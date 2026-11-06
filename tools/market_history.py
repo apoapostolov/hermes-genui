@@ -151,15 +151,29 @@ def _fetch(client: httpx.Client, symbol: str, period: str) -> dict | str:
     points = [(t, v) for t, v in zip(res.get("timestamp") or [], closes) if v is not None]
     if len(points) < 2:
         return f"Not enough price data for {sym} over {period}."
-    fmt = "%H:%M" if period == "1d" else "%-d %b" if period in ("5d", "1mo", "3mo") else "%b %Y"
     return {
         "name": clean_name(meta.get("shortName") or meta.get("longName"), sym),
         "sym": sym,
         "unit": "pts" if sym.startswith("^") else currency_sign(meta.get("currency")),  # an index is points
         "kind": meta.get("instrumentType"),
-        "x": [datetime.fromtimestamp(t, tz).strftime(fmt) for t, _ in points],
+        "x": [_label(t, tz, period) for t, _ in points],
         "y": [round(v, 2) for _, v in points],
     }
+
+
+def _label(ts: float, tz, period: str) -> str:
+    """One x-axis label. The day is written from ``.day`` instead of ``%-d``: that directive (no zero padding) is a
+    glibc extension, and MSVC's ``strftime`` rejects it with ``ValueError: Invalid format string``, which took the whole
+    tool down on Windows for 5d, 1mo and 3mo.
+
+    _label(1761955200, ZoneInfo("Asia/Kolkata"), "1mo") → "1 Nov"; "1d" → "05:30"; "1y" → "Nov 2025".
+    """
+    moment = datetime.fromtimestamp(ts, tz)
+    if period == "1d":
+        return moment.strftime("%H:%M")
+    if period in ("5d", "1mo", "3mo"):
+        return f"{moment.day} {moment.strftime('%b')}"
+    return moment.strftime("%b %Y")
 
 
 def _change(y: list[float]) -> float:

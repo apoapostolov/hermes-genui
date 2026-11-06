@@ -1,4 +1,8 @@
+import ast
 import importlib
+import inspect
+import re
+from zoneinfo import ZoneInfo
 
 import httpx
 import pytest
@@ -110,6 +114,44 @@ def test_period_for():
     assert markets.period_for("this week") == "5d"
     assert markets.period_for("today") == "1d"
     assert markets.period_for("whenever") == "1mo"
+
+
+def test_a_day_label_is_written_without_a_glibc_only_directive():
+    # "%-d" (day of month, no zero padding) is a glibc extension. MSVC's strftime rejects it with
+    # ValueError: Invalid format string, so on Windows every 5d, 1mo and 3mo call raised out of history() while 1d and
+    # 1y worked. The label is assembled from .day instead: 1 Nov, not 01 Nov.
+    kolkata = ZoneInfo("Asia/Kolkata")
+    assert markets._label(T0, kolkata, "1mo") == "1 Nov"
+    assert markets._label(T0 + 9 * 86400, kolkata, "5d") == "10 Nov"
+    assert markets._label(T0, kolkata, "1d") == "05:30"
+    assert markets._label(T0, kolkata, "1y") == "Nov 2025"
+
+
+def test_no_glibc_only_strftime_directive_is_left_in_the_module():
+    # CI runs on Linux, where "%-d" silently works, so a reintroduction is caught by reading the module's string
+    # literals rather than by running it. Docstrings are skipped: they name the directive to explain the fix.
+    tree = ast.parse(inspect.getsource(markets))
+    docstrings = set()
+    for node in ast.walk(tree):
+        body = getattr(node, "body", None)
+        if not isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) or not body:
+            continue
+        first = body[0]
+        if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant):
+            if isinstance(first.value.value, str):
+                docstrings.add(id(first.value))
+    literals = [n.value for n in ast.walk(tree)
+                if isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in docstrings]
+    assert literals, "the module has no string literals: this test has gone blind"
+    assert not [text for text in literals if re.search(r"%-[dmHIMS]", text)]
+
+
+def test_a_month_board_carries_day_first_labels(store_dir):
+    def handler(request):
+        return httpx.Response(200, json=chart_payload([24000.0, 24150.0, 24310.5]))
+
+    chart = stored_board(markets.history("NIFTY", "1mo", client=client_for(handler)), store_dir)[1]
+    assert chart["x"] == ["1 Nov", "2 Nov", "3 Nov"]
 
 
 def by_symbol(prices: dict[str, list[float]]):
