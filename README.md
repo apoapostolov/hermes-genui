@@ -122,6 +122,12 @@ the server.
 plugin switches, and the plugin starts off. So switch **Desktop** on again in the Webapp's **Capabilities → Plugins**,
 once in every browser and device you use, even if it's already on in the Desktop app.
 
+**Where boards draw.** Only in Hermes Desktop and in the Webapp that ships with Hermes (`hermes webapp`); those two
+load the plugin's drawing half. Everywhere else the plugin still works, but replies come back as text and Markdown
+tables: Telegram, the CLI, and other web or mobile apps that use Hermes as a backend (a self-hosted web UI, for
+example). The plugin notices the chat can't draw and has the model write text instead, so you won't see broken
+markers. If everything is installed and you only get text, check which app you're chatting in first.
+
 > [!WARNING]
 > **Safari, and every browser on iPhone or iPad (Chrome included):** Hermes's Capabilities page crashes there with
 > *"workspace failed to render: Can't find variable: requestIdleCallback"*, so you can't reach the switch. It's a
