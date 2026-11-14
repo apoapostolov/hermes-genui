@@ -27,9 +27,8 @@ function Tile({ tile, wash }: { tile: TileItem; wash: number }) {
   const [photoFailed, setPhotoFailed] = useState(false);
   const tap = tapOf(tile, send, fill);
   const colour = `var(--hb-chart-${wash})`;
-  return (
-    <button type="button" className="hb-tile" onClick={tap} disabled={!tap} title={tile.run}
-      style={{ background: `linear-gradient(140deg, ${colour}, color-mix(in srgb, ${colour} 55%, #140c24))` }}>
+  const content = (
+    <>
       {tile.image && !photoFailed && (
         <img src={tile.image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setPhotoFailed(true)} />
       )}
@@ -39,6 +38,10 @@ function Tile({ tile, wash }: { tile: TileItem; wash: number }) {
         <span className="hb-tile-title">{tile.title}</span>
         {tile.subtitle && <span className="hb-tile-subtitle">{tile.subtitle}</span>}
       </span>
-    </button>
+    </>
   );
+  const style = { background: `linear-gradient(140deg, ${colour}, color-mix(in srgb, ${colour} 55%, #140c24))` };
+  return tap
+    ? <button type="button" className="hb-tile" onClick={tap} title={tile.run} style={style}>{content}</button>
+    : <div className="hb-tile hb-tile-static" style={style}>{content}</div>;
 }

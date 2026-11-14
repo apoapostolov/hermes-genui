@@ -20,6 +20,25 @@ describe("tiles", () => {
     expect(screen.getByText("Bamboo grove")).toBeTruthy();
   });
 
+  it("renders informational tiles as noninteractive gradient cards", () => {
+    const { container, fill, send } = draw([{
+      type: "tiles",
+      items: [
+        { title: "Scenic drive", subtitle: "Hudson Valley views" },
+        { title: "Village stroll", subtitle: "Browse local shops" },
+      ],
+    }]);
+
+    const cards = container.querySelectorAll(".hb-tile");
+    expect(cards).toHaveLength(2);
+    expect(cards[0].tagName).toBe("DIV");
+    expect(cards[1].tagName).toBe("DIV");
+    expect(cards[0].getAttribute("style")).toContain("linear-gradient");
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(fill).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  });
+
   it("draws a photo without a referrer, and hides it when it fails to load", () => {
     const { container } = draw([tiles]);
     const img = container.querySelector(".hb-tile img") as HTMLImageElement;

@@ -1,6 +1,6 @@
-"""tiles: cover cards (2-8) that fill the composer (ask) or send a message (run) when tapped."""
+"""tiles: 2-8 cover cards, optionally interactive via ask or run."""
 
-from .common import NO_SEND, acts_before_the_model, has_any_text, has_text, safe_text
+from .common import NO_SEND, acts_before_the_model, has_text, safe_text
 
 
 def check_tiles(block: dict, path: str) -> list[tuple[str, str]]:
@@ -15,8 +15,8 @@ def check_tiles(block: dict, path: str) -> list[tuple[str, str]]:
         return [(path, "tiles needs 2-8 items")]
     problems = []
     for i, it in enumerate(items):
-        if not (isinstance(it, dict) and has_text(it.get("title")) and has_any_text(it, "ask", "run")):
-            problems.append((f"{path}.items.{i}", "tile needs a title and ask or run"))
+        if not (isinstance(it, dict) and has_text(it.get("title"))):
+            problems.append((f"{path}.items.{i}", "tile needs a title"))
         elif acts_before_the_model(it.get("ask")) or acts_before_the_model(it.get("run")):
             problems.append((f"{path}.items.{i}", NO_SEND))
     return problems

@@ -1,4 +1,4 @@
-A JSON list of blocks, each with a `type`, drawn in order; broken ones are skipped. Numbers only from tools or the user.
+JSON blocks in order; invalid blocks skipped. Use sourced numbers only.
 Icons: mail, rupee, bell, cal, check, clock, chart, photo, spark, chat, brain, sun, moon, sunset, note, globe, search, heart, plane, bed, food, walk, pin, trophy, lock, star, leaf, flame, ticket, info, alert.
 
 chart: A trend, a comparison, or parts of a whole. Use for: line: trends. bar: periods or items; bars turn sideways for long labels or rankings; time stays upright. hbar: rankings, 2-5 named items. donut, pie: parts of a whole, 3-7 parts. stacked: parts of a total over time. area: growth that builds up. combo: two measures. 2-3 items on several metrics: a table, not a chart each. Fields: kind (as above). title. x: labels. series: [{name, data: numbers, null for a gap}], 1-3 (stacked, area: up to 6; pie, donut: 1). combo: first series bars, the rest lines (another unit gets its own axis). unit: "%", "₹Cr", "$M" or a word. tone: "change" colours one line by gain or loss. source: site name.
@@ -33,7 +33,7 @@ layers: Slabs in light 3D, bottom first; Next pulls one out with its note. Use f
 Example: {"type":"layers","title":"Network stack","layers":[{"id":"ip","label":"Internet","tone":"blue","note":"Routes packets."},{"id":"app","label":"Application","tone":"green"}]}
 actions: Up to 3 buttons that send a message. Use for: An obvious next step. Fields: items: [{label, run: the message}].
 Example: {"type":"actions","items":[{"label":"Analyze","run":"Analyze TCS: last 4 quarters"}]}
-tiles: 2-8 cover cards. Use for: Choices to explore. Fields: items: [{title, subtitle, image, icon, ask: fills the composer | run: sends}].
+tiles: 2-8 cover cards. Use for: Choices to explore. Fields: items: [{title, subtitle, image, icon, ask: fills the composer | run: sends}]. No ask/run: a static card, only for pure facts.
 Example: {"type":"tiles","items":[{"title":"Arashiyama","icon":"leaf","ask":"Add Arashiyama"},{"title":"Gion","icon":"moon","run":"Add a Gion walk"}]}
 checklist: Items to tick; ticks are saved. Use for: Packing lists, to-dos, steps. Fields: title. items: [text | {text, group}], ≤40. numbered: true for steps.
 Example: {"type":"checklist","title":"Packing","items":["Jacket",{"text":"ID card","group":"Papers"}]}

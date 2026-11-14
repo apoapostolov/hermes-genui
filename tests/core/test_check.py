@@ -228,13 +228,23 @@ def test_button_needs_a_label_and_run_or_an_https_url():
     assert check_blocks(broken) == ["0: button needs a label", "1: button needs run or an https url"]
 
 
-def test_tiles_need_two_to_eight_titled_cards_that_ask_or_run():
+def test_tiles_need_two_to_eight_titled_cards():
     tile = {"title": "Kyoto", "ask": "Plan Kyoto"}
     assert check_blocks([{"type": "tiles", "items": [tile, {"title": "Nara", "run": "Plan Nara"}]}]) == []
     assert check_blocks([{"type": "tiles", "items": [tile]}]) == ["0: tiles needs 2-8 items"]
     assert check_blocks([{"type": "tiles", "items": [tile] * 9}]) == ["0: tiles needs 2-8 items"]
     assert check_blocks([{"type": "tiles", "items": [tile, {"title": "Nara"}, {"ask": "x"}]}]) == [
-        "0.items.1: tile needs a title and ask or run", "0.items.2: tile needs a title and ask or run"]
+        "0.items.2: tile needs a title"]
+
+
+def test_tiles_allow_informational_cards_without_actions():
+    """Passive tiles are valid alongside interactive tiles."""
+    board = [{"type": "tiles", "items": [
+        {"title": "Scenic drive", "subtitle": "Explore the Hudson Valley"},
+        {"title": "Village stroll", "subtitle": "Browse local shops"},
+        {"title": "Plan dinner", "ask": "Suggest dinner options"},
+    ]}]
+    assert check_blocks(board) == []
 
 
 def test_checklist_needs_1_to_40_items_with_text():

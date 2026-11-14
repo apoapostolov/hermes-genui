@@ -1,5 +1,5 @@
 {
- "about": "A JSON list of blocks, each with a `type`, drawn in order; broken ones are skipped. Numbers only from tools or the user.",
+ "about": "JSON blocks in order; invalid blocks skipped. Use sourced numbers only.",
  "icons": [
   "mail",
   "rupee",
@@ -419,7 +419,7 @@
    "kind": "tiles",
    "for": "2-8 cover cards.",
    "use_when": "Choices to explore.",
-   "fields": "items: [{title, subtitle, image, icon, ask: fills the composer | run: sends}].",
+   "fields": "items: [{title, subtitle, image, icon, ask: fills the composer | run: sends}]. No ask/run: a static card, only for pure facts.",
    "example": {
     "type": "tiles",
     "items": [
