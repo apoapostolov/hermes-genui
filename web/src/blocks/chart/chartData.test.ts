@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readBlocks } from "../../core/readBlocks";
-import { axisNames, changePct, chartKind, chartLabel, chartScales, isOrderedLabel, kindToDraw, maxSeries,
-  pieSlices, scatterPoints, waterfallBars, type ChartKind, type ChartSpec } from "./chartData";
+import { axisNames, binTotals, changePct, chartKind, chartLabel, chartScales, fmtSpan, isOrderedLabel, kindToDraw,
+  maxSeries, pieSlices, scatterPoints, waterfallBars, type ChartKind, type ChartSpec } from "./chartData";
 
 describe("chart reading", () => {
   it("maps kind names and aliases, anything else is a line", () => {
@@ -216,5 +216,63 @@ describe("chartScales for a scatter", () => {
     expect(scales.left.min).toBeLessThan(1.2);
     expect(scales.left.max).toBeGreaterThan(24.6);
     expect(scales.right).toBeNull();
+  });
+});
+
+describe("histogram and range", () => {
+  const read = (raw: object) => readBlocks([{ type: "chart", ...raw }]) as any[];
+  const hist = (data: (number | null)[]) => read({ kind: "histogram", x: ["0-15", "15-30", "30-45"], series: [{ data }] })[0].spec;
+  const range = (series: object) => read({ kind: "range", x: ["Mon", "Tue"], series: [series] })[0]?.spec;
+
+  it("maps the new kind names and their aliases", () => {
+    expect(chartKind("Histogram")).toBe("histogram");
+    expect(chartKind("hist")).toBe("histogram");
+    expect(chartKind("range_bar")).toBe("range");
+    expect(chartKind("floating bar")).toBe("range");
+    expect(chartKind("boxplot")).toBe("line");
+  });
+
+  it("takes one series each, and a histogram's counts grow from zero", () => {
+    expect(maxSeries("histogram")).toBe(1);
+    expect(maxSeries("range")).toBe(1);
+    expect(chartScales(hist([4, 12, 0]), null).left.min).toBe(0);
+    expect(chartScales(hist([4, 12, 0]), null).left.max).toBeGreaterThan(12);
+  });
+
+  it("reads a histogram's counts, a negative one and a gap alike", () => {
+    expect(hist([4, null, 9]).series[0].data).toEqual([4, null, 9]);
+    expect(hist([4, -2, 9]).series[0].data).toEqual([4, null, 9]);
+    expect(hist([0, 0, 0]).series[0].data).toEqual([0, 0, 0]);
+    expect(read({ kind: "histogram", x: ["a"], series: [{ data: [null] }] })).toEqual([]);
+  });
+
+  it("reads a range's low, high and now, lower end first, with the window's middle as its value", () => {
+    const spec = range({ name: "Delivery", low: [34, 19], high: [18, 36], now: [26, 31] })!;
+    expect(spec.series[0].span).toEqual([{ low: 18, high: 34, now: 26 }, { low: 19, high: 36, now: 31 }]);
+    expect(spec.series[0].data).toEqual([26, 27.5]);
+  });
+
+  it("keeps a window missing one end as no window, and drops a chart with no window at all", () => {
+    const spec = range({ low: [18, null], high: [34, 36], now: [null, 31] })!;
+    expect(spec.series[0].span).toEqual([{ low: 18, high: 34, now: null }, { low: null, high: null, now: 31 }]);
+    expect(range({ low: [null], high: [null], now: [null] })).toBeUndefined();
+  });
+
+  it("hugs a range's own values instead of running to zero", () => {
+    const spec = range({ low: [18], high: [34], now: [26] })!;
+    expect(chartScales(spec, null).left.min).toBeGreaterThan(0);
+    expect(chartScales(spec, null).left.max).toBeGreaterThan(34);
+  });
+
+  it("writes a window's ends with the unit on each, and a dash when neither is known", () => {
+    expect(fmtSpan(18, 34, "min")).toBe("18 min–34 min");
+    expect(fmtSpan(18, 34, "%")).toBe("18%–34%");
+    expect(fmtSpan(null, 34, "min")).toBe("34 min");
+    expect(fmtSpan(null, null)).toBe("–");
+  });
+
+  it("counts a histogram and finds its tallest bin", () => {
+    expect(binTotals([4, 12, null, 9])).toEqual({ total: 25, tallest: 1 });
+    expect(binTotals([null, null])).toEqual({ total: 0, tallest: -1 });
   });
 });
