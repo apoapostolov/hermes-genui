@@ -83,3 +83,25 @@ describe("checklist item state, owner and note", () => {
     expect(items[1]).toEqual({ text: "Two" });
   });
 });
+
+describe("checklist phase tracker", () => {
+  it("reads compact density and source ids", () => {
+    const r = one({ type: "checklist", title: "Release", density: "compact", items: [
+      { text: "Copy", state: "active", sourceIds: ["src-1", "src-2"] },
+      { text: "Verify", state: "blocked", sources: ["src-3"] },
+    ] });
+    expect(r.dropped).toEqual([]);
+    expect(r.blocks[0]).toMatchObject({ type: "checklist", title: "Release", density: "compact",
+      items: [
+        { text: "Copy", state: "active", sourceIds: ["src-1", "src-2"] },
+        { text: "Verify", state: "blocked", sourceIds: ["src-3"] },
+      ] });
+  });
+  it("ignores an unknown density and keeps four source ids", () => {
+    const r = one({ type: "checklist", density: "tiny", items: [
+      { text: "Copy", sourceIds: ["a", "b", "c", "d", "e"] },
+    ] });
+    expect((r.blocks[0] as any).density).toBeUndefined();
+    expect((r.blocks[0] as any).items[0].sourceIds).toEqual(["a", "b", "c", "d"]);
+  });
+});

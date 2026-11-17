@@ -120,3 +120,29 @@ describe("checklist states", () => {
       { method: "PUT", body: { state: { "0": [0, 1] } } }));
   });
 });
+
+describe("checklist compact density", () => {
+  const phases = { type: "checklist", title: "Release 0.4", density: "compact", items: [
+    { text: "Bump the manifest", state: "done" },
+    { text: "Publish the wheel", state: "blocked", sourceIds: ["src-1"] },
+    { text: "Post the changelog", state: "active" },
+    { text: "Drop the old alias", state: "skipped" },
+  ] };
+
+  it("draws one labelled segment per item and keeps the count", () => {
+    const c = draw([phases]).container;
+    expect(c.querySelectorAll(".hb-check-seg").length).toBe(4);
+    expect(screen.getByRole("checkbox", { name: /Publish the wheel, blocked, sources src-1/ })).toBeTruthy();
+    expect(screen.getByRole("checkbox", { name: /Post the changelog, in progress/ }).getAttribute("aria-current")).toBe("step");
+    expect(screen.getByText("1 of 4 done, 1 blocked, 1 skipped")).toBeTruthy();
+    expect(screen.queryByText("Waiting")).toBeNull();
+  });
+
+  it("still ticks a segment", () => {
+    draw([phases]);
+    const seg = screen.getByRole("checkbox", { name: /Post the changelog, in progress/ });
+    fireEvent.click(seg);
+    expect(seg.getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByText("2 of 4 done, 1 blocked, 1 skipped")).toBeTruthy();
+  });
+});

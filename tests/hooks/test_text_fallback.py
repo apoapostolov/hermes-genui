@@ -264,6 +264,12 @@ def test_checklist_note_alone_needs_no_word():
     assert render({"type": "checklist", "items": [{"text": "Ship", "note": "Friday"}]}) == "- [ ] Ship (Friday)"
 
 
+def test_checklist_phase_tracker_reads_source_ids():
+    board = {"type": "checklist", "density": "compact", "items": [
+        {"text": "Publish", "state": "blocked", "sourceIds": ["src-1", "src-2"]}]}
+    assert render(board) == "- [ ] Publish (blocked, sources src-1, src-2)"
+
+
 def test_tiles():
     tiles = {"type": "tiles", "items": [{"title": "Arashiyama", "subtitle": "Bamboo", "ask": "a"},
                                         {"title": "Gion", "run": "b"}]}

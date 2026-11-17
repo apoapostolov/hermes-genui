@@ -354,7 +354,7 @@
    "kind": "steps",
    "for": "A walkthrough with Back / Next.",
    "use_when": "After a flow: each step lights its node and changes the stage.",
-   "fields": "title. for: a flow id. items 2-12: [{title, text ≤600, node, image, holds: {node id: chips}, send: true (packet from the last lit node), tick: 1-20 (rerun its group)}].",
+   "fields": "title. for: a flow id. items 2-12: [{title, text ≤600, node, image, holds: {node id: chips}, send: packet from last lit node, tick: 1-20 reruns group}].",
    "example": {
     "type": "steps",
     "for": "tf",
@@ -440,7 +440,7 @@
    "kind": "checklist",
    "for": "Items to tick; ticks saved.",
    "use_when": "Packing, to-dos, steps.",
-   "fields": "title. items ≤40: text | {text, group, state: pending|active|done|blocked|skipped, owner, note}. numbered.",
+   "fields": "title. density: compact|expanded. items ≤40: text | {text, group, state: pending|active|done|blocked|skipped, owner, note, sourceIds ≤4}. numbered.",
    "example": {
     "type": "checklist",
     "title": "Packing",
@@ -613,7 +613,7 @@
    "kind": "form",
    "for": "Fields to fill; Send posts one message.",
    "use_when": "Before a big answer when two or more key choices are unknown: ask with ONE form, every field prefilled with your best guess, then build from the answer message. Not for a single yes/no (use actions).",
-   "fields": "id, title. fields ≤12: {id, kind: select|radio|checkbox|slider|text, label, value, required, group: a heading shared with the fields after it}. options for select, radio, checkbox: text or {value, label, note}. slider: min, max, step, unit, ends: [left, right]. text: placeholder, multiline.",
+   "fields": "id, title. fields ≤12: {id, kind: select|radio|checkbox|slider|text, label, value, required, group: a heading shared with the fields after it}. options: text or {value, label, note}. slider: min, max, step, unit, ends: [left, right]. text: placeholder, multiline.",
    "example": {
     "type": "form",
     "id": "trip",

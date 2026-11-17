@@ -2489,7 +2489,12 @@ var STATE_WORDS = {
   blocked: "Blocked",
   skipped: "Skipped"
 };
-function Checklist({ title, numbered, items, ticked, path }) {
+function segmentName(item, on) {
+  const state = on ? "done" : item.state ? STATE_WORDS[item.state]?.toLowerCase() ?? item.state : "not started";
+  const sources = item.sourceIds?.length ? `, sources ${item.sourceIds.join(", ")}` : "";
+  return `${item.text}, ${state}${sources}`;
+}
+function Checklist({ title, numbered, items, ticked, path, density }) {
   const [ticks, tap] = useSavedTicks(path, ticked, items.length);
   const uid = useId3();
   const done = ticks.length;
@@ -2506,7 +2511,8 @@ function Checklist({ title, numbered, items, ticked, path }) {
     const wordId = word ? `${uid}-state-${index}` : void 0;
     const ownerId = item.owner ? `${uid}-owner-${index}` : void 0;
     const noteId = item.note ? `${uid}-note-${index}` : void 0;
-    const describedBy = [wordId, ownerId, noteId].filter(Boolean).join(" ") || void 0;
+    const sourceId = item.sourceIds?.length ? `${uid}-source-${index}` : void 0;
+    const describedBy = [wordId, ownerId, noteId, sourceId].filter(Boolean).join(" ") || void 0;
     const classes = ["hb-check", on ? "hb-check-on" : state ? `hb-check-${state}` : "", pointer === index ? "hb-check-pointer" : ""];
     return /* @__PURE__ */ jsx20("div", { className: "hb-checklist-row", children: /* @__PURE__ */ jsxs17(
       "button",
@@ -2527,7 +2533,11 @@ function Checklist({ title, numbered, items, ticked, path }) {
               word && /* @__PURE__ */ jsx20("span", { className: "hb-check-state", id: wordId, children: word }),
               item.owner && /* @__PURE__ */ jsx20("span", { className: "hb-check-owner", id: ownerId, children: item.owner })
             ] }),
-            item.note && /* @__PURE__ */ jsx20("span", { className: "hb-check-note", id: noteId, children: item.note })
+            item.note && /* @__PURE__ */ jsx20("span", { className: "hb-check-note", id: noteId, children: item.note }),
+            item.sourceIds?.length && /* @__PURE__ */ jsxs17("span", { className: "hb-check-source", id: sourceId, children: [
+              "sources ",
+              item.sourceIds.join(", ")
+            ] })
           ] })
         ]
       }
@@ -2539,6 +2549,30 @@ function Checklist({ title, numbered, items, ticked, path }) {
       /* @__PURE__ */ jsx20("span", { className: allDone ? "hb-checklist-count hb-checklist-count-done" : "hb-checklist-count", "aria-live": "polite", children: countText(done, items.length, blocked, skipped) })
     ] }),
     /* @__PURE__ */ jsx20("div", { className: "hb-checklist-track", "aria-hidden": "true", children: /* @__PURE__ */ jsx20("span", { className: "hb-checklist-fill", style: { width: `${done / items.length * 100}%` } }) }),
+    density === "compact" && /* @__PURE__ */ jsx20("div", { className: "hb-checklist-compact", role: "group", "aria-label": title ?? "Phases", children: items.map((item, index) => {
+      const on = ticks.includes(index);
+      const state = on ? void 0 : item.state;
+      const classes = [
+        "hb-check-seg",
+        on ? "hb-check-on" : state ? `hb-check-${state}` : "",
+        pointer === index ? "hb-check-pointer" : ""
+      ];
+      return /* @__PURE__ */ jsx20(
+        "button",
+        {
+          type: "button",
+          role: "checkbox",
+          "aria-checked": on,
+          "aria-current": pointer === index ? "step" : void 0,
+          "aria-label": segmentName(item, on),
+          title: segmentName(item, on),
+          onClick: () => tap(index),
+          className: classes.join(" ").trim(),
+          children: /* @__PURE__ */ jsx20("span", { className: "hb-sr", children: segmentName(item, on) })
+        },
+        index
+      );
+    }) }),
     segmentsOf(items).map(
       (segment, si) => segment.label ? /* @__PURE__ */ jsxs17("div", { className: "hb-checklist-group", role: "group", "aria-labelledby": `${uid}-group-${si}`, children: [
         /* @__PURE__ */ jsx20("div", { className: "hb-checklist-group-label", id: `${uid}-group-${si}`, children: /* @__PURE__ */ jsx20(InlineText, { text: segment.label }) }),
@@ -2605,12 +2639,21 @@ function readChecklist(raw, here) {
   const items = [];
   const ticked = [];
   kept.forEach((item, i) => {
-    items.push(clean({ text: item.text, group: item.group, id: item.id, state: item.state, owner: item.owner, note: item.note }));
+    items.push(clean({
+      text: item.text,
+      group: item.group,
+      id: item.id,
+      state: item.state,
+      owner: item.owner,
+      note: item.note,
+      sourceIds: item.sourceIds
+    }));
     if (item.done) ticked.push(i);
   });
   const numbered = raw.numbered === true || raw.ordered === true;
   const title = firstText([raw.title, raw.label], 80);
-  return clean({ type: "checklist", title, numbered, items, ticked, path: here.path });
+  const density = raw.density === "compact" ? "compact" : void 0;
+  return clean({ type: "checklist", title, numbered, items, ticked, path: here.path, density });
 }
 function collectItems(raw, here) {
   const found = [];
@@ -2651,8 +2694,15 @@ function readItem(item, groupLabel, here) {
     done: item.done === true || item.checked === true || state === "done",
     state: state === "done" ? void 0 : state,
     owner: firstText([item.owner], 40),
-    note: firstText([item.note], 120)
+    note: firstText([item.note], 120),
+    sourceIds: readSourceIds(item.sourceIds ?? item.sources, here)
   };
+}
+function readSourceIds(raw, here) {
+  if (!Array.isArray(raw)) return void 0;
+  const ids = raw.slice(0, 4).map((id) => typeof id === "string" && id.trim() ? id.trim().slice(0, 40) : void 0).filter((id) => id !== void 0);
+  if (raw.length > 4) here.drop("item keeps 4 source ids");
+  return ids.length ? ids : void 0;
 }
 function readState(raw, here) {
   if (raw === void 0 || raw === null) return void 0;
@@ -6190,7 +6240,7 @@ var actions_default = "/* A row of pill buttons (the pills themselves are in sty
 var tiles_default = "/* Tiles: cover cards. Every card keeps the cover shape \u2014 its height comes from its aspect-ratio, never from the\n   text, so rows stay even however long a reason is. The reason reads in up to three lines (the reader cuts it to\n   about 120 characters between words), in full white with a shadow, and the photo stays bright: only the caption\n   block darkens behind the text, there is no overlay over the whole card. */\n.hb-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }\n.hb-tile {\n  position: relative;\n  display: block;\n  aspect-ratio: 1 / 1.05;\n  margin: 0;\n  padding: 0;\n  overflow: hidden;\n  border: 0;\n  border-radius: 20px;\n  color: #fff;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);\n}\n.hb-tile:hover { transform: translateY(-1px); }\n.hb-tile:active { transform: scale(0.98); }\n.hb-tile:disabled { cursor: default; transform: none; }\n.hb-tile-static { cursor: default; }\n.hb-tile-static:hover,\n.hb-tile-static:active { transform: none; }\n.hb-tile:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }\n.hb-tile-icon {\n  position: absolute;\n  top: 12px;\n  left: 12px;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border: 1px solid rgba(255, 255, 255, 0.35);\n  border-radius: 12px;\n  background: rgba(255, 255, 255, 0.22);\n  backdrop-filter: blur(8px);\n}\n/* The scrim is localized: it is the caption block's own background, so it fades in over the text and nowhere\n   else \u2014 the photo above the caption keeps its full brightness. It is already dark by the title (the top third of\n   the fade does most of the work), so a title over snow or sky reads as well as the lines under it. */\n.hb-tile-text {\n  position: absolute;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  display: flex;\n  flex-direction: column;\n  gap: 3px;\n  padding: 30px 12px 12px 14px;\n  background: linear-gradient(180deg, rgba(12, 8, 24, 0) 0%, rgba(12, 8, 24, 0.46) 34%, rgba(12, 8, 24, 0.72) 100%);\n}\n.hb-tile-title { font-size: 15.5px; line-height: 20px; font-weight: 700; letter-spacing: -0.01em; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3); }\n.hb-tile-subtitle {\n  display: -webkit-box;\n  -webkit-line-clamp: 3;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  font-size: 12.5px;\n  line-height: 16px;\n  color: #fff;\n  text-shadow: 0 1px 2px rgba(12, 8, 24, 0.55);\n}\n@media (prefers-reduced-motion: reduce) {\n  .hb-tile { transition: none; }\n}\n";
 
 // src/blocks/checklist/checklist.css
-var checklist_default = '/* Checklist */\n.hb-checklist { display: flex; flex-direction: column; }\n.hb-checklist-head { display: flex; align-items: baseline; gap: 8px; }\n.hb-checklist-head .hb-card-title { flex: 1; min-width: 0; }\n.hb-checklist-count {\n  margin-left: auto;\n  font-size: 12.5px;\n  font-weight: 600;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-checklist-count-done { color: var(--hb-good); }\n.hb-checklist-track { display: block; height: 6px; margin: 8px 0 4px; overflow: hidden; border-radius: 999px; background: var(--hb-well); }\n.hb-checklist-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-good); transition: width 0.3s ease; }\n.hb-checklist-group-label { padding: 10px 0 2px; font-size: 12px; font-weight: 700; color: var(--hb-muted); }\n.hb-check {\n  display: flex;\n  align-items: flex-start;\n  gap: 12px;\n  width: 100%;\n  margin: 0;\n  padding: 7px 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n}\n.hb-check:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; border-radius: 8px; }\n.hb-check-mark {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 22px;\n  height: 22px;\n  margin-top: 0.5px;\n  border: 2px solid var(--hb-line-strong);\n  border-radius: 999px;\n  color: var(--hb-muted);\n  font-size: 11px;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n  transition: background 0.15s, border-color 0.15s;\n}\n/* The state is a shape on the same 22px mark, so no icon has to carry it: a dot for the item being worked on, a bar\n   for one that cannot move, a dashed ring for one dropped on purpose. */\n.hb-check-mark::after { content: ""; display: block; border-radius: 999px; }\n.hb-check-active .hb-check-mark { border-color: var(--hb-accent); }\n.hb-check-active .hb-check-mark::after { width: 8px; height: 8px; background: var(--hb-accent); }\n.hb-check-blocked .hb-check-mark { border-color: var(--hb-warn); }\n.hb-check-blocked .hb-check-mark::after { width: 10px; height: 2px; background: var(--hb-warn); }\n.hb-check-skipped .hb-check-mark { border-style: dashed; border-color: var(--hb-muted); }\n.hb-check-pointer .hb-check-mark { border-color: var(--hb-accent); }\n.hb-check-on .hb-check-mark { border-color: var(--hb-good); background: var(--hb-good); color: var(--hb-surface); }\n.hb-check-text { flex: 1; min-width: 0; font-size: 14.5px; line-height: 21px; transition: color 0.15s; }\n.hb-check-line { display: flex; align-items: baseline; gap: 8px; }\n.hb-check-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }\n.hb-check-state { flex: none; font-size: 11.5px; font-weight: 600; color: var(--hb-muted); white-space: nowrap; }\n.hb-check-blocked .hb-check-state { color: var(--hb-warn); }\n.hb-check-owner { flex: none; font-size: 11.5px; color: var(--hb-muted); white-space: nowrap; }\n.hb-check-note { display: block; margin-top: 2px; font-size: 12px; line-height: 18px; color: var(--hb-muted); overflow-wrap: anywhere; }\n.hb-check-on .hb-check-text { color: var(--hb-muted); }\n.hb-check-on .hb-check-label { text-decoration: line-through; text-decoration-thickness: 1px; }\n@media (prefers-reduced-motion: reduce) {\n  .hb-checklist-fill, .hb-check-mark, .hb-check-text { transition: none; }\n}\n';
+var checklist_default = '/* Checklist */\n.hb-checklist { display: flex; flex-direction: column; }\n.hb-checklist-head { display: flex; align-items: baseline; gap: 8px; }\n.hb-checklist-head .hb-card-title { flex: 1; min-width: 0; }\n.hb-checklist-count {\n  margin-left: auto;\n  font-size: 12.5px;\n  font-weight: 600;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-checklist-count-done { color: var(--hb-good); }\n.hb-checklist-track { display: block; height: 6px; margin: 8px 0 4px; overflow: hidden; border-radius: 999px; background: var(--hb-well); }\n.hb-checklist-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-good); transition: width 0.3s ease; }\n.hb-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }\n.hb-checklist-compact { display: flex; gap: 4px; margin: 8px 0 4px; }\n.hb-check-seg {\n  flex: 1 1 0; min-width: 8px; height: 18px; padding: 0; border: 1px solid var(--hb-line-strong);\n  border-radius: 5px; background: var(--hb-well); cursor: pointer; transition: background 0.15s, border-color 0.15s;\n}\n.hb-check-seg.hb-check-active { border-color: var(--hb-accent); background: var(--hb-accent-soft); }\n.hb-check-seg.hb-check-blocked { border-color: var(--hb-warn); background: color-mix(in srgb, var(--hb-warn) 22%, transparent); }\n.hb-check-seg.hb-check-skipped { border-style: dashed; border-color: var(--hb-muted); }\n.hb-check-seg.hb-check-on { border-color: var(--hb-good); background: var(--hb-good); }\n.hb-check-seg.hb-check-pointer { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-check-seg:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-checklist-group-label { padding: 10px 0 2px; font-size: 12px; font-weight: 700; color: var(--hb-muted); }\n.hb-check {\n  display: flex;\n  align-items: flex-start;\n  gap: 12px;\n  width: 100%;\n  margin: 0;\n  padding: 7px 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n}\n.hb-check:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; border-radius: 8px; }\n.hb-check-mark {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 22px;\n  height: 22px;\n  margin-top: 0.5px;\n  border: 2px solid var(--hb-line-strong);\n  border-radius: 999px;\n  color: var(--hb-muted);\n  font-size: 11px;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n  transition: background 0.15s, border-color 0.15s;\n}\n/* The state is a shape on the same 22px mark, so no icon has to carry it: a dot for the item being worked on, a bar\n   for one that cannot move, a dashed ring for one dropped on purpose. */\n.hb-check-mark::after { content: ""; display: block; border-radius: 999px; }\n.hb-check-active .hb-check-mark { border-color: var(--hb-accent); }\n.hb-check-active .hb-check-mark::after { width: 8px; height: 8px; background: var(--hb-accent); }\n.hb-check-blocked .hb-check-mark { border-color: var(--hb-warn); }\n.hb-check-blocked .hb-check-mark::after { width: 10px; height: 2px; background: var(--hb-warn); }\n.hb-check-skipped .hb-check-mark { border-style: dashed; border-color: var(--hb-muted); }\n.hb-check-pointer .hb-check-mark { border-color: var(--hb-accent); }\n.hb-check-on .hb-check-mark { border-color: var(--hb-good); background: var(--hb-good); color: var(--hb-surface); }\n.hb-check-text { flex: 1; min-width: 0; font-size: 14.5px; line-height: 21px; transition: color 0.15s; }\n.hb-check-line { display: flex; align-items: baseline; gap: 8px; }\n.hb-check-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }\n.hb-check-state { flex: none; font-size: 11.5px; font-weight: 600; color: var(--hb-muted); white-space: nowrap; }\n.hb-check-blocked .hb-check-state { color: var(--hb-warn); }\n.hb-check-owner { flex: none; font-size: 11.5px; color: var(--hb-muted); white-space: nowrap; }\n.hb-check-note { display: block; margin-top: 2px; font-size: 12px; line-height: 18px; color: var(--hb-muted); overflow-wrap: anywhere; }\n.hb-check-source { display: block; margin-top: 1px; font-size: 11px; color: var(--hb-muted); }\n.hb-check-on .hb-check-text { color: var(--hb-muted); }\n.hb-check-on .hb-check-label { text-decoration: line-through; text-decoration-thickness: 1px; }\n@media (prefers-reduced-motion: reduce) {\n  .hb-checklist-fill, .hb-check-mark, .hb-check-text, .hb-check-seg { transition: none; }\n}\n';
 
 // src/blocks/calculator/calculator.css
 var calculator_default = "/* Calculator; a form's slider uses the same .hb-calc-head, .hb-calc-label, .hb-calc-value and .hb-range. */\n.hb-calc { display: flex; flex-direction: column; }\n/* At the top of a reply sliders stop at 720px rather than stretching across a wide board; in a layout block they fill\n   their place. */\n.hb-blocks > .hb-calc { max-width: 720px; }\n.hb-calc-slider { display: block; padding: 8px 0; }\n.hb-calc-head { display: flex; align-items: baseline; gap: 8px; }\n.hb-calc-label { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--hb-ink-2); }\n.hb-calc-value { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }\n.hb-range { display: block; width: 100%; margin: 8px 0 0; accent-color: var(--hb-accent); cursor: pointer; }\n.hb-calc-ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--hb-muted); font-variant-numeric: tabular-nums; }\n.hb-calc-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 8px; }\n/* A calculator's live chart sits in the calculator's card, so it drops its own card look. */\n.hb-calc > .hb-chart { margin-top: 10px; padding: 10px 0 0; border: 0; border-top: 1px solid var(--hb-line); border-radius: 0; background: none; }\n.hb-calc-result { min-width: 0; padding: 10px 14px; border-radius: 14px; background: var(--hb-accent-soft); }\n.hb-calc-result-label { font-size: 12px; font-weight: 600; color: var(--hb-accent-ink); }\n.hb-calc-result-value {\n  margin-top: 2px;\n  font-size: 20px;\n  line-height: 1.2;\n  font-weight: 800;\n  letter-spacing: -0.02em;\n  font-variant-numeric: tabular-nums;\n  overflow-wrap: anywhere;\n}\n";
