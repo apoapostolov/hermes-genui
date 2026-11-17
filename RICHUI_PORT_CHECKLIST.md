@@ -1,0 +1,35 @@
+# GenUI port checklist
+
+This tracks the rich-ui port work in [sagarmainkar/hermes-genui](https://github.com/sagarmainkar/hermes-genui). The visual contract lives in [AGENTS.md](AGENTS.md). Add one row when a PR opens and update its status here in the same pass.
+
+## Opened PRs
+
+| PR | Source | Scope | State | CI |
+| --- | --- | --- | --- | --- |
+| [#16](https://github.com/sagarmainkar/hermes-genui/pull/16) | [#15](https://github.com/sagarmainkar/hermes-genui/issues/15) | Stray `::blocks` tag renders nothing | Open | monitored |
+| [#19](https://github.com/sagarmainkar/hermes-genui/pull/19) | [#18](https://github.com/sagarmainkar/hermes-genui/issues/18) | Wheel chains past a short table | Open | monitored |
+| [#20](https://github.com/sagarmainkar/hermes-genui/pull/20) | [#11](https://github.com/sagarmainkar/hermes-genui/issues/11) | Generated image provenance and gallery | Open | green |
+| [#29](https://github.com/sagarmainkar/hermes-genui/pull/29) | [#24](https://github.com/sagarmainkar/hermes-genui/issues/24) | Chart caveat and axis captions | Open | green |
+| [#30](https://github.com/sagarmainkar/hermes-genui/pull/30) | [#25](https://github.com/sagarmainkar/hermes-genui/issues/25) | Ranked bars in `list` | Open | green |
+
+## Remaining port queue
+
+Ordered by estimated implementation cost. A row becomes a PR row above when its branch is pushed and the PR is opened.
+
+| Order | Issue | Scope | UI bible aspect to add when it lands |
+| --- | --- | --- | --- |
+| 1 | [#23](https://github.com/sagarmainkar/hermes-genui/issues/23) | KPI and stat change from `previous`, cost tone inversion | Semantic direction on a compact chip, and when inversion belongs to the data rather than the control |
+| 2 | [#27](https://github.com/sagarmainkar/hermes-genui/issues/27) | Checklist item states, owner and note | State markers beside an existing checkbox row, and a computed current pointer without a new control |
+| 3 | [#17](https://github.com/sagarmainkar/hermes-genui/issues/17) | Progress shapes, thresholds and segments | Shape variants of one value, status colour paired with text, and segmented tracks alongside plain tracks |
+| 4 | [#21](https://github.com/sagarmainkar/hermes-genui/issues/21) | Scatter and waterfall chart kinds | New marks inside the chart frame, and how a mark joins the existing series and legend contract |
+| 5 | [#26](https://github.com/sagarmainkar/hermes-genui/issues/26) | Histogram and range chart kinds | Binned and band marks inside the chart frame, with the same axis and hover contract |
+| 6 | [#28](https://github.com/sagarmainkar/hermes-genui/issues/28) | Accessible names and roles across blocks | One naming ladder across blocks and where a dedicated role changes an existing drawing |
+| 7 | [#22](https://github.com/sagarmainkar/hermes-genui/issues/22) | `null` means unknown, never 0 | Gap rendering, zero rendering and unknown rendering as one cross-block rule |
+
+## Definition of done for each row
+
+- Branch pushed to `apoapostolov/hermes-genui`, PR open against `sagarmainkar/hermes-genui:main`, linked to its issue.
+- Reader, React renderer, Python checker and text fallback updated together where the field changes meaning.
+- Focus, keyboard and reduced-motion behavior inherited from the existing control, not reimplemented.
+- `AGENTS.md` updated in the same session when the change introduces a visual or interaction aspect the contract did not already name.
+- Bundle rebuilt from LF-normalized sources, both CI checks green, and a read-only CI monitor attached.
