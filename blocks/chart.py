@@ -102,9 +102,8 @@ def _slices(x: list, series: dict, top: int = 4) -> str:
 
 
 def text_chart(block: dict) -> str:
-    """One line: the title (and unit), then each series first → last, or a pie's top slices.
-
-    → "**Revenue vs profit** (₹Cr): Revenue 67,087 → 72,275 (▲ 7.7%); Net profit 10,720 → 13,420 (▲ 25.2%)"
+    """The title (and unit), then each series first → last, or a pie's top slices. A written caveat becomes a second
+    italic line: "**Revenue** (₹Cr): Revenue 67,087 → 74,010 (▲ 10.3%)\n_Q3 onward is a projection._"
     """
     series = [s for s in block.get("series", []) if isinstance(s, dict)]
     if not series:
@@ -117,4 +116,6 @@ def text_chart(block: dict) -> str:
         return ""
     unit = safe_text(block.get("unit"), 20)
     title = f"**{safe_text(block.get('title')) or 'Chart'}**" + (f" ({unit})" if unit else "")
-    return f"{title}: {body}"
+    line = f"{title}: {body}"
+    caveat = safe_text(block.get("caveat"), 120)
+    return f"{line}\n_{caveat}_" if caveat else line

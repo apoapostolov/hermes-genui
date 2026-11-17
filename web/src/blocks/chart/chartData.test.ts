@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readBlocks } from "../../core/readBlocks";
-import { changePct, chartKind, isOrderedLabel, kindToDraw, pieSlices, type ChartKind, type ChartSpec } from "./chartData";
+import { changePct, chartKind, chartLabel, isOrderedLabel, kindToDraw, pieSlices, type ChartKind, type ChartSpec } from "./chartData";
 
 describe("chart reading", () => {
   it("maps kind names and aliases, anything else is a line", () => {
@@ -24,6 +24,31 @@ describe("chart reading", () => {
     const c = readBlocks([{ type: "chart", kind: "combo", unit: "₹Cr", x: ["Q1", "Q2"], series: [
       { name: "Revenue", data: [65799, 67087] }, { name: "Margin", unit: "%", data: [18.4, 16] }] }])[0] as any;
     expect(c.spec.series.map((s: any) => s.right)).toEqual([false, true]);
+  });
+  it("reads the caveat and axis captions, trims and caps them, and drops captions without an axis", () => {
+    const raw = { type: "chart", kind: "line", x: ["a", "b", "c"], series: [{ data: [1, 2, 3] }],
+      caveat: "  Q3 onward is a projection.  ", xLabel: " Quarter ", yLabel: "Revenue" };
+    const spec = (readBlocks([raw])[0] as any).spec;
+    expect(spec.caveat).toBe("Q3 onward is a projection.");
+    expect(spec.xLabel).toBe("Quarter");
+    expect(spec.yLabel).toBe("Revenue");
+    const long = (readBlocks([{ ...raw, caveat: "x".repeat(200), xLabel: "y".repeat(60) }])[0] as any).spec;
+    expect(long.caveat.length).toBe(120);
+    expect(long.xLabel.length).toBe(40);
+    const pie = (readBlocks([{ ...raw, kind: "pie", series: [{ data: [1, 2, 3] }] }])[0] as any).spec;
+    expect(pie.caveat).toBe("Q3 onward is a projection.");
+    expect(pie.xLabel).toBeUndefined();
+    expect(pie.yLabel).toBeUndefined();
+    const hbar = (readBlocks([{ ...raw, kind: "hbar" }])[0] as any).spec;
+    expect(hbar.xLabel).toBe("Quarter");
+    expect(hbar.yLabel).toBeUndefined();
+  });
+  it("builds the accessible name from the title, axes, ends and caveat", () => {
+    const spec = (readBlocks([{ type: "chart", kind: "line", unit: "₹Cr", title: "Revenue",
+      x: ["Q1", "Q4"], series: [{ data: [67087, 74010] }], xLabel: "Quarter", yLabel: "Revenue",
+      caveat: "Q4 is a projection." }])[0] as any).spec as ChartSpec;
+    expect(chartLabel(spec)).toBe(
+      "Revenue. line chart. Quarter along the bottom. Revenue up the side. ₹67,087 Cr to ₹74,010 Cr, up 10.3%. Q4 is a projection.");
   });
 });
 
