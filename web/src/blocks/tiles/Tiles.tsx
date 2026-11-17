@@ -32,7 +32,6 @@ function Tile({ tile, wash }: { tile: TileItem; wash: number }) {
       {tile.image && !photoFailed && (
         <img src={tile.image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setPhotoFailed(true)} />
       )}
-      <span className="hb-tile-shade" />
       {tile.icon && <span className="hb-tile-icon"><Icon name={tile.icon} size={18} stroke={2.2} /></span>}
       <span className="hb-tile-text">
         <span className="hb-tile-title">{tile.title}</span>
