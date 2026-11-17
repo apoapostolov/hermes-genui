@@ -74,3 +74,16 @@ describe("Flow", () => {
     expect(fitsAcross(2, 0, 300)).toBe(true);
   });
 });
+
+describe("what a flow is called", () => {
+  it("is a group named by its title", () => {
+    render(<Blocks blocks={readBlocks([flow])} />);
+    expect(screen.getByRole("group", { name: "How a transformer picks the next word" })).toBeTruthy();
+  });
+
+  it("says what it is when it has no title", () => {
+    const { title, ...untitled } = flow;
+    render(<Blocks blocks={readBlocks([untitled])} />);
+    expect(screen.getByRole("group", { name: "Flow" })).toBeTruthy();
+  });
+});

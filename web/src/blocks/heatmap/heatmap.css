@@ -1,6 +1,8 @@
 /* Heatmap */
 .hb-heatmap { display: flex; flex-direction: column; gap: 8px; }
 .hb-heat-grid { display: grid; gap: 4px; align-items: center; }
+/* A row and a cell are roles, not boxes: they pass their children through so the grid's columns still line up. */
+.hb-heat-arow, .hb-heat-acell { display: contents; }
 .hb-heat-col {
   overflow: hidden;
   text-align: center;

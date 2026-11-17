@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { pinLocale } from "../../lib/locale.testing";
 import { readBlocks } from "../../core/readBlocks";
@@ -267,5 +267,54 @@ describe("chart figure from block JSON", () => {
     expect(chart({ ...raw, figure: false })[0].spec.figure).toBe(false);
     expect(chart({ ...raw, figure: true })[0].spec.figure).toBe(true);
     expect(chart({ ...raw, figure: "no" })[0].spec.figure).toBeUndefined();
+  });
+});
+
+describe("what a chart says to a screen reader", () => {
+  const name = (raw: object) => {
+    const { container } = render(<Blocks blocks={chart(raw)} />);
+    const drawing = container.querySelector('[role="img"]') as HTMLElement;
+    const seen = drawing.getAttribute("aria-labelledby");
+    const title = seen ? container.querySelector(`[id="${seen}"]`) : null;
+    return { drawing, label: title?.textContent ?? drawing.getAttribute("aria-label") };
+  };
+
+  it("is named by the title it draws, not a copy of it", () => {
+    render(<Blocks blocks={chart({ kind: "line", title: "Revenue vs profit", x: ["a", "b"], series: [{ name: "Revenue", data: [1, 2] }] })} />);
+    expect(screen.getByRole("img", { name: "Revenue vs profit" })).toBeTruthy();
+    cleanup();
+    expect(name({ kind: "line", title: "Revenue vs profit", x: ["a"], series: [{ name: "Revenue", data: [1] }] }).label)
+      .toBe("Revenue vs profit");
+  });
+
+  it("is named after its series when it has no title", () => {
+    expect(name({ kind: "bar", x: ["a"], series: [{ name: "Revenue", data: [1] }, { name: "Net profit", data: [2] }] }).label)
+      .toBe("Revenue, Net profit");
+  });
+
+  it("is described by its numbers, the same line the text fallback writes", () => {
+    const { container } = render(<Blocks blocks={chart({ kind: "line", title: "Signups", x: ["Mon", "Tue"],
+      series: [{ name: "Users", data: [10, 15] }] })} />);
+    const drawing = container.querySelector('[role="img"]') as HTMLElement;
+    const described = drawing.getAttribute("aria-describedby")!;
+    expect(container.querySelector(`[id="${described}"]`)!.textContent).toBe("Signups: Users 10 → 15 (▲ 50%)");
+  });
+
+  it("keeps one tab stop on the drawing, as before", () => {
+    const { container } = render(<Blocks blocks={chart({ kind: "line", title: "T", x: ["a", "b"], series: [{ name: "S", data: [1, 2] }] })} />);
+    const focusable = container.querySelectorAll('[tabindex="0"]');
+    expect(focusable.length).toBe(1);
+    expect(focusable[0].getAttribute("role")).toBe("img");
+  });
+
+  it("gives pies and horizontal bars the same name and description", () => {
+    const pie = render(<Blocks blocks={chart({ kind: "donut", title: "Mix", x: ["A", "B"], series: [{ name: "Share", data: [1, 1] }] })} />);
+    const pieImg = pie.container.querySelector('[role="img"]') as HTMLElement;
+    const pieDesc = pie.container.querySelector(`[id="${pieImg.getAttribute("aria-describedby")}"]`);
+    expect(pieDesc!.textContent).toBe("Mix: A 50%, B 50%");
+    cleanup();
+    const bar = render(<Blocks blocks={chart({ kind: "hbar", title: "Rank", x: ["A", "B"], series: [{ name: "Score", data: [3, 5] }] })} />);
+    const barImg = bar.container.querySelector('[role="img"]') as HTMLElement;
+    expect(bar.container.querySelector(`[id="${barImg.getAttribute("aria-describedby")}"]`)!.textContent).toBe("Rank: Score 3 → 5 (▲ 66.7%)");
   });
 });

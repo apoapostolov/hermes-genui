@@ -141,3 +141,14 @@ describe("tiles", () => {
     });
   });
 });
+
+describe("what a row of tiles is called", () => {
+  it("takes the model's group name, and says what it is without one", () => {
+    const cards = (raw: object) => draw([{ type: "tiles", ...raw, items: [{ title: "Gion", run: "Add a Gion walk" }, { title: "Nara", run: "Add Nara" }] }]);
+    cards({ name: "Pick a walk" });
+    expect(screen.getByRole("group", { name: "Pick a walk" })).toBeTruthy();
+    cleanup();
+    cards({});
+    expect(screen.getByRole("group", { name: "Choices" })).toBeTruthy();
+  });
+});

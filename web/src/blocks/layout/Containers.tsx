@@ -1,6 +1,7 @@
 // Containers only arrange blocks that are already drawn: side by side, in a titled card, or in a grid.
 import { useState, type ReactNode } from "react";
 import { InlineText } from "../../lib/InlineText";
+import { useNamed } from "../../core/a11y";
 
 /** Side by side, wrapping onto the next line when there's no room (each part wants about 140px). */
 // Small pieces that keep their own width in a row (a pill, a button, a link); everything else shares the row's width.
@@ -29,18 +30,19 @@ export function Columns({ children }: { children: ReactNode[] }) {
 /** A titled card. collapsed: an accordion that starts closed; click the title to open it. */
 export function Section({ title, collapsed, children }: { title?: string; collapsed: boolean; children: ReactNode }) {
   const [open, setOpen] = useState(!collapsed);
+  const named = useNamed("section", title);
   if (!collapsed) {
     return (
-      <div className="hb-card hb-section">
-        {title && <div className="hb-card-title"><InlineText text={title} /></div>}
+      <div className="hb-card hb-section" role="group" {...named.root}>
+        {title && <div id={named.title.id} className="hb-card-title"><InlineText text={title} /></div>}
         <div className="hb-section-body">{children}</div>
       </div>
     );
   }
   return (
-    <div className="hb-card hb-section">
+    <div className="hb-card hb-section" role="group" {...named.root}>
       <button type="button" className="hb-section-toggle" onClick={() => setOpen(!open)} aria-expanded={open}>
-        <span className="hb-card-title"><InlineText text={title ?? ""} /></span>
+        <span id={named.title.id} className="hb-card-title"><InlineText text={title ?? ""} /></span>
         <svg className={open ? "hb-chevron hb-chevron-open" : "hb-chevron"} width="18" height="18" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M9 6l6 6-6 6" />

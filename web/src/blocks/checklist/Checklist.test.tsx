@@ -46,3 +46,23 @@ describe("checklist", () => {
     expect(screen.getByText("All done")).toBeTruthy();
   });
 });
+
+describe("what a checklist says to a screen reader", () => {
+  const packing = { type: "checklist", title: "Packing", numbered: true, items: [{ text: "Jacket" }, { text: "ID card" }] };
+
+  it("is a group named by its title", () => {
+    draw([packing]);
+    expect(screen.getByRole("group", { name: "Packing" })).toBeTruthy();
+  });
+
+  it("names each tick by its text, not by the number drawn beside it", () => {
+    draw([packing]);
+    expect(screen.getByRole("checkbox", { name: "Jacket" })).toBeTruthy();
+    expect(screen.getByRole("checkbox", { name: "ID card" })).toBeTruthy();
+  });
+
+  it("says what it is when it has no title", () => {
+    draw([{ type: "checklist", items: ["Jacket"] }]);
+    expect(screen.getByRole("group", { name: "Checklist" })).toBeTruthy();
+  });
+});

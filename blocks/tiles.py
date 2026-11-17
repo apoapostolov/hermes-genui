@@ -1,6 +1,6 @@
 """tiles: 2-8 cover cards, optionally interactive via ask or run."""
 
-from .common import NO_SEND, acts_before_the_model, has_text, safe_text
+from .common import NO_SEND, acts_before_the_model, has_text, name_heading, safe_text
 
 
 def check_tiles(block: dict, path: str) -> list[tuple[str, str]]:
@@ -23,7 +23,8 @@ def check_tiles(block: dict, path: str) -> list[tuple[str, str]]:
 
 
 def text_tiles(block: dict) -> str:
-    """"- Arashiyama: Bamboo" per card; a card without a subtitle is just its title."""
+    """The group's heading, then "- Arashiyama: Bamboo" per card; a card without a subtitle is just its title, and a
+    block with no card gives no heading."""
     items = block.get("items") if isinstance(block.get("items"), list) else []
     lines = []
     for item in items[:8]:
@@ -31,4 +32,5 @@ def text_tiles(block: dict) -> str:
         subtitle = safe_text(item.get("subtitle")) if title else ""
         if title:
             lines.append(f"- {title}: {subtitle}" if subtitle else f"- {title}")
-    return "\n".join(lines)
+    heading = name_heading(block)
+    return "\n".join(([heading] if heading and lines else []) + lines)

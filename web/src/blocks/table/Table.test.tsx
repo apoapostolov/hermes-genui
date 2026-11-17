@@ -73,3 +73,16 @@ describe("Table", () => {
     expect(screen.getByText("No rows to show.")).toBeTruthy();
   });
 });
+
+describe("the table's name", () => {
+  it("is the caption it draws, so a reader says the caption before the columns", () => {
+    render(<Blocks blocks={readBlocks([{ type: "table", caption: "Phones under ₹50k", columns: ["Phone", "Price"],
+      rows: [["Pixel 10a", "₹44,999"]] }])} />);
+    expect(screen.getByRole("table", { name: "Phones under ₹50k" })).toBeTruthy();
+  });
+
+  it("names a table without a caption after what it is", () => {
+    render(<Blocks blocks={readBlocks([{ type: "table", columns: ["Phone"], rows: [["Pixel 10a"]] }])} />);
+    expect(screen.getByRole("table", { name: "Table" })).toBeTruthy();
+  });
+});

@@ -88,3 +88,13 @@ describe("sparkline path", () => {
     expect(sparkPath([5, 5])).toBe("M0 14L120 14");
   });
 });
+
+describe("what a kpis row is called", () => {
+  it("takes the model's group name, and says what it is without one", () => {
+    render(<Blocks blocks={readBlocks([{ type: "kpis", name: "This week", items: [{ label: "Steps", value: 8200 }] }])} />);
+    expect(screen.getByRole("group", { name: "This week" })).toBeTruthy();
+    cleanup();
+    render(<Blocks blocks={readBlocks([{ type: "kpis", items: [{ label: "Steps", value: 8200 }] }])} />);
+    expect(screen.getByRole("group", { name: "Figures" })).toBeTruthy();
+  });
+});

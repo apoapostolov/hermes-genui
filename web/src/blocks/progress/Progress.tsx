@@ -2,6 +2,7 @@
 import type { ProgressBlock, Step } from "./read";
 import { Icon } from "../../lib/Icon";
 import { fmt } from "../chart/chartData";
+import { useNamed } from "../../core/a11y";
 
 /**
  * How much of the track is filled, from 0 to 1. With no checkpoints it is value / goal. With checkpoints they sit
@@ -36,35 +37,60 @@ export function amountOf(value: number, goal: number, unit?: string): string {
 
 export function Progress({ title, value, goal, unit, steps }: ProgressBlock) {
   const share = trackShare(value, goal, steps);
+  const named = useNamed("progress", title);
+  const bar = barProps(named.root, value, goal, valueWords(value, goal, unit, steps));
   return (
     <div className="hb-card hb-progress">
       <div className="hb-progress-head">
         <span className="hb-progress-icon"><Icon name="trophy" size={19} stroke={2.2} /></span>
-        <span className="hb-card-title">{title}</span>
-        <span className="hb-progress-amount">
+        <span id={named.title.id} className="hb-card-title">{title}</span>
+        <span className="hb-progress-amount" aria-hidden="true">
           <Icon name="flame" size={15} stroke={2.2} />{amountOf(value, goal, unit)}
         </span>
       </div>
       {steps.length === 0 ? (
-        <div className="hb-progress-track"><span className="hb-progress-fill" style={{ width: `${share * 100}%` }} /></div>
+        <div className="hb-progress-track" {...bar}><span className="hb-progress-fill" style={{ width: `${share * 100}%` }} /></div>
       ) : (
-        <Checkpoints steps={steps} value={value} share={share} unit={unit} />
+        <Checkpoints steps={steps} value={value} share={share} unit={unit} bar={bar} />
       )}
     </div>
   );
 }
 
+/** What a progressbar says instead of a bare number: the amount as it is drawn, and its checkpoints when it has any.
+ *   (95, 120, "XP", [60, 120]) → "95 / 120 XP, 2 of 2 checkpoints passed" */
+function valueWords(value: number, goal: number, unit: string | undefined, steps: Step[]): string {
+  const amount = amountOf(value, goal, unit);
+  if (!steps.length) return amount;
+  return `${amount}, ${steps.filter((s) => value >= s.at).length} of ${steps.length} checkpoints passed`;
+}
+
+/** The track is the progressbar (the title beside it names it): the value held inside 0 and the goal, and the words a
+ *  reader hears for it. The amount beside the title is hidden, so it is said once and not twice. */
+function barProps(root: { "aria-labelledby"?: string; "aria-label"?: string }, value: number, goal: number, words: string) {
+  const top = Math.max(goal, value);
+  return {
+    ...root,
+    role: "progressbar",
+    "aria-valuemin": 0,
+    "aria-valuemax": top,
+    "aria-valuenow": Math.min(Math.max(value, 0), top),
+    "aria-valuetext": words,
+  };
+}
+
 /** Each checkpoint gets an equal column: its node sits at the column's centre and its label wraps inside it, so long
  *  names never run into the next one. The track runs from the first node's centre to the last's. A label given as a
- *  number is written like the amount: 250000 with "₹" → "₹2.5L". */
-function Checkpoints({ steps, value, share, unit }: { steps: Step[]; value: number; share: number; unit?: string }) {
+ *  number is written like the amount: 250000 with "₹" → "₹2.5L". The track carries the progressbar's role and value
+ *  (bar), so a reader hears the amount and the checkpoints passed as one. */
+function Checkpoints({ steps, value, share, unit, bar }: { steps: Step[]; value: number; share: number; unit?: string; bar: ReturnType<typeof barProps> }) {
   const n = steps.length;
   const edge = `${50 / n}%`;
   const span = ((n - 1) / n) * 100;
   return (
     <>
       <div className="hb-progress-nodes">
-        <span className="hb-progress-track hb-progress-track-steps" style={{ left: edge, right: edge }} />
+        <span className="hb-progress-track hb-progress-track-steps" style={{ left: edge, right: edge }} {...bar} />
         <span className="hb-progress-fill hb-progress-fill-steps" style={{ left: edge, width: `${span * share}%` }} />
         {steps.map((s, k) => {
           const done = value >= s.at;

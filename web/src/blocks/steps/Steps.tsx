@@ -4,12 +4,14 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { InlineText } from "../../lib/InlineText";
 import { useSetWalk } from "../flow/highlight";
+import { useNamed } from "../../core/a11y";
 import type { StepsBlock } from "./read";
 
 export function Steps({ title, for: flow, items }: StepsBlock) {
   const [at, setAt] = useState(0);
   const [failed, setFailed] = useState<ReadonlySet<number>>(() => new Set());
   const setWalk = useSetWalk();
+  const named = useNamed("steps", title);
   const before = useRef<number | null>(null);
   const step = items[at];
   const go = (to: number) => setAt(Math.max(0, Math.min(items.length - 1, to)));
@@ -32,9 +34,9 @@ export function Steps({ title, for: flow, items }: StepsBlock) {
 
   const photo = step.image && !failed.has(at) ? step.image : undefined;
   return (
-    <div className="hb-card hb-steps" role="group" aria-label={title ?? "Steps"} onKeyDown={onKeyDown}>
+    <div className="hb-card hb-steps" role="group" {...named.root} onKeyDown={onKeyDown}>
       <div className="hb-steps-head">
-        {title && <div className="hb-card-title">{title}</div>}
+        {title && <div id={named.title.id} className="hb-card-title">{title}</div>}
         <span className="hb-steps-place">{`${at + 1} of ${items.length}`}</span>
       </div>
       <div className="hb-steps-body" aria-live="polite">

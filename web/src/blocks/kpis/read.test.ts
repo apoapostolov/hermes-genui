@@ -26,3 +26,18 @@ describe("kpis and stat", () => {
     expect((readBlocks([{ type: "stat", label: "Saved", value: 3, trend: [1, 2, 3] }])[0] as any).trend).toEqual([1, 2, 3]);
   });
 });
+
+describe("a kpis group name", () => {
+  const read = (raw: object) => readBlocks([{ type: "kpis", ...raw }])[0] as any;
+  it("keeps the model's heading, trimmed", () => {
+    expect(read({ name: "  This week ", items: [{ label: "Steps", value: 8200 }] }).name).toBe("This week");
+  });
+  it("leaves the field off when it is blank or not text", () => {
+    for (const name of ["", "   ", 7, null, { title: "x" }]) {
+      expect("name" in read({ name, items: [{ label: "Steps", value: 8200 }] })).toBe(false);
+    }
+  });
+  it("reads a name on kpis only, not on stat", () => {
+    expect(readBlocks([{ type: "stat", name: "This week", label: "Steps", value: 8200 }])[0]).not.toHaveProperty("name");
+  });
+});

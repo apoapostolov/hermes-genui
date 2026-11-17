@@ -4,12 +4,20 @@ import { useContext, useState } from "react";
 import { BlockActions } from "../../host/actions";
 import type { TileItem } from "./read";
 import { Icon } from "../../lib/Icon";
+import { useNamed } from "../../core/a11y";
 
 // Chart colours dark enough for white text (amber, cyan and lime are too light), taken in turn.
 const WASHES = [1, 4, 8, 3, 6];
 
-export function Tiles({ items }: { items: TileItem[] }) {
-  return <div className="hb-tiles">{items.map((tile, i) => <Tile key={i} tile={tile} wash={WASHES[i % WASHES.length]} />)}</div>;
+/** A row of cover cards, named by the model's group `name` when it gives one ("Pick a walk") and by what it is when
+ *  it doesn't ("Choices"). */
+export function Tiles({ items, name }: { items: TileItem[]; name?: string }) {
+  const named = useNamed("tiles", undefined, [name]);
+  return (
+    <div className="hb-tiles" role="group" {...named.root}>
+      {items.map((tile, i) => <Tile key={i} tile={tile} wash={WASHES[i % WASHES.length]} />)}
+    </div>
+  );
 }
 
 /**

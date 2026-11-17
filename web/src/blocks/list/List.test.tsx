@@ -60,3 +60,13 @@ describe("list rows", () => {
     expect(container.querySelector("a.hb-list-row")!.getAttribute("href")).toBe("https://dyu.example");
   });
 });
+
+describe("what a list is called", () => {
+  it("is a group named by its heading, or by what it is", () => {
+    draw({ type: "list", title: "Rides", items: [{ title: "Dyu Art Café" }] });
+    expect(screen.getByRole("group", { name: "Rides" })).toBeTruthy();
+    cleanup();
+    draw({ type: "list", items: [{ title: "Dyu Art Café" }] });
+    expect(screen.getByRole("group", { name: "List" })).toBeTruthy();
+  });
+});

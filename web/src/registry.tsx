@@ -82,7 +82,7 @@ type Registry = { [K in Block["type"]]: BlockEntry<Extract<Block, { type: K }>> 
 /** type → its reader and its drawing. Containers (row, section, grid, columns, tabs) draw their children with `draw`. */
 export const REGISTRY: Registry = {
   chart: { read: readChart, Component: ({ block }) => <Chart spec={block.spec} /> },
-  kpis: { read: readKpis, Component: ({ block }) => <Kpis items={block.items} /> },
+  kpis: { read: readKpis, Component: ({ block }) => <Kpis items={block.items} name={block.name} /> },
   source: { read: readSource, Component: ({ block }) => <Source text={block.text} url={block.url} /> },
   timeline: { read: readTimeline, Component: ({ block }) => <Timeline {...block} /> },
   images: { read: readImages, Component: ({ block }) => <Images block={block} /> },
@@ -110,9 +110,9 @@ export const REGISTRY: Registry = {
   link: { read: readLink, Component: ({ block }) => <LinkLine {...block} /> },
   image: { read: readImage, Component: ({ block }) => <Picture {...block} /> },
   bar: { read: readBar, Component: ({ block }) => <Bar {...block} /> },
-  actions: { read: readActions, Component: ({ block }) => <Actions items={block.items} /> },
+  actions: { read: readActions, Component: ({ block }) => <Actions items={block.items} name={block.name} /> },
   button: { read: readButton, Component: ({ block }) => <Button {...block} /> },
-  tiles: { read: readTiles, Component: ({ block }) => <Tiles items={block.items} /> },
+  tiles: { read: readTiles, Component: ({ block }) => <Tiles items={block.items} name={block.name} /> },
   checklist: { read: readChecklist, Component: ({ block }) => <Checklist {...block} /> },
   calculator: { read: readCalculator, Component: ({ block }) => <Calculator {...block} /> },
   simulate: { read: readSimulate, Component: ({ block }) => <Simulate {...block} /> },

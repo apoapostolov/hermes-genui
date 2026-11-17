@@ -12,6 +12,7 @@ import { lessMotion } from "../../lib/motion";
 import { useWidth } from "../chart/useWidth";
 import type { FlowMove } from "../steps/read";
 import { useWalk, type Walk } from "./highlight";
+import { useNamed } from "../../core/a11y";
 import { packetPath, type Edges } from "./packet";
 import type { Chip, FlowBlock, FlowGroup, FlowNode } from "./read";
 import { flowState, isMoving, type FlowState } from "./walk";
@@ -65,6 +66,7 @@ export function Flow({ id, title, direction, nodes, groups = [] }: FlowBlock) {
   const panelId = useId();
   const down = direction === "down" || !fitsAcross(nodes.length, groups.length, width, holds);
   const shown = open === null ? undefined : nodes[open];
+  const named = useNamed("flow", title);
 
   // `arrow`: whether an arrow leads in (not for the first box, nor the first in a group: its frame has the arrow).
   const node = (n: FlowNode, i: number, arrow: boolean) => (
@@ -81,8 +83,8 @@ export function Flow({ id, title, direction, nodes, groups = [] }: FlowBlock) {
   }
 
   return (
-    <div className="hb-card hb-flow" onKeyDown={onKeyDown}>
-      {title && <div className="hb-card-title">{title}</div>}
+    <div className="hb-card hb-flow" role="group" {...named.root} onKeyDown={onKeyDown}>
+      {title && <div id={named.title.id} className="hb-card-title">{title}</div>}
       <div ref={box} className="hb-flow-box">
         <ol className={`hb-flow-chain ${down ? "hb-flow-down" : "hb-flow-right"}`}>
           {pieces(nodes.length, groups).map(({ start, end, group }) => group ? (

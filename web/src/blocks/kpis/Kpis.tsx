@@ -2,6 +2,7 @@
 // number, a coloured change line and, when given a trend, a small line of it.
 import { fmt, partColour, SHORT_FROM } from "../chart/chartData";
 import { formatAmount, formatChange, formatNumber } from "../../lib/format";
+import { useNamed } from "../../core/a11y";
 import type { KpiItem } from "./read";
 
 /** A whole number from 1800 to 2100 with no unit reads as a year, so it gets no thousands separator.
@@ -53,11 +54,13 @@ export function KpiCard({ item, trendColour }: { item: KpiItem; trendColour?: st
 
 /** A row of cards. When two or more have a trend, each trend line takes the chart colour of its card's place (the
  *  1st card's blue, the 2nd's amber …), so a comparison's cards match its chart's lines, which come in the same
- *  order. A lone trend keeps the first colour. */
-export function Kpis({ items }: { items: KpiItem[] }) {
+ *  order. A lone trend keeps the first colour. A `name` — the model's group heading — is the row's name, so a reader
+ *  says "This week" before the figures rather than four numbers in a row. */
+export function Kpis({ items, name }: { items: KpiItem[]; name?: string }) {
   const several = items.filter((k) => k.trend).length >= 2;
+  const named = useNamed("kpis", undefined, [name]);
   return (
-    <div className="hb-kpis">
+    <div className="hb-kpis" role="group" {...named.root}>
       {items.map((k, i) => <KpiCard key={i} item={k} trendColour={several ? partColour(i) : undefined} />)}
     </div>
   );

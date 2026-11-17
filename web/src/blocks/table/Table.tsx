@@ -7,12 +7,14 @@ import type { TableBlock } from "./read";
 import { bigNumber, changeOf, isChangeColumn, miniBar } from "./cells";
 import { cellNumber, isNumberColumn, nextSort, sortedOrder, type SortState } from "./sort";
 import { InlineText } from "../../lib/InlineText";
+import { useNamed } from "../../core/a11y";
 
 // Mini bars need a few rows to compare; with 2 the coloured numbers say it all.
 const MINI_BARS_FROM = 3;
 
 export function Table({ columns, rows, highlight, caption }: TableBlock) {
   const [sort, setSort] = useState<SortState>(null);
+  const named = useNamed("table", caption);
   const order = sortedOrder(rows, sort);
   const bestRow = highlight && "row" in highlight ? highlight.row : -1;
   const bestColumn = highlight && "column" in highlight ? highlight.column : -1;
@@ -30,9 +32,11 @@ export function Table({ columns, rows, highlight, caption }: TableBlock) {
 
   return (
     <div className="hb-card hb-table-card">
-      {caption && <div className="hb-chart-title hb-table-caption"><InlineText text={caption} /></div>}
+      {/* The caption stays outside the scroll box, where a wide table cannot scroll it away; the table is named by it
+          instead of carrying a <caption> that would ride along with the columns. */}
+      {caption && <div id={named.title.id} className="hb-chart-title hb-table-caption"><InlineText text={caption} /></div>}
       <div className="hb-table-scroll">
-        <table className={columns.length >= 3 ? "hb-table hb-table-wide" : "hb-table"}>
+        <table className={columns.length >= 3 ? "hb-table hb-table-wide" : "hb-table"} {...named.root}>
           <thead>
             <tr>
               {columns.map((name, c) => (

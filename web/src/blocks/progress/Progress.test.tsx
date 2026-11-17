@@ -53,3 +53,39 @@ describe("progress amount in the user's locale", () => {
     expect(container.querySelector(".hb-progress-amount")!.textContent).toBe("1.234 / 10.000");
   });
 });
+
+describe("what progress says to a screen reader", () => {
+  const bar = (raw: object) => {
+    const { container } = render(<Blocks blocks={readBlocks([{ type: "progress", ...raw }])} />);
+    return container.querySelector('[role="progressbar"]') as HTMLElement;
+  };
+
+  it("is a progress bar named by its title, holding the value and the goal", () => {
+    const track = bar({ title: "Level 4", value: 95, goal: 120, unit: "XP" });
+    expect(track.getAttribute("role")).toBe("progressbar");
+    expect(track.getAttribute("aria-valuemin")).toBe("0");
+    expect(track.getAttribute("aria-valuemax")).toBe("120");
+    expect(track.getAttribute("aria-valuenow")).toBe("95");
+    expect(screen.getByRole("progressbar", { name: "Level 4" })).toBe(track);
+  });
+
+  it("says the amount in words, so it is not read as one number out of a max", () => {
+    expect(bar({ title: "Level 4", value: 95, goal: 120, unit: "XP" }).getAttribute("aria-valuetext"))
+      .toBe("95 / 120 XP");
+    expect(bar({ title: "Level 4", value: 95, goal: 120, unit: "XP", steps: [{ label: "60 XP", at: 60 }, { label: "120 XP", at: 120 }] })
+      .getAttribute("aria-valuetext")).toBe("95 / 120 XP, 1 of 2 checkpoints passed");
+  });
+
+  it("keeps the amount beside the title out of the reading, and stays unfocusable", () => {
+    const { container } = render(<Blocks blocks={readBlocks([{ type: "progress", title: "Level 4", value: 95, goal: 120, unit: "XP" }])} />);
+    expect(container.querySelector(".hb-progress-amount")!.getAttribute("aria-hidden")).toBe("true");
+    expect(container.querySelector('[tabindex]')).toBeNull();
+  });
+
+  it("holds a value past the goal inside the bar, and says the real amount", () => {
+    const track = bar({ title: "Saved", value: 150, goal: 120 });
+    expect(track.getAttribute("aria-valuemax")).toBe("150");
+    expect(track.getAttribute("aria-valuenow")).toBe("150");
+    expect(track.getAttribute("aria-valuetext")).toBe("150 / 120");
+  });
+});

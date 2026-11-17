@@ -6,15 +6,17 @@ import type { ChecklistBlock, ChecklistItem } from "./read";
 import { InlineText } from "../../lib/InlineText";
 import { Icon } from "../../lib/Icon";
 import { loadBoardState, readTicks, saveBoardValue, ticksAfterLoad, toggleTick } from "./savedState";
+import { useNamed } from "../../core/a11y";
 
 export function Checklist({ title, numbered, items, ticked, path }: ChecklistBlock) {
   const [ticks, tap] = useSavedTicks(path, ticked, items.length);
   const done = ticks.length;
   const allDone = done === items.length;
+  const named = useNamed("checklist", title);
   return (
-    <div className="hb-card hb-checklist">
+    <div className="hb-card hb-checklist" role="group" {...named.root}>
       <div className="hb-checklist-head">
-        {title && <span className="hb-card-title"><InlineText text={title} /></span>}
+        {title && <span id={named.title.id} className="hb-card-title"><InlineText text={title} /></span>}
         <span className={allDone ? "hb-checklist-count hb-checklist-count-done" : "hb-checklist-count"} aria-live="polite">
           {allDone ? "All done" : `${done} of ${items.length} done`}
         </span>
@@ -24,9 +26,10 @@ export function Checklist({ title, numbered, items, ticked, path }: ChecklistBlo
         <div key={i}>
           {startsGroup(items, i) && <div className="hb-checklist-group"><InlineText text={item.group!} /></div>}
           <button type="button" role="checkbox" aria-checked={ticks.includes(i)} onClick={() => tap(i)}
+            aria-labelledby={`${named.title.id}-item-${i}`}
             className={ticks.includes(i) ? "hb-check hb-check-on" : "hb-check"}>
-            <span className="hb-check-mark">{ticks.includes(i) ? <Icon name="check" size={13} stroke={3} /> : numbered ? i + 1 : null}</span>
-            <span className="hb-check-text"><InlineText text={item.text} /></span>
+            <span className="hb-check-mark" aria-hidden="true">{ticks.includes(i) ? <Icon name="check" size={13} stroke={3} /> : numbered ? i + 1 : null}</span>
+            <span id={`${named.title.id}-item-${i}`} className="hb-check-text"><InlineText text={item.text} /></span>
           </button>
         </div>
       ))}

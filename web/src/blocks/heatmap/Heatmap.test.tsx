@@ -27,3 +27,26 @@ describe("Heatmap", () => {
     expect(screen.getByText(/JPM · M8/)).toBeTruthy();
   });
 });
+
+describe("the heat map as a table", () => {
+  const draw = (block: unknown) => render(<Blocks blocks={readBlocks([block])} />).container;
+
+  it("is a table named by its title, with a row per row and a cell per value", () => {
+    const c = draw({ type: "heatmap", title: "Banks", rows: ["JPM", "GS"], cols: ["Q1", "Q2"], values: [[4.1, -1.2], [7.5, 2.2]], unit: "%" });
+    expect(screen.getByRole("table", { name: "Banks" })).toBeTruthy();
+    expect(c.querySelectorAll('[role="row"]').length).toBe(3);          // the column headers and the two rows
+    expect(c.querySelectorAll('[role="cell"]').length).toBe(5);         // one corner, four values
+    expect(screen.getAllByRole("rowheader").map((h) => h.textContent)).toEqual(["JPM", "GS"]);
+  });
+
+  it("keeps every cell a button in the same tab order, so a tap still shows its number", () => {
+    const c = draw({ type: "heatmap", title: "Banks", rows: ["JPM"], cols: ["Q1", "Q2"], values: [[4.1, -1.2]], unit: "%" });
+    expect(c.querySelectorAll("button.hb-heat-cell").length).toBe(2);
+    expect(screen.getByRole("button", { name: "JPM, Q2: -1.2%" })).toBeTruthy();
+  });
+
+  it("names a heat map that has no title after what it is", () => {
+    draw({ type: "heatmap", rows: ["JPM"], cols: ["Q1"], values: [[1]] });
+    expect(screen.getByRole("table", { name: "Heat map" })).toBeTruthy();
+  });
+});

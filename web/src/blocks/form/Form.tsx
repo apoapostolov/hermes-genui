@@ -9,21 +9,23 @@ import { InlineText } from "../../lib/InlineText";
 import { loadBoardState, saveBoardValue } from "../checklist/savedState";
 import { answerMessage, canSend, startingValues, startsGroup, type FormValue, type FormValues } from "./formMessage";
 import { readSent, sentRecord } from "./sentForm";
+import { useNamed } from "../../core/a11y";
 
 export function Form(form: FormBlock) {
   const { send } = useContext(BlockActions);
   const [values, setValues] = useState<FormValues>(() => startingValues(form));
   const [sent, markSent] = useSentForm(form, setValues);
   const ready = canSend(form, values, sent);
+  const named = useNamed("form", form.title);
   function onSend() {
     if (!ready) return;
     markSent(values);  // saved as the message goes
     send(answerMessage(form, values));
   }
   return (
-    <form className={sent ? "hb-card hb-form hb-form-sent" : "hb-card hb-form"} aria-disabled={sent}
+    <form className={sent ? "hb-card hb-form hb-form-sent" : "hb-card hb-form"} aria-disabled={sent} {...named.root}
       onSubmit={(e) => { e.preventDefault(); onSend(); }}>
-      {form.title && <div className="hb-card-title"><InlineText text={form.title} /></div>}
+      {form.title && <div id={named.title.id} className="hb-card-title"><InlineText text={form.title} /></div>}
       <fieldset disabled={sent}>
         {form.fields.map((field, i) => (
           <div key={field.id}>

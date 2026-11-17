@@ -3,7 +3,7 @@ import { actsBeforeTheModel, clean, cutAtWord, firstList, https, icon, keepFirst
 import type { IconName } from "../../lib/icons";
 
 export type TileItem = { title: string; subtitle?: string; image?: string; icon?: IconName; ask?: string; run?: string };
-export type TilesBlock = { type: "tiles"; items: TileItem[] };
+export type TilesBlock = { type: "tiles"; name?: string; items: TileItem[] };
 
 const MAX_TILES = 8;
 // The subtitle is the tile's readable decision reason, shown in up to three lines on a card that keeps its cover
@@ -40,9 +40,10 @@ function cutSubtitle(text: string): string {
 
 /**
  * tiles: cover cards, up to 8 (items, also `tiles`). Each needs a title; an image must be https and an icon one of the
- * icon names (otherwise that field is left off and the tile stays).
- *   {type: "tiles", items: [{title: "Kyoto", image: "javascript:x", icon: "nope", run: "Plan Kyoto"}, {subtitle: "no title"}]}
- *   → {type: "tiles", items: [{title: "Kyoto", run: "Plan Kyoto"}]}
+ * icon names (otherwise that field is left off and the tile stays). `name` is the group's heading ("Pick a walk"): it
+ * is not drawn, but it names the row of cards for a screen reader.
+ *   {type: "tiles", name: "Pick a walk", items: [{title: "Kyoto", image: "javascript:x", icon: "nope", run: "Plan Kyoto"}, {subtitle: "no title"}]}
+ *   → {type: "tiles", name: "Pick a walk", items: [{title: "Kyoto", run: "Plan Kyoto"}]}
  * A tile whose ask or run is a command or an @-reference ({title: "B", ask: "/reset"}) is dropped, noted NO_SEND.
  * Dropped: no item with a title.
  */
@@ -63,7 +64,7 @@ export function readTiles(raw: any, here: Trail): TilesBlock | null {
     items.push(tile);
   });
   if (!items.length) return here.drop("tiles has no item with a title");
-  return { type: "tiles", items: keepFirst(items, MAX_TILES, here, "tiles") };
+  return clean({ type: "tiles" as const, name: str(raw.name, 60), items: keepFirst(items, MAX_TILES, here, "tiles") });
 }
 
 /**

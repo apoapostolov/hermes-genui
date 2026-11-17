@@ -49,3 +49,13 @@ describe("calendar", () => {
     expect(relativeDay("2026-11-18", at)).toBe("Wednesday");
   });
 });
+
+describe("what a calendar is called", () => {
+  it("is a group named by its title, or by what it is", () => {
+    draw([{ ...DAY, title: "Today" }]);
+    expect(screen.getByRole("group", { name: "Today" })).toBeTruthy();
+    cleanup();
+    draw([DAY]);
+    expect(screen.getByRole("group", { name: "Calendar" })).toBeTruthy();
+  });
+});

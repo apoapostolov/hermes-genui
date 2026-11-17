@@ -4,6 +4,7 @@
 import { useContext } from "react";
 import { BlockActions } from "../../host/actions";
 import { Icon } from "../../lib/Icon";
+import { useNamed } from "../../core/a11y";
 import type { CalendarBlock, CalendarEvent } from "./read";
 
 const parts = (iso: string) => {
@@ -36,8 +37,9 @@ export function Calendar({ date, title, events, week, ask }: CalendarBlock) {
   const now = new Date();
   const day = parts(date);
   const next = nextEvent(events, date, now);
+  const named = useNamed("calendar", title);
   return (
-    <div className="hb-card hb-cal">
+    <div className="hb-card hb-cal" role="group" {...named.root}>
       <div className="hb-cal-date">
         <span className="hb-cal-weekday">{day.toLocaleDateString("en-GB", { weekday: "long" })}</span>
         <span className="hb-cal-day">{day.getDate()}</span>
@@ -45,7 +47,7 @@ export function Calendar({ date, title, events, week, ask }: CalendarBlock) {
       </div>
       <div className="hb-cal-mid">
         <div className="hb-cal-next-row">
-          {title && <span className="hb-cal-title">{title}</span>}
+          {title && <span id={named.title.id} className="hb-cal-title">{title}</span>}
           {next && (
             <span className="hb-cal-next">
               <span className="hb-cal-next-when">{relativeDay(date, now)}</span>

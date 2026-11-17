@@ -3,11 +3,11 @@ Icons: mail, rupee, bell, cal, check, clock, chart, photo, spark, chat, brain, s
 
 chart: A trend, a comparison, or parts of a whole. Use for: line: trends. bar: periods or items; bars turn sideways for long labels or rankings; time stays upright. hbar: rankings, 2-5 named items. donut, pie: parts of a whole, 3-7 parts. stacked: parts of a total over time. area: growth that builds up. combo: two measures. 2-3 items on several metrics: a table, not a chart each. Fields: kind (as above). title. x: labels. series: [{name, data: numbers, null for a gap}], 1-3 (stacked, area: up to 6; pie, donut: 1). combo: first series bars, the rest lines (another unit gets its own axis). unit: "%", "₹Cr", "$M" or a word. tone: "change" colours one line by gain or loss. source: site name.
 Example: {"type":"chart","kind":"bar","title":"Revenue vs profit","x":["Dec 2025","Mar 2026","Jun 2026"],"unit":"₹Cr","series":[{"name":"Revenue","data":[67087,70698,72275]},{"name":"Net profit","data":[10720,13784,13420]}]}
-kpis: 2-4 headline numbers, change and trend. Use for: The top of a report. Fields: items: [{label, value: number or short text, unit, change, change_unit: "%" | "pt", trend: 2-60 numbers}], ≤4.
+kpis: 2-4 headline numbers, change and trend. Use for: The top of a report. Fields: items: [{label, value: number or short text, unit, change, change_unit: "%" | "pt", trend: 2-60 numbers}], ≤4. name: a group heading.
 Example: {"type":"kpis","items":[{"label":"Revenue","value":72275,"unit":"₹Cr","change":2.2},{"label":"Net margin","value":18.6,"unit":"%","change":-0.9,"change_unit":"pt"}]}
-timeline: A plan, day by day: timed stops with place, icon and note. Use for: Itineraries, schedules, timed steps. Fields: title. groups ≤14: [{label, items ≤12: [{time, title, place, note, icon}]}]; only title required.
+timeline: A plan, day by day: timed stops with place, icon, note. Use for: Itineraries, schedules, timed steps. Fields: title. groups ≤14: [{label, items ≤12: [{time, title, place, note, icon}]}]; only title required.
 Example: {"type":"timeline","groups":[{"label":"Day 1 · Fri 9 Oct","items":[{"time":"07:00","title":"Fushimi Inari","icon":"walk","note":"Go early."}]},{"label":"Day 2 · Sat 10 Oct","items":[{"time":"08:30","title":"Arashiyama","icon":"leaf"}]}]}
-images: A strip of real photos with captions. Use for: What a place or thing looks like. Fields: title. images 1-12: [{url, caption, source: site name}].
+images: A strip of photos with captions. Use for: What a place looks like. Fields: title. images 1-12: [{url, caption, source: site name}].
 Example: {"type":"images","title":"Kyoto","images":[{"url":"https://upload.wikimedia.org/wikipedia/commons/1/16/KyotoFushimiInariLarge.jpg","caption":"Fushimi Inari","source":"Wikimedia"}]}
 table: Options compared on the same attributes. Use for: Phones, plans, hotels. Fields: columns ≤8. rows ≤30, a cell per column. highlight: {row: n} | {column: n} from 0, badged Best. caption.
 Example: {"type":"table","caption":"Phones under ₹50k","columns":["Phone","Price","Camera"],"highlight":{"row":0},"rows":[["Pixel 10a","₹44,999","Best in class"],["Nothing 4","₹39,999","OK"]]}
@@ -19,27 +19,27 @@ list: Rows: rank, icon or photo, title, subtitle, value. Use for: Rankings, top 
 Example: {"type":"list","title":"Cafés nearby","ranked":true,"items":[{"title":"Third Wave","subtitle":"80 Feet Road","value":"4.5★"},{"title":"Dyu Art Café","subtitle":"Garden seats","value":"4.4★"}]}
 progress: A value on a track to a goal; checkpoints ticked. Use for: Savings, challenges, training. Fields: title. value. goal (> 0). unit. steps ≤6: [{label, at: number}].
 Example: {"type":"progress","title":"Level 4","value":95,"goal":120,"unit":"XP","steps":[{"label":"60 XP","at":60},{"label":"120 XP","at":120}]}
-streak: A big count and the week, days ticked. Use for: Daily habits. Fields: count. label, unit (default "Current streak", "days"). days: up to 7 [{label, date, done, today}].
+streak: A count and the week, days ticked. Use for: Daily habits. Fields: count. label, unit (default "Current streak", "days"). days: up to 7 [{label, date, done, today}].
 Example: {"type":"streak","count":2,"days":[{"label":"Mon","done":true},{"label":"Tue","done":true},{"label":"Wed","today":true}]}
-heatmap: A grid of cells shaded by value. Use for: Sectors by quarter, habits by weekday. Fields: title. rows, cols: ≤12 labels each. values: a list per row. unit. scale: diverging (default with a value < 0) | sequential.
+heatmap: A grid of cells shaded by value. Use for: Sectors by quarter, habits by weekday. Fields: title. rows, cols: ≤12 labels each. values: a list per row. unit. scale: diverging (default if < 0) | sequential.
 Example: {"type":"heatmap","title":"Banks, % change","rows":["JPM","GS"],"cols":["Q1","Q2"],"values":[[4.1,-1.2],[7.5,2.2]],"unit":"%"}
 flip: Flash cards: question front, answer (and photo) back. Use for: Quizzes, revision. Fields: title. cards: [{front (≤120 chars), back (≤240), image}], 2-12.
 Example: {"type":"flip","title":"Asian Games","cards":[{"front":"Most golds?","back":"China · 201"},{"front":"Host city?","back":"Nagoya"}]}
-flow: Boxes joined by arrows, holding chips of what's in them. Use for: Explainers, 4-8 stages. A chain only; branching graphs: a mermaid code block in the reply. Fields: id (for steps). title. direction: right | down. nodes 2-10: [{id, label, icon, note ≤280, holds: ≤10 chips (text ≤16 or {text, tone: accent})}]. groups ≤3: [{label, nodes: adjacent ids, count: 2-100}] frame a repeat.
+flow: Boxes joined by arrows, holding chips. Use for: Explainers, 4-8 stages. A chain only; branching graphs: a mermaid code block in the reply. Fields: id (for steps). title. direction: right | down. nodes 2-10: [{id, label, icon, note ≤280, holds: ≤10 chips (text ≤16 or {text, tone: accent})}]. groups ≤3: [{label, nodes: adjacent ids, count: 2-100}] frame a repeat.
 Example: {"type":"flow","id":"tf","nodes":[{"id":"tok","label":"Tokens","holds":["The","cat"]},{"id":"attn","label":"Attention"},{"id":"out","label":"Next word"}],"groups":[{"label":"Repeated","nodes":["attn"],"count":6}]}
-steps: A walkthrough with Back / Next. Use for: After a flow: each step lights its node and changes the stage. Fields: title. for: a flow id. items 2-12: [{title, text ≤600, node, image, holds: {node id: chips}, send: true (packet from the last lit node), tick: 1-20 (rerun its group)}].
+steps: A walkthrough: Back / Next. Use for: After a flow: each step lights its node and changes the stage. Fields: title. for: a flow id. items 2-12: [{title, text ≤600, node, image, holds: {node id: chips}, send: true (packet from the last lit node), tick: 1-20 (rerun its group)}].
 Example: {"type":"steps","for":"tf","items":[{"title":"Split","text":"Into **tokens**.","node":"tok"},{"title":"Mix","node":"attn","send":true,"holds":{"attn":["mixed"]}}]}
-layers: Slabs in light 3D, bottom first; Next pulls one out with its note. Use for: A stack of layers or levels (network, model, atmosphere). Fields: title. caption. layers 2-12: [{id, label ≤24, tone: blue | amber | green | violet | accent | grey, note ≤280}].
+layers: Slabs in 3D, bottom first; Next pulls one out with its note. Use for: A stack of layers or levels (network, model, atmosphere). Fields: title. caption. layers 2-12: [{id, label ≤24, tone: blue | amber | green | violet | accent | grey, note ≤280}].
 Example: {"type":"layers","title":"Network stack","layers":[{"id":"ip","label":"Internet","tone":"blue","note":"Routes packets."},{"id":"app","label":"Application","tone":"green"}]}
-actions: Up to 3 buttons that send a message. Use for: An obvious next step. Fields: items: [{label, run: the message}].
+actions: Up to 3 buttons that send a message. Use for: An obvious next step. Fields: items: [{label, run: the message}]. name: a group heading.
 Example: {"type":"actions","items":[{"label":"Analyze","run":"Analyze TCS: last 4 quarters"}]}
-tiles: 2-8 cover cards. Use for: Choices to explore. Fields: items: [{title, subtitle: a few words, image, icon, ask: fills the composer | run: sends}]. No ask/run: a static card, only for pure facts.
+tiles: 2-8 cover cards. Use for: Choices to explore. Fields: items: [{title, subtitle: a few words, image, icon, ask: fills the composer | run: sends}]. No ask/run: a static card, only for pure facts. name: a group heading.
 Example: {"type":"tiles","items":[{"title":"Arashiyama","icon":"leaf","ask":"Add Arashiyama"},{"title":"Gion","icon":"moon","run":"Add a Gion walk"}]}
 checklist: Items to tick; ticks are saved. Use for: Packing lists, to-dos, steps. Fields: title. items: [text | {text, group}], ≤40. numbered: true for steps.
 Example: {"type":"checklist","title":"Packing","items":["Jacket",{"text":"ID card","group":"Papers"}]}
-calendar: A day at a glance: big date, its events, the week. Use for: Today, a day's plan or agenda. Fields: date: YYYY-MM-DD. events ≤12: [{title, start: "09:30", end, place}]. week ≤7: [{date, count}]. ask: fills the composer.
+calendar: A day at a glance: date, events, the week. Use for: Today, a day's plan or agenda. Fields: date: YYYY-MM-DD. events ≤12: [{title, start: "09:30", end, place}]. week ≤7: [{date, count}]. ask: fills the composer.
 Example: {"type":"calendar","date":"2026-11-14","events":[{"title":"Standup","start":"09:30","place":"Zoom"}],"week":[{"date":"2026-11-14","count":1}],"ask":"What's on today?"}
-upnext: What's coming, as illustrated cards. Use for: Upcoming events, bills, deliveries, birthdays. Fields: items 1-12: [{date: YYYY-MM-DD, title, kind: birthday | bill | travel | delivery | meeting | medical | meal | school | general, time, amount, ask}].
+upnext: Coming up, as illustrated cards. Use for: Upcoming events, bills, deliveries, birthdays. Fields: items 1-12: [{date: YYYY-MM-DD, title, kind: birthday | bill | travel | delivery | meeting | medical | meal | school | general, time, amount, ask}].
 Example: {"type":"upnext","items":[{"date":"2026-11-17","title":"Emma's birthday","kind":"birthday","time":"08:00"}]}
 weather: Weather now: temperature, sky, high, low. Use for: Top of a day or trip. Fields: temp. place. condition. high, low.
 Example: {"type":"weather","temp":17,"place":"Pune","condition":"Cloudy","high":30,"low":16}

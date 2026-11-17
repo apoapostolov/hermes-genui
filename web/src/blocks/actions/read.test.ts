@@ -56,3 +56,14 @@ describe("a button's message can't be a command or an @-reference", () => {
     expect(readBlocksNoted(fine.map((run) => ({ type: "button", label: "Go", run }))).blocks).toHaveLength(3);
   });
 });
+
+describe("an actions group name", () => {
+  it("keeps the model's heading", () => {
+    const r = one({ type: "actions", name: "Next", items: [{ label: "Weather", run: "Goa weather" }] });
+    expect((r.blocks[0] as any).name).toBe("Next");
+  });
+  it("is not read on a single button", () => {
+    const r = one({ type: "button", name: "Next", label: "Go", run: "Go on" });
+    expect(r.blocks[0]).not.toHaveProperty("name");
+  });
+});

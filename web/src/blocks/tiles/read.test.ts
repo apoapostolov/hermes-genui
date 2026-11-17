@@ -128,3 +128,15 @@ describe("tiles", () => {
     expect((many.blocks[0] as any).items.length).toBe(8);
   });
 });
+
+describe("a tiles group name", () => {
+  it("keeps the model's heading", () => {
+    const r = one({ type: "tiles", name: "Pick a walk",
+      items: [{ title: "Gion", run: "Add a Gion walk" }, { title: "Nara", run: "Add Nara" }] });
+    expect((r.blocks[0] as any).name).toBe("Pick a walk");
+  });
+  it("leaves the field off when it is blank", () => {
+    const r = one({ type: "tiles", name: " ", items: [{ title: "Gion" }, { title: "Nara" }] });
+    expect("name" in (r.blocks[0] as any)).toBe(false);
+  });
+});

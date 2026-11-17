@@ -73,7 +73,7 @@
    "kind": "kpis",
    "for": "2-4 headline numbers, change and trend.",
    "use_when": "The top of a report.",
-   "fields": "items: [{label, value: number or short text, unit, change, change_unit: \"%\" | \"pt\", trend: 2-60 numbers}], ≤4.",
+   "fields": "items: [{label, value: number or short text, unit, change, change_unit: \"%\" | \"pt\", trend: 2-60 numbers}], ≤4. name: a group heading.",
    "example": {
     "type": "kpis",
     "items": [
@@ -95,7 +95,7 @@
   },
   {
    "kind": "timeline",
-   "for": "A plan, day by day: timed stops with place, icon and note.",
+   "for": "A plan, day by day: timed stops with place, icon, note.",
    "use_when": "Itineraries, schedules, timed steps.",
    "fields": "title. groups ≤14: [{label, items ≤12: [{time, title, place, note, icon}]}]; only title required.",
    "example": {
@@ -127,8 +127,8 @@
   },
   {
    "kind": "images",
-   "for": "A strip of real photos with captions.",
-   "use_when": "What a place or thing looks like.",
+   "for": "A strip of photos with captions.",
+   "use_when": "What a place looks like.",
    "fields": "title. images 1-12: [{url, caption, source: site name}].",
    "example": {
     "type": "images",
@@ -242,7 +242,7 @@
   },
   {
    "kind": "streak",
-   "for": "A big count and the week, days ticked.",
+   "for": "A count and the week, days ticked.",
    "use_when": "Daily habits.",
    "fields": "count. label, unit (default \"Current streak\", \"days\"). days: up to 7 [{label, date, done, today}].",
    "example": {
@@ -268,7 +268,7 @@
    "kind": "heatmap",
    "for": "A grid of cells shaded by value.",
    "use_when": "Sectors by quarter, habits by weekday.",
-   "fields": "title. rows, cols: ≤12 labels each. values: a list per row. unit. scale: diverging (default with a value < 0) | sequential.",
+   "fields": "title. rows, cols: ≤12 labels each. values: a list per row. unit. scale: diverging (default if < 0) | sequential.",
    "example": {
     "type": "heatmap",
     "title": "Banks, % change",
@@ -315,7 +315,7 @@
   },
   {
    "kind": "flow",
-   "for": "Boxes joined by arrows, holding chips of what's in them.",
+   "for": "Boxes joined by arrows, holding chips.",
    "use_when": "Explainers, 4-8 stages. A chain only; branching graphs: a mermaid code block in the reply.",
    "fields": "id (for steps). title. direction: right | down. nodes 2-10: [{id, label, icon, note ≤280, holds: ≤10 chips (text ≤16 or {text, tone: accent})}]. groups ≤3: [{label, nodes: adjacent ids, count: 2-100}] frame a repeat.",
    "example": {
@@ -352,7 +352,7 @@
   },
   {
    "kind": "steps",
-   "for": "A walkthrough with Back / Next.",
+   "for": "A walkthrough: Back / Next.",
    "use_when": "After a flow: each step lights its node and changes the stage.",
    "fields": "title. for: a flow id. items 2-12: [{title, text ≤600, node, image, holds: {node id: chips}, send: true (packet from the last lit node), tick: 1-20 (rerun its group)}].",
    "example": {
@@ -379,7 +379,7 @@
   },
   {
    "kind": "layers",
-   "for": "Slabs in light 3D, bottom first; Next pulls one out with its note.",
+   "for": "Slabs in 3D, bottom first; Next pulls one out with its note.",
    "use_when": "A stack of layers or levels (network, model, atmosphere).",
    "fields": "title. caption. layers 2-12: [{id, label ≤24, tone: blue | amber | green | violet | accent | grey, note ≤280}].",
    "example": {
@@ -404,7 +404,7 @@
    "kind": "actions",
    "for": "Up to 3 buttons that send a message.",
    "use_when": "An obvious next step.",
-   "fields": "items: [{label, run: the message}].",
+   "fields": "items: [{label, run: the message}]. name: a group heading.",
    "example": {
     "type": "actions",
     "items": [
@@ -419,7 +419,7 @@
    "kind": "tiles",
    "for": "2-8 cover cards.",
    "use_when": "Choices to explore.",
-   "fields": "items: [{title, subtitle: a few words, image, icon, ask: fills the composer | run: sends}]. No ask/run: a static card, only for pure facts.",
+   "fields": "items: [{title, subtitle: a few words, image, icon, ask: fills the composer | run: sends}]. No ask/run: a static card, only for pure facts. name: a group heading.",
    "example": {
     "type": "tiles",
     "items": [
@@ -455,7 +455,7 @@
   },
   {
    "kind": "calendar",
-   "for": "A day at a glance: big date, its events, the week.",
+   "for": "A day at a glance: date, events, the week.",
    "use_when": "Today, a day's plan or agenda.",
    "fields": "date: YYYY-MM-DD. events ≤12: [{title, start: \"09:30\", end, place}]. week ≤7: [{date, count}]. ask: fills the composer.",
    "example": {
@@ -479,7 +479,7 @@
   },
   {
    "kind": "upnext",
-   "for": "What's coming, as illustrated cards.",
+   "for": "Coming up, as illustrated cards.",
    "use_when": "Upcoming events, bills, deliveries, birthdays.",
    "fields": "items 1-12: [{date: YYYY-MM-DD, title, kind: birthday | bill | travel | delivery | meeting | medical | meal | school | general, time, amount, ask}].",
    "example": {

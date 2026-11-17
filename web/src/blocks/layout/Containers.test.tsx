@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import layoutCss from "./layout.css?raw";
 import { afterEach, describe, expect, it } from "vitest";
 import catalog from "../../../../core/catalog.json";
@@ -33,3 +33,16 @@ describe("rows", () => {
   });
 });
 
+
+describe("what a titled card is called", () => {
+  it("is a group named by the title it draws", () => {
+    render(<Blocks blocks={readBlocks([{ type: "section", title: "Notes", children: [{ type: "text", text: "hi" }] }])} />);
+    expect(screen.getByRole("group", { name: "Notes" })).toBeTruthy();
+  });
+
+  it("names a collapsed card by the title on its toggle", () => {
+    render(<Blocks blocks={readBlocks([{ type: "section", title: "Details", collapsed: true, children: [{ type: "text", text: "hi" }] }])} />);
+    expect(screen.getByRole("group", { name: "Details" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Details" })).toBeTruthy();
+  });
+});

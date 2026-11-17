@@ -245,11 +245,49 @@ function Icon({ name, size = 16, stroke = 2 }) {
   );
 }
 
+// src/core/a11y.ts
+import { useId } from "react";
+var KIND_WORDS = {
+  actions: "Actions",
+  calendar: "Calendar",
+  chart: "Chart",
+  checklist: "Checklist",
+  flow: "Flow",
+  form: "Form",
+  heatmap: "Heat map",
+  kpis: "Figures",
+  list: "List",
+  progress: "Progress",
+  section: "Section",
+  steps: "Steps",
+  table: "Table",
+  tiles: "Choices",
+  timeline: "Timeline"
+};
+function blockName(kind, words) {
+  for (const w of words) {
+    const text = str(w, 90);
+    if (text !== void 0) return text;
+  }
+  return KIND_WORDS[kind];
+}
+function useNamed(kind, shown, derived = []) {
+  const id = useId();
+  const name = blockName(kind, [shown, ...derived]);
+  const drawsTitle = str(shown, 90) !== void 0;
+  return { title: { id }, name, root: drawsTitle ? { "aria-labelledby": id } : { "aria-label": name } };
+}
+function seriesWords(specs) {
+  const names = specs.map((s) => str(s.name, 40)).filter((n) => n !== void 0);
+  return names.length ? names.join(", ") : void 0;
+}
+
 // src/blocks/actions/Actions.tsx
 import { jsx as jsx3, jsxs } from "react/jsx-runtime";
-function Actions({ items }) {
+function Actions({ items, name }) {
   const { send } = useContext2(BlockActions);
-  return /* @__PURE__ */ jsx3("div", { className: "hb-actions", children: items.map((a, i) => /* @__PURE__ */ jsxs("button", { type: "button", className: "hb-pill", title: a.run, onClick: () => send(a.run), children: [
+  const named = useNamed("actions", void 0, [name]);
+  return /* @__PURE__ */ jsx3("div", { className: "hb-actions", role: "group", ...named.root, children: items.map((a, i) => /* @__PURE__ */ jsxs("button", { type: "button", className: "hb-pill", title: a.run, onClick: () => send(a.run), children: [
     /* @__PURE__ */ jsx3(Icon, { name: "spark", size: 14, stroke: 2.2 }),
     a.label
   ] }, i)) });
@@ -288,7 +326,7 @@ function readActions(raw, here) {
     items.push({ label, run });
   });
   if (!items.length) return here.drop("actions has no usable button");
-  return { type: "actions", items: keepFirst(items, MAX_BUTTONS, here, "buttons") };
+  return clean({ type: "actions", name: str(raw.name, 60), items: keepFirst(items, MAX_BUTTONS, here, "buttons") });
 }
 function readButton(raw, here) {
   const label = firstText([raw.label, raw.text], 40);
@@ -987,7 +1025,7 @@ function tryParse(formula) {
 }
 
 // src/blocks/chart/Chart.tsx
-import { useId, useMemo as useMemo2, useRef as useRef4, useState as useState7 } from "react";
+import { useId as useId4, useMemo as useMemo2, useRef as useRef4, useState as useState7 } from "react";
 
 // src/blocks/chart/geometry.ts
 function textWidth(text, size = 11) {
@@ -1238,6 +1276,38 @@ function pickKeys(n, at2, pick, rows = false) {
   };
 }
 
+// src/blocks/chart/describe.ts
+function plainNum(v) {
+  if (Number.isInteger(v)) return formatNumber(v, { digits: 0 });
+  return formatNumber(v, { digits: Math.abs(v) >= 1 ? 2 : 3 });
+}
+function chipWords(change) {
+  const arrow = change < 0 ? "\u25BC" : "\u25B2";
+  return `(${arrow} ${plainNum(Math.abs(change))}%)`;
+}
+function seriesLine(series) {
+  const data = series.data.filter((v) => v !== null);
+  if (!data.length) return "";
+  const first = data[0];
+  const last = data[data.length - 1];
+  const line = `${series.name ?? ""} ${plainNum(first)} \u2192 ${plainNum(last)}`.trim();
+  return first ? `${line} ${chipWords(Math.round((last - first) / Math.abs(first) * 1e3) / 10)}` : line;
+}
+function slicesLine(x, data) {
+  const parts2 = x.map((label, i) => ({ label: String(label), value: data[i] ?? null })).filter((p) => p.value !== null && p.value > 0).sort((a, b) => b.value - a.value);
+  const total = parts2.reduce((sum, p) => sum + p.value, 0);
+  if (!total) return "";
+  const shown = parts2.slice(0, 4).map((p) => `${p.label} ${Math.round(p.value / total * 100)}%`.trim());
+  if (parts2.length > 4) shown.push(`+${parts2.length - 4} more`);
+  return shown.join(", ");
+}
+function describeChart(spec) {
+  const pie = spec.type === "pie" || spec.type === "donut";
+  const body = pie ? slicesLine(spec.x, spec.series[0]?.data ?? []) : spec.series.map(seriesLine).filter(Boolean).join("; ");
+  if (!body) return "";
+  return `${spec.title ?? "Chart"}${spec.unit ? ` (${spec.unit})` : ""}: ${body}`;
+}
+
 // src/blocks/chart/ChartTip.tsx
 import { useLayoutEffect as useLayoutEffect2, useRef, useState as useState4 } from "react";
 import { Fragment as Fragment2, jsx as jsx6, jsxs as jsxs3 } from "react/jsx-runtime";
@@ -1452,13 +1522,16 @@ function Area({ bands, layout, colour }) {
 }
 
 // src/blocks/chart/HBarChart.tsx
-import { Fragment as Fragment3, useRef as useRef2, useState as useState5 } from "react";
+import { Fragment as Fragment3, useId as useId2, useRef as useRef2, useState as useState5 } from "react";
 import { jsx as jsx11, jsxs as jsxs8 } from "react/jsx-runtime";
 function HBarChart({ spec }) {
   const [tip, setTip] = useState5(null);
   const [picked, setPicked] = useState5(null);
   const box = useRef2(null);
   const tracks = useRef2([]);
+  const named = useNamed("chart", spec.title, [seriesWords(spec.series)]);
+  const description = describeChart(spec);
+  const descId = useId2();
   const values = spec.series.flatMap((s) => s.data.filter((v) => v !== null));
   const lo = Math.min(0, ...values);
   const hi = Math.max(0, ...values);
@@ -1495,7 +1568,7 @@ function HBarChart({ spec }) {
   const shade2 = (i) => picked === null || picked === i ? 1 : 0.55;
   const rowEvents = (i) => ({ onPointerEnter: () => pick(i), onPointerDown: () => pick(i) });
   return /* @__PURE__ */ jsxs8("figure", { className: "hb-card hb-chart", children: [
-    /* @__PURE__ */ jsx11("figcaption", { className: "hb-chart-title", children: spec.title ?? spec.series[0].name ?? "Chart" }),
+    /* @__PURE__ */ jsx11("figcaption", { id: named.title.id, className: "hb-chart-title", children: spec.title ?? spec.series[0].name ?? "Chart" }),
     !single && /* @__PURE__ */ jsx11(ChartLegend, { series: spec.series }),
     /* @__PURE__ */ jsxs8("div", { ref: box, className: "hb-hbar-box", children: [
       /* @__PURE__ */ jsx11(
@@ -1503,7 +1576,8 @@ function HBarChart({ spec }) {
         {
           className: `hb-hbar-grid${single ? "" : " hb-hbar-many"}`,
           role: "img",
-          "aria-label": spec.title ?? "chart",
+          ...named.root,
+          "aria-describedby": description ? descId : void 0,
           ...pickKeys(spec.x.length, picked, pick, true),
           onPointerLeave: () => pick(null),
           children: spec.x.map((label, i) => /* @__PURE__ */ jsxs8(Fragment3, { children: [
@@ -1533,12 +1607,13 @@ function HBarChart({ spec }) {
       ),
       /* @__PURE__ */ jsx11(ChartTip, { tip })
     ] }),
+    description && /* @__PURE__ */ jsx11("p", { id: descId, className: "hb-sr", children: description }),
     spec.source && /* @__PURE__ */ jsx11("div", { className: "hb-chart-source", children: spec.source })
   ] });
 }
 
 // src/blocks/chart/PieChart.tsx
-import { useRef as useRef3, useState as useState6 } from "react";
+import { useId as useId3, useRef as useRef3, useState as useState6 } from "react";
 import { jsx as jsx12, jsxs as jsxs9 } from "react/jsx-runtime";
 var BOX = 168;
 var C = BOX / 2;
@@ -1570,6 +1645,9 @@ function PieChart({ spec }) {
   const [picked, setPicked] = useState6(null);
   const [tip, setTip] = useState6(null);
   const svg = useRef3(null);
+  const named = useNamed("chart", spec.title, [seriesWords(spec.series)]);
+  const description = describeChart(spec);
+  const descId = useId3();
   const values = spec.series[0].data;
   const total = values.reduce((sum, v) => sum + v, 0);
   const unit = spec.series[0].unit ?? spec.unit;
@@ -1605,7 +1683,7 @@ function PieChart({ spec }) {
   const faded = (i) => picked === null || picked === i ? 1 : 0.5;
   const mouse = (i) => (e) => e.pointerType === "mouse" && pick(i);
   return /* @__PURE__ */ jsxs9("figure", { className: "hb-card hb-chart hb-pie", children: [
-    /* @__PURE__ */ jsx12("figcaption", { className: "hb-chart-title", children: spec.title ?? spec.series[0].name ?? "Chart" }),
+    /* @__PURE__ */ jsx12("figcaption", { id: named.title.id, className: "hb-chart-title", children: spec.title ?? spec.series[0].name ?? "Chart" }),
     !donut && /* @__PURE__ */ jsxs9("div", { className: "hb-chart-figure", children: [
       /* @__PURE__ */ jsx12("span", { className: "hb-chart-big", children: headline.value }),
       /* @__PURE__ */ jsx12("span", { className: "hb-chart-at", children: headline.label })
@@ -1620,7 +1698,8 @@ function PieChart({ spec }) {
           viewBox: `0 0 ${BOX} ${BOX}`,
           className: "hb-pie-svg",
           role: "img",
-          "aria-label": spec.title ?? "chart",
+          ...named.root,
+          "aria-describedby": description ? descId : void 0,
           ...pickKeys(values.length, picked, pick),
           children: [
             slices.map((s, i) => /* @__PURE__ */ jsx12(
@@ -1651,6 +1730,7 @@ function PieChart({ spec }) {
       ] }, i)) }) }),
       /* @__PURE__ */ jsx12(ChartTip, { tip })
     ] }),
+    description && /* @__PURE__ */ jsx12("p", { id: descId, className: "hb-sr", children: description }),
     spec.source && /* @__PURE__ */ jsx12("div", { className: "hb-chart-source", children: spec.source })
   ] });
 }
@@ -1668,7 +1748,10 @@ function XYChart({ spec }) {
   const svg = useRef4(null);
   const width = useWidth(plot);
   const [hover, setHover] = useState7(null);
-  const gid = useId().replace(/[^a-zA-Z0-9]/g, "");
+  const gid = useId4().replace(/[^a-zA-Z0-9]/g, "");
+  const named = useNamed("chart", spec.title, [seriesWords(spec.series)]);
+  const description = useMemo2(() => describeChart(spec), [spec]);
+  const descId = useId4();
   const n = spec.x.length;
   const piled = spec.type === "stacked" || spec.type === "area";
   const bands = useMemo2(() => piled ? stackSeries(spec.series, n) : null, [spec, n, piled]);
@@ -1686,7 +1769,7 @@ function XYChart({ spec }) {
   const multiLegend = spec.type === "combo" || spec.type === "bar" && spec.series.length > 1 || spec.type === "line" && spec.series.length > 1;
   const wide = spec.type === "line" && n >= WIDE_FROM;
   return /* @__PURE__ */ jsxs10("figure", { className: `hb-card hb-chart${wide ? " hb-chart-wide" : ""}`, children: [
-    /* @__PURE__ */ jsx13(Headline, { spec, hover }),
+    /* @__PURE__ */ jsx13(Headline, { spec, hover, titleId: named.title.id }),
     /* @__PURE__ */ jsxs10("div", { ref: plot, className: "hb-chart-plot", children: [
       /* @__PURE__ */ jsxs10(
         "svg",
@@ -1697,7 +1780,8 @@ function XYChart({ spec }) {
           viewBox: `0 0 ${layout.W} ${layout.H}`,
           className: "hb-chart-svg",
           role: "img",
-          "aria-label": spec.title ?? "chart",
+          ...named.root,
+          "aria-describedby": description ? descId : void 0,
           ...pickKeys(n, hover, setHover),
           onPointerDown: pickAt,
           onPointerMove: (e) => (e.buttons || e.pointerType === "mouse") && pickAt(e),
@@ -1715,6 +1799,7 @@ function XYChart({ spec }) {
       ),
       /* @__PURE__ */ jsx13(ChartTip, { tip })
     ] }),
+    description && /* @__PURE__ */ jsx13("p", { id: descId, className: "hb-sr", children: description }),
     multiLegend && /* @__PURE__ */ jsx13(ChartLegend, { series: spec.series }),
     piled && spec.series.length > 1 && /* @__PURE__ */ jsx13(ChartLegend, { series: spec.series, at: hover ?? lastIndex(spec), unit: spec.unit }),
     spec.source && /* @__PURE__ */ jsx13("div", { className: "hb-chart-source", children: spec.source })
@@ -1724,7 +1809,7 @@ function lastIndex(spec) {
   const { last } = seriesEnds(spec.series[0].data);
   return last < 0 ? spec.x.length - 1 : last;
 }
-function Headline({ spec, hover }) {
+function Headline({ spec, hover, titleId }) {
   const piled = spec.type === "stacked" || spec.type === "area";
   const pct = spec.type === "line" ? changePct(spec.series[0].data) : null;
   const shown = hover ?? lastIndex(spec);
@@ -1734,7 +1819,7 @@ function Headline({ spec, hover }) {
   const withFigure = spec.figure !== false;
   return /* @__PURE__ */ jsxs10(Fragment4, { children: [
     /* @__PURE__ */ jsxs10("figcaption", { className: "hb-chart-head", children: [
-      /* @__PURE__ */ jsx13("span", { className: "hb-chart-title", children: spec.title ?? spec.series[0].name ?? "Chart" }),
+      /* @__PURE__ */ jsx13("span", { id: titleId, className: "hb-chart-title", children: spec.title ?? spec.series[0].name ?? "Chart" }),
       pct !== null && withFigure && /* @__PURE__ */ jsxs10("span", { className: `hb-chip ${pct >= 0 ? "hb-chip-good" : "hb-chip-warn"}`, children: [
         pct >= 0 ? "\u25B2" : "\u25BC",
         " ",
@@ -1908,7 +1993,8 @@ function Calendar({ date, title, events, week, ask }) {
   const now = /* @__PURE__ */ new Date();
   const day = parts(date);
   const next = nextEvent(events, date, now);
-  return /* @__PURE__ */ jsxs12("div", { className: "hb-card hb-cal", children: [
+  const named = useNamed("calendar", title);
+  return /* @__PURE__ */ jsxs12("div", { className: "hb-card hb-cal", role: "group", ...named.root, children: [
     /* @__PURE__ */ jsxs12("div", { className: "hb-cal-date", children: [
       /* @__PURE__ */ jsx15("span", { className: "hb-cal-weekday", children: day.toLocaleDateString("en-GB", { weekday: "long" }) }),
       /* @__PURE__ */ jsx15("span", { className: "hb-cal-day", children: day.getDate() }),
@@ -1916,7 +2002,7 @@ function Calendar({ date, title, events, week, ask }) {
     ] }),
     /* @__PURE__ */ jsxs12("div", { className: "hb-cal-mid", children: [
       /* @__PURE__ */ jsxs12("div", { className: "hb-cal-next-row", children: [
-        title && /* @__PURE__ */ jsx15("span", { className: "hb-cal-title", children: title }),
+        title && /* @__PURE__ */ jsx15("span", { id: named.title.id, className: "hb-cal-title", children: title }),
         next && /* @__PURE__ */ jsxs12("span", { className: "hb-cal-next", children: [
           /* @__PURE__ */ jsx15("span", { className: "hb-cal-next-when", children: relativeDay(date, now) }),
           /* @__PURE__ */ jsx15("span", { className: "hb-cal-next-time", children: next.end ? `${next.start}\u2013${next.end}` : next.start }),
@@ -2009,7 +2095,7 @@ function Callout({ tone, title, text }) {
 import { useContext as useContext4 } from "react";
 
 // src/lib/EventArt.tsx
-import { useId as useId2 } from "react";
+import { useId as useId5 } from "react";
 import { jsx as jsx17, jsxs as jsxs14 } from "react/jsx-runtime";
 var KIND_BG = {
   medical: { day: ["#d9f4ee", "#c4e2f4"], night: ["#12403f", "#183a5c"] },
@@ -2033,7 +2119,7 @@ function kindVars(kind) {
   return { "--ka": k.day[0], "--kb": k.day[1], "--kda": k.night[0], "--kdb": k.night[1] };
 }
 function EventArt({ kind, size = 120 }) {
-  const id = useId2().replace(/[^a-zA-Z0-9]/g, "");
+  const id = useId5().replace(/[^a-zA-Z0-9]/g, "");
   const g = (n) => `url(#${id}${n})`;
   return /* @__PURE__ */ jsxs14("svg", { width: size, height: size, viewBox: "0 0 120 120", "aria-hidden": "true", children: [
     /* @__PURE__ */ jsxs14("defs", { children: [
@@ -2487,9 +2573,10 @@ function Checklist({ title, numbered, items, ticked, path }) {
   const [ticks, tap] = useSavedTicks(path, ticked, items.length);
   const done = ticks.length;
   const allDone = done === items.length;
-  return /* @__PURE__ */ jsxs17("div", { className: "hb-card hb-checklist", children: [
+  const named = useNamed("checklist", title);
+  return /* @__PURE__ */ jsxs17("div", { className: "hb-card hb-checklist", role: "group", ...named.root, children: [
     /* @__PURE__ */ jsxs17("div", { className: "hb-checklist-head", children: [
-      title && /* @__PURE__ */ jsx20("span", { className: "hb-card-title", children: /* @__PURE__ */ jsx20(InlineText, { text: title }) }),
+      title && /* @__PURE__ */ jsx20("span", { id: named.title.id, className: "hb-card-title", children: /* @__PURE__ */ jsx20(InlineText, { text: title }) }),
       /* @__PURE__ */ jsx20("span", { className: allDone ? "hb-checklist-count hb-checklist-count-done" : "hb-checklist-count", "aria-live": "polite", children: allDone ? "All done" : `${done} of ${items.length} done` })
     ] }),
     /* @__PURE__ */ jsx20("div", { className: "hb-checklist-track", children: /* @__PURE__ */ jsx20("span", { className: "hb-checklist-fill", style: { width: `${done / items.length * 100}%` } }) }),
@@ -2502,10 +2589,11 @@ function Checklist({ title, numbered, items, ticked, path }) {
           role: "checkbox",
           "aria-checked": ticks.includes(i),
           onClick: () => tap(i),
+          "aria-labelledby": `${named.title.id}-item-${i}`,
           className: ticks.includes(i) ? "hb-check hb-check-on" : "hb-check",
           children: [
-            /* @__PURE__ */ jsx20("span", { className: "hb-check-mark", children: ticks.includes(i) ? /* @__PURE__ */ jsx20(Icon, { name: "check", size: 13, stroke: 3 }) : numbered ? i + 1 : null }),
-            /* @__PURE__ */ jsx20("span", { className: "hb-check-text", children: /* @__PURE__ */ jsx20(InlineText, { text: item.text }) })
+            /* @__PURE__ */ jsx20("span", { className: "hb-check-mark", "aria-hidden": "true", children: ticks.includes(i) ? /* @__PURE__ */ jsx20(Icon, { name: "check", size: 13, stroke: 3 }) : numbered ? i + 1 : null }),
+            /* @__PURE__ */ jsx20("span", { id: `${named.title.id}-item-${i}`, className: "hb-check-text", children: /* @__PURE__ */ jsx20(InlineText, { text: item.text }) })
           ]
         }
       )
@@ -2662,7 +2750,7 @@ function readFlip(raw, here) {
 }
 
 // src/blocks/flow/Flow.tsx
-import { Fragment as Fragment5, useId as useId3, useLayoutEffect as useLayoutEffect3, useMemo as useMemo4, useRef as useRef6, useState as useState11 } from "react";
+import { Fragment as Fragment5, useId as useId6, useLayoutEffect as useLayoutEffect3, useMemo as useMemo4, useRef as useRef6, useState as useState11 } from "react";
 
 // src/lib/motion.ts
 function lessMotion() {
@@ -2762,9 +2850,10 @@ function Flow({ id, title, direction, nodes, groups = [] }) {
   const state = travelling ?? target;
   const moving = isMoving(nodes, steps);
   const holds = state.holds.some((h) => h.length > 0);
-  const panelId = useId3();
+  const panelId = useId6();
   const down = direction === "down" || !fitsAcross(nodes.length, groups.length, width, holds);
   const shown = open === null ? void 0 : nodes[open];
+  const named = useNamed("flow", title);
   const node = (n, i, arrow) => /* @__PURE__ */ jsxs19("li", { className: "hb-flow-step", children: [
     arrow && /* @__PURE__ */ jsx22(Arrow, {}),
     /* @__PURE__ */ jsx22(
@@ -2786,8 +2875,8 @@ function Flow({ id, title, direction, nodes, groups = [] }) {
   function onKeyDown(e) {
     if (e.key === "Escape" && open !== null) setOpen(null);
   }
-  return /* @__PURE__ */ jsxs19("div", { className: "hb-card hb-flow", onKeyDown, children: [
-    title && /* @__PURE__ */ jsx22("div", { className: "hb-card-title", children: title }),
+  return /* @__PURE__ */ jsxs19("div", { className: "hb-card hb-flow", role: "group", ...named.root, onKeyDown, children: [
+    title && /* @__PURE__ */ jsx22("div", { id: named.title.id, className: "hb-card-title", children: title }),
     /* @__PURE__ */ jsxs19("div", { ref: box, className: "hb-flow-box", children: [
       /* @__PURE__ */ jsx22("ol", { className: `hb-flow-chain ${down ? "hb-flow-down" : "hb-flow-right"}`, children: pieces(nodes.length, groups).map(({ start, end, group }) => group ? /* @__PURE__ */ jsxs19("li", { className: "hb-flow-step", style: { flexGrow: end - start + 1 }, children: [
         start > 0 && /* @__PURE__ */ jsx22(Arrow, {}),
@@ -3203,6 +3292,7 @@ function Form(form) {
   const [values, setValues] = useState12(() => startingValues(form));
   const [sent, markSent] = useSentForm(form, setValues);
   const ready = canSend(form, values, sent);
+  const named = useNamed("form", form.title);
   function onSend() {
     if (!ready) return;
     markSent(values);
@@ -3213,12 +3303,13 @@ function Form(form) {
     {
       className: sent ? "hb-card hb-form hb-form-sent" : "hb-card hb-form",
       "aria-disabled": sent,
+      ...named.root,
       onSubmit: (e) => {
         e.preventDefault();
         onSend();
       },
       children: [
-        form.title && /* @__PURE__ */ jsx23("div", { className: "hb-card-title", children: /* @__PURE__ */ jsx23(InlineText, { text: form.title }) }),
+        form.title && /* @__PURE__ */ jsx23("div", { id: named.title.id, className: "hb-card-title", children: /* @__PURE__ */ jsx23(InlineText, { text: form.title }) }),
         /* @__PURE__ */ jsx23("fieldset", { disabled: sent, children: form.fields.map((field, i) => /* @__PURE__ */ jsxs20("div", { children: [
           startsGroup2(form.fields, i) && /* @__PURE__ */ jsx23("div", { className: "hb-form-group", children: /* @__PURE__ */ jsx23(InlineText, { text: field.group }) }),
           /* @__PURE__ */ jsx23(FieldView, { field, value: values[field.id], onChange: (v) => setValues((all) => ({ ...all, [field.id]: v })) })
@@ -3337,7 +3428,7 @@ function Pills({ field, value, onChange }) {
 }
 
 // src/blocks/heatmap/Heatmap.tsx
-import { Fragment as Fragment7, useState as useState13 } from "react";
+import { useState as useState13 } from "react";
 
 // src/blocks/heatmap/heatmapColour.ts
 var FAINT = 10;
@@ -3386,23 +3477,26 @@ function Heatmap({ title, rows, cols, values, unit, scale }) {
   const [picked, setPicked] = useState13(null);
   const range = rangeOf(values);
   const numbersInCells = cols.length <= SHOW_NUMBERS_UP_TO;
+  const named = useNamed("heatmap", title);
   return /* @__PURE__ */ jsxs21("div", { className: "hb-card hb-heatmap", children: [
-    title && /* @__PURE__ */ jsx24("div", { className: "hb-card-title", children: title }),
+    title && /* @__PURE__ */ jsx24("div", { id: named.title.id, className: "hb-card-title", children: title }),
     /* @__PURE__ */ jsxs21(
       "div",
       {
         className: "hb-heat-grid",
         style: { gridTemplateColumns: `minmax(0, max-content) repeat(${cols.length}, minmax(0, 1fr))` },
         role: "table",
-        "aria-label": title ?? "Heat map",
+        ...named.root,
         children: [
-          /* @__PURE__ */ jsx24("span", {}),
-          cols.map((c, j) => /* @__PURE__ */ jsx24("span", { className: "hb-heat-col", role: "columnheader", children: c }, j)),
-          rows.map((r, i) => /* @__PURE__ */ jsxs21(Fragment7, { children: [
+          /* @__PURE__ */ jsxs21("div", { role: "row", className: "hb-heat-arow", children: [
+            /* @__PURE__ */ jsx24("span", { role: "cell", className: "hb-heat-acell" }),
+            cols.map((c, j) => /* @__PURE__ */ jsx24("span", { className: "hb-heat-col", role: "columnheader", children: c }, j))
+          ] }),
+          rows.map((r, i) => /* @__PURE__ */ jsxs21("div", { role: "row", className: "hb-heat-arow", children: [
             /* @__PURE__ */ jsx24("span", { className: "hb-heat-row", role: "rowheader", children: r }),
             cols.map((c, j) => {
               const v = values[i][j];
-              return /* @__PURE__ */ jsx24(
+              return /* @__PURE__ */ jsx24("span", { role: "cell", className: "hb-heat-acell", children: /* @__PURE__ */ jsx24(
                 "button",
                 {
                   type: "button",
@@ -3411,9 +3505,8 @@ function Heatmap({ title, rows, cols, values, unit, scale }) {
                   onClick: () => setPicked({ row: i, col: j }),
                   "aria-label": `${r}, ${c}: ${cellText(v, unit)}`,
                   children: numbersInCells && v !== null ? cellText(v, unit) : ""
-                },
-                j
-              );
+                }
+              ) }, j);
             })
           ] }, i))
         ]
@@ -3565,9 +3658,10 @@ function KpiCard({ item, trendColour }) {
     item.trend && /* @__PURE__ */ jsx26(Sparkline, { values: item.trend, colour: trendColour })
   ] });
 }
-function Kpis({ items }) {
+function Kpis({ items, name }) {
   const several = items.filter((k) => k.trend).length >= 2;
-  return /* @__PURE__ */ jsx26("div", { className: "hb-kpis", children: items.map((k, i) => /* @__PURE__ */ jsx26(KpiCard, { item: k, trendColour: several ? partColour(i) : void 0 }, i)) });
+  const named = useNamed("kpis", void 0, [name]);
+  return /* @__PURE__ */ jsx26("div", { className: "hb-kpis", role: "group", ...named.root, children: items.map((k, i) => /* @__PURE__ */ jsx26(KpiCard, { item: k, trendColour: several ? partColour(i) : void 0 }, i)) });
 }
 function changeClass(change) {
   return change > 0 ? "hb-kpi-up" : change < 0 ? "hb-kpi-down" : "hb-kpi-flat";
@@ -3621,7 +3715,7 @@ function readKpis(raw, here) {
     items.push(readKpi(item));
   });
   if (!items.length) return here.drop("kpis has no item with a label");
-  return { type: "kpis", items: keepFirst(items, 4, here, "items") };
+  return clean({ type: "kpis", name: str(raw.name, 60), items: keepFirst(items, 4, here, "items") });
 }
 function readStat(raw, here) {
   const label = firstText([raw.label, raw.title], 40);
@@ -3644,15 +3738,16 @@ function Columns({ children }) {
 }
 function Section({ title, collapsed, children }) {
   const [open, setOpen] = useState15(!collapsed);
+  const named = useNamed("section", title);
   if (!collapsed) {
-    return /* @__PURE__ */ jsxs24("div", { className: "hb-card hb-section", children: [
-      title && /* @__PURE__ */ jsx27("div", { className: "hb-card-title", children: /* @__PURE__ */ jsx27(InlineText, { text: title }) }),
+    return /* @__PURE__ */ jsxs24("div", { className: "hb-card hb-section", role: "group", ...named.root, children: [
+      title && /* @__PURE__ */ jsx27("div", { id: named.title.id, className: "hb-card-title", children: /* @__PURE__ */ jsx27(InlineText, { text: title }) }),
       /* @__PURE__ */ jsx27("div", { className: "hb-section-body", children })
     ] });
   }
-  return /* @__PURE__ */ jsxs24("div", { className: "hb-card hb-section", children: [
+  return /* @__PURE__ */ jsxs24("div", { className: "hb-card hb-section", role: "group", ...named.root, children: [
     /* @__PURE__ */ jsxs24("button", { type: "button", className: "hb-section-toggle", onClick: () => setOpen(!open), "aria-expanded": open, children: [
-      /* @__PURE__ */ jsx27("span", { className: "hb-card-title", children: /* @__PURE__ */ jsx27(InlineText, { text: title ?? "" }) }),
+      /* @__PURE__ */ jsx27("span", { id: named.title.id, className: "hb-card-title", children: /* @__PURE__ */ jsx27(InlineText, { text: title ?? "" }) }),
       /* @__PURE__ */ jsx27(
         "svg",
         {
@@ -3788,7 +3883,7 @@ function readTabChildren(list, here, depth, readChild) {
 }
 
 // src/blocks/layout/Tabs.tsx
-import { useId as useId4, useRef as useRef8, useState as useState16 } from "react";
+import { useId as useId7, useRef as useRef8, useState as useState16 } from "react";
 import { jsx as jsx28, jsxs as jsxs25 } from "react/jsx-runtime";
 function tabAfterKey(current, count2, key) {
   if (key === "ArrowRight") return (current + 1) % count2;
@@ -3798,7 +3893,7 @@ function tabAfterKey(current, count2, key) {
 function Tabs({ labels: labels2, badges = [], panel }) {
   const [picked, setPicked] = useState16(0);
   const buttons = useRef8([]);
-  const base = useId4().replace(/[^a-zA-Z0-9]/g, "");
+  const base = useId7().replace(/[^a-zA-Z0-9]/g, "");
   const onKey = (e) => {
     const next = tabAfterKey(picked, labels2.length, e.key);
     if (next === picked) return;
@@ -3860,10 +3955,11 @@ function avatarColour(title) {
 }
 
 // src/blocks/list/List.tsx
-import { Fragment as Fragment8, jsx as jsx29, jsxs as jsxs26 } from "react/jsx-runtime";
+import { Fragment as Fragment7, jsx as jsx29, jsxs as jsxs26 } from "react/jsx-runtime";
 function List({ title, ranked, items }) {
-  return /* @__PURE__ */ jsxs26("div", { className: "hb-card hb-list", children: [
-    title && /* @__PURE__ */ jsx29("div", { className: "hb-list-heading", children: /* @__PURE__ */ jsx29(InlineText, { text: title }) }),
+  const named = useNamed("list", title);
+  return /* @__PURE__ */ jsxs26("div", { className: "hb-card hb-list", role: "group", ...named.root, children: [
+    title && /* @__PURE__ */ jsx29("div", { id: named.title.id, className: "hb-list-heading", children: /* @__PURE__ */ jsx29(InlineText, { text: title }) }),
     items.map((item, i) => /* @__PURE__ */ jsx29(ListRow, { item, rank: ranked ? i + 1 : null }, i))
   ] });
 }
@@ -3871,7 +3967,7 @@ function ListRow({ item, rank }) {
   const { send } = useContext7(BlockActions);
   const [photoFailed, setPhotoFailed] = useState17(false);
   const lead = rowLead(item, rank !== null, photoFailed);
-  const body = /* @__PURE__ */ jsxs26(Fragment8, { children: [
+  const body = /* @__PURE__ */ jsxs26(Fragment7, { children: [
     rank !== null && /* @__PURE__ */ jsx29("span", { className: "hb-list-rank", children: rank }),
     lead === "image" && /* @__PURE__ */ jsx29("img", { className: "hb-list-photo", src: item.image, alt: "", loading: "lazy", referrerPolicy: "no-referrer", onError: () => setPhotoFailed(true) }),
     lead === "icon" && item.icon && /* @__PURE__ */ jsx29("span", { className: "hb-list-icon", children: /* @__PURE__ */ jsx29(Icon, { name: item.icon, size: 17, stroke: 2.2 }) }),
@@ -4231,7 +4327,7 @@ function readListItem(item) {
 }
 
 // src/blocks/progress/Progress.tsx
-import { Fragment as Fragment9, jsx as jsx31, jsxs as jsxs28 } from "react/jsx-runtime";
+import { Fragment as Fragment8, jsx as jsx31, jsxs as jsxs28 } from "react/jsx-runtime";
 function trackShare(value, goal, steps) {
   if (!steps.length) return Math.max(0, Math.min(1, value / goal));
   if (value <= steps[0].at) return 0;
@@ -4248,25 +4344,43 @@ function amountOf(value, goal, unit) {
 }
 function Progress({ title, value, goal, unit, steps }) {
   const share = trackShare(value, goal, steps);
+  const named = useNamed("progress", title);
+  const bar = barProps(named.root, value, goal, valueWords(value, goal, unit, steps));
   return /* @__PURE__ */ jsxs28("div", { className: "hb-card hb-progress", children: [
     /* @__PURE__ */ jsxs28("div", { className: "hb-progress-head", children: [
       /* @__PURE__ */ jsx31("span", { className: "hb-progress-icon", children: /* @__PURE__ */ jsx31(Icon, { name: "trophy", size: 19, stroke: 2.2 }) }),
-      /* @__PURE__ */ jsx31("span", { className: "hb-card-title", children: title }),
-      /* @__PURE__ */ jsxs28("span", { className: "hb-progress-amount", children: [
+      /* @__PURE__ */ jsx31("span", { id: named.title.id, className: "hb-card-title", children: title }),
+      /* @__PURE__ */ jsxs28("span", { className: "hb-progress-amount", "aria-hidden": "true", children: [
         /* @__PURE__ */ jsx31(Icon, { name: "flame", size: 15, stroke: 2.2 }),
         amountOf(value, goal, unit)
       ] })
     ] }),
-    steps.length === 0 ? /* @__PURE__ */ jsx31("div", { className: "hb-progress-track", children: /* @__PURE__ */ jsx31("span", { className: "hb-progress-fill", style: { width: `${share * 100}%` } }) }) : /* @__PURE__ */ jsx31(Checkpoints, { steps, value, share, unit })
+    steps.length === 0 ? /* @__PURE__ */ jsx31("div", { className: "hb-progress-track", ...bar, children: /* @__PURE__ */ jsx31("span", { className: "hb-progress-fill", style: { width: `${share * 100}%` } }) }) : /* @__PURE__ */ jsx31(Checkpoints, { steps, value, share, unit, bar })
   ] });
 }
-function Checkpoints({ steps, value, share, unit }) {
+function valueWords(value, goal, unit, steps) {
+  const amount = amountOf(value, goal, unit);
+  if (!steps.length) return amount;
+  return `${amount}, ${steps.filter((s) => value >= s.at).length} of ${steps.length} checkpoints passed`;
+}
+function barProps(root, value, goal, words) {
+  const top = Math.max(goal, value);
+  return {
+    ...root,
+    role: "progressbar",
+    "aria-valuemin": 0,
+    "aria-valuemax": top,
+    "aria-valuenow": Math.min(Math.max(value, 0), top),
+    "aria-valuetext": words
+  };
+}
+function Checkpoints({ steps, value, share, unit, bar }) {
   const n = steps.length;
   const edge = `${50 / n}%`;
   const span = (n - 1) / n * 100;
-  return /* @__PURE__ */ jsxs28(Fragment9, { children: [
+  return /* @__PURE__ */ jsxs28(Fragment8, { children: [
     /* @__PURE__ */ jsxs28("div", { className: "hb-progress-nodes", children: [
-      /* @__PURE__ */ jsx31("span", { className: "hb-progress-track hb-progress-track-steps", style: { left: edge, right: edge } }),
+      /* @__PURE__ */ jsx31("span", { className: "hb-progress-track hb-progress-track-steps", style: { left: edge, right: edge }, ...bar }),
       /* @__PURE__ */ jsx31("span", { className: "hb-progress-fill hb-progress-fill-steps", style: { left: edge, width: `${span * share}%` } }),
       steps.map((s, k) => {
         const done = value >= s.at;
@@ -4418,14 +4532,14 @@ function dotColour(n, start, counts, k) {
 }
 
 // src/blocks/simulate/Piles.tsx
-import { Fragment as Fragment10, jsx as jsx33, jsxs as jsxs29 } from "react/jsx-runtime";
+import { Fragment as Fragment9, jsx as jsx33, jsxs as jsxs29 } from "react/jsx-runtime";
 var GROW_MS = 280;
 var DOT = 14;
 function Piles({ piles, amounts, start, per, most, playing, unit, label }) {
   const counts = amounts.map((a) => Math.max(0, Math.round((a ?? 0) / per)));
   const startDots = Math.max(0, Math.round(start / per));
   const tallest = Math.max(1, ...most.map((m) => Math.round(m / per)));
-  return /* @__PURE__ */ jsxs29(Fragment10, { children: [
+  return /* @__PURE__ */ jsxs29(Fragment9, { children: [
     /* @__PURE__ */ jsx33("div", { className: "hb-sim-piles", children: piles.map((pile, k) => /* @__PURE__ */ jsx33(
       Pile,
       {
@@ -4714,6 +4828,7 @@ function Steps({ title, for: flow, items }) {
   const [at2, setAt] = useState21(0);
   const [failed, setFailed] = useState21(() => /* @__PURE__ */ new Set());
   const setWalk = useSetWalk();
+  const named = useNamed("steps", title);
   const before = useRef13(null);
   const step = items[at2];
   const go = (to) => setAt(Math.max(0, Math.min(items.length - 1, to)));
@@ -4731,9 +4846,9 @@ function Steps({ title, for: flow, items }) {
     e.preventDefault();
   }
   const photo = step.image && !failed.has(at2) ? step.image : void 0;
-  return /* @__PURE__ */ jsxs32("div", { className: "hb-card hb-steps", role: "group", "aria-label": title ?? "Steps", onKeyDown, children: [
+  return /* @__PURE__ */ jsxs32("div", { className: "hb-card hb-steps", role: "group", ...named.root, onKeyDown, children: [
     /* @__PURE__ */ jsxs32("div", { className: "hb-steps-head", children: [
-      title && /* @__PURE__ */ jsx36("div", { className: "hb-card-title", children: title }),
+      title && /* @__PURE__ */ jsx36("div", { id: named.title.id, className: "hb-card-title", children: title }),
       /* @__PURE__ */ jsx36("span", { className: "hb-steps-place", children: `${at2 + 1} of ${items.length}` })
     ] }),
     /* @__PURE__ */ jsxs32("div", { className: "hb-steps-body", "aria-live": "polite", children: [
@@ -4991,6 +5106,7 @@ import { jsx as jsx38, jsxs as jsxs34 } from "react/jsx-runtime";
 var MINI_BARS_FROM = 3;
 function Table({ columns, rows, highlight, caption }) {
   const [sort, setSort] = useState22(null);
+  const named = useNamed("table", caption);
   const order = sortedOrder(rows, sort);
   const bestRow = highlight && "row" in highlight ? highlight.row : -1;
   const bestColumn = highlight && "column" in highlight ? highlight.column : -1;
@@ -5006,8 +5122,8 @@ function Table({ columns, rows, highlight, caption }) {
     extra
   ].filter(Boolean).join(" ");
   return /* @__PURE__ */ jsxs34("div", { className: "hb-card hb-table-card", children: [
-    caption && /* @__PURE__ */ jsx38("div", { className: "hb-chart-title hb-table-caption", children: /* @__PURE__ */ jsx38(InlineText, { text: caption }) }),
-    /* @__PURE__ */ jsx38("div", { className: "hb-table-scroll", children: /* @__PURE__ */ jsxs34("table", { className: columns.length >= 3 ? "hb-table hb-table-wide" : "hb-table", children: [
+    caption && /* @__PURE__ */ jsx38("div", { id: named.title.id, className: "hb-chart-title hb-table-caption", children: /* @__PURE__ */ jsx38(InlineText, { text: caption }) }),
+    /* @__PURE__ */ jsx38("div", { className: "hb-table-scroll", children: /* @__PURE__ */ jsxs34("table", { className: columns.length >= 3 ? "hb-table hb-table-wide" : "hb-table", ...named.root, children: [
       /* @__PURE__ */ jsx38("thead", { children: /* @__PURE__ */ jsx38("tr", { children: columns.map((name, c) => /* @__PURE__ */ jsx38("th", { "aria-sort": ariaSort(sort, c), className: cellClass(c, name, sort?.column === c ? "hb-sorted" : ""), children: /* @__PURE__ */ jsxs34("button", { type: "button", onClick: () => setSort(nextSort(sort, c)), children: [
         /* @__PURE__ */ jsx38("span", { children: name }),
         /* @__PURE__ */ jsx38("span", { className: "hb-sort", "aria-hidden": "true", children: sortMark(sort, c) }),
@@ -5078,7 +5194,7 @@ function readTiles(raw, here) {
     items.push(tile);
   });
   if (!items.length) return here.drop("tiles has no item with a title");
-  return { type: "tiles", items: keepFirst(items, MAX_TILES, here, "tiles") };
+  return clean({ type: "tiles", name: str(raw.name, 60), items: keepFirst(items, MAX_TILES, here, "tiles") });
 }
 function readTile(item) {
   if (!item || typeof item !== "object") return null;
@@ -5102,10 +5218,11 @@ function readTile(item) {
 
 // src/blocks/tiles/Tiles.tsx
 import { useContext as useContext8, useState as useState23 } from "react";
-import { Fragment as Fragment11, jsx as jsx39, jsxs as jsxs35 } from "react/jsx-runtime";
+import { Fragment as Fragment10, jsx as jsx39, jsxs as jsxs35 } from "react/jsx-runtime";
 var WASHES = [1, 4, 8, 3, 6];
-function Tiles({ items }) {
-  return /* @__PURE__ */ jsx39("div", { className: "hb-tiles", children: items.map((tile, i) => /* @__PURE__ */ jsx39(Tile, { tile, wash: WASHES[i % WASHES.length] }, i)) });
+function Tiles({ items, name }) {
+  const named = useNamed("tiles", void 0, [name]);
+  return /* @__PURE__ */ jsx39("div", { className: "hb-tiles", role: "group", ...named.root, children: items.map((tile, i) => /* @__PURE__ */ jsx39(Tile, { tile, wash: WASHES[i % WASHES.length] }, i)) });
 }
 function tapOf(tile, send, fill) {
   if (tile.run) return () => send(tile.run);
@@ -5117,7 +5234,7 @@ function Tile({ tile, wash }) {
   const [photoFailed, setPhotoFailed] = useState23(false);
   const tap = tapOf(tile, send, fill);
   const colour = `var(--hb-chart-${wash})`;
-  const content = /* @__PURE__ */ jsxs35(Fragment11, { children: [
+  const content = /* @__PURE__ */ jsxs35(Fragment10, { children: [
     tile.image && !photoFailed && /* @__PURE__ */ jsx39("img", { src: tile.image, alt: "", loading: "lazy", referrerPolicy: "no-referrer", onError: () => setPhotoFailed(true) }),
     tile.icon && /* @__PURE__ */ jsx39("span", { className: "hb-tile-icon", children: /* @__PURE__ */ jsx39(Icon, { name: tile.icon, size: 18, stroke: 2.2 }) }),
     /* @__PURE__ */ jsxs35("span", { className: "hb-tile-text", children: [
@@ -5181,7 +5298,7 @@ function readStop(it) {
 }
 
 // src/blocks/briefing/Briefing.tsx
-import { Fragment as Fragment12, jsx as jsx40, jsxs as jsxs36 } from "react/jsx-runtime";
+import { Fragment as Fragment11, jsx as jsx40, jsxs as jsxs36 } from "react/jsx-runtime";
 var deg2 = (v) => `${Math.round(v)}\xB0`;
 function Line({ counts }) {
   const parts2 = [];
@@ -5205,7 +5322,7 @@ function Line({ counts }) {
   const joined = parts2.flatMap((p, i) => i ? [", ", p] : [p]);
   return /* @__PURE__ */ jsxs36("p", { className: "hb-brief-line", children: [
     joined,
-    handled && /* @__PURE__ */ jsxs36(Fragment12, { children: [
+    handled && /* @__PURE__ */ jsxs36(Fragment11, { children: [
       ", and ",
       handled
     ] }),
@@ -5374,7 +5491,7 @@ function readTracker(raw, here) {
 
 // src/blocks/tracker/Tracker.tsx
 import { useContext as useContext10, useEffect as useEffect9, useState as useState25 } from "react";
-import { Fragment as Fragment13, jsx as jsx42, jsxs as jsxs38 } from "react/jsx-runtime";
+import { Fragment as Fragment12, jsx as jsx42, jsxs as jsxs38 } from "react/jsx-runtime";
 var VIEW_KEY = "hermes-genui.tracker.view";
 var SEEN_KEY = "hermes-genui.tracker.handled";
 function stored(key) {
@@ -5395,19 +5512,19 @@ function More({ d }) {
   return /* @__PURE__ */ jsxs38("details", { className: "hb-tr-details", children: [
     /* @__PURE__ */ jsx42("summary", { children: "Details" }),
     /* @__PURE__ */ jsxs38("dl", { children: [
-      d.from && /* @__PURE__ */ jsxs38(Fragment13, { children: [
+      d.from && /* @__PURE__ */ jsxs38(Fragment12, { children: [
         /* @__PURE__ */ jsx42("dt", { children: "From" }),
         /* @__PURE__ */ jsx42("dd", { children: d.from })
       ] }),
-      d.received && /* @__PURE__ */ jsxs38(Fragment13, { children: [
+      d.received && /* @__PURE__ */ jsxs38(Fragment12, { children: [
         /* @__PURE__ */ jsx42("dt", { children: "Received" }),
         /* @__PURE__ */ jsx42("dd", { children: d.received })
       ] }),
-      d.about.length > 0 && /* @__PURE__ */ jsxs38(Fragment13, { children: [
+      d.about.length > 0 && /* @__PURE__ */ jsxs38(Fragment12, { children: [
         /* @__PURE__ */ jsx42("dt", { children: "About" }),
         /* @__PURE__ */ jsx42("dd", { children: d.about.join(" \xB7 ") })
       ] }),
-      d.trail.length > 0 && /* @__PURE__ */ jsxs38(Fragment13, { children: [
+      d.trail.length > 0 && /* @__PURE__ */ jsxs38(Fragment12, { children: [
         /* @__PURE__ */ jsx42("dt", { children: "So far" }),
         /* @__PURE__ */ jsx42("dd", { children: d.trail.join(" \u2192 ") })
       ] })
@@ -5487,8 +5604,9 @@ function Tracker({ need, handled }) {
 // src/blocks/timeline/Timeline.tsx
 import { jsx as jsx43, jsxs as jsxs39 } from "react/jsx-runtime";
 function Timeline({ title, groups }) {
-  return /* @__PURE__ */ jsxs39("div", { className: "hb-card hb-timeline", children: [
-    title && /* @__PURE__ */ jsx43("div", { className: "hb-card-title", children: title }),
+  const named = useNamed("timeline", title);
+  return /* @__PURE__ */ jsxs39("div", { className: "hb-card hb-timeline", role: "group", ...named.root, children: [
+    title && /* @__PURE__ */ jsx43("div", { id: named.title.id, className: "hb-card-title", children: title }),
     groups.map((g, gi) => /* @__PURE__ */ jsxs39("div", { className: "hb-timeline-group", children: [
       g.label && /* @__PURE__ */ jsx43("span", { className: "hb-chip hb-chip-soft", children: g.label }),
       g.items.map((s, k) => {
@@ -5517,7 +5635,7 @@ function Timeline({ title, groups }) {
 import { jsx as jsx44 } from "react/jsx-runtime";
 var REGISTRY = {
   chart: { read: readChart, Component: ({ block }) => /* @__PURE__ */ jsx44(Chart, { spec: block.spec }) },
-  kpis: { read: readKpis, Component: ({ block }) => /* @__PURE__ */ jsx44(Kpis, { items: block.items }) },
+  kpis: { read: readKpis, Component: ({ block }) => /* @__PURE__ */ jsx44(Kpis, { items: block.items, name: block.name }) },
   source: { read: readSource, Component: ({ block }) => /* @__PURE__ */ jsx44(Source, { text: block.text, url: block.url }) },
   timeline: { read: readTimeline, Component: ({ block }) => /* @__PURE__ */ jsx44(Timeline, { ...block }) },
   images: { read: readImages, Component: ({ block }) => /* @__PURE__ */ jsx44(Images, { block }) },
@@ -5545,9 +5663,9 @@ var REGISTRY = {
   link: { read: readLink, Component: ({ block }) => /* @__PURE__ */ jsx44(LinkLine, { ...block }) },
   image: { read: readImage, Component: ({ block }) => /* @__PURE__ */ jsx44(Picture, { ...block }) },
   bar: { read: readBar, Component: ({ block }) => /* @__PURE__ */ jsx44(Bar, { ...block }) },
-  actions: { read: readActions, Component: ({ block }) => /* @__PURE__ */ jsx44(Actions, { items: block.items }) },
+  actions: { read: readActions, Component: ({ block }) => /* @__PURE__ */ jsx44(Actions, { items: block.items, name: block.name }) },
   button: { read: readButton, Component: ({ block }) => /* @__PURE__ */ jsx44(Button, { ...block }) },
-  tiles: { read: readTiles, Component: ({ block }) => /* @__PURE__ */ jsx44(Tiles, { items: block.items }) },
+  tiles: { read: readTiles, Component: ({ block }) => /* @__PURE__ */ jsx44(Tiles, { items: block.items, name: block.name }) },
   checklist: { read: readChecklist, Component: ({ block }) => /* @__PURE__ */ jsx44(Checklist, { ...block }) },
   calculator: { read: readCalculator, Component: ({ block }) => /* @__PURE__ */ jsx44(Calculator, { ...block }) },
   simulate: { read: readSimulate, Component: ({ block }) => /* @__PURE__ */ jsx44(Simulate, { ...block }) },
@@ -5977,7 +6095,7 @@ var tokens_default = `/* Hermes GenUI: every class starts with hb- so nothing le
 `;
 
 // src/styles/shared.css
-var shared_default = "/* Pieces several blocks share: cards, chips, pill buttons and the motion they use. */\n/* Cards */\n.hb-card {\n  background: var(--hb-card);\n  border: 1px solid var(--hb-line);\n  border-radius: 16px;\n  padding: 14px 16px;\n}\n.hb-card-title {\n  font-size: 16px;\n  line-height: 22px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n}\n/* Chips */\n.hb-chip {\n  display: inline-flex;\n  align-items: center;\n  align-self: flex-start;\n  gap: 4px;\n  padding: 2px 9px;\n  border-radius: 999px;\n  font-size: 12px;\n  font-weight: 600;\n  line-height: 18px;\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-chip-soft { background: var(--hb-accent-soft); color: var(--hb-accent-ink); }\n.hb-chip-good { background: color-mix(in srgb, var(--hb-good) 14%, transparent); color: var(--hb-good); }\n.hb-chip-warn { background: color-mix(in srgb, var(--hb-warn) 13%, transparent); color: var(--hb-warn); }\n.hb-chip-plain { background: var(--hb-well); color: var(--hb-ink-2); }\n/* Pill buttons that act (actions, button, a form's Send): soft for buttons in a reply, solid for a form's Send. */\n.hb-pill {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  min-height: 36px;\n  max-width: 100%;\n  padding: 7px 14px;\n  border: 0;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n  font: inherit;\n  font-size: 13.5px;\n  font-weight: 600;\n  line-height: 18px;\n  text-align: left;\n  text-decoration: none;\n  cursor: pointer;\n  transition: background 0.15s, transform 0.1s;\n}\n.hb-pill svg { flex: none; }\n.hb-pill:hover { background: color-mix(in srgb, var(--hb-accent) 22%, transparent); }\n.hb-pill:active { transform: scale(0.97); }\n.hb-pill:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-pill-solid { background: var(--hb-accent); color: #fff; }\n.hb-pill-solid:hover { background: color-mix(in srgb, var(--hb-accent) 86%, #000); }\n.hb-pill:disabled { opacity: 0.45; cursor: default; transform: none; }\n.hb-pill-solid:disabled:hover { background: var(--hb-accent); }\n/* Motion: a panel appearing (section, tabs, photo overlay) and a bar growing (bar, progress). */\n.hb-appear { animation: hb-appear 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); }\n@keyframes hb-appear { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }\n@keyframes hb-grow { from { transform: scaleX(0); } }\n@media (prefers-reduced-motion: reduce) {\n  .hb-pill { transition: none; }\n  .hb-appear { animation: none; }\n}\n";
+var shared_default = "/* Pieces several blocks share: cards, chips, pill buttons and the motion they use. */\n/* Cards */\n.hb-card {\n  background: var(--hb-card);\n  border: 1px solid var(--hb-line);\n  border-radius: 16px;\n  padding: 14px 16px;\n}\n.hb-card-title {\n  font-size: 16px;\n  line-height: 22px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n}\n/* Chips */\n.hb-chip {\n  display: inline-flex;\n  align-items: center;\n  align-self: flex-start;\n  gap: 4px;\n  padding: 2px 9px;\n  border-radius: 999px;\n  font-size: 12px;\n  font-weight: 600;\n  line-height: 18px;\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-chip-soft { background: var(--hb-accent-soft); color: var(--hb-accent-ink); }\n.hb-chip-good { background: color-mix(in srgb, var(--hb-good) 14%, transparent); color: var(--hb-good); }\n.hb-chip-warn { background: color-mix(in srgb, var(--hb-warn) 13%, transparent); color: var(--hb-warn); }\n.hb-chip-plain { background: var(--hb-well); color: var(--hb-ink-2); }\n/* Pill buttons that act (actions, button, a form's Send): soft for buttons in a reply, solid for a form's Send. */\n.hb-pill {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  min-height: 36px;\n  max-width: 100%;\n  padding: 7px 14px;\n  border: 0;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n  font: inherit;\n  font-size: 13.5px;\n  font-weight: 600;\n  line-height: 18px;\n  text-align: left;\n  text-decoration: none;\n  cursor: pointer;\n  transition: background 0.15s, transform 0.1s;\n}\n.hb-pill svg { flex: none; }\n.hb-pill:hover { background: color-mix(in srgb, var(--hb-accent) 22%, transparent); }\n.hb-pill:active { transform: scale(0.97); }\n.hb-pill:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-pill-solid { background: var(--hb-accent); color: #fff; }\n.hb-pill-solid:hover { background: color-mix(in srgb, var(--hb-accent) 86%, #000); }\n.hb-pill:disabled { opacity: 0.45; cursor: default; transform: none; }\n.hb-pill-solid:disabled:hover { background: var(--hb-accent); }\n/* A line that only a screen reader hears: a drawing's data, said in words the drawing cannot be read for. */\n.hb-sr {\n  position: absolute;\n  width: 1px;\n  height: 1px;\n  margin: -1px;\n  padding: 0;\n  overflow: hidden;\n  clip-path: inset(50%);\n  white-space: nowrap;\n  border: 0;\n}\n/* Motion: a panel appearing (section, tabs, photo overlay) and a bar growing (bar, progress). */\n.hb-appear { animation: hb-appear 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); }\n@keyframes hb-appear { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }\n@keyframes hb-grow { from { transform: scaleX(0); } }\n@media (prefers-reduced-motion: reduce) {\n  .hb-pill { transition: none; }\n  .hb-appear { animation: none; }\n}\n";
 
 // src/host/blockTag.css
 var blockTag_default = "/* The block tag's own states */\n.hb-state {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  margin: 8px 0;\n  padding: 10px 14px;\n  max-width: 100%;\n  border-radius: 14px;\n  background: color-mix(in srgb, var(--foreground, #1f2328) 5%, transparent);\n  color: var(--ui-text-tertiary, #6b7280);\n  font-size: 13px;\n}\n.hb-pulse { animation: hb-pulse 1.2s ease-in-out infinite; }\n@keyframes hb-pulse { 50% { opacity: 0.45; } }\n@media (prefers-reduced-motion: reduce) {\n  .hb-pulse { animation: none; }\n}\n";
@@ -6013,7 +6131,7 @@ var table_default = "/* Tables */\n/* A table keeps its natural width (columns c
 var list_default = "/* List */\n.hb-list { padding: 4px 0; overflow: hidden; }\n.hb-list-heading { padding: 8px 16px 2px; font-size: 13px; font-weight: 700; color: var(--hb-muted); }\n.hb-list-row {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  padding: 10px 16px;\n  border-top: 1px solid var(--hb-line);\n  color: inherit;\n  text-decoration: none;\n}\n.hb-list > .hb-list-row:first-child, .hb-list-heading + .hb-list-row { border-top: 0; }\n.hb-list-link { cursor: pointer; transition: background 0.15s; }\n.hb-list-link:hover { background: var(--hb-well); }\n.hb-list-rank {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 28px;\n  height: 28px;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n  font-size: 13px;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n}\n.hb-list-photo { flex: none; width: 44px; height: 44px; border-radius: 12px; object-fit: cover; background: var(--hb-well); }\n.hb-list-icon {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border-radius: 12px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n}\n.hb-list-initial {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border-radius: 999px;\n  color: #fff;\n  font-size: 15px;\n  font-weight: 700;\n}\n.hb-list-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }\n.hb-list-title { font-size: 14.5px; line-height: 20px; font-weight: 600; overflow-wrap: anywhere; }\n.hb-list-subtitle {\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  margin-top: 1px;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--hb-muted);\n}\n.hb-list-value { flex: none; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }\n.hb-list-chevron { flex: none; color: var(--hb-muted); }\n.hb-section .hb-list { padding: 0; }\n\n/* List rows that send a message when tapped */\n.hb-list-button {\n  width: 100%;\n  margin: 0;\n  border: 0;\n  border-top: 1px solid var(--hb-line);\n  background: none;\n  font: inherit;\n  text-align: left;\n}\n.hb-list-button:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; }\n";
 
 // src/blocks/heatmap/heatmap.css
-var heatmap_default = "/* Heatmap */\n.hb-heatmap { display: flex; flex-direction: column; gap: 8px; }\n.hb-heat-grid { display: grid; gap: 4px; align-items: center; }\n.hb-heat-col {\n  overflow: hidden;\n  text-align: center;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 11px;\n  font-weight: 600;\n  color: var(--hb-muted);\n}\n.hb-heat-row {\n  max-width: 96px;\n  padding-right: 6px;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 12px;\n  font-weight: 600;\n}\n.hb-heat-cell {\n  display: grid;\n  place-items: center;\n  min-width: 0;\n  height: 32px;\n  margin: 0;\n  padding: 0 2px;\n  overflow: hidden;\n  border: 0;\n  border-radius: 8px;\n  color: var(--hb-ink);\n  font: inherit;\n  font-size: 11.5px;\n  font-weight: 600;\n  line-height: 1;\n  font-variant-numeric: tabular-nums;\n  cursor: pointer;\n}\n.hb-heat-cell:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 1px; }\n.hb-heat-picked { font-size: 12.5px; color: var(--hb-muted); font-variant-numeric: tabular-nums; }\n.hb-heat-picked b { font-weight: 600; color: var(--hb-ink); }\n";
+var heatmap_default = "/* Heatmap */\n.hb-heatmap { display: flex; flex-direction: column; gap: 8px; }\n.hb-heat-grid { display: grid; gap: 4px; align-items: center; }\n/* A row and a cell are roles, not boxes: they pass their children through so the grid's columns still line up. */\n.hb-heat-arow, .hb-heat-acell { display: contents; }\n.hb-heat-col {\n  overflow: hidden;\n  text-align: center;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 11px;\n  font-weight: 600;\n  color: var(--hb-muted);\n}\n.hb-heat-row {\n  max-width: 96px;\n  padding-right: 6px;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 12px;\n  font-weight: 600;\n}\n.hb-heat-cell {\n  display: grid;\n  place-items: center;\n  min-width: 0;\n  height: 32px;\n  margin: 0;\n  padding: 0 2px;\n  overflow: hidden;\n  border: 0;\n  border-radius: 8px;\n  color: var(--hb-ink);\n  font: inherit;\n  font-size: 11.5px;\n  font-weight: 600;\n  line-height: 1;\n  font-variant-numeric: tabular-nums;\n  cursor: pointer;\n}\n.hb-heat-cell:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 1px; }\n.hb-heat-picked { font-size: 12.5px; color: var(--hb-muted); font-variant-numeric: tabular-nums; }\n.hb-heat-picked b { font-weight: 600; color: var(--hb-ink); }\n";
 
 // src/blocks/flip/flip.css
 var flip_default = "/* Flash cards: a grid of cards, each turning over in 3D on a tap to a softly tinted answer. A card grows with its\n   text: both faces sit in one grid cell, so the longer side sets its height, and the cards in a row share the row's. */\n.hb-flip { display: flex; flex-direction: column; gap: 8px; }\n/* At most --hb-flip-cols columns (set from the card count so the last row isn't a lone card), at least 200px each. */\n.hb-flip-grid {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(max(200px, calc((100% - (var(--hb-flip-cols, 4) - 1) * 10px) / var(--hb-flip-cols, 4))), 1fr));\n  gap: 10px;\n}\n.hb-flip-card {\n  display: grid;\n  grid-template-columns: minmax(0, 1fr);\n  min-width: 0;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n  perspective: 1000px;\n}\n.hb-flip-inner {\n  display: grid;\n  grid-template-columns: minmax(0, 1fr);\n  min-height: 150px;\n  transform-style: preserve-3d;\n  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);\n}\n/* A photo on any card makes every card at least as tall as a photo card needs, so the rows stay even. */\n.hb-flip-tall .hb-flip-inner { min-height: 220px; }\n.hb-flip-turned { transform: rotateY(180deg); }\n.hb-flip-face {\n  grid-area: 1 / 1;\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  overflow: hidden;\n  padding: 12px 14px;\n  border-radius: 12px;\n  border: 1px solid var(--hb-line);\n  backface-visibility: hidden;\n  -webkit-backface-visibility: hidden;\n}\n.hb-flip-front { background: var(--hb-card); }\n.hb-flip-card:hover .hb-flip-front { border-color: var(--hb-line-strong); }\n/* The answer side: a soft wash of the accent over the page colour, text in the normal ink. */\n.hb-flip-back {\n  transform: rotateY(180deg);\n  background: linear-gradient(var(--hb-accent-soft), var(--hb-accent-soft)), var(--hb-surface);\n  border-color: color-mix(in srgb, var(--hb-accent) 30%, transparent);\n}\n.hb-flip-card:focus-visible .hb-flip-face { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-flip-label {\n  font-size: 11px;\n  font-weight: 600;\n  letter-spacing: 0.06em;\n  text-transform: uppercase;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n}\n.hb-flip-back .hb-flip-label { color: var(--hb-accent-ink); }\n.hb-flip-question, .hb-flip-answer { flex: 1; display: flex; align-items: center; min-height: 0; }\n.hb-flip-question { font-size: 14.5px; line-height: 1.35; font-weight: 600; }\n.hb-flip-answer { font-size: 13.5px; line-height: 1.45; }\n.hb-flip-foot { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--hb-muted); }\n.hb-flip-back img { display: block; flex: none; width: calc(100% + 28px); height: 96px; margin: -12px -14px 4px; object-fit: cover; }\n@media (prefers-reduced-motion: reduce) {\n  .hb-flip-inner, .hb-flip-turned { transition: none; transform: none; }\n  .hb-flip-face, .hb-flip-back { transform: none; backface-visibility: visible; -webkit-backface-visibility: visible; transition: opacity 0.2s; }\n  .hb-flip-inner:not(.hb-flip-turned) .hb-flip-back, .hb-flip-turned .hb-flip-front { opacity: 0; }\n}\n";

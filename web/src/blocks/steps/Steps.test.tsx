@@ -89,3 +89,13 @@ describe("Steps", () => {
     expect(container.querySelector(".hb-flow-lit .hb-flow-label")!.textContent).toBe("Tokens");
   });
 });
+
+describe("what a walkthrough is called", () => {
+  it("is a group named by its title, or by what it is", () => {
+    render(<Blocks blocks={readBlocks([{ type: "steps", title: "How a prompt runs", items: [{ title: "Ask" }, { title: "Answer" }] }])} />);
+    expect(screen.getByRole("group", { name: "How a prompt runs" })).toBeTruthy();
+    cleanup();
+    render(<Blocks blocks={readBlocks([{ type: "steps", items: [{ title: "Ask" }, { title: "Answer" }] }])} />);
+    expect(screen.getByRole("group", { name: "Steps" })).toBeTruthy();
+  });
+});

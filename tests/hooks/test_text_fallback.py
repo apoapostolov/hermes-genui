@@ -110,6 +110,33 @@ def test_kpis_one_line_each():
     assert out == "Revenue: 72,275 ₹Cr (▲ 2.2%)\nNet margin: 18.6% (▼ 0.9pt)"
 
 
+def test_a_group_name_heads_kpis_tiles_and_actions():
+    # `name` is the heading a group of figures or cards carries: the drawing side only announces it, the text side
+    # writes it as one bold line above them.
+    kpis = {"type": "kpis", "name": "This week", "items": [{"label": "Steps", "value": 8200}]}
+    assert render(kpis) == "**This week**\nSteps: 8,200"
+    tiles = {"type": "tiles", "name": "Pick a walk",
+             "items": [{"title": "Gion", "run": "Add a Gion walk"}, {"title": "Nara", "run": "Add Nara"}]}
+    assert render(tiles) == "**Pick a walk**\n- Gion\n- Nara"
+    actions = {"type": "actions", "name": "Next", "items": [{"label": "Analyze", "run": "Analyze TCS"}]}
+    assert render(actions) == "**Next**\nNext: Analyze"
+
+
+def test_a_name_alone_writes_no_line():
+    # Nothing to head: no figures, no cards, no buttons, no heading.
+    assert render({"type": "kpis", "name": "This week", "items": [{"value": 8}]}) == ""
+    assert render({"type": "tiles", "name": "Pick a walk", "items": [{"subtitle": "no title"}]}) == ""
+    assert render({"type": "actions", "name": "Next", "items": []}) == ""
+
+
+def test_name_is_read_only_where_the_issue_names_it():
+    # A chart, table or progress block keeps its own words: `name` on them changes nothing.
+    chart = dict(EXAMPLES["chart"], name="This week")
+    assert render(chart) == render(EXAMPLES["chart"])
+    progress = {"type": "progress", "name": "Level", "title": "Level 4", "value": 95, "goal": 120}
+    assert render(progress) == "Level 4: 95 / 120"
+
+
 def test_progress_and_bar():
     assert render(EXAMPLES["progress"]) == "Level 4: 95 / 120 XP"
     assert render({"type": "bar", "label": "Budget used", "value": 62}) == "Budget used: 62 / 100"

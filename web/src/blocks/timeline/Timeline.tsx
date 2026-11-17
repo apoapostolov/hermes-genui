@@ -1,11 +1,13 @@
 // A plan, day by day: times down the left, a dot or icon on a line, then each stop's title, place and note.
 import type { TimelineBlock } from "./read";
 import { Icon } from "../../lib/Icon";
+import { useNamed } from "../../core/a11y";
 
 export function Timeline({ title, groups }: TimelineBlock) {
+  const named = useNamed("timeline", title);
   return (
-    <div className="hb-card hb-timeline">
-      {title && <div className="hb-card-title">{title}</div>}
+    <div className="hb-card hb-timeline" role="group" {...named.root}>
+      {title && <div id={named.title.id} className="hb-card-title">{title}</div>}
       {groups.map((g, gi) => (
         <div key={gi} className="hb-timeline-group">
           {g.label && <span className="hb-chip hb-chip-soft">{g.label}</span>}

@@ -4,11 +4,15 @@ import { useContext } from "react";
 import { BlockActions } from "../../host/actions";
 import type { ActionItem, ButtonBlock } from "./read";
 import { Icon } from "../../lib/Icon";
+import { useNamed } from "../../core/a11y";
 
-export function Actions({ items }: { items: ActionItem[] }) {
+/** A row of up to three buttons, named by the model's group `name` when it gives one and by what it is when it
+ *  doesn't ("Actions"). */
+export function Actions({ items, name }: { items: ActionItem[]; name?: string }) {
   const { send } = useContext(BlockActions);
+  const named = useNamed("actions", undefined, [name]);
   return (
-    <div className="hb-actions">
+    <div className="hb-actions" role="group" {...named.root}>
       {items.map((a, i) => (
         <button key={i} type="button" className="hb-pill" title={a.run} onClick={() => send(a.run)}>
           <Icon name="spark" size={14} stroke={2.2} />{a.label}

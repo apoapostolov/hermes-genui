@@ -7,11 +7,13 @@ import type { ListBlock, ListItem } from "./read";
 import { InlineText } from "../../lib/InlineText";
 import { Icon } from "../../lib/Icon";
 import { avatarColour, initialOf, rowLead } from "./rowAvatar";
+import { useNamed } from "../../core/a11y";
 
 export function List({ title, ranked, items }: ListBlock) {
+  const named = useNamed("list", title);
   return (
-    <div className="hb-card hb-list">
-      {title && <div className="hb-list-heading"><InlineText text={title} /></div>}
+    <div className="hb-card hb-list" role="group" {...named.root}>
+      {title && <div id={named.title.id} className="hb-list-heading"><InlineText text={title} /></div>}
       {items.map((item, i) => <ListRow key={i} item={item} rank={ranked ? i + 1 : null} />)}
     </div>
   );

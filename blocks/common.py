@@ -162,6 +162,16 @@ def first_of(block: dict, *keys: str, limit: int = MAX_STRING) -> str:
     return next((t for t in (safe_text(block.get(k), limit) for k in keys) if t), "")
 
 
+def name_heading(block: dict) -> str:
+    """The heading a group of figures, cards or buttons carries, as one bold line: the model's `name`, which the
+    drawing side does not write out. Only kpis, tiles and actions read it.
+
+    {"name": "This week"} → "**This week**";  {"name": " "} → "";  {} → ""
+    """
+    name = safe_text(block.get("name"), 60)
+    return f"**{name}**" if name else ""
+
+
 def safe_url(value: object, https_only: bool = False) -> str:
     """A URL safe to put inside Markdown's (...), or "" when it isn't http(s).
 

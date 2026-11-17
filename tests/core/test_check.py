@@ -692,3 +692,12 @@ def test_checklist_items_may_carry_unique_short_ids():
     assert check_blocks(dup) == ["0.items.1: item id is used twice"]
     long = [{"type": "checklist", "items": [{"text": "A", "id": "x" * 41}]}]
     assert check_blocks(long) == ["0.items.0: item id is plain text up to 40 characters"]
+
+
+def test_a_group_name_never_makes_a_block_invalid():
+    # `name` is a heading a model may add to kpis, tiles and actions: the drawing side announces it and the text side
+    # writes it, so the checker has nothing to say about it — here or on a block that doesn't read it.
+    assert check_blocks([{"type": "kpis", "name": "This week", "items": [{"label": "Steps", "value": 8200}]}]) == []
+    assert check_blocks([{"type": "actions", "name": "Next", "items": [{"label": "Go", "run": "Go on"}]}]) == []
+    chart = {"type": "chart", "name": "This week", "x": ["a"], "series": [{"name": "s", "data": [1]}]}
+    assert check_blocks([chart]) == []

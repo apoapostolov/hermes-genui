@@ -132,3 +132,11 @@ describe("form sent state", () => {
     expect(sent).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("what a form is called", () => {
+  it("is a form named by its title: a landmark, not an unnamed box", () => {
+    draw([{ type: "form", title: "Plan it", fields: [{ id: "where", kind: "select", label: "Where", value: "Hills",
+      options: ["Hills", "Beach"] }] }]);
+    expect(screen.getByRole("form", { name: "Plan it" })).toBeTruthy();
+  });
+});

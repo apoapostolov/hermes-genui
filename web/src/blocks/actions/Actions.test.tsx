@@ -45,3 +45,14 @@ describe("what a tap will send is shown on hover", () => {
     expect(container.querySelectorAll("[title]")).toHaveLength(4);
   });
 });
+
+describe("what a row of buttons is called", () => {
+  it("takes the model's group name, and says what it is without one", () => {
+    const row = (raw: object) => draw([{ type: "actions", ...raw, items: [{ label: "Weather", run: "Goa weather" }] }]);
+    row({ name: "Next" });
+    expect(screen.getByRole("group", { name: "Next" })).toBeTruthy();
+    cleanup();
+    row({});
+    expect(screen.getByRole("group", { name: "Actions" })).toBeTruthy();
+  });
+});

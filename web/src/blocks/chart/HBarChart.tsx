@@ -1,7 +1,9 @@
 // Horizontal bars: a row per x label, read top to bottom as a ranking. Asked for as hbar, or chosen for bars whose
 // labels read better as rows (kindToDraw in chartData.ts).
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useId, useRef, useState } from "react";
 import { fmt, partColour, seriesName, type ChartSpec } from "./chartData";
+import { describeChart } from "./describe";
+import { useNamed, seriesWords } from "../../core/a11y";
 import { ChartTip, type Tip } from "./ChartTip";
 import { ChartLegend } from "./Legend";
 import { pickKeys } from "./pick";
@@ -17,6 +19,9 @@ export function HBarChart({ spec }: { spec: ChartSpec }) {
   const [picked, setPicked] = useState<number | null>(null);
   const box = useRef<HTMLDivElement>(null);
   const tracks = useRef<(HTMLDivElement | null)[]>([]);
+  const named = useNamed("chart", spec.title, [seriesWords(spec.series)]);
+  const description = describeChart(spec);
+  const descId = useId();
 
   const values = spec.series.flatMap((s) => s.data.filter((v): v is number => v !== null));
   const lo = Math.min(0, ...values);
@@ -58,10 +63,11 @@ export function HBarChart({ spec }: { spec: ChartSpec }) {
   const rowEvents = (i: number) => ({ onPointerEnter: () => pick(i), onPointerDown: () => pick(i) });
   return (
     <figure className="hb-card hb-chart">
-      <figcaption className="hb-chart-title">{spec.title ?? spec.series[0].name ?? "Chart"}</figcaption>
+      <figcaption id={named.title.id} className="hb-chart-title">{spec.title ?? spec.series[0].name ?? "Chart"}</figcaption>
       {!single && <ChartLegend series={spec.series} />}
       <div ref={box} className="hb-hbar-box">
-        <div className={`hb-hbar-grid${single ? "" : " hb-hbar-many"}`} role="img" aria-label={spec.title ?? "chart"}
+        <div className={`hb-hbar-grid${single ? "" : " hb-hbar-many"}`} role="img" {...named.root}
+          aria-describedby={description ? descId : undefined}
           {...pickKeys(spec.x.length, picked, pick, true)} onPointerLeave={() => pick(null)}>
           {spec.x.map((label, i) => (
             <Fragment key={i}>
@@ -93,6 +99,7 @@ export function HBarChart({ spec }: { spec: ChartSpec }) {
         </div>
         <ChartTip tip={tip} />
       </div>
+      {description && <p id={descId} className="hb-sr">{description}</p>}
       {spec.source && <div className="hb-chart-source">{spec.source}</div>}
     </figure>
   );

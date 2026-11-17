@@ -1,5 +1,5 @@
 // Headline numbers: kpis (a row of up to 4) and stat (one on its own). Both read their numbers with readKpi.
-import { firstText, keepFirst, num, str, type Trail } from "../../core/fields";
+import { clean, firstText, keepFirst, num, str, type Trail } from "../../core/fields";
 
 export type KpiItem = {
   label: string;
@@ -13,7 +13,7 @@ export type KpiItem = {
 // A trend is a small line under the number: it needs 2 points, and more than 60 would not show in it.
 const TREND_FEWEST = 2;
 const TREND_MOST = 60;
-export type KpisBlock = { type: "kpis"; items: KpiItem[] };
+export type KpisBlock = { type: "kpis"; name?: string; items: KpiItem[] };
 export type StatBlock = { type: "stat" } & KpiItem;
 
 /**
@@ -45,8 +45,10 @@ function readTrend(v: unknown): number[] | undefined {
 }
 
 /**
- * kpis: up to 4 headline numbers in cards. Items without a text label are dropped.
- *   {type: "kpis", items: [{label: "Steps", value: 8200}, {value: 3}]} → {type: "kpis", items: [{label: "Steps", value: 8200, …}]}
+ * kpis: up to 4 headline numbers in cards. Items without a text label are dropped. `name` is the group's heading
+ * ("This week"): it is not drawn, but it names the row for a screen reader.
+ *   {type: "kpis", name: "This week", items: [{label: "Steps", value: 8200}, {value: 3}]}
+ *   → {type: "kpis", name: "This week", items: [{label: "Steps", value: 8200, …}]}
  * Dropped: no items list, or no item with a label.
  */
 export function readKpis(raw: any, here: Trail): KpisBlock | null {
@@ -60,7 +62,7 @@ export function readKpis(raw: any, here: Trail): KpisBlock | null {
     items.push(readKpi(item));
   });
   if (!items.length) return here.drop("kpis has no item with a label");
-  return { type: "kpis", items: keepFirst(items, 4, here, "items") };
+  return clean({ type: "kpis" as const, name: str(raw.name, 60), items: keepFirst(items, 4, here, "items") });
 }
 
 /**

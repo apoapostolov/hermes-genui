@@ -1,6 +1,6 @@
 """actions: a row of up to 3 buttons that send a message; button: one on its own (a message or an https page)."""
 
-from .common import NO_SEND, acts_before_the_model, has_text, is_https, md_link, safe_text, safe_url
+from .common import NO_SEND, acts_before_the_model, has_text, is_https, md_link, name_heading, safe_text, safe_url
 
 
 def check_actions(block: dict, path: str) -> list[tuple[str, str]]:
@@ -47,5 +47,10 @@ def text_button(block: dict) -> str:
 
 
 def text_actions(block: dict) -> str:
+    """The group's heading, then "Next: A · B": {"name": "Next", "items": [{"label": "Analyze"}]}
+    → "**Next**\\nNext: Analyze". No heading when the block gives no name or no label."""
     items = block.get("items") if isinstance(block.get("items"), list) else []
-    return _next_steps([safe_text(it.get("label")) for it in items if isinstance(it, dict)])
+    buttons = _next_steps([safe_text(it.get("label")) for it in items if isinstance(it, dict)])
+    if not buttons:
+        return ""
+    return "\n".join(line for line in (name_heading(block), buttons) if line)

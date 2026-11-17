@@ -2,7 +2,7 @@
 
 import sys
 
-from .common import change_chip, first_of, has_text, is_number, safe_text, with_unit
+from .common import change_chip, first_of, has_text, is_number, name_heading, safe_text, with_unit
 
 # A trend is a small line under the number: enough points to show a shape, few enough to stay small.
 TREND_POINTS = (2, 60)
@@ -63,5 +63,10 @@ def text_stat(block: dict) -> str:
 
 
 def text_kpis(block: dict) -> str:
+    """The group's heading, then one line per figure: {"name": "This week", "items": [{...}]}
+    → "**This week**\\nRevenue: 72,275 ₹Cr (▲ 2.2%)". No heading when the block gives no name, no lines when it gives
+    no figure (so the heading never stands alone)."""
     items = block.get("items") if isinstance(block.get("items"), list) else []
-    return "\n".join(line for line in (_figure(it) for it in items if isinstance(it, dict)) if line)
+    lines = [line for line in (_figure(it) for it in items if isinstance(it, dict)) if line]
+    heading = name_heading(block)
+    return "\n".join(([heading] if heading and lines else []) + lines)

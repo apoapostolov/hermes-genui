@@ -59,6 +59,18 @@
 .hb-pill-solid:hover { background: color-mix(in srgb, var(--hb-accent) 86%, #000); }
 .hb-pill:disabled { opacity: 0.45; cursor: default; transform: none; }
 .hb-pill-solid:disabled:hover { background: var(--hb-accent); }
+/* A line that only a screen reader hears: a drawing's data, said in words the drawing cannot be read for. */
+.hb-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
 /* Motion: a panel appearing (section, tabs, photo overlay) and a bar growing (bar, progress). */
 .hb-appear { animation: hb-appear 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); }
 @keyframes hb-appear { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }

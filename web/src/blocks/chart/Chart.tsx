@@ -6,6 +6,8 @@ import { changePct, chartScales, fmt, kindToDraw, stackSeries, totalAt, type Cha
 import { seriesEnds, xyLayout, xyTip, type XYLayout } from "./layout";
 import { useWidth } from "./useWidth";
 import { pickKeys } from "./pick";
+import { describeChart } from "./describe";
+import { useNamed, seriesWords } from "../../core/a11y";
 import { ChartTip } from "./ChartTip";
 import { ChartLegend } from "./Legend";
 import { LineMarks, Crosshair } from "./LineMarks";
@@ -31,6 +33,9 @@ function XYChart({ spec }: { spec: ChartSpec }) {
   const width = useWidth(plot);
   const [hover, setHover] = useState<number | null>(null);
   const gid = useId().replace(/[^a-zA-Z0-9]/g, "");
+  const named = useNamed("chart", spec.title, [seriesWords(spec.series)]);
+  const description = useMemo(() => describeChart(spec), [spec]);
+  const descId = useId();
   const n = spec.x.length;
   const piled = spec.type === "stacked" || spec.type === "area";  // the series pile on each other
   const bands = useMemo(() => (piled ? stackSeries(spec.series, n) : null), [spec, n, piled]);
@@ -53,10 +58,11 @@ function XYChart({ spec }: { spec: ChartSpec }) {
   const wide = spec.type === "line" && n >= WIDE_FROM;
   return (
     <figure className={`hb-card hb-chart${wide ? " hb-chart-wide" : ""}`}>
-      <Headline spec={spec} hover={hover} />
+      <Headline spec={spec} hover={hover} titleId={named.title.id} />
       <div ref={plot} className="hb-chart-plot">
         <svg ref={svg} width="100%" height={layout.H} viewBox={`0 0 ${layout.W} ${layout.H}`} className="hb-chart-svg"
-          role="img" aria-label={spec.title ?? "chart"} {...pickKeys(n, hover, setHover)}
+          role="img" {...named.root} aria-describedby={description ? descId : undefined}
+          {...pickKeys(n, hover, setHover)}
           onPointerDown={pickAt} onPointerMove={(e) => (e.buttons || e.pointerType === "mouse") && pickAt(e)}
           onPointerLeave={() => setHover(null)}>
           <XLabels spec={spec} layout={layout} />
@@ -69,6 +75,7 @@ function XYChart({ spec }: { spec: ChartSpec }) {
         </svg>
         <ChartTip tip={tip} />
       </div>
+      {description && <p id={descId} className="hb-sr">{description}</p>}
       {multiLegend && <ChartLegend series={spec.series} />}
       {piled && spec.series.length > 1 && <ChartLegend series={spec.series} at={hover ?? lastIndex(spec)} unit={spec.unit} />}
       {spec.source && <div className="hb-chart-source">{spec.source}</div>}
@@ -84,8 +91,9 @@ function lastIndex(spec: ChartSpec): number {
 }
 
 /** The title, the line's change chip, and the big number: the value at the picked x label, or the latest. A stacked
- *  chart's number is the whole pile; the other series's values sit beside it. figure: false keeps only the title. */
-function Headline({ spec, hover }: { spec: ChartSpec; hover: number | null }) {
+ *  chart's number is the whole pile; the other series's values sit beside it. figure: false keeps only the title.
+ *  titleId is what the drawing points at, so it is announced by the title it shows. */
+function Headline({ spec, hover, titleId }: { spec: ChartSpec; hover: number | null; titleId: string }) {
   const piled = spec.type === "stacked" || spec.type === "area";
   const pct = spec.type === "line" ? changePct(spec.series[0].data) : null;
   const shown = hover ?? lastIndex(spec);
@@ -96,7 +104,7 @@ function Headline({ spec, hover }: { spec: ChartSpec; hover: number | null }) {
   return (
     <>
       <figcaption className="hb-chart-head">
-        <span className="hb-chart-title">{spec.title ?? spec.series[0].name ?? "Chart"}</span>
+        <span id={titleId} className="hb-chart-title">{spec.title ?? spec.series[0].name ?? "Chart"}</span>
         {pct !== null && withFigure && <span className={`hb-chip ${pct >= 0 ? "hb-chip-good" : "hb-chip-warn"}`}>{pct >= 0 ? "▲" : "▼"} {Math.abs(pct).toFixed(1)}%</span>}
       </figcaption>
       {withFigure && (
