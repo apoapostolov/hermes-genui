@@ -146,29 +146,71 @@
    "kind": "table",
    "for": "Options compared on the same attributes.",
    "use_when": "Phones, plans, hotels.",
-   "fields": "columns ≤8. rows ≤30, a cell per column. highlight: {row: n} | {column: n} from 0, badged Best. caption.",
+   "fields": "columns ≤8. rows ≤30. Structured: columns [{id, label, kind: text|number|currency|percent|date|badge|link|bar|sources, unit, max, align: left|right|center, tone}], rows [{cells: {id: {text, value, url, tone}}, sources ≤4: [{label, url: http(s)}]}], filterable, page 1-10, aggregates ≤4 [{column, op: sum|avg|min|max|count, label}]. Legacy columns: string[] and rows: [][] still work, a cell per column. highlight: {row: n} | {column: n} from 0, badged Best. caption.",
    "example": {
     "type": "table",
-    "caption": "Phones under ₹50k",
+    "caption": "Phones compared",
     "columns": [
-     "Phone",
-     "Price",
-     "Camera"
+     {
+      "id": "phone",
+      "label": "Phone"
+     },
+     {
+      "id": "price",
+      "label": "Price",
+      "kind": "currency",
+      "unit": "₹",
+      "align": "right"
+     },
+     {
+      "id": "camera",
+      "label": "Camera",
+      "kind": "bar",
+      "max": 100
+     }
     ],
-    "highlight": {
-     "row": 0
-    },
     "rows": [
-     [
-      "Pixel 10a",
-      "₹44,999",
-      "Best in class"
-     ],
-     [
-      "Nothing 4",
-      "₹39,999",
-      "OK"
-     ]
+     {
+      "cells": {
+       "phone": {
+        "text": "Pixel 10a"
+       },
+       "price": {
+        "value": 44999
+       },
+       "camera": {
+        "value": 92
+       }
+      },
+      "sources": [
+       {
+        "label": "GSMArena",
+        "url": "https://www.gsmarena.com/pixel_10a"
+       }
+      ]
+     },
+     {
+      "cells": {
+       "phone": {
+        "text": "Nothing 4"
+       },
+       "price": {
+        "value": 39999
+       },
+       "camera": {
+        "value": 78
+       }
+      }
+     }
+    ],
+    "filterable": true,
+    "page": 1,
+    "aggregates": [
+     {
+      "column": "price",
+      "op": "avg",
+      "label": "Average"
+     }
     ]
    }
   },

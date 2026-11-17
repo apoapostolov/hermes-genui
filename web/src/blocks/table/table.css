@@ -76,3 +76,23 @@
 .hb-table td.hb-table-empty { color: var(--hb-muted); font-weight: 400; text-align: center; }
 @media (prefers-reduced-motion: reduce) { .hb-sort { transition: none; } }
 .hb-section .hb-table-card { background: none; border: 0; }
+/* Structured tables: typed columns, local filter, pages, aggregates and source chips. */
+.hb-table-structured .hb-table-grid { width: 100%; border-collapse: collapse; font-size: 13px; }
+.hb-table-structured th, .hb-table-structured td { padding: 7px 10px; border-bottom: 1px solid var(--hb-line); text-align: left; vertical-align: top; }
+.hb-table-structured th { color: var(--hb-ink-2); font-size: 11.5px; font-weight: 700; }
+.hb-table-structured .hb-align-right { text-align: right; font-variant-numeric: tabular-nums; }
+.hb-table-structured .hb-align-center { text-align: center; }
+.hb-table-structured tfoot td { color: var(--hb-ink-2); font-weight: 600; border-top: 1px solid var(--hb-line-strong); }
+.hb-table-aggregate-label { color: var(--hb-muted); font-size: 11px; font-weight: 400; }
+.hb-table-sources { display: flex; flex-wrap: wrap; gap: 3px 8px; }
+.hb-table-sources a { color: var(--hb-accent-ink); text-decoration: underline; text-underline-offset: 2px; }
+.hb-table-source-hint { margin-left: 4px; color: var(--hb-muted); }
+.hb-table-bar { display: flex; align-items: center; gap: 6px; min-width: 90px; }
+.hb-table-bar-fill { display: block; flex: 1 1 auto; height: 6px; border-radius: 999px; background: var(--hb-accent); }
+.hb-table-bar-value { flex: none; font-variant-numeric: tabular-nums; }
+.hb-table-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; }
+.hb-table-tools input { min-width: 140px; max-width: 240px; padding: 5px 9px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); font: inherit; font-size: 12px; }
+.hb-table-tools input:focus-visible, .hb-table-pages button:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }
+.hb-table-pages { display: flex; align-items: center; gap: 8px; color: var(--hb-muted); font-size: 11.5px; }
+.hb-table-pages button { min-width: 26px; min-height: 26px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); cursor: pointer; }
+.hb-table-pages button:disabled { opacity: 0.4; cursor: default; }

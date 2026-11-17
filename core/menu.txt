@@ -8,7 +8,7 @@ Judgment
 Data
 - chart: a trend, comparison or parts of a whole (line, bar, hbar, area, stacked, combo, pie, donut). 2-3 items on several metrics: a table instead.
 - kpis: 2-4 headline numbers with change and trend; the top of a report.
-- table: options compared on the same attributes (phones, plans, hotels).
+- table: options compared on the same attributes, or typed records with filter, pages and sources (phones, plans, hotels).
 - heatmap: a grid shaded by value (sectors by quarter, habits by weekday).
 - list: ranked or plain rows with title, subtitle, value (top picks, results).
 - progress: a value on a track to a goal (savings, training), or a budget split by category.
