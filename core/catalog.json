@@ -481,7 +481,7 @@
    "kind": "upnext",
    "for": "What's coming, as illustrated cards.",
    "use_when": "Upcoming events, bills, deliveries, birthdays.",
-   "fields": "items 1-12: [{date: YYYY-MM-DD, title, kind: birthday | bill | travel | delivery | meeting | medical | meal | school | general, time, amount, ask}].",
+   "fields": "items 1-12: [{date: YYYY-MM-DD, title, kind: birthday|bill|travel|delivery|meeting|medical|meal|school|general, time, amount, ask}].",
    "example": {
     "type": "upnext",
     "items": [
@@ -572,7 +572,7 @@
    "kind": "simulate",
    "for": "A formula played over time, as dots or a line that draws itself.",
    "use_when": "A quantity over time; never this maths in text.",
-   "fields": "title. t: {name, to, step, unit, speed}. inputs ≤4: calculator sliders, by name. values: {name: number}. view: {kind: dots | chart, per: amount a dot is, start, piles 1-3: [{name, formula (as calculator), adds}]}. unit. source.",
+   "fields": "title. t: {name, to, step, unit, speed}. inputs ≤4: calculator sliders, by name. values: {name: number}. view: {kind: dots | chart, per, start, piles 1-3: [{name, formula, adds}]}. unit. source.",
    "example": {
     "type": "simulate",
     "t": {

@@ -28,6 +28,35 @@ describe("table reader", () => {
   });
 });
 
+describe("structured table reader", () => {
+  it("reads typed columns, object rows, sources and aggregates", () => {
+    const r = readBlocksNoted([{ type: "table", caption: "Spend", columns: [
+      { id: "shop", label: "Shop" },
+      { id: "spend", label: "Spend", kind: "currency", unit: "₹" },
+      { id: "share", label: "Share", kind: "percent" },
+      { id: "from", label: "From", kind: "sources" },
+    ], rows: [
+      { shop: "A", spend: 1200, share: 40, sources: [{ label: "POS", url: "https://example.org/a" }] },
+      { shop: "B", spend: 1800, share: 60, from: "Manual" },
+    ], filterable: true, aggregates: [{ column: "spend", op: "sum" }] }]);
+    expect(r.dropped).toEqual([]);
+    const block = r.blocks[0] as any;
+    expect(block.structured).toBe(true);
+    expect(block.columns.map((c: any) => c.kind)).toEqual(["text", "currency", "percent", "sources"]);
+    expect(block.rows[0].sources).toEqual([{ label: "POS", url: "https://example.org/a" }]);
+    expect(block.rows[1].sources).toEqual([{ label: "Manual" }]);
+    expect(block.filterable).toBe(true);
+    expect(block.aggregates).toEqual([{ column: "spend", op: "sum", label: "Spend" }]);
+  });
+  it("drops non-http source links and keeps an unknown kind as text", () => {
+    const r = readBlocksNoted([{ type: "table", columns: [{ id: "a", label: "A", kind: "magic" }],
+      rows: [{ a: "x", sources: [{ label: "Bad", url: "javascript:alert(1)" }] }] }]);
+    const block = r.blocks[0] as any;
+    expect(block.columns[0].kind).toBe("text");
+    expect(block.rows[0].sources).toEqual([{ label: "Bad" }]);
+  });
+});
+
 describe("table sorting", () => {
   it("reads the number a cell starts with", () => {
     expect(cellNumber("₹44,999")).toBe(44999);

@@ -167,6 +167,23 @@ def test_table_rows_as_objects_and_short_rows():
     assert out.splitlines()[2:] == ["| 1 | 2.5 |", "| x |  |"]
 
 
+def test_structured_table_reads_as_markdown_with_footer():
+    out = render({"type": "table", "caption": "Spend", "columns": [
+        {"id": "shop", "label": "Shop"}, {"id": "spend", "label": "Spend", "kind": "currency", "unit": "$"},
+        {"id": "share", "label": "Share", "kind": "percent"}, {"id": "from", "label": "From", "kind": "sources"}],
+        "rows": [{"cells": {"shop": {"text": "A"}, "spend": {"text": "1200", "value": 1200},
+                            "share": {"text": "40", "value": 40}},
+                  "sources": [{"label": "POS"}, {"label": "Bank"}]}],
+        "aggregates": [{"column": "spend", "op": "sum", "label": "Spend"}]})
+    assert out == (
+        "**Spend**\n"
+        "| Shop | Spend | Share | From |\n"
+        "| --- | --- | --- | --- |\n"
+        "| A | $1,200 | 40% | POS, Bank |\n"
+        "_Spend: 1,200_"
+    )
+
+
 def test_heatmap_is_a_compact_table():
     out = render(EXAMPLES["heatmap"])
     assert out == (

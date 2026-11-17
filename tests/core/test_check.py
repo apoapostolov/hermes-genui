@@ -134,6 +134,17 @@ def test_table_limits():
     assert check_blocks([wide]) == ["0: a table holds at most 8 columns"]
 
 
+def test_structured_table_is_checked():
+    good = {"type": "table", "filterable": True,
+            "columns": [{"id": "shop", "label": "Shop"}, {"id": "spend", "label": "Spend", "kind": "currency"}],
+            "rows": [{"cells": {"shop": {"text": "A"}, "spend": {"text": "1200", "value": 1200}}}],
+            "aggregates": [{"column": "spend", "op": "sum"}]}
+    assert check_blocks([good]) == []
+    assert check_blocks([{**good, "page": 12}]) == ["0: page must be 1 to 10"]
+    assert check_blocks([{**good, "columns": [{"id": "shop", "label": "Shop", "kind": "magic"}]}]) == [
+        "0.columns.0: unknown column kind"]
+
+
 def test_columns_hold_two_or_three_wide_blocks():
     chart = {"type": "chart", "kind": "line", "x": ["a", "b"], "series": [{"data": [1, 2]}]}
     table = {"type": "table", "columns": ["A"], "rows": [["x"]]}

@@ -73,3 +73,44 @@ describe("Table", () => {
     expect(screen.getByText("No rows to show.")).toBeTruthy();
   });
 });
+
+describe("structured table", () => {
+  const spend = () => readBlocks([{ type: "table", caption: "Spend", filterable: true, columns: [
+    { id: "shop", label: "Shop" },
+    { id: "spend", label: "Spend", kind: "currency", unit: "$" },
+    { id: "share", label: "Share", kind: "percent" },
+    { id: "from", label: "From", kind: "sources" },
+    { id: "rank", label: "Rank", kind: "bar", max: 10 },
+  ], rows: [
+    { shop: "A", spend: 1200, share: 40, sources: [{ label: "POS", url: "https://example.org/a" }], rank: 8 },
+    { shop: "B", spend: 1800, share: 60, from: "Manual", rank: 10 },
+  ], aggregates: [{ column: "spend", op: "sum" }] }]);
+
+  it("formats typed cells, sources and the aggregate footer", () => {
+    pinLocale("en-US");
+    const { container } = render(<Blocks blocks={spend()} />);
+    expect(screen.getAllByText("Spend").length).toBeGreaterThan(0);
+    expect(screen.getByText("$1,200")).toBeTruthy();
+    expect(screen.getByText("40%")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "POS" }).getAttribute("href")).toBe("https://example.org/a");
+    expect(container.querySelector("tfoot")!.textContent).toContain("3,000");
+    expect(container.querySelector(".hb-table-bar-fill")!.getAttribute("style")).toContain("80%");
+  });
+
+  it("filters rows", () => {
+    pinLocale("en-US");
+    render(<Blocks blocks={spend()} />);
+    fireEvent.change(screen.getByRole("searchbox", { name: "Filter rows" }), { target: { value: "Manual" } });
+    expect(screen.queryByText("$1,200")).toBeNull();
+    expect(screen.getByText("$1,800")).toBeTruthy();
+  });
+
+  it("pages after ten rows", () => {
+    pinLocale("en-US");
+    const rows = Array.from({ length: 12 }, (_, i) => ({ shop: `S${i}`, spend: i + 1 }));
+    render(<Blocks blocks={readBlocks([{ type: "table", columns: [{ id: "shop", label: "Shop" }, { id: "spend", label: "Spend", kind: "number" }], rows }])} />);
+    expect(screen.getByText("Page 1 of 2")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+    expect(screen.getByText("S10")).toBeTruthy();
+  });
+});
