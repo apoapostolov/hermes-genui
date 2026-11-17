@@ -94,6 +94,17 @@ def test_chart_tone_is_change_on_a_line_chart_only():
     assert check_blocks([{**chart_with(two), "tone": "change"}]) == ['0: tone "change" is for a one-series line chart']
 
 
+def test_chart_drawing_controls_are_checked():
+    rising = [{"name": "Close", "data": [1, 2]}]
+    assert check_blocks([{**chart_with(rising), "stepped": True, "height": 240}]) == []
+    assert check_blocks([{**chart_with(rising), "stepped": False}]) == ['0: stepped can only be true']
+    assert check_blocks([{**chart_with(rising, kind="bar"), "stepped": True}]) == [
+        '0: stepped is for a line or combo chart']
+    assert check_blocks([{**chart_with(rising, kind="bar"), "sortDesc": True}]) == []
+    assert check_blocks([{**chart_with(rising), "sortDesc": True}]) == ['0: sortDesc is for a bar chart']
+    assert check_blocks([{**chart_with(rising), "height": 100}]) == ['0: height must be 120 to 480']
+
+
 def test_kpi_trend_is_2_to_60_numbers():
     def kpis(trend: object) -> dict:
         return {"type": "kpis", "items": [{"label": "Close", "value": 3100},

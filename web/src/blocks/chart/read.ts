@@ -44,7 +44,24 @@ function readSpec(d: any): ChartSpec | null {
     series, unit, source: typeof d.source === "string" ? d.source : undefined };
   if (typeof d.figure === "boolean") spec.figure = d.figure;
   if (d.tone === "change") spec.tone = "change";
+  if (d.stepped === true) spec.stepped = true;
+  if (typeof d.height === "number" && isFinite(d.height)) spec.height = Math.round(Math.min(480, Math.max(120, d.height)));
+  if (d.sortDesc === true && type === "bar") sortByFirstSeries(spec);
   return spec;
+}
+
+/** Reorder a bar chart's columns by the first series, largest first; gaps go last. */
+function sortByFirstSeries(spec: ChartSpec): void {
+  const values = spec.series[0]?.data ?? [];
+  const order = spec.x.map((_, i) => i).sort((a, b) => {
+    const av = values[a] ?? null, bv = values[b] ?? null;
+    if (av === null && bv === null) return a - b;
+    if (av === null) return 1;
+    if (bv === null) return -1;
+    return bv - av || a - b;
+  });
+  spec.x = order.map((i) => spec.x[i]);
+  spec.series = spec.series.map((s) => ({ ...s, data: order.map((i) => s.data[i] ?? null) }));
 }
 
 /** One series as written → its name, its numbers (anything else a gap), its own unit, and which scale it uses. */

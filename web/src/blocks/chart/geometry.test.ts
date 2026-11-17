@@ -55,6 +55,9 @@ describe("linePath", () => {
     const pts = Array.from({ length: 13 }, (_, i) => [i * 10, i % 2 ? 5 : 15] as [number, number]);
     expect(linePath(pts)).toContain("C");
   });
+  it("holds each value until the next label when stepped", () => {
+    expect(linePath([[0, 10], [5, 20], [10, 15]], true)).toBe("M0,10L5,10L5,20L10,20L10,15");
+  });
 });
 
 describe("spreadLabels", () => {
