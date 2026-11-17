@@ -44,6 +44,7 @@ Register the type in the `Block` union and in `web/src/registry.tsx` too. `regis
 ### Tone, focus, motion, layers
 
 - Map meaning to the three semantic tones. Do not encode status with a new colour or with colour alone. Pair a status colour with a sign, glyph or word.
+- A change chip is data, not a new control. The reader computes it once from `previous`, and the card renders only the arrow, number and unit. `invert_tone` swaps the two semantic tones on the existing direction classes when a fall is good news. The arrow still carries direction, and the text fallback prints the same number and rounding.
 - Every interactive element gets `outline: 2px solid var(--hb-accent)` on `:focus-visible`. Offset is 2px for a raised control, -2px for a control that fills its row, 1px for a dense grid cell, 4px around a focusable chart drawing. A hover affordance must have a focus counterpart.
 - Hover changes a background, border or opacity, not size. Rows and options use `--hb-well` or a soft accent wash. The one lift-and-press exception is `tiles`.
 - Reuse `hb-appear` and `hb-grow`. Keep colour transitions at 0.15s with `cubic-bezier(0.2, 0.8, 0.2, 1)`. Add a `prefers-reduced-motion: reduce` rule in any stylesheet that animates, and ask `lessMotion()` before starting JavaScript animation.

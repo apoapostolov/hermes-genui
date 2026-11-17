@@ -11,6 +11,7 @@ This tracks the rich-ui port work in [sagarmainkar/hermes-genui](https://github.
 | [#20](https://github.com/sagarmainkar/hermes-genui/pull/20) | [#11](https://github.com/sagarmainkar/hermes-genui/issues/11) | Generated image provenance and gallery | Open | green |
 | [#29](https://github.com/sagarmainkar/hermes-genui/pull/29) | [#24](https://github.com/sagarmainkar/hermes-genui/issues/24) | Chart caveat and axis captions | Open | green |
 | [#30](https://github.com/sagarmainkar/hermes-genui/pull/30) | [#25](https://github.com/sagarmainkar/hermes-genui/issues/25) | Ranked bars in `list` | Open | green |
+| [#31](https://github.com/sagarmainkar/hermes-genui/pull/31) | [#23](https://github.com/sagarmainkar/hermes-genui/issues/23) | KPI change from `previous`, cost tone inversion | Open | pending |
 
 ## Remaining port queue
 
@@ -18,13 +19,12 @@ Ordered by estimated implementation cost. A row becomes a PR row above when its 
 
 | Order | Issue | Scope | UI bible aspect to add when it lands |
 | --- | --- | --- | --- |
-| 1 | [#23](https://github.com/sagarmainkar/hermes-genui/issues/23) | KPI and stat change from `previous`, cost tone inversion | Semantic direction on a compact chip, and when inversion belongs to the data rather than the control |
-| 2 | [#27](https://github.com/sagarmainkar/hermes-genui/issues/27) | Checklist item states, owner and note | State markers beside an existing checkbox row, and a computed current pointer without a new control |
-| 3 | [#17](https://github.com/sagarmainkar/hermes-genui/issues/17) | Progress shapes, thresholds and segments | Shape variants of one value, status colour paired with text, and segmented tracks alongside plain tracks |
-| 4 | [#21](https://github.com/sagarmainkar/hermes-genui/issues/21) | Scatter and waterfall chart kinds | New marks inside the chart frame, and how a mark joins the existing series and legend contract |
-| 5 | [#26](https://github.com/sagarmainkar/hermes-genui/issues/26) | Histogram and range chart kinds | Binned and band marks inside the chart frame, with the same axis and hover contract |
-| 6 | [#28](https://github.com/sagarmainkar/hermes-genui/issues/28) | Accessible names and roles across blocks | One naming ladder across blocks and where a dedicated role changes an existing drawing |
-| 7 | [#22](https://github.com/sagarmainkar/hermes-genui/issues/22) | `null` means unknown, never 0 | Gap rendering, zero rendering and unknown rendering as one cross-block rule |
+| 1 | [#27](https://github.com/sagarmainkar/hermes-genui/issues/27) | Checklist item states, owner and note | State markers beside an existing checkbox row, and a computed current pointer without a new control |
+| 2 | [#17](https://github.com/sagarmainkar/hermes-genui/issues/17) | Progress shapes, thresholds and segments | Shape variants of one value, status colour paired with text, and segmented tracks alongside plain tracks |
+| 3 | [#21](https://github.com/sagarmainkar/hermes-genui/issues/21) | Scatter and waterfall chart kinds | New marks inside the chart frame, and how a mark joins the existing series and legend contract |
+| 4 | [#26](https://github.com/sagarmainkar/hermes-genui/issues/26) | Histogram and range chart kinds | Binned and band marks inside the chart frame, with the same axis and hover contract |
+| 5 | [#28](https://github.com/sagarmainkar/hermes-genui/issues/28) | Accessible names and roles across blocks | One naming ladder across blocks and where a dedicated role changes an existing drawing |
+| 6 | [#22](https://github.com/sagarmainkar/hermes-genui/issues/22) | `null` means unknown, never 0 | Gap rendering, zero rendering and unknown rendering as one cross-block rule |
 
 ## Definition of done for each row
 
