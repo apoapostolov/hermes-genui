@@ -79,6 +79,11 @@ hermes gateway restart                                       # loads the plugin'
 
 Already have it? `hermes plugins update hermes-genui`, then `hermes gateway restart`.
 
+> [!NOTE]
+> **Several profiles?** Install it in the **default** profile as well as the profiles you use it in. With the plugin
+> in two or more profiles but not in the default one, Hermes Desktop can keep reloading it
+> ([why](#%EF%B8%8F-troubleshooting)).
+
 Prefer clicking? In Hermes Desktop, open **Capabilities → Plugins → Install from Git** and enter
 `sagarmainkar/hermes-genui`, then run the second and third lines above.
 
@@ -425,6 +430,7 @@ Found a security issue? Please see [SECURITY.md](SECURITY.md).
 | "This page isn't in this profile…" | Switch back to the profile the page was made in, or ask Hermes to make it here. |
 | Today says nothing needs you, right after setup | The first check is still running. Look under **Scheduled jobs → Personal assistant check**, or say *Run the assistant's check now*. |
 | "Couldn't load this block" | Run `hermes gateway restart` after installing or updating. If it's one reply in an otherwise working chat, the model wrote a tag without drawing: ask *"draw it with blocks"*. |
+| Hermes Desktop flickers, or an open page closes by itself after a few seconds | A Hermes bug when the plugin is installed in two or more profiles but not in the default one: Desktop and the gateway each copy the plugin's drawing half from a different profile, so it is replaced and reloaded every few seconds. Install the plugin in the default profile too (`hermes plugins install sagarmainkar/hermes-genui --enable`), then reload Desktop. |
 | A board arrives as text | You're outside Hermes Desktop and the Webapp (Telegram, the CLI), which is by design. In Desktop, check the plugin's **Desktop** switch. |
 | "workspace failed to render: Can't find variable: requestIdleCallback" | A Hermes bug ([hermes-agent#148538](https://github.com/NousResearch/hermes-agent/issues/148538)) in Safari and in every browser on iPhone and iPad. On a Mac, use the [Safari workaround](#safari-on-a-mac). On iPhone or iPad the Webapp [doesn't work yet](#iphone-and-ipad). |
 | A literal `::blocks{id="…"}` line, in the Hermes dashboard | The dashboard draws nothing and reports itself as `local`, like Desktop, so the Markdown fallback is skipped too. Open the chat in Hermes Desktop or the Webapp, or ask for a Markdown table. |
