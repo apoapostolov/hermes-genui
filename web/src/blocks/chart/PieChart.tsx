@@ -1,7 +1,7 @@
 // Pie and donut: shares of a whole, with a legend beside the drawing (below it when the chart is narrower than 440px)
 // listing each slice's name, value and share, so no label is squeezed onto a slice.
 import { useRef, useState } from "react";
-import { fmt, partColour, seriesName, shareNote, sharePct, type ChartSpec } from "./chartData";
+import { chartLabel, fmt, partColour, seriesName, shareNote, sharePct, type ChartSpec } from "./chartData";
 import { ChartTip, type Tip } from "./ChartTip";
 import { pickKeys } from "./pick";
 
@@ -98,7 +98,7 @@ export function PieChart({ spec }: { spec: ChartSpec }) {
       )}
       <div className="hb-pie-body">
         <svg ref={svg} width={BOX} height={BOX} viewBox={`0 0 ${BOX} ${BOX}`} className="hb-pie-svg" role="img"
-          aria-label={spec.title ?? "chart"} {...pickKeys(values.length, picked, pick)}>
+          aria-label={chartLabel(spec)} {...pickKeys(values.length, picked, pick)}>
           {slices.map((s, i) => (
             <path key={i} d={slicePath(s.start, s.end, hole)} fill={sliceColour(String(spec.x[i]), i)} opacity={faded(i)}
               className="hb-slice" onClick={() => toggle(i)} onPointerEnter={mouse(i)} onPointerLeave={mouse(null)} />
@@ -124,6 +124,7 @@ export function PieChart({ spec }: { spec: ChartSpec }) {
         </table>
         <ChartTip tip={tip} />
       </div>
+      {spec.caveat && <div className="hb-chart-caveat">{spec.caveat}</div>}
       {spec.source && <div className="hb-chart-source">{spec.source}</div>}
     </figure>
   );
