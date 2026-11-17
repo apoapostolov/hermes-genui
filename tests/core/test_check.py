@@ -19,7 +19,7 @@ def test_every_catalog_example_is_valid(entry):
 
 
 def test_unknown_type():
-    assert check_blocks([{"type": "weather"}]) == ['0: unknown type "weather"']
+    assert check_blocks([{"type": "sundial"}]) == ['0: unknown type "sundial"']
 
 
 def test_not_an_object():
@@ -318,6 +318,14 @@ def test_tabs_hold_two_to_six_labelled_tabs_of_blocks():
         "0.tabs.3: tab needs children",
         "0.tabs.4: tab is not an object",
     ]
+
+
+def test_a_tab_may_carry_a_count_badge():
+    one, two = {"label": "Bills", "children": [TEXT], "badge": 4}, {"label": "Done", "children": [TEXT]}
+    assert check_blocks([tabs_of(one, two)]) == []
+    for bad in (0, -1, 1000, 2.5, "4", True):
+        assert check_blocks([tabs_of({**one, "badge": bad}, two)]) == [
+            "0.tabs.0: a tab's badge is a whole number from 1 to 999"], bad
 
 
 def test_a_tab_holds_any_blocks_read_as_if_at_the_top_level():
@@ -674,3 +682,13 @@ def test_step_holds_send_and_tick_are_checked_strictly():
         "0.items.6: tick is a whole number from 1 to 20",
         '0.items.7: holds maps node ids to chips: {"embed": ["a vector"]}, at most 10 nodes',
     ]
+
+
+def test_checklist_items_may_carry_unique_short_ids():
+    ok = [{"type": "checklist", "items": [{"text": "Pay Xfinity", "id": "a1b2c3d4"},
+                                          {"text": "Reply to Emma", "id": "e5"}]}]
+    assert check_blocks(ok) == []
+    dup = [{"type": "checklist", "items": [{"text": "A", "id": "x"}, {"text": "B", "id": "x"}]}]
+    assert check_blocks(dup) == ["0.items.1: item id is used twice"]
+    long = [{"type": "checklist", "items": [{"text": "A", "id": "x" * 41}]}]
+    assert check_blocks(long) == ["0.items.0: item id is plain text up to 40 characters"]

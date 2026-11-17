@@ -3,6 +3,8 @@
 import { host, TRANSCRIPT_DIRECTIVE_AREA } from "@hermes/plugin-sdk";
 import { BlockActions, composerActions, type Rest } from "./host/actions";
 import { BlockTag } from "./host/BlockTag";
+import { registerLive } from "./live/register";
+import { openAndFill } from "./live/open";
 import css from "./styles";
 
 const ID = "hermes-genui";
@@ -41,5 +43,9 @@ export default {
         ),
       },
     });
+    // The plugin's pages: Today, an assembled dashboard, and each kept dashboard.
+    // A tap on a page opens a chat first: a page has no message box.
+    const open = (text: string) => void openAndFill(text, host ?? {});
+    registerLive(ctx, open);
   },
 };

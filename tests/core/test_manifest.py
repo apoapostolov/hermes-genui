@@ -35,9 +35,9 @@ def test_read_fields_takes_top_level_lines_only():
 
 def test_name_version_and_homepage_come_from_plugin_yaml():
     assert manifest.NAME == top_level("name") == "hermes-genui"
-    assert manifest.VERSION == top_level("version").strip('"') == "0.2.0"
+    assert manifest.VERSION == top_level("version").strip('"') == "0.3.0"
     assert manifest.HOMEPAGE == top_level("homepage") == "https://github.com/sagarmainkar/hermes-genui"
-    assert manifest.USER_AGENT == "hermes-genui/0.2.0 (+https://github.com/sagarmainkar/hermes-genui)"
+    assert manifest.USER_AGENT == "hermes-genui/0.3.0 (+https://github.com/sagarmainkar/hermes-genui)"
 
 
 def test_the_toolset_follows_the_name():

@@ -33,3 +33,10 @@ describe("checklist", () => {
     expect(one({ type: "checklist", items: [] }).dropped).toEqual([{ path: "0", why: "checklist has no item with text" }]);
   });
 });
+
+describe("checklist item ids", () => {
+  it("keeps an item's id, so a tick can follow the item", () => {
+    const read = one({ type: "checklist", items: [{ text: "Pay Xfinity", id: "a1b2" }, "Reply to Emma"] }).blocks[0];
+    expect((read as { items: unknown[] }).items).toEqual([{ text: "Pay Xfinity", id: "a1b2" }, { text: "Reply to Emma" }]);
+  });
+});

@@ -22,6 +22,15 @@ describe("tabs", () => {
     expect(screen.getByRole("tabpanel").textContent).toContain("First view");
     expect(screen.queryByText("Second view")).toBeNull();
   });
+  it("shows a tab's count badge and says it to screen readers", () => {
+    render(<Blocks blocks={readBlocks([{ type: "tabs", tabs: [
+      { label: "Bills", badge: 4, children: [{ type: "text", text: "a" }] },
+      { label: "Done", children: [{ type: "text", text: "b" }] },
+    ] }])} />);
+    const bills = screen.getByRole("tab", { name: "Bills, 4 open" });
+    expect(bills.querySelector(".hb-tab-badge")?.textContent).toBe("4");
+    expect(screen.getByRole("tab", { name: "Done" }).querySelector(".hb-tab-badge")).toBeNull();
+  });
   it("switches on click: the other tab's content shows and the first's is gone", () => {
     render(<Blocks blocks={board} />);
     fireEvent.click(screen.getByRole("tab", { name: "Risks" }));

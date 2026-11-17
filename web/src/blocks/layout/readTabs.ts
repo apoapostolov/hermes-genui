@@ -3,16 +3,18 @@ import { firstList, firstText, keepFirst, type Trail } from "../../core/fields";
 import type { ReadChild } from "../../core/types";
 import type { Block } from "../../registry";
 
-export type Tab = { label: string; children: Block[] };
+export type Tab = { label: string; children: Block[]; badge?: number };
 export type TabsBlock = { type: "tabs"; tabs: Tab[] };
 
 const MAX_TABS = 6;
 const MAX_LABEL = 30;
+const MAX_BADGE = 999;
 
 /**
  * tabs → the tabs block, or one tab's children in its place, or nothing.
- * - tabs (also `items`): [{label (also `title`; cut to 30), children (also `items`, `blocks`, `content`)}]. A tab's
- *   children are read as if at the top level, so columns and sections work inside one.
+ * - tabs (also `items`): [{label (also `title`; cut to 30), children (also `items`, `blocks`, `content`), badge}]. A
+ *   tab's children are read as if at the top level, so columns and sections work inside one. `badge` is an optional
+ *   count shown beside the label: a whole number from 1 to 999, else left off.
  * - A tab without a label, or with no child that can be drawn, is dropped (noted). At most 6 tabs (the rest noted).
  * - One usable tab left: its children are drawn in place. None: the tabs are dropped.
  * - Not at the top level (inside a container, or inside another tab): flattened, drawing the first usable tab's
@@ -55,7 +57,8 @@ function readTab(item: any, here: Trail, depth: number, readChild: ReadChild): T
   if (!label) return here.drop("tab needs a label");
   const children = readTabChildren(firstList([item.children, item.items, item.blocks, item.content]) ?? [], here, depth, readChild);
   if (!children.length) return here.drop("tab has no children it can draw");
-  return { label, children };
+  const badge = item.badge;
+  return Number.isInteger(badge) && badge >= 1 && badge <= MAX_BADGE ? { label, children, badge } : { label, children };
 }
 
 /** A tab's children, read at the tab's depth (0 at the top level, so columns and sections are drawn). A tabs block

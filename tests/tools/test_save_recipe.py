@@ -39,7 +39,7 @@ def test_a_good_recipe_is_handed_to_hermes(saved):
     ({"name": "monthly-review", "markdown": recipe(name="other-name")}, "frontmatter name"),
     ({"name": "monthly-review", "markdown": recipe(description="short")}, "description"),
     ({"name": "monthly-review", "markdown": recipe().replace("```json", "```text")}, "JSON layout example"),
-    ({"name": "monthly-review", "markdown": recipe(layout=[{"type": "weather"}])}, 'unknown type "weather"'),
+    ({"name": "monthly-review", "markdown": recipe(layout=[{"type": "sundial"}])}, 'unknown type "sundial"'),
     ({"name": "monthly-review", "markdown": recipe(extra="Use ::preview{file=x.html} for this.")}, "::preview"),
     ({"name": "monthly-review", "markdown": recipe(extra="<script>alert(1)</script>")}, "HTML"),
     ({"name": "monthly-review", "markdown": recipe(extra="x" * 13_000)}, "too long"),

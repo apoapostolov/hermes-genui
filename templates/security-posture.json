@@ -1,0 +1,12 @@
+{
+ "name": "Security posture",
+ "about": "Where the risk is: findings, exposure, detections, compliance.",
+ "best_for": "vulnerability management, exposure and EDR tools; a CRM adds which customers are affected",
+ "cover": [
+  "open findings by severity",
+  "the most exposed assets and accounts",
+  "detections and open incidents",
+  "compliance pass rates by framework",
+  "the one host or account to act on (a verdict)"
+ ]
+}

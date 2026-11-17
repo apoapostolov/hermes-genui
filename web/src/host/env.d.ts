@@ -8,6 +8,7 @@ declare module "@hermes/plugin-sdk" {
       insertText(sessionId: string | null, text: string, opts?: { mode?: "block" | "inline" | "prefix" }): Promise<boolean>;
       focus(sessionId: string | null): void;
     };
+    navigate?: (path: string) => void;
   };
 }
 

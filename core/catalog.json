@@ -419,7 +419,7 @@
    "kind": "tiles",
    "for": "2-8 cover cards.",
    "use_when": "Choices to explore.",
-   "fields": "items: [{title, subtitle, image, icon, ask: fills the composer | run: sends}]. No ask/run: a static card, only for pure facts.",
+   "fields": "items: [{title, subtitle: a few words, image, icon, ask: fills the composer | run: sends}]. No ask/run: a static card, only for pure facts.",
    "example": {
     "type": "tiles",
     "items": [
@@ -451,6 +451,61 @@
       "group": "Papers"
      }
     ]
+   }
+  },
+  {
+   "kind": "calendar",
+   "for": "A day at a glance: big date, its events, the week.",
+   "use_when": "Today, a day's plan or agenda.",
+   "fields": "date: YYYY-MM-DD. events ≤12: [{title, start: \"09:30\", end, place}]. week ≤7: [{date, count}]. ask: fills the composer.",
+   "example": {
+    "type": "calendar",
+    "date": "2026-11-14",
+    "events": [
+     {
+      "title": "Standup",
+      "start": "09:30",
+      "place": "Zoom"
+     }
+    ],
+    "week": [
+     {
+      "date": "2026-11-14",
+      "count": 1
+     }
+    ],
+    "ask": "What's on today?"
+   }
+  },
+  {
+   "kind": "upnext",
+   "for": "What's coming, as illustrated cards.",
+   "use_when": "Upcoming events, bills, deliveries, birthdays.",
+   "fields": "items 1-12: [{date: YYYY-MM-DD, title, kind: birthday | bill | travel | delivery | meeting | medical | meal | school | general, time, amount, ask}].",
+   "example": {
+    "type": "upnext",
+    "items": [
+     {
+      "date": "2026-11-17",
+      "title": "Emma's birthday",
+      "kind": "birthday",
+      "time": "08:00"
+     }
+    ]
+   }
+  },
+  {
+   "kind": "weather",
+   "for": "Weather now: temperature, sky, high, low.",
+   "use_when": "Top of a day or trip.",
+   "fields": "temp. place. condition. high, low.",
+   "example": {
+    "type": "weather",
+    "temp": 17,
+    "place": "Pune",
+    "condition": "Cloudy",
+    "high": 30,
+    "low": 16
    }
   },
   {

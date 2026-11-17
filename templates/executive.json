@@ -1,0 +1,12 @@
+{
+ "name": "Executive",
+ "about": "The business at a glance: revenue, pipeline, risk, the accounts to watch.",
+ "best_for": "CRM, billing or a data warehouse; security tools add risk",
+ "cover": [
+  "revenue and growth (MRR) over the last year",
+  "pipeline by stage and what's closing",
+  "accounts at risk, and why",
+  "support load and SLA breaches",
+  "the one thing to act on (a verdict)"
+ ]
+}

@@ -10,7 +10,13 @@ import {
 } from "./blocks/atoms/read";
 import { Calculator } from "./blocks/calculator/Calculator";
 import { readCalculator, type CalculatorBlock } from "./blocks/calculator/read";
+import { Calendar } from "./blocks/calendar/Calendar";
+import { readCalendar, type CalendarBlock } from "./blocks/calendar/read";
 import { Callout } from "./blocks/callout/Callout";
+import { UpNext } from "./blocks/upnext/UpNext";
+import { readUpNext, type UpNextBlock } from "./blocks/upnext/read";
+import { Weather } from "./blocks/weather/Weather";
+import { readWeather, type WeatherBlock } from "./blocks/weather/read";
 import { readCallout, type CalloutBlock } from "./blocks/callout/read";
 import { Chart } from "./blocks/chart/Chart";
 import { readChart, type ChartBlock } from "./blocks/chart/read";
@@ -51,6 +57,12 @@ import { Table } from "./blocks/table/Table";
 import { readTiles, type TilesBlock } from "./blocks/tiles/read";
 import { Tiles } from "./blocks/tiles/Tiles";
 import { readTimeline, type TimelineBlock } from "./blocks/timeline/read";
+import { Briefing } from "./blocks/briefing/Briefing";
+import { readBriefing, type BriefingBlock } from "./blocks/briefing/read";
+import { Prepared } from "./blocks/prepared/Prepared";
+import { readPrepared, type PreparedBlock } from "./blocks/prepared/read";
+import { readTracker, type TrackerBlock } from "./blocks/tracker/read";
+import { Tracker } from "./blocks/tracker/Tracker";
 import { Timeline } from "./blocks/timeline/Timeline";
 import type { BlockEntry } from "./core/types";
 
@@ -58,9 +70,12 @@ import type { BlockEntry } from "./core/types";
 export type Block =
   | ChartBlock | KpisBlock | SourceBlock | TimelineBlock | ImagesBlock | CalloutBlock | TableBlock
   | ListBlock | ProgressBlock | StreakBlock | HeatmapBlock | FlipBlock | FlowBlock | StepsBlock | LayersBlock
-  | ActionsBlock | TilesBlock | ChecklistBlock | CalculatorBlock | SimulateBlock | FormBlock
+  | ActionsBlock | TilesBlock | ChecklistBlock | CalendarBlock | UpNextBlock | WeatherBlock | CalculatorBlock | SimulateBlock | FormBlock
   | HeadingBlock | TextBlock | StatBlock | DividerBlock | BadgeBlock | ButtonBlock | LinkBlock | ImageBlock | BarBlock
-  | ContainerBlock | TabsBlock;
+  | ContainerBlock | TabsBlock | BriefingBlock | TrackerBlock | PreparedBlock;
+
+/** The Today page's own blocks: drawn from the plugin's data, never offered to the model (not in the catalog). */
+export const PAGE_KINDS = ["briefing", "tracker", "prepared"] as const;
 
 type Registry = { [K in Block["type"]]: BlockEntry<Extract<Block, { type: K }>> };
 
@@ -72,6 +87,12 @@ export const REGISTRY: Registry = {
   timeline: { read: readTimeline, Component: ({ block }) => <Timeline {...block} /> },
   images: { read: readImages, Component: ({ block }) => <Images block={block} /> },
   callout: { read: readCallout, Component: ({ block }) => <Callout {...block} /> },
+  calendar: { read: readCalendar, Component: ({ block }) => <Calendar {...block} /> },
+  upnext: { read: readUpNext, Component: ({ block }) => <UpNext {...block} /> },
+  weather: { read: readWeather, Component: ({ block }) => <Weather {...block} /> },
+  briefing: { read: readBriefing, Component: ({ block }) => <Briefing {...block} /> },
+  tracker: { read: readTracker, Component: ({ block }) => <Tracker {...block} /> },
+  prepared: { read: readPrepared, Component: ({ block }) => <Prepared {...block} /> },
   table: { read: readTable, Component: ({ block }) => <Table {...block} /> },
   list: { read: readList, Component: ({ block }) => <List {...block} /> },
   progress: { read: readProgress, Component: ({ block }) => <Progress {...block} /> },
@@ -100,5 +121,5 @@ export const REGISTRY: Registry = {
   section: { read: readContainer, Component: ({ block, draw }) => <Section title={block.title} collapsed={block.collapsed}>{draw(block.children)}</Section> },
   grid: { read: readContainer, Component: ({ block, draw }) => <Grid>{draw(block.children)}</Grid> },
   columns: { read: readContainer, Component: ({ block, draw }) => <Columns>{draw(block.children)}</Columns> },
-  tabs: { read: readTabs, Component: ({ block, draw }) => <Tabs labels={block.tabs.map((t) => t.label)} panel={(i) => draw(block.tabs[i].children)} /> },
+  tabs: { read: readTabs, Component: ({ block, draw }) => <Tabs labels={block.tabs.map((t) => t.label)} badges={block.tabs.map((t) => t.badge)} panel={(i) => draw(block.tabs[i].children)} /> },
 };

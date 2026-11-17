@@ -26,8 +26,12 @@ from .atoms import (
     text_link,
     text_text,
 )
+from .briefing import check_briefing, text_briefing
 from .calculator import check_calculator, text_calculator
+from .calendar import check_calendar, text_calendar
 from .callout import check_callout, text_callout
+from .upnext import check_upnext, text_upnext
+from .weather import check_weather, text_weather
 from .chart import check_chart, text_chart
 from .checklist import check_checklist, text_checklist
 from .flip import check_flip, text_flip
@@ -40,6 +44,7 @@ from .kpis import check_kpis, check_stat, text_kpis, text_stat
 from .layers import check_layers, text_layers
 from .layout import check_container, check_tabs, text_container, text_tabs
 from .list import check_list, text_list
+from .prepared import check_prepared, text_prepared
 from .progress import check_progress, text_progress
 from .simulate import check_simulate, text_simulate
 from .source import check_source, text_source
@@ -48,6 +53,7 @@ from .streak import check_streak, text_streak
 from .table import check_table, text_table
 from .tiles import check_tiles, text_tiles
 from .timeline import check_timeline, text_timeline
+from .tracker import check_tracker, text_tracker
 
 TYPES = {
     "chart": (check_chart, text_chart),
@@ -65,6 +71,9 @@ TYPES = {
     "actions": (check_actions, text_actions),
     "tiles": (check_tiles, text_tiles),
     "checklist": (check_checklist, text_checklist),
+    "calendar": (check_calendar, text_calendar),
+    "upnext": (check_upnext, text_upnext),
+    "weather": (check_weather, text_weather),
     "calculator": (check_calculator, text_calculator),
     "simulate": (check_simulate, text_simulate),
     "form": (check_form, text_form),
@@ -86,4 +95,12 @@ TYPES = {
     "button": (check_button, text_button),
     "image": (check_image, text_image),
     "bar": (check_bar, text_bar),
+}
+
+# Blocks the Today page draws from the plugin's own data, never offered to the model (they aren't in the catalog): a
+# reply that uses one is refused; check_blocks(page=True) accepts them.
+PAGE_TYPES = {
+    "briefing": (check_briefing, text_briefing),
+    "tracker": (check_tracker, text_tracker),
+    "prepared": (check_prepared, text_prepared),
 }

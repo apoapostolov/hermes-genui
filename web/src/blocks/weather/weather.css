@@ -1,0 +1,9 @@
+/* weather: one wide strip after Odie's Today. Big temperature | sky in place, high and tonight's low. */
+.hb-blocks .hb-weather { display: flex; align-items: center; gap: 22px; padding: 16px 26px; border-radius: 22px;
+  background: linear-gradient(105deg, color-mix(in srgb, #7aa7ff 22%, var(--hb-card)),
+    color-mix(in srgb, #ffd66b 24%, var(--hb-card)) 100%); }
+.hb-weather-temp { font-size: 44px; line-height: 1; font-weight: 800; letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums; }
+.hb-weather-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.hb-weather-where { font-size: 16px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hb-weather-range { font-size: 13.5px; color: var(--hb-ink-2); }

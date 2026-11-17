@@ -19,7 +19,7 @@ def test_describe_stays_compact():
     # about 4 characters per token; the description goes with every request, so it stays near 3,250 tokens (raised
     # from 2,750 for the form's ask-first guidance, to 3,025 for flow and steps, then for simulate and layers, each
     # time after trimming other entries)
-    assert len(describe()) < 3250 * 4
+    assert len(describe()) < 3500 * 4
 
 
 def test_atoms_take_one_line_each():

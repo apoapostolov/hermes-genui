@@ -1,0 +1,52 @@
+/* upnext: Odie's Up Next cards. Each card takes its kind's two pastel colours (--ka, --kb from EventArt's kindVars),
+   and the deep night pair in dark mode (--kda, --kdb). */
+.hb-up { display: flex; flex-direction: column; gap: 10px; container-type: inline-size; }
+.hb-up-row { --up-n: 2; }
+/* Only whole cards: as many as fit the width (about 160px or more each), never one sliced at the edge. The rest
+   scroll in, a card at a time. */
+@container (min-width: 520px) { .hb-up-row { --up-n: 3; } }
+@container (min-width: 700px) { .hb-up-row { --up-n: 4; } }
+@container (min-width: 880px) { .hb-up-row { --up-n: 5; } }
+@container (min-width: 1060px) { .hb-up-row { --up-n: 6; } }
+.hb-up-heading { font-size: 13px; font-weight: 700; color: var(--hb-ink-2); }
+.hb-up-row { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 0 8px;
+  scrollbar-width: none; }
+.hb-up-card { all: unset; box-sizing: border-box; cursor: pointer; scroll-snap-align: start; flex: 0 0 calc((100% - (var(--up-n) - 1) * 12px) / var(--up-n));
+  min-width: 0; min-height: 168px; padding: 12px; border-radius: 24px; display: flex; flex-direction: column;
+  background: linear-gradient(150deg, var(--ka), var(--kb)); color: #1d1a2c; border: 1px solid rgba(255, 255, 255, .6);
+  box-shadow: 0 14px 30px -22px rgba(40, 30, 70, .45); transition: transform .15s ease; }
+.dark .hb-up-card { background: linear-gradient(150deg, var(--kda), var(--kdb)); color: #f4f2fb; border-color: rgba(255, 255, 255, .08); }
+.hb-up-card:hover { transform: translateY(-2px); }
+.hb-up-card:active { transform: scale(.98); }
+.hb-up-card:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }
+.hb-up-top { display: flex; align-items: flex-start; justify-content: space-between; }
+.hb-up-top > span { display: flex; flex-direction: column; }
+.hb-up-weekday { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; opacity: .75; }
+.hb-up-source { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(255, 255, 255, .85); color: #4a4560; }
+.dark .hb-up-source { background: rgba(255, 255, 255, .14); color: #f4f2fb; }
+.hb-up-day { font-size: 32px; line-height: 1; font-weight: 800; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.hb-up-title { margin-top: 10px; font-size: 14.5px; line-height: 1.25; font-weight: 600; display: -webkit-box;
+  -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 36px; }
+.hb-up-meta { margin-top: auto; padding-top: 6px; font-size: 12.5px; opacity: .7; font-variant-numeric: tabular-nums; }
+/* A tracked item's state: a small pill (dot + words) on a translucent ground, so the card's own colours stay. Red only
+   for overdue; amber for today and soon. */
+.hb-up-state { align-self: flex-start; display: inline-flex; align-items: center; gap: 5px; margin-top: 6px;
+  padding: 3px 7px; border-radius: 999px; font-size: 11px; line-height: 1.2; font-weight: 600;
+  background: rgba(255, 255, 255, .78); }
+.dark .hb-up-state { background: rgba(0, 0, 0, .32); }
+.hb-up-state::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.hb-up-state-overdue { color: #c4321f; }
+.hb-up-state-today, .hb-up-state-soon { color: #9a5a00; }
+.dark .hb-up-state-overdue { color: #ff9a8a; }
+.dark .hb-up-state-today, .dark .hb-up-state-soon { color: #ffc46b; }
+/* Compact (Today): smaller cards in rows that fit the width, no sideways scroll; at most two rows. */
+.hb-up-compact { display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: 8px; overflow: visible;
+  padding: 0; grid-auto-rows: auto; }
+.hb-up-compact .hb-up-card { min-height: 112px; padding: 10px; border-radius: 16px; }
+.hb-up-compact .hb-up-day { font-size: 22px; }
+.hb-up-compact .hb-up-title { margin-top: 6px; font-size: 13px; min-height: 0; }
+.hb-up-compact .hb-up-meta { font-size: 11.5px; }
+.hb-up-compact > :nth-child(n+9) { display: none; }
+@container (max-width: 480px) { .hb-up-compact { grid-template-columns: 1fr 1fr; } .hb-up-compact > :nth-child(n+5) { display: none; } }
+@media (prefers-reduced-motion: reduce) { .hb-up-card { transition: none; } .hb-up-card:hover { transform: none; } }

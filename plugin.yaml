@@ -1,20 +1,23 @@
 manifest_version: 2
 name: hermes-genui
-version: "0.2.0"
+version: "0.3.0"
 description: >-
-  Visual, interactive blocks drawn right inside Hermes Desktop replies: charts, tables, timelines, photo strips,
-  calculators with live sliders, forms, checklists that remember their ticks, flash cards and step-by-step
+  Visual, interactive blocks drawn right inside Hermes Desktop and Webapp replies: charts, tables, timelines, photo
+  strips, calculators with live sliders, forms, checklists that remember their ticks, flash cards and step-by-step
   explainers. The model lays them out with the show_blocks tool or follows a bundled recipe (trip planner,
   comparison, what-if maths, stock dashboard, report, explainer and more), and two live tools bring in real data:
   market_history for prices from Yahoo Finance and find_photos for checked, credited photos from Wikimedia Commons,
-  Openverse, pages your own web search finds and, with your own keys, Unsplash, Pexels and Tavily. Every block is checked before it is stored, and on
-  surfaces that can't draw (Telegram, the CLI and others) the same answers arrive as plain text and Markdown.
+  Openverse, pages your own web search finds and, with your own keys, Unsplash, Pexels and Tavily. A Today page is
+  kept by a personal assistant that tracks bills, renewals, orders and replies from your mail and calendar, and
+  dashboards built from your MCP servers can be kept in the sidebar and refreshed. Every block is checked before it
+  is stored, and on surfaces that can't draw (Telegram, the CLI and others) the same answers arrive as plain text
+  and Markdown.
 author: Sagar Mainkar
 license: MIT
 homepage: https://github.com/sagarmainkar/hermes-genui
-tags: [desktop, generative-ui, charts, dashboards, visualization, photos, markets, recipes]
+tags: [desktop, generative-ui, charts, dashboards, visualization, photos, markets, recipes, assistant]
 requires_hermes: ">=0.22.5"
-provides_tools: [show_blocks, market_history, find_photos, save_recipe]
+provides_tools: [show_blocks, market_history, find_photos, save_recipe, dashboard, board_page, assistant_setup, assistant_items, assistant_open, assistant_inbox, assistant_calendar, assistant_report, assistant_ideas]
 provides_hooks: [pre_llm_call, transform_llm_output]
 config_schema:
   unsplash_access_key:

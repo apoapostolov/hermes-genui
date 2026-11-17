@@ -13,6 +13,7 @@ LAYOUT_TYPES = (*CONTAINERS, "tabs")
 MAX_IN = {"row": 3, "grid": 6}
 MAX_TABS = 6
 MAX_TAB_LABEL = 30
+MAX_TAB_BADGE = 999  # an optional count beside a tab's label
 
 
 def check_container(block: dict, path: str, inside_section: bool, check_child) -> list[str]:
@@ -44,9 +45,10 @@ def check_container(block: dict, path: str, inside_section: bool, check_child) -
 
 
 def check_tabs(block: dict, path: str, inside_section: bool, check_child) -> list[str]:
-    """2-6 tabs, each with a label (up to 30 characters) and children. A tab's children are checked as if at the top
-    level (columns and sections are fine there), except that tabs can't hold tabs. (Tabs sit at the top level only, so
-    `inside_section` is always False here; the caller turns away tabs anywhere else.)
+    """2-6 tabs, each with a label (up to 30 characters), children and an optional count `badge` (1-999). A tab's
+    children are checked as if at the top level (columns and sections are fine there), except that tabs can't hold
+    tabs. (Tabs sit at the top level only, so `inside_section` is always False here; the caller turns away tabs
+    anywhere else.)
 
     tabs = [{"label": "A", "children": [text]}] → ["0: tabs needs 2-6 tabs"]
     tabs[1] = {"label": "B", "children": [{"type": "text"}]} → ["0.tabs.1.children.0: text needs text"]
@@ -68,6 +70,8 @@ def check_tabs(block: dict, path: str, inside_section: bool, check_child) -> lis
             problems.append(f"{where}: a tab's label is at most {MAX_TAB_LABEL} characters")
         elif not isinstance(children, list) or not children:
             problems.append(f"{where}: tab needs children")
+        elif "badge" in tab and not (type(tab["badge"]) is int and 1 <= tab["badge"] <= MAX_TAB_BADGE):
+            problems.append(f"{where}: a tab's badge is a whole number from 1 to {MAX_TAB_BADGE}")
         else:
             for j, child in enumerate(children):
                 problems += check_child(child, f"{where}.children.{j}", inside_section=False)

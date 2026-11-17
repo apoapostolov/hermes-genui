@@ -181,7 +181,7 @@ def test_heatmap_is_a_compact_table():
 # --- robustness and safety ------------------------------------------------------------------------
 
 def test_unknown_malformed_and_include_blocks_are_skipped():
-    blocks = [{"type": "weather"}, "not a block", None, {"type": "include", "id": "7f3a09bc"},
+    blocks = [{"type": "sundial"}, "not a block", None, {"type": "include", "id": "7f3a09bc"},
               {"type": "chart", "series": "nonsense"}, {"type": "table", "rows": 5},
               {"type": "text", "text": "kept"}]
     assert tf.blocks_as_text(blocks) == "kept"
@@ -382,7 +382,7 @@ def test_replace_tags_bad_or_missing_board():
 
 
 def test_replace_tags_board_with_nothing_readable_or_a_load_error():
-    assert tf.replace_tags('::blocks{id="7f3a09bc"}', load=lambda _: [{"type": "weather"}]) == NOT_SHOWN
+    assert tf.replace_tags('::blocks{id="7f3a09bc"}', load=lambda _: [{"type": "sundial"}]) == NOT_SHOWN
 
     def broken(_):
         raise ValueError("bad json")

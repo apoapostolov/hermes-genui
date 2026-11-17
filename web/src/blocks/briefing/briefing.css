@@ -1,0 +1,25 @@
+/* briefing: Today's sky band. Fixed sky gradients with white text (every stop at least 4.5:1, a test checks); the counts
+   sit on soft tinted chips, not loud badges. */
+.hb-brief { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 8px; padding: 14px 18px;
+  border-radius: 18px; color: #fff; background: linear-gradient(160deg, #1d4fa3, #3a6cc0); }
+.hb-brief::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5; }
+.hb-brief > * { position: relative; z-index: 1; }
+.hb-brief-clear { background: linear-gradient(160deg, #1d4fa3 0%, #2c62bd 60%, #3a6cc0 100%); }
+.hb-brief-cloud { background: linear-gradient(160deg, #3f4c63 0%, #55637c 60%, #66748c 100%); }
+.hb-brief-rain { background: linear-gradient(160deg, #34435b 0%, #4d5e78 55%, #5f708a 100%); }
+.hb-brief-rain::after { background: repeating-linear-gradient(105deg, transparent 0 13px, rgba(255, 255, 255, .08) 13px 14px); }
+.hb-brief-snow { background: linear-gradient(160deg, #4a5d7c 0%, #5a6d8c 60%, #627592 100%); }
+.hb-brief-storm { background: linear-gradient(160deg, #262f45 0%, #44506b 60%, #5a6680 100%); }
+.hb-brief-fog { background: linear-gradient(160deg, #525a68 0%, #646d7b 60%, #6b7482 100%); }
+.hb-brief-night { background: linear-gradient(160deg, #141b38 0%, #2a3566 60%, #45508a 100%); }
+.hb-brief-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 6px 16px; }
+.hb-brief-hello { display: flex; flex-direction: column; min-width: 0; }
+.hb-brief-date { font-size: 12px; opacity: .85; }
+.hb-brief h2 { margin: 2px 0 0; font-size: 19px; line-height: 1.2; font-weight: 700; letter-spacing: -0.01em; color: #fff; }
+.hb-brief-wx { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+.hb-brief-temp { font-size: 26px; line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; }
+.hb-brief-sky { margin-top: 2px; font-size: 12px; opacity: .9; }
+.hb-brief-line { margin: 0; font-size: 15px; line-height: 1.4; font-weight: 600; }
+.hb-brief-bad, .hb-brief-good { padding: 1px 6px; border-radius: 6px; }
+.hb-brief-bad { background: rgba(255, 110, 110, .3); }
+.hb-brief-good { background: rgba(110, 230, 160, .26); }

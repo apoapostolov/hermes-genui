@@ -45,8 +45,8 @@ def test_lone_object_is_a_list_of_one(store_dir):
 
 
 def test_problems_are_returned_and_nothing_stored(store_dir):
-    result = tools.show_blocks({"blocks": [{"type": "weather"}]})
-    assert result == 'Not drawn. Fix these and call show_blocks again:\n- 0: unknown type "weather"'
+    result = tools.show_blocks({"blocks": [{"type": "sundial"}]})
+    assert result == 'Not drawn. Fix these and call show_blocks again:\n- 0: unknown type "sundial"'
     assert list(store_dir.glob("*.json")) == []
 
 

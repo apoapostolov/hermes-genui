@@ -1,0 +1,12 @@
+{
+ "name": "Sales pipeline",
+ "about": "The pipeline at a glance: by stage, by segment, deals to watch, a what-if.",
+ "best_for": "CRM tools; a data warehouse adds history",
+ "cover": [
+  "open pipeline by stage",
+  "pipeline by region or segment",
+  "deals closing this quarter and deals to watch",
+  "win rate and a what-if calculator",
+  "the deal to act on (a verdict)"
+ ]
+}

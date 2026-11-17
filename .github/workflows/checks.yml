@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
       - name: Tests
-        run: uv run --no-project -q --with pytest --with httpx --with fastapi pytest -c tests/pytest.ini --rootdir=tests tests
+        run: uv run --no-project -q --with pytest --with httpx --with fastapi --with psutil pytest -c tests/pytest.ini --rootdir=tests tests
       - name: Lint
         run: uvx ruff check --select E,F,W,UP,PTH --line-length 120 --exclude web .
 

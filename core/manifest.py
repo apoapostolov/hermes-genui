@@ -3,9 +3,9 @@
 Everything that says the plugin's name takes it from here: the system-prompt section id, the namespace of the recipe
 skills ("<NAME>:trip-planner"), the toolset, and the User-Agent the photo and market sources are asked with.
 
-    plugin.yaml:  name: hermes-genui / version: "0.2.0" / homepage: https://github.com/sagarmainkar/hermes-genui
-    → NAME "hermes-genui";  VERSION "0.2.0";
-      USER_AGENT "hermes-genui/0.2.0 (+https://github.com/sagarmainkar/hermes-genui)"
+    plugin.yaml:  name: hermes-genui / version: "0.3.0" / homepage: https://github.com/sagarmainkar/hermes-genui
+    → NAME "hermes-genui";  VERSION "0.3.0";
+      USER_AGENT "hermes-genui/0.3.0 (+https://github.com/sagarmainkar/hermes-genui)"
 """
 
 import re

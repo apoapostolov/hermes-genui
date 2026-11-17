@@ -32,7 +32,7 @@ describe("Blocks", () => {
   });
 
   it("draws nothing for an unknown type", () => {
-    const { container } = render(<Blocks blocks={[{ type: "weather" } as unknown as Block]} />);
+    const { container } = render(<Blocks blocks={[{ type: "sundial" } as unknown as Block]} />);
     expect(container.querySelector(".hb-blocks")!.textContent).toBe("");
   });
 

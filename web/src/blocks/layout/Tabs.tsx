@@ -12,8 +12,11 @@ export function tabAfterKey(current: number, count: number, key: string): number
   return current;
 }
 
-/** `labels` name the tabs; `panel(i)` draws tab i's blocks, called only for the picked tab. */
-export function Tabs({ labels, panel }: { labels: string[]; panel: (i: number) => ReactNode }) {
+/** `labels` name the tabs; `badges[i]`, when set, is a count shown beside tab i's label; `panel(i)` draws tab i's
+ *  blocks, called only for the picked tab. */
+export function Tabs({ labels, badges = [], panel }: {
+  labels: string[]; badges?: (number | undefined)[]; panel: (i: number) => ReactNode;
+}) {
   const [picked, setPicked] = useState(0);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const base = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -31,8 +34,10 @@ export function Tabs({ labels, panel }: { labels: string[]; panel: (i: number) =
           <button key={i} type="button" role="tab" id={`${base}-tab-${i}`} aria-controls={`${base}-panel`}
             aria-selected={i === picked} tabIndex={i === picked ? 0 : -1}
             className={i === picked ? "hb-tab hb-tab-on" : "hb-tab"}
-            ref={(el) => { buttons.current[i] = el; }} onClick={() => setPicked(i)}>
+            ref={(el) => { buttons.current[i] = el; }} onClick={() => setPicked(i)}
+            aria-label={badges[i] ? `${label}, ${badges[i]} open` : undefined}>
             <InlineText text={label} />
+            {badges[i] ? <span className="hb-tab-badge" aria-hidden="true">{badges[i]}</span> : null}
           </button>
         ))}
       </div>

@@ -14,14 +14,24 @@ core/                 shared by every tool and hook
   check.py            checks a board before it is stored; looks each type up in blocks.TYPES
   store.py            one JSON file per board (also loaded on its own by dashboard/plugin_api.py: no package imports)
   surface.py          whether this turn's chat surface can draw blocks
+  assistant/          the personal assistant: memory.py (items, checks and settings, under one lock), track.py (states
+                      from dates, Needs you, Handled, safe links; pure), demo.py and seed.json (the sample mailbox)
+  dashboard/          Today as a spec of sections: spec.py, sources.py (each source makes blocks), assemble.py
+  pages/              kept dashboards: store.py, calls.py (the read-only calls a refresh repeats), refresh.py
+  live/               what the plugin fetches itself (weather, stock prices, system stats) and its cache
 blocks/               one module per type or family: check_<type>(block, path) and text_<type>(block)
   __init__.py         the registry: TYPES = {"chart": (check_chart, text_chart), ...}
+                      and PAGE_TYPES: blocks only the plugin's own pages draw (briefing, tracker, prepared). They are
+                      not in the catalog, so the model never sees them; check_blocks takes them only with page=True
   common.py, layout.py   shared helpers; row, section, grid, columns and tabs (they hold other blocks)
 tools/                one module per tool
   __init__.py         the tool registry: TOOLS = (ToolSpec(name, schema, handler), ...)
   show_blocks.py      show_blocks, tag_for, paste_instruction, includes, the photo rule
   market_history.py   prices from Yahoo Finance as a board
   save_recipe.py      checks a recipe and hands it to Hermes's skill_manage
+  dashboard.py        Today's layout;  board_page.py: kept pages, their recorded calls and refreshes
+  assistant.py        setup and items for chats, and the scheduled check's own tools (their own toolset)
+  assistant_ideas.py  the ideas job's one tool: no mail access, photos and pay links checked before they are stored
   photos/             find_photos: __init__.py (find, mix, the tool), safety.py (https, public addresses only,
                       redirects checked hop by hop), sources/ (wikimedia, openverse, pages, unsplash, pexels, tavily),
                       memory.py (sources resting after a failure, recent searches)
@@ -29,6 +39,7 @@ hooks/                prompt_section.py (the system-prompt rule), visual_nudge.p
                       text_fallback.py (transform_llm_output: boards as Markdown off Desktop)
 dashboard/            manifest.json and plugin_api.py: the REST API Hermes mounts for the Desktop half
 recipes/              shipped recipe skills;  desktop/plugin.js: the built Desktop half (shipped)
+templates/            briefs for kept dashboards (what an executive or security dashboard should cover)
 tests/                mirrors the layout (tests/core, tests/tools, ...); fixtures/describe.txt pins the description
 
 web/src/
@@ -36,6 +47,7 @@ web/src/
   registry.tsx        the registry: the Block type list and REGISTRY = {type: {read, Component}}
   core/, host/, lib/, styles/   readers and renderer; the Hermes side; helpers; colour tokens and shared CSS
   blocks/<type>/      read.ts (reader + types), <Type>.tsx (drawing), <type>.css, and tests next to them
+  live/               Today and kept pages: the sidebar rows, DashboardView (draws a page with the same renderer)
 ```
 
 Everything below the root uses relative imports: Hermes imports the plugin folder as one package.
@@ -115,7 +127,7 @@ Say the new type is `gauge`.
 ## Checks
 
 ```
-uv run --no-project -q --with pytest --with httpx --with fastapi pytest -c tests/pytest.ini --rootdir=tests tests
+uv run --no-project -q --with pytest --with httpx --with fastapi --with psutil pytest -c tests/pytest.ini --rootdir=tests tests
 uvx ruff check --select E,F,W,UP,PTH --line-length 120 --exclude web .
 cd web && npx vitest run && npx tsc --noEmit && npm run build
 ```

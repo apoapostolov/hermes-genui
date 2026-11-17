@@ -1,0 +1,23 @@
+/* The Today page: an assembled dashboard. Only its header is the page's own; everything under it is catalog blocks. */
+.hb-dash { box-sizing: border-box; height: 100%; overflow-y: auto; padding: 28px clamp(16px, 4vw, 40px) 48px;
+  background: var(--hb-surface); color: var(--hb-ink); }
+/* The page takes the whole window: no chat-column cap on it or the board inside it. */
+.hb-blocks.hb-dash, .hb-dash > .hb-blocks { max-width: none; }
+.hb-dash-head { margin-bottom: 18px; }
+.hb-dash-date { font-size: 13px; font-weight: 600; color: var(--hb-muted); }
+.hb-dash-head h1 { margin: 6px 0 0; font-size: clamp(28px, 4vw, 36px); line-height: 1.12; font-weight: 700;
+  letter-spacing: -0.025em; }
+.hb-dash-sub { color: var(--hb-muted); }
+/* On the Today page, a row of numbers spans the page's width; in chat it keeps its compact 200px cards. */
+.hb-dash .hb-kpis { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+/* A lone number (one stock's price) stays a card, not a banner. */
+.hb-dash .hb-kpis:has(> :only-child) { grid-template-columns: minmax(150px, 320px); }
+/* A designed page's snapshot line under the header: label · updated 09:12 · (why it failed) · ↻ Refresh. */
+.hb-refresh { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: -6px 0 16px; font-size: 13px;
+  color: var(--hb-muted); }
+.hb-refresh-label { font-weight: 700; color: var(--hb-ink-2); }
+.hb-refresh-error { color: var(--hb-warn, #b7791f); }
+.hb-refresh-button { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; height: 28px;
+  padding: 0 12px; border-radius: 99px; border: 1px solid var(--hb-line); color: var(--hb-ink); font-weight: 600; }
+.hb-refresh-button:disabled { cursor: default; opacity: .6; }
+.hb-refresh-button:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }

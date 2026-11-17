@@ -11,7 +11,7 @@ the result into one message.
 
 import re
 
-from ..blocks import TYPES
+from ..blocks import PAGE_TYPES, TYPES
 from ..blocks.calculator import arithmetic
 from ..blocks.layout import CONTAINERS, LAYOUT_TYPES
 from ..blocks.steps import text_steps
@@ -25,7 +25,7 @@ MORE_NOTE = "… (more in Hermes Desktop)"
 MAX_DEPTH = 6
 
 # The renderers that turn one block on its own into text (every type but the layout ones, which hold other blocks).
-RENDERERS = {kind: render for kind, (_, render) in TYPES.items() if kind not in LAYOUT_TYPES}
+RENDERERS = {kind: render for kind, (_, render) in {**TYPES, **PAGE_TYPES}.items() if kind not in LAYOUT_TYPES}
 
 
 def _render(block: object, depth: int, labels: dict) -> list[str]:

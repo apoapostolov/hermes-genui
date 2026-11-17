@@ -7,7 +7,7 @@ describe("readBlocks", () => {
     const b = readBlocks([
       { type: "chart", kind: "bar", title: "Rev", x: ["Q1", "Q2"], series: [{ name: "R", data: [1, 2] }], unit: "$M" },
       { type: "kpis", items: [{ label: "Revenue", value: 182.2, unit: "$M", change: 3.8, change_unit: "%" }] },
-      { type: "weather", foo: 1 },
+      { type: "sundial", foo: 1 },
       { type: "source", text: "SEC filings", url: "https://www.sec.gov/x" },
     ]);
     expect(b.map((x) => x.type)).toEqual(["chart", "kpis", "source"]);
@@ -20,9 +20,9 @@ describe("readBlocks", () => {
     expect(readBlocks({ blocks: [{ type: "heading", text: "Wrapped" }] })).toEqual([{ type: "heading", text: "Wrapped" }]);
   });
   it("notes what it dropped and why", () => {
-    const r = readBlocksNoted([{ type: "weather" }, "x"]);
+    const r = readBlocksNoted([{ type: "sundial" }, "x"]);
     expect(r.blocks).toEqual([]);
-    expect(r.dropped).toEqual([{ path: "0", why: 'unknown type "weather"' }, { path: "1", why: "not a block object" }]);
+    expect(r.dropped).toEqual([{ path: "0", why: 'unknown type "sundial"' }, { path: "1", why: "not a block object" }]);
   });
 });
 

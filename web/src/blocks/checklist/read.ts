@@ -1,7 +1,7 @@
 // checklist: things to do or pack, or steps to follow; the user ticks them off and the ticks are saved with the board.
 import { clean, firstList, firstText, keepFirst, type Trail } from "../../core/fields";
 
-export type ChecklistItem = { text: string; group?: string };
+export type ChecklistItem = { text: string; group?: string; id?: string };
 /** path: where the checklist sits in the stored board ("2", "0.children.1"): its ticks are saved under that key.
  *  ticked: the items the model said are already done (the starting ticks, before anything is saved). */
 export type ChecklistBlock = { type: "checklist"; title?: string; numbered: boolean; items: ChecklistItem[]; ticked: number[]; path: string };
@@ -26,7 +26,7 @@ export function readChecklist(raw: any, here: Trail): ChecklistBlock | null {
   const items: ChecklistItem[] = [];
   const ticked: number[] = [];
   kept.forEach((item, i) => {
-    items.push(clean({ text: item.text, group: item.group }));
+    items.push(clean({ text: item.text, group: item.group, id: item.id }));
     if (item.done) ticked.push(i);
   });
   const numbered = raw.numbered === true || raw.ordered === true;
@@ -34,7 +34,7 @@ export function readChecklist(raw: any, here: Trail): ChecklistBlock | null {
   return clean({ type: "checklist" as const, title, numbered, items, ticked, path: here.path });
 }
 
-type Found = { text: string; group?: string; done: boolean };
+type Found = { text: string; group?: string; done: boolean; id?: string };
 
 /** The items wherever the model put them: a flat list (items, tasks, steps), then lists inside groups.
  *  {items: ["A"], groups: [{label: "G", items: ["B"]}]} → [{text: "A"}, {text: "B", group: "G"}] (each with done: false) */
@@ -71,5 +71,6 @@ function readItem(item: any, groupLabel: string | undefined): Found | null {
   const text = firstText([item.text, item.title, item.label, item.name], 160);
   if (!text) return null;
   const group = firstText([item.group, item.section, item.category], 60) ?? groupLabel;
-  return { text, group, done: item.done === true || item.checked === true };
+  const id = typeof item.id === "string" && item.id.trim() ? item.id.trim().slice(0, 40) : undefined;
+  return { text, group, done: item.done === true || item.checked === true, id };
 }

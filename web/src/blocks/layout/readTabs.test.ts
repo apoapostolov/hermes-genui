@@ -35,6 +35,15 @@ describe("tabs", () => {
       { path: "0", why: "kept the first 6 tabs of 7" },
     ]);
   });
+  it("keeps a tab's count badge when it's a whole number from 1 to 999, and quietly leaves any other off", () => {
+    const r = readBlocksNoted([{ type: "tabs", tabs: [
+      { ...tab("Bills", [text("a")]), badge: 4 }, { ...tab("Orders", [text("b")]), badge: 0 },
+      { ...tab("Replies", [text("c")]), badge: "3" }, { ...tab("Done", [text("d")]), badge: 2.5 },
+      { ...tab("All", [text("e")]), badge: 1000 },
+    ] }]);
+    expect((r.blocks[0] as any).tabs.map((t: any) => t.badge)).toEqual([4, undefined, undefined, undefined, undefined]);
+    expect(r.dropped).toEqual([]);
+  });
   it("cuts a long label to 30 characters", () => {
     const r = readBlocksNoted([{ type: "tabs", tabs: [tab("x".repeat(40), [text("a")]), tab("B", [text("b")])] }]);
     expect((r.blocks[0] as any).tabs[0].label).toBe("x".repeat(30));

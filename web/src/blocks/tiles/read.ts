@@ -10,8 +10,8 @@ const MAX_TILES = 8;
 // shape (the height comes from the aspect-ratio, never from the text). So the reader cuts the reason to what three
 // lines hold — about 120 characters — between words, never mid-word; the rest ends in "…". cutAtWord does that
 // while a space sits in the back half of the room and otherwise falls back to slicing one long unbroken run, so
-// the tiles cut below repairs that slice: a cover never paints half a word. (The catalog says nothing about
-// subtitle length today — this cut, not model guidance, keeps a two-sentence reason off a cover.)
+// the tiles cut below repairs that slice: a cover never paints half a word. (The catalog asks for a few words;
+// this cut is what keeps a two-sentence reason off a cover when a model writes one anyway.)
 const SUBTITLE_MAX = 120;
 // The fields a tile's title may come in, best first: models often write a `label` (or only a `text`) for a card.
 const TITLE_FIELDS = ["title", "label", "name", "caption", "text"];

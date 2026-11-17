@@ -55,10 +55,14 @@
 .hb-tab:hover { color: var(--hb-ink-2); background: var(--hb-well); }
 .hb-tab-on, .hb-tab-on:hover { color: var(--hb-accent-ink); border-bottom-color: var(--hb-accent); background: none; }
 .hb-tab:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; }
+.hb-tab-badge { display: inline-block; min-width: 18px; margin-left: 6px; padding: 0 5px; border-radius: 99px;
+  background: var(--hb-well); color: var(--hb-ink-2); font-size: 11px; line-height: 18px; text-align: center;
+  font-variant-numeric: tabular-nums; vertical-align: 1px; }
+.hb-tab-on .hb-tab-badge { background: var(--hb-accent); color: #fff; }
 .hb-tab-panel { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 
 /* Columns: dashboards side by side, each block at its own height (a short card beside a tall one stays short). */
-.hb-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 10px; align-items: start; }
+.hb-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 10px; align-items: start; }
 .hb-column { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
 /* Beside other blocks a table's card fills its column or cell (on its own it hugs its columns). */
 :is(.hb-column, .hb-grid-cell) > .hb-table-card { width: auto; }
