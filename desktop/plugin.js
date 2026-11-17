@@ -2427,7 +2427,7 @@ function readSeries(s, k, type, chartUnit) {
 }
 
 // src/blocks/checklist/Checklist.tsx
-import { useContext as useContext5, useEffect, useRef as useRef5, useState as useState9 } from "react";
+import { useContext as useContext5, useEffect, useId as useId3, useRef as useRef5, useState as useState9 } from "react";
 
 // src/blocks/checklist/savedState.ts
 var boards = /* @__PURE__ */ new Map();
@@ -2483,39 +2483,90 @@ function ticksAfterLoad(saved, onScreen, tapped) {
 
 // src/blocks/checklist/Checklist.tsx
 import { jsx as jsx20, jsxs as jsxs17 } from "react/jsx-runtime";
+var STATE_WORDS = {
+  pending: void 0,
+  active: "In progress",
+  blocked: "Blocked",
+  skipped: "Skipped"
+};
 function Checklist({ title, numbered, items, ticked, path }) {
   const [ticks, tap] = useSavedTicks(path, ticked, items.length);
+  const uid = useId3();
   const done = ticks.length;
   const allDone = done === items.length;
+  const open = items.filter((_, i) => !ticks.includes(i));
+  const blocked = open.filter((item) => item.state === "blocked").length;
+  const skipped = open.filter((item) => item.state === "skipped").length;
+  const pointer = items.some((item) => item.state) ? pointerAt(items, ticks) : -1;
+  function row(item, index) {
+    const on = ticks.includes(index);
+    const state = on ? void 0 : item.state;
+    const word = state ? STATE_WORDS[state] : void 0;
+    const labelId = `${uid}-label-${index}`;
+    const wordId = word ? `${uid}-state-${index}` : void 0;
+    const ownerId = item.owner ? `${uid}-owner-${index}` : void 0;
+    const noteId = item.note ? `${uid}-note-${index}` : void 0;
+    const describedBy = [wordId, ownerId, noteId].filter(Boolean).join(" ") || void 0;
+    const classes = ["hb-check", on ? "hb-check-on" : state ? `hb-check-${state}` : "", pointer === index ? "hb-check-pointer" : ""];
+    return /* @__PURE__ */ jsx20("div", { className: "hb-checklist-row", children: /* @__PURE__ */ jsxs17(
+      "button",
+      {
+        type: "button",
+        role: "checkbox",
+        "aria-checked": on,
+        "aria-current": pointer === index ? "step" : void 0,
+        "aria-labelledby": labelId,
+        "aria-describedby": describedBy,
+        onClick: () => tap(index),
+        className: classes.join(" ").trim(),
+        children: [
+          /* @__PURE__ */ jsx20("span", { className: "hb-check-mark", children: on ? /* @__PURE__ */ jsx20(Icon, { name: "check", size: 13, stroke: 3 }) : numbered ? index + 1 : null }),
+          /* @__PURE__ */ jsxs17("span", { className: "hb-check-text", children: [
+            /* @__PURE__ */ jsxs17("span", { className: "hb-check-line", children: [
+              /* @__PURE__ */ jsx20("span", { className: "hb-check-label", id: labelId, children: /* @__PURE__ */ jsx20(InlineText, { text: item.text }) }),
+              word && /* @__PURE__ */ jsx20("span", { className: "hb-check-state", id: wordId, children: word }),
+              item.owner && /* @__PURE__ */ jsx20("span", { className: "hb-check-owner", id: ownerId, children: item.owner })
+            ] }),
+            item.note && /* @__PURE__ */ jsx20("span", { className: "hb-check-note", id: noteId, children: item.note })
+          ] })
+        ]
+      }
+    ) }, index);
+  }
   return /* @__PURE__ */ jsxs17("div", { className: "hb-card hb-checklist", children: [
     /* @__PURE__ */ jsxs17("div", { className: "hb-checklist-head", children: [
       title && /* @__PURE__ */ jsx20("span", { className: "hb-card-title", children: /* @__PURE__ */ jsx20(InlineText, { text: title }) }),
-      /* @__PURE__ */ jsx20("span", { className: allDone ? "hb-checklist-count hb-checklist-count-done" : "hb-checklist-count", "aria-live": "polite", children: allDone ? "All done" : `${done} of ${items.length} done` })
+      /* @__PURE__ */ jsx20("span", { className: allDone ? "hb-checklist-count hb-checklist-count-done" : "hb-checklist-count", "aria-live": "polite", children: countText(done, items.length, blocked, skipped) })
     ] }),
-    /* @__PURE__ */ jsx20("div", { className: "hb-checklist-track", children: /* @__PURE__ */ jsx20("span", { className: "hb-checklist-fill", style: { width: `${done / items.length * 100}%` } }) }),
-    items.map((item, i) => /* @__PURE__ */ jsxs17("div", { children: [
-      startsGroup(items, i) && /* @__PURE__ */ jsx20("div", { className: "hb-checklist-group", children: /* @__PURE__ */ jsx20(InlineText, { text: item.group }) }),
-      /* @__PURE__ */ jsxs17(
-        "button",
-        {
-          type: "button",
-          role: "checkbox",
-          "aria-checked": ticks.includes(i),
-          onClick: () => tap(i),
-          className: ticks.includes(i) ? "hb-check hb-check-on" : "hb-check",
-          children: [
-            /* @__PURE__ */ jsx20("span", { className: "hb-check-mark", children: ticks.includes(i) ? /* @__PURE__ */ jsx20(Icon, { name: "check", size: 13, stroke: 3 }) : numbered ? i + 1 : null }),
-            /* @__PURE__ */ jsx20("span", { className: "hb-check-text", children: /* @__PURE__ */ jsx20(InlineText, { text: item.text }) })
-          ]
-        }
-      )
-    ] }, i))
+    /* @__PURE__ */ jsx20("div", { className: "hb-checklist-track", "aria-hidden": "true", children: /* @__PURE__ */ jsx20("span", { className: "hb-checklist-fill", style: { width: `${done / items.length * 100}%` } }) }),
+    segmentsOf(items).map(
+      (segment, si) => segment.label ? /* @__PURE__ */ jsxs17("div", { className: "hb-checklist-group", role: "group", "aria-labelledby": `${uid}-group-${si}`, children: [
+        /* @__PURE__ */ jsx20("div", { className: "hb-checklist-group-label", id: `${uid}-group-${si}`, children: /* @__PURE__ */ jsx20(InlineText, { text: segment.label }) }),
+        segment.rows.map(({ item, index }) => row(item, index))
+      ] }, si) : /* @__PURE__ */ jsx20("div", { className: "hb-checklist-plain", children: segment.rows.map(({ item, index }) => row(item, index)) }, si)
+    )
   ] });
 }
-function startsGroup(items, i) {
-  const group = items[i].group;
-  if (!group) return false;
-  return items[i - 1]?.group !== group;
+function countText(done, total, blocked, skipped) {
+  const head = done === total ? "All done" : `${done} of ${total} done`;
+  const beside = [blocked ? `${blocked} blocked` : "", skipped ? `${skipped} skipped` : ""].filter(Boolean);
+  return beside.length ? `${head}, ${beside.join(", ")}` : head;
+}
+function pointerAt(items, ticks) {
+  const open = (i) => !ticks.includes(i);
+  const active = items.findIndex((item, i) => item.state === "active" && open(i));
+  if (active >= 0) return active;
+  return items.findIndex((item, i) => item.state === "pending" && open(i));
+}
+function segmentsOf(items) {
+  const segments = [];
+  items.forEach((item, index) => {
+    const last = segments[segments.length - 1];
+    if (item.group && last?.label !== item.group) segments.push({ label: item.group, rows: [{ item, index }] });
+    else if (last) last.rows.push({ item, index });
+    else segments.push({ rows: [{ item, index }] });
+  });
+  return segments;
 }
 function useSavedTicks(path, ticked, count2) {
   const { rest, blockId } = useContext5(BlockActions);
@@ -2544,6 +2595,8 @@ function useSavedTicks(path, ticked, count2) {
 }
 
 // src/blocks/checklist/read.ts
+var CHECKLIST_STATES = ["pending", "active", "done", "blocked", "skipped"];
+var STATE_RULE = "item state is pending, active, done, blocked or skipped";
 var MAX_ITEMS = 40;
 function readChecklist(raw, here) {
   const found = collectItems(raw, here);
@@ -2552,7 +2605,7 @@ function readChecklist(raw, here) {
   const items = [];
   const ticked = [];
   kept.forEach((item, i) => {
-    items.push(clean({ text: item.text, group: item.group, id: item.id }));
+    items.push(clean({ text: item.text, group: item.group, id: item.id, state: item.state, owner: item.owner, note: item.note }));
     if (item.done) ticked.push(i);
   });
   const numbered = raw.numbered === true || raw.ordered === true;
@@ -2563,7 +2616,7 @@ function collectItems(raw, here) {
   const found = [];
   const flat = firstList([raw.items, raw.tasks, raw.steps]);
   flat?.forEach((item, i) => {
-    const read = readItem(item, void 0);
+    const read = readItem(item, void 0, here.at("items").at(i));
     if (read) found.push(read);
     else here.at("items").at(i).drop("item has no text");
   });
@@ -2572,14 +2625,14 @@ function collectItems(raw, here) {
     const label = firstText([g?.label, g?.title, g?.name], 60);
     const list = firstList([g?.items, g?.tasks]) ?? [];
     list.forEach((item, i) => {
-      const read = readItem(item, label);
+      const read = readItem(item, label, here.at("groups").at(gi).at("items").at(i));
       if (read) found.push(read);
       else here.at("groups").at(gi).at("items").at(i).drop("item has no text");
     });
   });
   return found;
 }
-function readItem(item, groupLabel) {
+function readItem(item, groupLabel, here) {
   if (typeof item === "string") {
     const text2 = firstText([item], 160);
     if (!text2) return null;
@@ -2590,7 +2643,22 @@ function readItem(item, groupLabel) {
   if (!text) return null;
   const group = firstText([item.group, item.section, item.category], 60) ?? groupLabel;
   const id = typeof item.id === "string" && item.id.trim() ? item.id.trim().slice(0, 40) : void 0;
-  return { text, group, done: item.done === true || item.checked === true, id };
+  const state = readState(item.state, here);
+  return {
+    text,
+    group,
+    id,
+    done: item.done === true || item.checked === true || state === "done",
+    state: state === "done" ? void 0 : state,
+    owner: firstText([item.owner], 40),
+    note: firstText([item.note], 120)
+  };
+}
+function readState(raw, here) {
+  if (raw === void 0 || raw === null) return void 0;
+  if (typeof raw === "string" && CHECKLIST_STATES.includes(raw)) return raw;
+  here.drop(STATE_RULE);
+  return void 0;
 }
 
 // src/blocks/flip/Flip.tsx
@@ -2662,7 +2730,7 @@ function readFlip(raw, here) {
 }
 
 // src/blocks/flow/Flow.tsx
-import { Fragment as Fragment5, useId as useId3, useLayoutEffect as useLayoutEffect3, useMemo as useMemo4, useRef as useRef6, useState as useState11 } from "react";
+import { Fragment as Fragment5, useId as useId4, useLayoutEffect as useLayoutEffect3, useMemo as useMemo4, useRef as useRef6, useState as useState11 } from "react";
 
 // src/lib/motion.ts
 function lessMotion() {
@@ -2762,7 +2830,7 @@ function Flow({ id, title, direction, nodes, groups = [] }) {
   const state = travelling ?? target;
   const moving = isMoving(nodes, steps);
   const holds = state.holds.some((h) => h.length > 0);
-  const panelId = useId3();
+  const panelId = useId4();
   const down = direction === "down" || !fitsAcross(nodes.length, groups.length, width, holds);
   const shown = open === null ? void 0 : nodes[open];
   const node = (n, i, arrow) => /* @__PURE__ */ jsxs19("li", { className: "hb-flow-step", children: [
@@ -3154,7 +3222,7 @@ function answerWords(field, value) {
   if (field.kind === "checkbox") return value.map(labelOf).join(", ");
   return labelOf(String(value));
 }
-function startsGroup2(fields, i) {
+function startsGroup(fields, i) {
   const group = fields[i].group;
   if (!group) return false;
   return fields[i - 1]?.group !== group;
@@ -3162,7 +3230,7 @@ function startsGroup2(fields, i) {
 function answerMessage(form, values) {
   const lines = [form.title ? `Form: ${form.title} (${form.id})` : `Form: ${form.id}`];
   form.fields.forEach((f, i) => {
-    if (startsGroup2(form.fields, i)) lines.push(`\u2014 ${f.group} \u2014`);
+    if (startsGroup(form.fields, i)) lines.push(`\u2014 ${f.group} \u2014`);
     lines.push(`${f.label}: ${answerWords(f, values[f.id]) || "(none)"}`);
   });
   return lines.join("\n");
@@ -3220,7 +3288,7 @@ function Form(form) {
       children: [
         form.title && /* @__PURE__ */ jsx23("div", { className: "hb-card-title", children: /* @__PURE__ */ jsx23(InlineText, { text: form.title }) }),
         /* @__PURE__ */ jsx23("fieldset", { disabled: sent, children: form.fields.map((field, i) => /* @__PURE__ */ jsxs20("div", { children: [
-          startsGroup2(form.fields, i) && /* @__PURE__ */ jsx23("div", { className: "hb-form-group", children: /* @__PURE__ */ jsx23(InlineText, { text: field.group }) }),
+          startsGroup(form.fields, i) && /* @__PURE__ */ jsx23("div", { className: "hb-form-group", children: /* @__PURE__ */ jsx23(InlineText, { text: field.group }) }),
           /* @__PURE__ */ jsx23(FieldView, { field, value: values[field.id], onChange: (v) => setValues((all) => ({ ...all, [field.id]: v })) })
         ] }, field.id)) }),
         /* @__PURE__ */ jsxs20("div", { className: "hb-form-foot", children: [
@@ -3788,7 +3856,7 @@ function readTabChildren(list, here, depth, readChild) {
 }
 
 // src/blocks/layout/Tabs.tsx
-import { useId as useId4, useRef as useRef8, useState as useState16 } from "react";
+import { useId as useId5, useRef as useRef8, useState as useState16 } from "react";
 import { jsx as jsx28, jsxs as jsxs25 } from "react/jsx-runtime";
 function tabAfterKey(current, count2, key) {
   if (key === "ArrowRight") return (current + 1) % count2;
@@ -3798,7 +3866,7 @@ function tabAfterKey(current, count2, key) {
 function Tabs({ labels: labels2, badges = [], panel }) {
   const [picked, setPicked] = useState16(0);
   const buttons = useRef8([]);
-  const base = useId4().replace(/[^a-zA-Z0-9]/g, "");
+  const base = useId5().replace(/[^a-zA-Z0-9]/g, "");
   const onKey = (e) => {
     const next = tabAfterKey(picked, labels2.length, e.key);
     if (next === picked) return;
@@ -6122,7 +6190,7 @@ var actions_default = "/* A row of pill buttons (the pills themselves are in sty
 var tiles_default = "/* Tiles: cover cards. Every card keeps the cover shape \u2014 its height comes from its aspect-ratio, never from the\n   text, so rows stay even however long a reason is. The reason reads in up to three lines (the reader cuts it to\n   about 120 characters between words), in full white with a shadow, and the photo stays bright: only the caption\n   block darkens behind the text, there is no overlay over the whole card. */\n.hb-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }\n.hb-tile {\n  position: relative;\n  display: block;\n  aspect-ratio: 1 / 1.05;\n  margin: 0;\n  padding: 0;\n  overflow: hidden;\n  border: 0;\n  border-radius: 20px;\n  color: #fff;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);\n}\n.hb-tile:hover { transform: translateY(-1px); }\n.hb-tile:active { transform: scale(0.98); }\n.hb-tile:disabled { cursor: default; transform: none; }\n.hb-tile-static { cursor: default; }\n.hb-tile-static:hover,\n.hb-tile-static:active { transform: none; }\n.hb-tile:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }\n.hb-tile-icon {\n  position: absolute;\n  top: 12px;\n  left: 12px;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border: 1px solid rgba(255, 255, 255, 0.35);\n  border-radius: 12px;\n  background: rgba(255, 255, 255, 0.22);\n  backdrop-filter: blur(8px);\n}\n/* The scrim is localized: it is the caption block's own background, so it fades in over the text and nowhere\n   else \u2014 the photo above the caption keeps its full brightness. It is already dark by the title (the top third of\n   the fade does most of the work), so a title over snow or sky reads as well as the lines under it. */\n.hb-tile-text {\n  position: absolute;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  display: flex;\n  flex-direction: column;\n  gap: 3px;\n  padding: 30px 12px 12px 14px;\n  background: linear-gradient(180deg, rgba(12, 8, 24, 0) 0%, rgba(12, 8, 24, 0.46) 34%, rgba(12, 8, 24, 0.72) 100%);\n}\n.hb-tile-title { font-size: 15.5px; line-height: 20px; font-weight: 700; letter-spacing: -0.01em; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3); }\n.hb-tile-subtitle {\n  display: -webkit-box;\n  -webkit-line-clamp: 3;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  font-size: 12.5px;\n  line-height: 16px;\n  color: #fff;\n  text-shadow: 0 1px 2px rgba(12, 8, 24, 0.55);\n}\n@media (prefers-reduced-motion: reduce) {\n  .hb-tile { transition: none; }\n}\n";
 
 // src/blocks/checklist/checklist.css
-var checklist_default = "/* Checklist */\n.hb-checklist { display: flex; flex-direction: column; }\n.hb-checklist-head { display: flex; align-items: baseline; gap: 8px; }\n.hb-checklist-head .hb-card-title { flex: 1; min-width: 0; }\n.hb-checklist-count {\n  margin-left: auto;\n  font-size: 12.5px;\n  font-weight: 600;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-checklist-count-done { color: var(--hb-good); }\n.hb-checklist-track { display: block; height: 6px; margin: 8px 0 4px; overflow: hidden; border-radius: 999px; background: var(--hb-well); }\n.hb-checklist-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-good); transition: width 0.3s ease; }\n.hb-checklist-group { padding: 10px 0 2px; font-size: 12px; font-weight: 700; color: var(--hb-muted); }\n.hb-check {\n  display: flex;\n  align-items: flex-start;\n  gap: 12px;\n  width: 100%;\n  margin: 0;\n  padding: 7px 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n}\n.hb-check:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; border-radius: 8px; }\n.hb-check-mark {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 22px;\n  height: 22px;\n  margin-top: 0.5px;\n  border: 2px solid var(--hb-line-strong);\n  border-radius: 999px;\n  color: var(--hb-muted);\n  font-size: 11px;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n  transition: background 0.15s, border-color 0.15s;\n}\n.hb-check-on .hb-check-mark { border-color: var(--hb-good); background: var(--hb-good); color: #fff; }\n.hb-check-text { flex: 1; min-width: 0; font-size: 14.5px; line-height: 21px; transition: color 0.15s; }\n.hb-check-on .hb-check-text { color: var(--hb-muted); text-decoration: line-through; text-decoration-thickness: 1px; }\n@media (prefers-reduced-motion: reduce) {\n  .hb-checklist-fill, .hb-check-mark, .hb-check-text { transition: none; }\n}\n";
+var checklist_default = '/* Checklist */\n.hb-checklist { display: flex; flex-direction: column; }\n.hb-checklist-head { display: flex; align-items: baseline; gap: 8px; }\n.hb-checklist-head .hb-card-title { flex: 1; min-width: 0; }\n.hb-checklist-count {\n  margin-left: auto;\n  font-size: 12.5px;\n  font-weight: 600;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-checklist-count-done { color: var(--hb-good); }\n.hb-checklist-track { display: block; height: 6px; margin: 8px 0 4px; overflow: hidden; border-radius: 999px; background: var(--hb-well); }\n.hb-checklist-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-good); transition: width 0.3s ease; }\n.hb-checklist-group-label { padding: 10px 0 2px; font-size: 12px; font-weight: 700; color: var(--hb-muted); }\n.hb-check {\n  display: flex;\n  align-items: flex-start;\n  gap: 12px;\n  width: 100%;\n  margin: 0;\n  padding: 7px 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n}\n.hb-check:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; border-radius: 8px; }\n.hb-check-mark {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 22px;\n  height: 22px;\n  margin-top: 0.5px;\n  border: 2px solid var(--hb-line-strong);\n  border-radius: 999px;\n  color: var(--hb-muted);\n  font-size: 11px;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n  transition: background 0.15s, border-color 0.15s;\n}\n/* The state is a shape on the same 22px mark, so no icon has to carry it: a dot for the item being worked on, a bar\n   for one that cannot move, a dashed ring for one dropped on purpose. */\n.hb-check-mark::after { content: ""; display: block; border-radius: 999px; }\n.hb-check-active .hb-check-mark { border-color: var(--hb-accent); }\n.hb-check-active .hb-check-mark::after { width: 8px; height: 8px; background: var(--hb-accent); }\n.hb-check-blocked .hb-check-mark { border-color: var(--hb-warn); }\n.hb-check-blocked .hb-check-mark::after { width: 10px; height: 2px; background: var(--hb-warn); }\n.hb-check-skipped .hb-check-mark { border-style: dashed; border-color: var(--hb-muted); }\n.hb-check-pointer .hb-check-mark { border-color: var(--hb-accent); }\n.hb-check-on .hb-check-mark { border-color: var(--hb-good); background: var(--hb-good); color: var(--hb-surface); }\n.hb-check-text { flex: 1; min-width: 0; font-size: 14.5px; line-height: 21px; transition: color 0.15s; }\n.hb-check-line { display: flex; align-items: baseline; gap: 8px; }\n.hb-check-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }\n.hb-check-state { flex: none; font-size: 11.5px; font-weight: 600; color: var(--hb-muted); white-space: nowrap; }\n.hb-check-blocked .hb-check-state { color: var(--hb-warn); }\n.hb-check-owner { flex: none; font-size: 11.5px; color: var(--hb-muted); white-space: nowrap; }\n.hb-check-note { display: block; margin-top: 2px; font-size: 12px; line-height: 18px; color: var(--hb-muted); overflow-wrap: anywhere; }\n.hb-check-on .hb-check-text { color: var(--hb-muted); }\n.hb-check-on .hb-check-label { text-decoration: line-through; text-decoration-thickness: 1px; }\n@media (prefers-reduced-motion: reduce) {\n  .hb-checklist-fill, .hb-check-mark, .hb-check-text { transition: none; }\n}\n';
 
 // src/blocks/calculator/calculator.css
 var calculator_default = "/* Calculator; a form's slider uses the same .hb-calc-head, .hb-calc-label, .hb-calc-value and .hb-range. */\n.hb-calc { display: flex; flex-direction: column; }\n/* At the top of a reply sliders stop at 720px rather than stretching across a wide board; in a layout block they fill\n   their place. */\n.hb-blocks > .hb-calc { max-width: 720px; }\n.hb-calc-slider { display: block; padding: 8px 0; }\n.hb-calc-head { display: flex; align-items: baseline; gap: 8px; }\n.hb-calc-label { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--hb-ink-2); }\n.hb-calc-value { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }\n.hb-range { display: block; width: 100%; margin: 8px 0 0; accent-color: var(--hb-accent); cursor: pointer; }\n.hb-calc-ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--hb-muted); font-variant-numeric: tabular-nums; }\n.hb-calc-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 8px; }\n/* A calculator's live chart sits in the calculator's card, so it drops its own card look. */\n.hb-calc > .hb-chart { margin-top: 10px; padding: 10px 0 0; border: 0; border-top: 1px solid var(--hb-line); border-radius: 0; background: none; }\n.hb-calc-result { min-width: 0; padding: 10px 14px; border-radius: 14px; background: var(--hb-accent-soft); }\n.hb-calc-result-label { font-size: 12px; font-weight: 600; color: var(--hb-accent-ink); }\n.hb-calc-result-value {\n  margin-top: 2px;\n  font-size: 20px;\n  line-height: 1.2;\n  font-weight: 800;\n  letter-spacing: -0.02em;\n  font-variant-numeric: tabular-nums;\n  overflow-wrap: anywhere;\n}\n";

@@ -692,3 +692,22 @@ def test_checklist_items_may_carry_unique_short_ids():
     assert check_blocks(dup) == ["0.items.1: item id is used twice"]
     long = [{"type": "checklist", "items": [{"text": "A", "id": "x" * 41}]}]
     assert check_blocks(long) == ["0.items.0: item id is plain text up to 40 characters"]
+
+
+def test_checklist_items_may_carry_a_state_an_owner_and_a_note():
+    ok = [{"type": "checklist", "items": [
+        {"text": "Copy", "state": "active", "owner": "Priya", "note": "Half done"},
+        {"text": "Verify", "state": "blocked"}, {"text": "Ship", "state": "done"},
+        {"text": "Backfill", "state": "skipped"}, {"text": "Announce", "state": "pending"}]}]
+    assert check_blocks(ok) == []
+    bad = [{"type": "checklist", "items": [
+        {"text": "A", "state": "waiting"}, {"text": "B", "state": 5},
+        {"text": "C", "owner": "x" * 41}, {"text": "D", "note": "y" * 121}, {"text": "E", "owner": ""}]}]
+    assert check_blocks(bad) == [
+        "0.items.0: item state is pending, active, done, blocked or skipped",
+        "0.items.1: item state is pending, active, done, blocked or skipped",
+        "0.items.2: item owner is plain text up to 40 characters",
+        "0.items.3: item note is plain text up to 120 characters",
+        "0.items.4: item owner is plain text up to 40 characters",
+    ]
+

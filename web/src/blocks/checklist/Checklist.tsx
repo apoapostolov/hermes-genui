@@ -1,45 +1,115 @@
-// Things to tick off, with "3 of 9 done" and a bar above them; items of one group sit under its heading. Inside a
-// `::blocks` tag the ticks are saved with the board (savedState.ts), so they're there after a reload and on the laptop.
-import { useContext, useEffect, useRef, useState } from "react";
+// Things to tick off, with "3 of 9 done" and a bar above them; items of one group sit under its heading and each item
+// can say where its work stands (state), who holds it and why it waits. Inside a `::blocks` tag the ticks are saved
+// with the board (savedState.ts), so they're there after a reload and on the laptop.
+import { useContext, useEffect, useId, useRef, useState } from "react";
 import { BlockActions } from "../../host/actions";
-import type { ChecklistBlock, ChecklistItem } from "./read";
+import type { ChecklistBlock, ChecklistItem, ItemState } from "./read";
 import { InlineText } from "../../lib/InlineText";
 import { Icon } from "../../lib/Icon";
 import { loadBoardState, readTicks, saveBoardValue, ticksAfterLoad, toggleTick } from "./savedState";
 
+/** The word drawn beside an item (and read with it): pending has none, done is carried by the tick and the count. */
+const STATE_WORDS: Record<ItemState, string | undefined> = {
+  pending: undefined,
+  active: "In progress",
+  blocked: "Blocked",
+  skipped: "Skipped",
+};
+
 export function Checklist({ title, numbered, items, ticked, path }: ChecklistBlock) {
   const [ticks, tap] = useSavedTicks(path, ticked, items.length);
+  const uid = useId();
   const done = ticks.length;
   const allDone = done === items.length;
+  const open = items.filter((_, i) => !ticks.includes(i));
+  const blocked = open.filter((item) => item.state === "blocked").length;
+  const skipped = open.filter((item) => item.state === "skipped").length;
+  const pointer = items.some((item) => item.state) ? pointerAt(items, ticks) : -1;
+
+  function row(item: ChecklistItem, index: number) {
+    const on = ticks.includes(index);
+    const state = on ? undefined : item.state;
+    const word = state ? STATE_WORDS[state] : undefined;
+    const labelId = `${uid}-label-${index}`;
+    const wordId = word ? `${uid}-state-${index}` : undefined;
+    const ownerId = item.owner ? `${uid}-owner-${index}` : undefined;
+    const noteId = item.note ? `${uid}-note-${index}` : undefined;
+    const describedBy = [wordId, ownerId, noteId].filter(Boolean).join(" ") || undefined;
+    const classes = ["hb-check", on ? "hb-check-on" : state ? `hb-check-${state}` : "", pointer === index ? "hb-check-pointer" : ""];
+    return (
+      <div key={index} className="hb-checklist-row">
+        <button type="button" role="checkbox" aria-checked={on} aria-current={pointer === index ? "step" : undefined}
+          aria-labelledby={labelId} aria-describedby={describedBy} onClick={() => tap(index)} className={classes.join(" ").trim()}>
+          <span className="hb-check-mark">{on ? <Icon name="check" size={13} stroke={3} /> : numbered ? index + 1 : null}</span>
+          <span className="hb-check-text">
+            <span className="hb-check-line">
+              <span className="hb-check-label" id={labelId}><InlineText text={item.text} /></span>
+              {word && <span className="hb-check-state" id={wordId}>{word}</span>}
+              {item.owner && <span className="hb-check-owner" id={ownerId}>{item.owner}</span>}
+            </span>
+            {item.note && <span className="hb-check-note" id={noteId}>{item.note}</span>}
+          </span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="hb-card hb-checklist">
       <div className="hb-checklist-head">
         {title && <span className="hb-card-title"><InlineText text={title} /></span>}
         <span className={allDone ? "hb-checklist-count hb-checklist-count-done" : "hb-checklist-count"} aria-live="polite">
-          {allDone ? "All done" : `${done} of ${items.length} done`}
+          {countText(done, items.length, blocked, skipped)}
         </span>
       </div>
-      <div className="hb-checklist-track"><span className="hb-checklist-fill" style={{ width: `${(done / items.length) * 100}%` }} /></div>
-      {items.map((item, i) => (
-        <div key={i}>
-          {startsGroup(items, i) && <div className="hb-checklist-group"><InlineText text={item.group!} /></div>}
-          <button type="button" role="checkbox" aria-checked={ticks.includes(i)} onClick={() => tap(i)}
-            className={ticks.includes(i) ? "hb-check hb-check-on" : "hb-check"}>
-            <span className="hb-check-mark">{ticks.includes(i) ? <Icon name="check" size={13} stroke={3} /> : numbered ? i + 1 : null}</span>
-            <span className="hb-check-text"><InlineText text={item.text} /></span>
-          </button>
-        </div>
-      ))}
+      <div className="hb-checklist-track" aria-hidden="true">
+        <span className="hb-checklist-fill" style={{ width: `${(done / items.length) * 100}%` }} />
+      </div>
+      {segmentsOf(items).map((segment, si) =>
+        segment.label ? (
+          <div key={si} className="hb-checklist-group" role="group" aria-labelledby={`${uid}-group-${si}`}>
+            <div className="hb-checklist-group-label" id={`${uid}-group-${si}`}><InlineText text={segment.label} /></div>
+            {segment.rows.map(({ item, index }) => row(item, index))}
+          </div>
+        ) : (
+          <div key={si} className="hb-checklist-plain">{segment.rows.map(({ item, index }) => row(item, index))}</div>
+        ),
+      )}
     </div>
   );
 }
 
-/** Whether item i starts a new group heading: it has a group, and the item before it has a different one (or none).
- *  [Jacket (Clothes), Socks (Clothes), Passport (Papers)]: at 0 → yes, at 1 → no, at 2 → yes */
-function startsGroup(items: ChecklistItem[], i: number): boolean {
-  const group = items[i].group;
-  if (!group) return false;
-  return items[i - 1]?.group !== group;
+/** "3 of 9 done", naming what is stuck beside it: "6 of 9 done, 1 blocked", "6 of 9 done, 2 skipped".
+ *  (6, 9, 1, 0) → "6 of 9 done, 1 blocked";  (9, 9, 0, 0) → "All done" */
+export function countText(done: number, total: number, blocked: number, skipped: number): string {
+  const head = done === total ? "All done" : `${done} of ${total} done`;
+  const beside = [blocked ? `${blocked} blocked` : "", skipped ? `${skipped} skipped` : ""].filter(Boolean);
+  return beside.length ? `${head}, ${beside.join(", ")}` : head;
+}
+
+/** The row the block points at: the first item being worked on, else the first one not started, else -1 (no pointer).
+ *  A ticked item is done, so it never holds the pointer. */
+function pointerAt(items: ChecklistItem[], ticks: number[]): number {
+  const open = (i: number) => !ticks.includes(i);
+  const active = items.findIndex((item, i) => item.state === "active" && open(i));
+  if (active >= 0) return active;
+  return items.findIndex((item, i) => item.state === "pending" && open(i));
+}
+
+type Row = { item: ChecklistItem; index: number };
+
+/** The items in drawing order, split where the group heading changes: one segment per heading, and one unlabelled
+ *  segment for the items before, between or after headings.
+ *  [Jacket (Clothes), Socks (Clothes), Passport (Papers)] → [{label: "Clothes", rows: [0, 1]}, {label: "Papers", rows: [2]}] */
+function segmentsOf(items: ChecklistItem[]): { label?: string; rows: Row[] }[] {
+  const segments: { label?: string; rows: Row[] }[] = [];
+  items.forEach((item, index) => {
+    const last = segments[segments.length - 1];
+    if (item.group && last?.label !== item.group) segments.push({ label: item.group, rows: [{ item, index }] });
+    else if (last) last.rows.push({ item, index });
+    else segments.push({ rows: [{ item, index }] });
+  });
+  return segments;
 }
 
 /** The ticks on screen and a tap handler. With a board and a REST door (inside a `::blocks` tag) the saved ticks are

@@ -13,7 +13,7 @@ table: Options compared on the same attributes. Use for: Phones, plans, hotels. 
 Example: {"type":"table","caption":"Phones under ₹50k","columns":["Phone","Price","Camera"],"highlight":{"row":0},"rows":[["Pixel 10a","₹44,999","Best in class"],["Nothing 4","₹39,999","OK"]]}
 callout: A tinted box: a warning, a tip or the takeaway. Use for: Warnings, tips, the verdict. One per reply. Fields: tone: info | tip | warn. title. text.
 Example: {"type":"callout","tone":"tip","text":"Pixel for photos; Nothing for price."}
-source: A small line naming the data's source. Use for: Last block, for outside data. Fields: text. url (optional).
+source: A line naming the data's source. Use for: Last block, outside data. Fields: text. url (optional).
 Example: {"type":"source","text":"screener.in · TCS · Jun 2026 quarter","url":"https://www.screener.in/company/TCS/"}
 list: Rows: rank, icon or photo, title, subtitle, value. Use for: Rankings, top picks, results. Fields: title. ranked: true numbers rows. items ≤12: [{title, subtitle, value, icon or image, run: sent on tap, or url}].
 Example: {"type":"list","title":"Cafés nearby","ranked":true,"items":[{"title":"Third Wave","subtitle":"80 Feet Road","value":"4.5★"},{"title":"Dyu Art Café","subtitle":"Garden seats","value":"4.4★"}]}
@@ -35,7 +35,7 @@ actions: Up to 3 buttons that send a message. Use for: An obvious next step. Fie
 Example: {"type":"actions","items":[{"label":"Analyze","run":"Analyze TCS: last 4 quarters"}]}
 tiles: 2-8 cover cards. Use for: Choices to explore. Fields: items: [{title, subtitle: a few words, image, icon, ask: fills the composer | run: sends}]. No ask/run: a static card, only for pure facts.
 Example: {"type":"tiles","items":[{"title":"Arashiyama","icon":"leaf","ask":"Add Arashiyama"},{"title":"Gion","icon":"moon","run":"Add a Gion walk"}]}
-checklist: Items to tick; ticks are saved. Use for: Packing lists, to-dos, steps. Fields: title. items: [text | {text, group}], ≤40. numbered: true for steps.
+checklist: Items to tick; ticks saved. Use for: Packing, to-dos, steps. Fields: title. items ≤40: text | {text, group, state: pending|active|done|blocked|skipped, owner, note}. numbered.
 Example: {"type":"checklist","title":"Packing","items":["Jacket",{"text":"ID card","group":"Papers"}]}
 calendar: A day at a glance: big date, its events, the week. Use for: Today, a day's plan or agenda. Fields: date: YYYY-MM-DD. events ≤12: [{title, start: "09:30", end, place}]. week ≤7: [{date, count}]. ask: fills the composer.
 Example: {"type":"calendar","date":"2026-11-14","events":[{"title":"Standup","start":"09:30","place":"Zoom"}],"week":[{"date":"2026-11-14","count":1}],"ask":"What's on today?"}
@@ -53,11 +53,11 @@ row: 2-3 small blocks side by side; they stack when narrow. Use for: Two stats, 
 Example: {"type":"row","children":[{"type":"stat","label":"Spent","value":18400,"unit":"₹"},{"type":"stat","label":"Left","value":6600}]}
 section: A titled card of blocks; collapsed: true folds it. Use for: A table and its verdict; a card per day; details (collapsed). Fields: title. collapsed. children: any blocks but a section.
 Example: {"type":"section","title":"Getting there","collapsed":true,"children":[{"type":"text","text":"Fly to Coimbatore, then 3h by road."}]}
-grid: 2-6 small blocks in two columns. Use for: Stats, photos or bars. Fields: children: 2-6 small blocks.
+grid: 2-6 small blocks in two columns. Use for: Stats, photos or bars. Fields: children: 2-6.
 Example: {"type":"grid","children":[{"type":"bar","label":"Food","value":7200,"max":8000,"unit":"₹"},{"type":"bar","label":"Packed","value":6,"max":9}]}
 columns: 2-3 big blocks side by side; they stack when narrow. Use for: Dashboards: a chart beside a table. Fields: children: 2-3 blocks (no section or columns).
 Example: {"type":"columns","children":[{"type":"chart","kind":"bar","title":"Revenue, $B","x":["Q1","Q2"],"series":[{"name":"Revenue","data":[90.2,102.3]}]},{"type":"table","columns":["Quarter","Margin"],"rows":[["Q2","34%"]]}]}
-tabs: 2-6 labelled tabs. Top level only. Use for: A view per profile, stock or scenario. Fields: tabs: [{label (≤30 chars), children: any blocks but tabs}].
+tabs: 2-6 labelled tabs. Top level only. Use for: A view per profile, stock or scenario. Fields: tabs: [{label ≤30, children: any blocks but tabs}].
 Example: {"type":"tabs","tabs":[{"label":"Rent","children":[{"type":"stat","label":"Monthly","value":45000,"unit":"₹"}]},{"label":"Buy","children":[{"type":"stat","label":"EMI","value":52000,"unit":"₹"}]}]}
 include: A tool's board (market_history, find_photos), placed by its id. Use for: Dashboards around a tool's board. Fields: id from the tool's tag.
 Example: {"type":"include","id":"7f3a09bc"}
