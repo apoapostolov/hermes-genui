@@ -140,6 +140,40 @@ def test_pie_shows_top_slices_with_shares():
     assert render(pie) == "**Mix**: A 50%, B 20%, C 15%, D 10%, +1 more"
 
 
+def test_histogram_counts_its_bins():
+    hist = {"type": "chart", "kind": "histogram", "title": "Calls", "unit": "min",
+            "x": ["0-50", "50-100", "100-150"], "series": [{"name": "Calls", "data": [4, 12, 9]}]}
+    assert render(hist) == "**Calls** (min): 25 counted in 3 bins: 0-50 4, 50-100 12, 100-150 9"
+
+
+def test_histogram_leaves_out_a_bin_with_no_count():
+    hist = {"type": "chart", "kind": "histogram", "title": "Calls", "x": ["0-50", "50-100", "100-150"],
+            "series": [{"data": [4, None, 9]}]}
+    assert render(hist) == "**Calls**: 13 counted in 2 bins: 0-50 4, 100-150 9"
+
+
+def test_a_long_histogram_names_only_its_tallest_bin():
+    bins = [f"{i * 10}-{i * 10 + 10}" for i in range(12)]
+    hist = {"type": "chart", "kind": "histogram", "title": "Calls", "x": bins,
+            "series": [{"data": [1] * 11 + [7]}]}
+    assert render(hist) == "**Calls**: 18 counted in 12 bins, most in 110-120 (7)"
+
+
+def test_range_writes_each_window_its_dot_and_where_the_dot_sits():
+    band = {"type": "chart", "kind": "range", "title": "Delivery time", "unit": "min",
+            "x": ["Mon", "Tue", "Wed", "Thu"],
+            "series": [{"name": "Delivery", "low": [18, 19, 20, None], "high": [34, 36, 38, None],
+                        "now": [26, 31, 42, None]}]}
+    assert render(band) == ("**Delivery time** (min): Mon 18-34, now 26; Tue 19-36, now 31; "
+                            "Wed 20-38, now 42 (above the band); Thu no window")
+
+
+def test_range_with_a_dot_below_its_window():
+    band = {"type": "chart", "kind": "range", "title": "Rent", "unit": "₹",
+            "x": ["Indiranagar"], "series": [{"low": [38000], "high": [52000], "now": [35000]}]}
+    assert render(band) == "**Rent** (₹): Indiranagar 38,000-52,000, now 35,000 (below the band)"
+
+
 # --- tables ---------------------------------------------------------------------------------------
 
 def test_table_is_markdown():

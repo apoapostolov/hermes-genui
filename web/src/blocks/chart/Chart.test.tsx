@@ -238,6 +238,72 @@ describe("donuts", () => {
   });
 });
 
+describe("histograms", () => {
+  const hist = () => chart({ kind: "histogram", title: "Delivery times", unit: "orders", x: ["0-15", "15-30", "30-45"],
+    series: [{ name: "Orders", data: [4, 12, 0] }] });
+
+  it("draws the bins as touching columns from zero, with their counts on top", () => {
+    const { container } = render(<Blocks blocks={hist()} />);
+    const bars = [...container.querySelectorAll("rect.hb-chart-bar")] as SVGRectElement[];
+    expect(bars.length).toBe(2);  // a count of 0 is a known zero and draws no column
+    expect(Number(bars[0].getAttribute("width"))).toBeGreaterThan(90);  // the whole 96px slot, less a hairline
+    const right = Number(bars[0].getAttribute("x")) + Number(bars[0].getAttribute("width"));
+    expect(Number(bars[1].getAttribute("x")) - right).toBeCloseTo(1);
+    expect(bars.map((b) => b.getAttribute("fill"))).toEqual(["var(--hb-chart-1)", "var(--hb-chart-1)"]);
+    expect([...container.querySelectorAll("text.hb-chart-value")].map((t) => t.textContent)).toEqual(["4 orders", "12 orders", "0 orders"]);
+  });
+
+  it("reads its tallest bin as the headline, beside how many it counted", () => {
+    const { container } = render(<Blocks blocks={hist()} />);
+    expect(container.querySelector(".hb-chart-big")!.textContent).toBe("12 orders");
+    expect(container.querySelector(".hb-chart-at")!.textContent).toBe("15-30 · 16 counted");
+    expect(container.querySelector(".hb-chip")).toBeNull();  // a distribution has no change to show
+  });
+
+  it("names the bin and its count in the hover card", () => {
+    const { container } = render(<Blocks blocks={hist()} />);
+    fireEvent.keyDown(container.querySelector("svg.hb-chart-svg")!, { key: "ArrowRight" });
+    expect(container.querySelector(".hb-tip-on .hb-tip-title")!.textContent).toBe("0-15");
+    expect(container.querySelector(".hb-tip-on .hb-tip-name")!.textContent).toBe("Orders");
+    expect(container.querySelector(".hb-tip-on .hb-tip-value")!.textContent).toBe("4 orders");
+    expect(container.querySelector(".hb-chart-big")!.textContent).toBe("4 orders");
+  });
+});
+
+describe("ranges", () => {
+  const delivery = () => chart({ kind: "range", title: "Delivery time", unit: "min", x: ["Mon", "Tue", "Wed"],
+    series: [{ name: "Delivery", low: [18, 19, 20], high: [34, 36, 38], now: [26, 31, 42] }] });
+
+  it("draws a band from low to high with the dot where the latest reading sits", () => {
+    const { container } = render(<Blocks blocks={delivery()} />);
+    const bands = [...container.querySelectorAll("rect.hb-chart-band")] as SVGRectElement[];
+    expect(bands.length).toBe(3);
+    expect(bands.map((b) => b.getAttribute("fill"))).toEqual(["var(--hb-chart-1)", "var(--hb-chart-1)", "var(--hb-chart-1)"]);
+    const dots = [...container.querySelectorAll("circle.hb-chart-dot")].map((d) => Number(d.getAttribute("cy")));
+    expect(dots.length).toBe(3);
+    expect(dots[2]).toBeLessThan(Number(bands[2].getAttribute("y")));  // 42 sits above 20-38
+  });
+
+  it("writes the scale on the left and the picked window in the headline", () => {
+    const { container } = render(<Blocks blocks={delivery()} />);
+    expect([...container.querySelectorAll("text.hb-chart-tick")].length).toBeGreaterThan(1);
+    expect(container.querySelector(".hb-chart-big")!.textContent).toBe("42 min");
+    expect(container.querySelector(".hb-chart-at")!.textContent).toBe("Wed · 20 min–38 min");
+  });
+
+  it("says when the dot sits outside the band, and when a window is missing", () => {
+    const { container } = render(<Blocks blocks={chart({ kind: "range", unit: "min", x: ["Mon", "Tue"],
+      series: [{ low: [18, null], high: [34, null], now: [42, null] }] })} />);
+    const svg = container.querySelector("svg.hb-chart-svg")!;
+    fireEvent.keyDown(svg, { key: "ArrowRight" });
+    expect(container.querySelector(".hb-tip-on .hb-tip-title")!.textContent).toBe("Mon");
+    expect(container.querySelector(".hb-tip-on .hb-tip-value")!.textContent).toBe("18 min–34 min");
+    expect(container.querySelector(".hb-tip-on .hb-tip-note")!.textContent).toBe("now 42 min, above the band");
+    fireEvent.keyDown(svg, { key: "ArrowRight" });
+    expect(container.querySelector(".hb-tip-on .hb-tip-note")!.textContent).toBe("no window");
+  });
+});
+
 describe("fmt", () => {
   it("formats crore amounts in rupees", () => {
     expect(fmt(72275, "₹Cr")).toBe("₹72,275 Cr");

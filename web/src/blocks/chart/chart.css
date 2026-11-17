@@ -49,6 +49,8 @@
 .hb-chart-rule { stroke: var(--hb-line); }
 .hb-chart-rule-strong { stroke: var(--hb-line-strong); }
 .hb-chart-dot { stroke: var(--hb-surface); stroke-width: 2; }
+/* A range's band: its series colour, soft, with the line colour as its edge. */
+.hb-chart-band { fill-opacity: 0.2; stroke: var(--hb-line-strong); stroke-width: 1.25; }
 .hb-chart-svg g, .hb-hbar-bar { transition: opacity 0.15s; }
 .hb-chart-draw { animation: hb-chart-draw 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 @keyframes hb-chart-draw { to { stroke-dashoffset: 0; } }

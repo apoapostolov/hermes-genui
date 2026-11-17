@@ -1,7 +1,7 @@
-// Where everything goes in an up-and-down chart (line, bar, area, stacked, combo), worked out from the spec and the
-// width it has on screen: the plot's edges, where a label or value sits, how wide a column is, which x labels and
-// value labels are written, and the labels at the ends of lines. Also what the hover card says at a point.
-import { fmt, partColour, seriesName, type ChartSeries, type ChartSpec } from "./chartData";
+// Where everything goes in an up-and-down chart (line, bar, area, stacked, combo, histogram, range), worked out from
+// the spec and the width it has on screen: the plot's edges, where a label or value sits, how wide a column is, which x
+// labels and value labels are written, and the labels at the ends of lines. Also what the hover card says at a point.
+import { fmt, fmtSpan, partColour, seriesName, type ChartSeries, type ChartSpan, type ChartSpec } from "./chartData";
 import { columnLayout, niceTicks, spreadLabels, textWidth, xLabelsShown } from "./geometry";
 import { formatChange } from "../../lib/format";
 import type { Tip } from "./ChartTip";
@@ -15,8 +15,9 @@ export type XYLayout = {
   W: number; H: number;
   /** The plot's edges: left and right x, top and bottom (base) y. */
   left: number; right: number; top: number; base: number;
-  /** Whether each x label owns a column (bars, stacked, combo) rather than a point on a line; a column's width. */
-  slotted: boolean; bar: number;
+  /** Whether each x label owns a column (bars, stacked, combo, histogram, range) rather than a point on a line; the
+   *  width of a column's slot and of the bar drawn in it. */
+  slotted: boolean; slot: number; bar: number;
   xAt: (i: number) => number; yAt: (v: number) => number;
   /** The y of a value on a series's own scale (a combo's line may use the right one). */
   yOf: (s: ChartSeries) => (v: number) => number;
@@ -58,13 +59,15 @@ const unitOf = (spec: ChartSpec, s: ChartSeries) => s.unit ?? spec.unit;
  * 220px. Bars carry their values on top when there are 12 or fewer (bars x series) and each value fits over its bar.
  * A line ends in its last value (one series) or each series's name (several), which takes room on the right.
  * Several lines also get faint gridlines at round values, written on the left, and the scale runs from the lowest to
- * the highest of them, so the gap between the lines reads without hovering.
+ * the highest of them, so the gap between the lines reads without hovering. A range gets those gridlines too (its
+ * windows sit between round values, not on a zero line); a histogram does not, its columns stand on zero.
  *   5 bars at 600px → 96px slots centred, values on top;  53 weekly points → about every 7th x label;
  *   two lines from 0% to 18.5% and -4.2% → gridlines at -10%, 0%, 10%, 20%
  */
 export function xyLayout(spec: ChartSpec, width: number, scales: { left: Scale; right: Scale | null }): XYLayout {
   const n = spec.x.length;
-  const slotted = spec.type === "bar" || spec.type === "stacked" || spec.type === "combo";
+  const slotted = spec.type === "bar" || spec.type === "stacked" || spec.type === "combo"
+    || spec.type === "histogram" || spec.type === "range";
   const H = slotted ? COLUMNS_H : LINES_H;
   const base = H - BOTTOM;
   const endTexts = spec.type === "line" ? lineEndTexts(spec) : [];
@@ -82,7 +85,7 @@ export function xyLayout(spec: ChartSpec, width: number, scales: { left: Scale; 
     : left + (n === 1 ? plotWidth / 2 : (plotWidth * i) / (n - 1));
   const step = slotted ? columns.slot : n > 1 ? plotWidth / (n - 1) : 0;
 
-  const valueLabels = spec.type === "bar" && n * perSlot <= MAX_VALUE_LABELS
+  const valueLabels = (spec.type === "bar" || spec.type === "histogram") && n * perSlot <= MAX_VALUE_LABELS
     && spec.series.every((s) => s.data.every((v) => v === null || textWidth(fmt(v, unitOf(spec, s)), 11.5) <= columns.slot / perSlot));
   const top = TOP + (valueLabels ? VALUE_ROOM : 0);
   const scaleY = ({ min, max }: Scale) => (v: number) => top + (base - top) * (1 - (v - min) / (max - min || 1));
@@ -99,15 +102,20 @@ export function xyLayout(spec: ChartSpec, width: number, scales: { left: Scale; 
   const placedEnds = endTexts.map((e, j) => ({ series: e.series, at: e.at, text: e.text, dotY: dotYs[j], y: textYs[j],
     dot: valueColour(spec, e.series, e.value), ink: spec.series.length === 1 ? "var(--hb-ink)" : partColour(e.series) }));
 
-  return { W: width, H, left, right, top, base, slotted, bar: columns.bar, xAt, yAt, yOf, xLabels, valueLabels,
-    ends: placedEnds, ticks };
+  return { W: width, H, left, right, top, base, slotted, slot: columns.slot, bar: columns.bar, xAt, yAt, yOf, xLabels,
+    valueLabels, ends: placedEnds, ticks };
 }
 
-/** The gridline values for a chart with several lines, from its lowest value to its highest; none for anything else
- *  (one line reads from its end label and the hover card). */
+/** The gridline values for a chart with several lines, from its lowest value to its highest, and for a range, from
+ *  its lowest window bottom to its highest top or dot; none for anything else (one line reads from its end label and
+ *  the hover card, and a histogram's columns stand on zero). */
 function gridTicks(spec: ChartSpec): number[] {
-  if (spec.type !== "line" || spec.series.length < 2) return [];
-  const values = spec.series.flatMap((s) => s.data.filter((v): v is number => v !== null));
+  if (spec.type === "line" && spec.series.length < 2) return [];
+  if (spec.type !== "line" && spec.type !== "range") return [];
+  const values = spec.type === "range"
+    ? spec.series.flatMap((s) => (s.span ?? []).flatMap((b) => (b ? [b.low, b.high, b.now] : [])))
+      .filter((v): v is number => v !== null)
+    : spec.series.flatMap((s) => s.data.filter((v): v is number => v !== null));
   return values.length ? niceTicks(Math.min(...values), Math.max(...values)) : [];
 }
 
@@ -164,10 +172,14 @@ function lineEndTexts(spec: ChartSpec): { series: number; at: number; value: num
 /**
  * The hover card at x label i: the label, each series's value there in full (gaps left out), and for a one-series
  * line a note of its change since the start. Bars get no share note: only a pie's slices are parts of a whole.
+ * A histogram's card is its own bin ("50–100", Count 12); a range's is both ends of the window and where the dot sits
+ * ("Mon", Range 18 min–34 min, "now 26 min").
  *   bars [4213500000, 6320250000] at 0 → "Q1", Revenue 4,213,500,000, no note
  *   line [100, 104.2] at 1 → Value 104.2, "▲ 4.2% since start"
  */
 export function xyTip(spec: ChartSpec, i: number, layout: XYLayout): Tip {
+  if (spec.type === "histogram") return binTip(spec, i, layout);
+  if (spec.type === "range") return spanTip(spec, i, layout);
   const rows: Tip["rows"] = [];
   let y = layout.base;
   let pile = 0;
@@ -179,6 +191,41 @@ export function xyTip(spec: ChartSpec, i: number, layout: XYLayout): Tip {
     y = Math.min(y, layout.yOf(s)(spec.type === "stacked" || spec.type === "area" ? pile : v));
   });
   return { x: layout.xAt(i), y, title: String(spec.x[i]), rows, note: tipNote(spec, i) };
+}
+
+/** A histogram's card at bin i: the bin's label, its count, and "not counted" where the bin has no count. */
+function binTip(spec: ChartSpec, i: number, layout: XYLayout): Tip {
+  const s = spec.series[0];
+  const v = s.data[i] ?? null;
+  const rows: Tip["rows"] = v === null
+    ? [] : [{ colour: partColour(0), name: s.name ?? "Count", value: fmt(v, unitOf(spec, s), { full: true }) }];
+  return { x: layout.xAt(i), y: v === null ? layout.base : layout.yAt(v), title: String(spec.x[i]), rows,
+    note: v === null ? "not counted" : undefined };
+}
+
+/** A range's card at x label i: both ends of the window in full, and where the dot sits against them. */
+function spanTip(spec: ChartSpec, i: number, layout: XYLayout): Tip {
+  const s = spec.series[0];
+  const span = s.span?.[i] ?? { low: null, high: null, now: null };
+  const unit = unitOf(spec, s);
+  const band = span.low !== null && span.high !== null;
+  const rows: Tip["rows"] = band
+    ? [{ colour: partColour(0), name: s.name ?? "Range", value: fmtSpan(span.low, span.high, unit, { full: true }) }]
+    : [];
+  const ys = [span.high, span.now].flatMap((v) => (v === null ? [] : [layout.yAt(v)]));
+  return { x: layout.xAt(i), y: ys.length ? Math.min(...ys) : layout.base, title: String(spec.x[i]), rows,
+    note: spanNote(span, unit) };
+}
+
+/** The dot read against its window: "now 26 min" inside it, "now 42 min, above the band" outside, alone when the
+ *  window is unknown, and "no window" when neither is known. */
+function spanNote(span: ChartSpan, unit: string | undefined): string | undefined {
+  if (span.now === null) return span.low === null ? "no window" : undefined;
+  const now = `now ${fmt(span.now, unit, { full: true })}`;
+  if (span.low === null || span.high === null) return now;
+  if (span.now < span.low) return `${now}, below the band`;
+  if (span.now > span.high) return `${now}, above the band`;
+  return now;
 }
 
 function tipNote(spec: ChartSpec, i: number): string | undefined {

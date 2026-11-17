@@ -83,6 +83,43 @@ def test_pie_needs_a_positive_value():
     assert check_blocks([chart_with([{"data": [0, -3]}], kind="pie")]) == ["0: a pie needs at least one positive value"]
 
 
+def test_histogram_takes_one_count_series_above_zero():
+    counts = [{"name": "Calls", "data": [4, 12]}]
+    assert check_blocks([chart_with(counts, kind="histogram")]) == []
+    assert check_blocks([chart_with(counts + [{"data": [1, 2]}], kind="histogram")]) == [
+        "0: a histogram chart takes 1 series"]
+    assert check_blocks([chart_with([{"data": [0, 0]}], kind="histogram")]) == [
+        "0: a histogram needs a count above zero"]
+    assert check_blocks([chart_with([{"data": [4, -1]}], kind="histogram")]) == [
+        "0: a histogram counts, so no negative values"]
+    assert check_blocks([chart_with([{"data": [4, "12"]}], kind="histogram")]) == [
+        "0.series.0: data must be numbers (null for a gap)"]
+
+
+def test_range_needs_low_and_high_for_each_x():
+    def window(low: list, high: list, now: list | None = None) -> dict:
+        series: dict = {"name": "Delivery", "low": low, "high": high}
+        if now is not None:
+            series["now"] = now
+        return {"type": "chart", "kind": "range", "x": ["Mon", "Tue"], "series": [series]}
+
+    assert check_blocks([window([18, 19], [34, 36], [26, 31])]) == []
+    assert check_blocks([window([18, 19], [34, 36])]) == []
+    assert check_blocks([window([18], [34, 36])]) == ["0.series.0.low: low has 1 values but x has 2 labels"]
+    assert check_blocks([{"type": "chart", "kind": "range", "x": ["Mon"], "series": [{"now": [26]}]}]) == [
+        "0.series.0: a range needs low for each x"]
+    assert check_blocks([window([18, 19], [34, 36], ["26", 31])]) == [
+        "0.series.0.now: now must be numbers (null for none)"]
+    assert check_blocks([window([40, 19], [34, 36])]) == ["0.series.0.0: low must not be above high"]
+    assert check_blocks([window([18, None], [34, 36])]) == [
+        "0.series.0.1: a window needs both low and high, or null for neither"]
+    assert check_blocks([window([None, None], [None, None], [None, None])]) == [
+        "0: chart needs at least one number"]
+    two = {"type": "chart", "kind": "range", "x": ["Mon"],
+           "series": [{"low": [18], "high": [34]}, {"low": [1], "high": [2]}]}
+    assert check_blocks([two]) == ["0: a range chart takes 1 series"]
+
+
 def test_chart_tone_is_change_on_a_line_chart_only():
     rising = [{"name": "Close", "data": [1, 2]}]
     assert check_blocks([{**chart_with(rising), "tone": "change"}]) == []

@@ -126,3 +126,52 @@ describe("startLabelY (the Start label beside a change line's dashed start)", ()
     expect(place([[8, 190], [60, 120]], 190)).toBe(184);
   });
 });
+
+describe("histogram and range layouts", () => {
+  const hist = (data: (number | null)[]): ChartSpec => ({ type: "histogram", x: ["0-15", "15-30", "30-45"], series: [{ data }] });
+
+  it("gives a histogram's columns the whole slot, so neighbours touch", () => {
+    const l = layoutOf(hist([4, 12, 9]));
+    expect(l.slotted).toBe(true);
+    expect(l.slot).toBe(96);
+    expect(l.valueLabels).toBe(true);
+    expect(l.ticks).toEqual([]);  // a histogram reads from its counts, not from gridlines
+  });
+
+  it("runs a range's scale from its lowest window to its highest, with gridlines", () => {
+    const spec: ChartSpec = { type: "range", unit: "min", x: ["Mon", "Tue"], series: [{ data: [26, 27.5],
+      span: [{ low: 18, high: 34, now: 26 }, { low: 19, high: 36, now: 31 }] }] };
+    const l = layoutOf(spec);
+    expect(l.slotted).toBe(true);
+    expect(l.ticks[0]).toBeLessThanOrEqual(18);
+    expect(l.ticks[l.ticks.length - 1]).toBeGreaterThanOrEqual(36);
+    expect(l.yAt(18)).toBeGreaterThan(l.yAt(34));  // lower down the drawing
+    expect(l.left).toBeGreaterThan(8);  // room for the values written on the left
+  });
+
+  it("puts a range's window and its dot in the hover card", () => {
+    const spec: ChartSpec = { type: "range", unit: "min", x: ["Mon", "Tue"], series: [{ name: "Delivery", data: [26, 39],
+      span: [{ low: 18, high: 34, now: 26 }, { low: 19, high: 36, now: 39 }] }] };
+    const tip = xyTip(spec, 1, layoutOf(spec));
+    expect(tip.title).toBe("Tue");
+    expect(tip.rows).toEqual([{ colour: "var(--hb-chart-1)", name: "Delivery", value: "19 min–36 min" }]);
+    expect(tip.note).toBe("now 39 min, above the band");
+    expect(xyTip(spec, 0, layoutOf(spec)).note).toBe("now 26 min");
+  });
+
+  it("says when a range has no window, or no dot", () => {
+    const spec: ChartSpec = { type: "range", x: ["Mon", "Tue"], series: [{ data: [26, null],
+      span: [{ low: 18, high: 34, now: null }, { low: null, high: null, now: null }] }] };
+    expect(xyTip(spec, 0, layoutOf(spec)).note).toBeUndefined();
+    expect(xyTip(spec, 1, layoutOf(spec)).note).toBe("no window");
+  });
+
+  it("names a histogram's bin and count, and says when a bin was not counted", () => {
+    const spec = hist([4, null, 9]);
+    const tip = xyTip(spec, 1, layoutOf(spec));
+    expect(tip.title).toBe("15-30");
+    expect(tip.rows).toEqual([]);
+    expect(tip.note).toBe("not counted");
+    expect(xyTip(spec, 0, layoutOf(spec)).rows).toEqual([{ colour: "var(--hb-chart-1)", name: "Count", value: "4" }]);
+  });
+});

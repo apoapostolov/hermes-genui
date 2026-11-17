@@ -473,8 +473,16 @@ function readBar(raw, here) {
 import { useMemo as useMemo3, useState as useState8 } from "react";
 
 // src/blocks/chart/chartData.ts
-var CHART_KINDS = ["line", "bar", "area", "stacked", "hbar", "combo", "pie", "donut"];
-var KIND_ALIASES = { doughnut: "donut", stackedbar: "stacked", horizontalbar: "hbar", barh: "hbar" };
+var CHART_KINDS = ["line", "bar", "area", "stacked", "hbar", "combo", "pie", "donut", "histogram", "range"];
+var KIND_ALIASES = {
+  doughnut: "donut",
+  stackedbar: "stacked",
+  horizontalbar: "hbar",
+  barh: "hbar",
+  hist: "histogram",
+  rangebar: "range",
+  floatingbar: "range"
+};
 function chartKind(name) {
   if (typeof name !== "string") return "line";
   const plain = name.toLowerCase().replace(/[\s_-]/g, "");
@@ -484,6 +492,7 @@ function chartKind(name) {
 }
 function maxSeries(kind) {
   if (kind === "stacked" || kind === "area") return 6;
+  if (kind === "histogram" || kind === "range") return 1;
   return 3;
 }
 function isOnRightScale(kind, index, seriesUnit, axis, chartUnit) {
@@ -605,11 +614,27 @@ function chartScales(spec, bands) {
     const ends = bands.flat().flatMap((b) => b === null ? [] : [b.from, b.to]);
     return { left: scaleFor(ends, true), right: null };
   }
+  if (spec.type === "range") {
+    const edges = spec.series.flatMap((s) => (s.span ?? []).flatMap((b) => b ? numbersOf([b.low, b.high, b.now]) : []));
+    return { left: scaleFor(edges.length ? edges : numbersOf(spec.series[0].data), false), right: null };
+  }
   const leftValues = spec.series.filter((s) => !s.right).flatMap((s) => numbersOf(s.data));
   const rightValues = spec.series.filter((s) => s.right).flatMap((s) => numbersOf(s.data));
-  const fromZero = spec.type === "bar" || spec.type === "combo";
+  const fromZero = spec.type === "bar" || spec.type === "combo" || spec.type === "histogram";
   const right = rightValues.length ? scaleFor(rightValues, false) : null;
   return { left: scaleFor(leftValues, fromZero), right };
+}
+function binTotals(data) {
+  let total = 0, tallest = -1, most = -1;
+  data.forEach((v, i) => {
+    if (v === null) return;
+    total += v;
+    if (v > most) {
+      most = v;
+      tallest = i;
+    }
+  });
+  return { total, tallest };
 }
 function numbersOf(data) {
   return data.filter((v) => v !== null);
@@ -628,6 +653,13 @@ function fmt(v, unit, { full = false } = {}) {
   const s = short ? formatCompact(abs, rupees || usesLakhCrore() ? "en-IN" : void 0) : rupees ? formatIndian(abs, digits) : formatNumber(abs, { digits });
   const signed = `${v < 0 ? "-" : ""}${sign}${s}`;
   return sign || !unit || unit === "pts" || unit.length > MAX_UNIT ? signed : `${signed} ${unit}`;
+}
+function fmtSpan(low, high, unit, { full = false } = {}) {
+  if (low === null || high === null) {
+    const one = low ?? high;
+    return one === null ? "\u2013" : fmt(one, unit, { full });
+  }
+  return `${fmt(low, unit, { full })}\u2013${fmt(high, unit, { full })}`;
 }
 
 // src/lib/formula.ts
@@ -1082,7 +1114,7 @@ function valueColour(spec, k, v) {
 var unitOf = (spec, s) => s.unit ?? spec.unit;
 function xyLayout(spec, width, scales) {
   const n = spec.x.length;
-  const slotted = spec.type === "bar" || spec.type === "stacked" || spec.type === "combo";
+  const slotted = spec.type === "bar" || spec.type === "stacked" || spec.type === "combo" || spec.type === "histogram" || spec.type === "range";
   const H = slotted ? COLUMNS_H : LINES_H;
   const base = H - BOTTOM;
   const endTexts = spec.type === "line" ? lineEndTexts(spec) : [];
@@ -1096,7 +1128,7 @@ function xyLayout(spec, width, scales) {
   const columns = columnLayout(plotWidth, n, perSlot);
   const xAt = (i) => slotted ? left + columns.start + columns.slot * (i + 0.5) : left + (n === 1 ? plotWidth / 2 : plotWidth * i / (n - 1));
   const step = slotted ? columns.slot : n > 1 ? plotWidth / (n - 1) : 0;
-  const valueLabels = spec.type === "bar" && n * perSlot <= MAX_VALUE_LABELS && spec.series.every((s) => s.data.every((v) => v === null || textWidth(fmt(v, unitOf(spec, s)), 11.5) <= columns.slot / perSlot));
+  const valueLabels = (spec.type === "bar" || spec.type === "histogram") && n * perSlot <= MAX_VALUE_LABELS && spec.series.every((s) => s.data.every((v) => v === null || textWidth(fmt(v, unitOf(spec, s)), 11.5) <= columns.slot / perSlot));
   const top = TOP + (valueLabels ? VALUE_ROOM : 0);
   const scaleY = ({ min, max }) => (v) => top + (base - top) * (1 - (v - min) / (max - min || 1));
   const yAt = scaleY(ticks.length ? { min: ticks[0], max: ticks[ticks.length - 1] } : scales.left);
@@ -1124,6 +1156,7 @@ function xyLayout(spec, width, scales) {
     top,
     base,
     slotted,
+    slot: columns.slot,
     bar: columns.bar,
     xAt,
     yAt,
@@ -1135,8 +1168,9 @@ function xyLayout(spec, width, scales) {
   };
 }
 function gridTicks(spec) {
-  if (spec.type !== "line" || spec.series.length < 2) return [];
-  const values = spec.series.flatMap((s) => s.data.filter((v) => v !== null));
+  if (spec.type === "line" && spec.series.length < 2) return [];
+  if (spec.type !== "line" && spec.type !== "range") return [];
+  const values = spec.type === "range" ? spec.series.flatMap((s) => (s.span ?? []).flatMap((b) => b ? [b.low, b.high, b.now] : [])).filter((v) => v !== null) : spec.series.flatMap((s) => s.data.filter((v) => v !== null));
   return values.length ? niceTicks(Math.min(...values), Math.max(...values)) : [];
 }
 var START_ABOVE = 6;
@@ -1176,6 +1210,8 @@ function lineEndTexts(spec) {
   });
 }
 function xyTip(spec, i, layout) {
+  if (spec.type === "histogram") return binTip(spec, i, layout);
+  if (spec.type === "range") return spanTip(spec, i, layout);
   const rows = [];
   let y = layout.base;
   let pile = 0;
@@ -1187,6 +1223,41 @@ function xyTip(spec, i, layout) {
     y = Math.min(y, layout.yOf(s)(spec.type === "stacked" || spec.type === "area" ? pile : v));
   });
   return { x: layout.xAt(i), y, title: String(spec.x[i]), rows, note: tipNote(spec, i) };
+}
+function binTip(spec, i, layout) {
+  const s = spec.series[0];
+  const v = s.data[i] ?? null;
+  const rows = v === null ? [] : [{ colour: partColour(0), name: s.name ?? "Count", value: fmt(v, unitOf(spec, s), { full: true }) }];
+  return {
+    x: layout.xAt(i),
+    y: v === null ? layout.base : layout.yAt(v),
+    title: String(spec.x[i]),
+    rows,
+    note: v === null ? "not counted" : void 0
+  };
+}
+function spanTip(spec, i, layout) {
+  const s = spec.series[0];
+  const span = s.span?.[i] ?? { low: null, high: null, now: null };
+  const unit = unitOf(spec, s);
+  const band = span.low !== null && span.high !== null;
+  const rows = band ? [{ colour: partColour(0), name: s.name ?? "Range", value: fmtSpan(span.low, span.high, unit, { full: true }) }] : [];
+  const ys = [span.high, span.now].flatMap((v) => v === null ? [] : [layout.yAt(v)]);
+  return {
+    x: layout.xAt(i),
+    y: ys.length ? Math.min(...ys) : layout.base,
+    title: String(spec.x[i]),
+    rows,
+    note: spanNote(span, unit)
+  };
+}
+function spanNote(span, unit) {
+  if (span.now === null) return span.low === null ? "no window" : void 0;
+  const now = `now ${fmt(span.now, unit, { full: true })}`;
+  if (span.low === null || span.high === null) return now;
+  if (span.now < span.low) return `${now}, below the band`;
+  if (span.now > span.high) return `${now}, above the band`;
+  return now;
 }
 function tipNote(spec, i) {
   if (spec.series.length !== 1 || spec.type !== "line") return void 0;
@@ -1422,6 +1493,56 @@ function ComboMarks({ spec, layout, hover }) {
         /* @__PURE__ */ jsx9("path", { d: linePath(pts), fill: "none", stroke: colour, strokeWidth: "2.25", strokeLinejoin: "round", strokeLinecap: "round" }),
         pts.map(([cx, cy], i) => /* @__PURE__ */ jsx9("circle", { cx, cy, r: "3.5", fill: colour, className: "hb-chart-dot" }, i))
       ] }, j);
+    })
+  ] });
+}
+function HistogramMarks({ spec, layout, hover }) {
+  const { xAt, yAt, slot } = layout;
+  const zero = yAt(0);
+  const width = Math.max(slot - 1, 1);
+  const unit = spec.series[0].unit ?? spec.unit;
+  return /* @__PURE__ */ jsxs6("g", { children: [
+    spec.series[0].data.map((v, i) => v === null ? null : /* @__PURE__ */ jsxs6("g", { opacity: shade(hover, i), children: [
+      v !== 0 && /* @__PURE__ */ jsx9(
+        "rect",
+        {
+          x: xAt(i) - width / 2,
+          y: Math.min(yAt(v), zero),
+          width,
+          height: Math.max(Math.abs(zero - yAt(v)), 1),
+          rx: "2",
+          fill: partColour(0),
+          className: "hb-chart-bar"
+        }
+      ),
+      layout.valueLabels && /* @__PURE__ */ jsx9("text", { x: xAt(i), y: yAt(v) - 6, textAnchor: "middle", className: "hb-chart-value", children: fmt(v, unit) })
+    ] }, i)),
+    /* @__PURE__ */ jsx9(Baseline, { layout })
+  ] });
+}
+function RangeMarks({ spec, layout, hover }) {
+  const { xAt, yAt, bar, left, right, base } = layout;
+  return /* @__PURE__ */ jsxs6("g", { children: [
+    /* @__PURE__ */ jsx9("line", { x1: left, x2: right, y1: base, y2: base, className: "hb-chart-rule" }),
+    (spec.series[0].span ?? []).map((w, i) => {
+      if (!w || w.low === null && w.high === null && w.now === null) return null;
+      const cx = xAt(i);
+      const low = w.low, high = w.high;
+      return /* @__PURE__ */ jsxs6("g", { opacity: shade(hover, i), children: [
+        low !== null && high !== null && /* @__PURE__ */ jsx9(
+          "rect",
+          {
+            x: cx - bar / 2,
+            y: yAt(high),
+            width: bar,
+            height: Math.max(yAt(low) - yAt(high), 1),
+            rx: "3",
+            fill: partColour(0),
+            className: "hb-chart-band"
+          }
+        ),
+        w.now !== null && /* @__PURE__ */ jsx9("circle", { cx, cy: yAt(w.now), r: "4", fill: partColour(0), className: "hb-chart-dot" })
+      ] }, i);
     })
   ] });
 }
@@ -1704,11 +1825,14 @@ function XYChart({ spec }) {
           onPointerLeave: () => setHover(null),
           children: [
             /* @__PURE__ */ jsx13(XLabels, { spec, layout }),
+            spec.type === "range" && layout.ticks.length > 0 && /* @__PURE__ */ jsx13(Gridlines, { spec, layout }),
             spec.type === "line" && /* @__PURE__ */ jsx13(LineMarks, { spec, layout, gid, hover }),
             spec.type === "bar" && /* @__PURE__ */ jsx13(BarMarks, { spec, layout, hover }),
             spec.type === "stacked" && bands && /* @__PURE__ */ jsx13(StackMarks, { bands, layout, hover }),
             spec.type === "area" && bands && /* @__PURE__ */ jsx13(AreaMarks, { bands, layout }),
             spec.type === "combo" && /* @__PURE__ */ jsx13(ComboMarks, { spec, layout, hover }),
+            spec.type === "histogram" && /* @__PURE__ */ jsx13(HistogramMarks, { spec, layout, hover }),
+            spec.type === "range" && /* @__PURE__ */ jsx13(RangeMarks, { spec, layout, hover }),
             (spec.type === "area" || spec.type === "combo") && hover !== null && /* @__PURE__ */ jsx13(Crosshair, { layout, at: hover })
           ]
         }
@@ -1724,14 +1848,27 @@ function lastIndex(spec) {
   const { last } = seriesEnds(spec.series[0].data);
   return last < 0 ? spec.x.length - 1 : last;
 }
+function headlineAt(spec) {
+  if (spec.type !== "histogram") return lastIndex(spec);
+  return Math.max(binTotals(spec.series[0].data).tallest, 0);
+}
 function Headline({ spec, hover }) {
   const piled = spec.type === "stacked" || spec.type === "area";
   const pct = spec.type === "line" ? changePct(spec.series[0].data) : null;
-  const shown = hover ?? lastIndex(spec);
-  const big = piled ? totalAt(spec.series, shown) : spec.series[0].data[shown] ?? null;
-  const bigUnit = piled ? spec.unit : spec.series[0].unit ?? spec.unit;
+  const shown = hover ?? headlineAt(spec);
+  const first = spec.series[0];
+  const unit = piled ? spec.unit : first.unit ?? spec.unit;
+  const hist = spec.type === "histogram";
+  const span = spec.type === "range" ? first.span?.[shown] ?? null : null;
+  const counted = hist ? binTotals(first.data) : null;
+  const big = hist ? first.data[shown] ?? null : span ? span.now ?? fmtSpan(span.low, span.high, unit) : piled ? totalAt(spec.series, shown) : first.data[shown] ?? null;
   const listed = piled ? [] : spec.series.slice(1);
   const withFigure = spec.figure !== false;
+  const at2 = [
+    hover !== null || hist || span ? String(spec.x[shown]) : "",
+    counted ? `${counted.total} counted` : "",
+    span && span.now !== null && span.low !== null && span.high !== null ? fmtSpan(span.low, span.high, unit) : ""
+  ].filter(Boolean).join(" \xB7 ");
   return /* @__PURE__ */ jsxs10(Fragment4, { children: [
     /* @__PURE__ */ jsxs10("figcaption", { className: "hb-chart-head", children: [
       /* @__PURE__ */ jsx13("span", { className: "hb-chart-title", children: spec.title ?? spec.series[0].name ?? "Chart" }),
@@ -1743,9 +1880,9 @@ function Headline({ spec, hover }) {
       ] })
     ] }),
     withFigure && /* @__PURE__ */ jsxs10("div", { className: "hb-chart-figure", children: [
-      /* @__PURE__ */ jsx13("span", { className: "hb-chart-big", children: big === null ? "\u2013" : fmt(big, bigUnit) }),
+      /* @__PURE__ */ jsx13("span", { className: "hb-chart-big", children: big === null ? "\u2013" : typeof big === "string" ? big : fmt(big, unit) }),
       /* @__PURE__ */ jsxs10("span", { className: "hb-chart-at", children: [
-        hover !== null ? spec.x[shown] : "",
+        at2,
         listed.map((s, k) => {
           const v = s.data[shown] ?? null;
           return v === null ? null : /* @__PURE__ */ jsxs10("span", { className: "hb-chart-other", children: [
@@ -2397,8 +2534,9 @@ function readSpec(d) {
   if (!Array.isArray(d.x) || !Array.isArray(d.series) || !d.series.length) return null;
   const type = chartKind(d.kind);
   const unit = typeof d.unit === "string" ? d.unit : void 0;
+  const range = type === "range";
   let x = d.x.map(String);
-  let series = d.series.filter((s) => s && Array.isArray(s.data)).slice(0, maxSeries(type)).map((s, k) => readSeries(s, k, type, unit));
+  let series = d.series.filter((s) => s && (Array.isArray(s.data) || range && (Array.isArray(s.low) || Array.isArray(s.high)))).slice(0, maxSeries(type)).map((s, k) => range ? readSpanSeries(s, x.length) : readSeries(s, k, type, unit));
   if (!series.length || series.every((s) => s.data.every((v) => v === null))) return null;
   if (type === "pie" || type === "donut") {
     const slices = pieSlices(x, series[0].data);
@@ -2418,12 +2556,33 @@ function readSpec(d) {
   if (d.tone === "change") spec.tone = "change";
   return spec;
 }
+function num2(v) {
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
+}
 function readSeries(s, k, type, chartUnit) {
   const name = typeof s.name === "string" ? s.name : void 0;
-  const data = s.data.map((v) => typeof v === "number" && isFinite(v) ? v : null);
+  const data = s.data.map((v) => {
+    const n = num2(v);
+    return n !== null && type === "histogram" && n < 0 ? null : n;
+  });
   const unit = typeof s.unit === "string" ? s.unit : void 0;
   const right = isOnRightScale(type, k, unit, s.axis, chartUnit);
   return { name, data, unit, right };
+}
+function readSpanSeries(s, n) {
+  const lows = Array.isArray(s.low) ? s.low : [];
+  const highs = Array.isArray(s.high) ? s.high : [];
+  const nows = Array.isArray(s.now) ? s.now : [];
+  const span = Array.from({ length: n }, (_, i) => {
+    const a = num2(lows[i]), b = num2(highs[i]);
+    const now = num2(nows[i]);
+    if (a === null || b === null) return { low: null, high: null, now };
+    return a <= b ? { low: a, high: b, now } : { low: b, high: a, now };
+  });
+  const data = span.map((w) => w.low !== null && w.high !== null ? (w.low + w.high) / 2 : w.now);
+  const name = typeof s.name === "string" ? s.name : void 0;
+  const unit = typeof s.unit === "string" ? s.unit : void 0;
+  return { name, data, unit, right: false, span };
 }
 
 // src/blocks/checklist/Checklist.tsx
@@ -6001,7 +6160,7 @@ var timeline_default = "/* Timeline */\n.hb-timeline { display: flex; flex-direc
 var layout_default = "/* Containers. A row's small cards (stats, badges) end at the same height; a tall block never sits in a row\n   (layout/read.ts draws that row as a stack). */\n.hb-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }\n.hb-row-cell { flex: 1 1 140px; min-width: 0; display: flex; flex-direction: column; }\n.hb-row-cell > * { flex: 1; }\n/* Grid: each cell keeps its block's own height, top-aligned in its row. */\n.hb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; align-items: start; }\n.hb-grid-cell { min-width: 0; display: flex; flex-direction: column; }\n.hb-row-cell-own { flex: none; align-self: center; }\n.hb-section { display: flex; flex-direction: column; gap: 8px; }\n.hb-section-body { display: flex; flex-direction: column; gap: 10px; }\n.hb-section .hb-card { background: var(--hb-well); border-color: transparent; }\n.hb-section-toggle {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  width: 100%;\n  padding: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n}\n.hb-section-toggle .hb-card-title { flex: 1; min-width: 0; }\n.hb-chevron { flex: none; color: var(--hb-muted); transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); }\n.hb-chevron-open { transform: rotate(90deg); }\n/* Tabs: underlined tab buttons in a bar that scrolls sideways when they don't fit, above one panel of blocks. */\n.hb-tabs { display: flex; flex-direction: column; gap: 10px; min-width: 0; }\n.hb-tab-bar {\n  display: flex;\n  gap: 2px;\n  overflow-x: auto;\n  scrollbar-width: none;\n  border-bottom: 1px solid var(--hb-line);\n}\n.hb-tab-bar::-webkit-scrollbar { display: none; }\n.hb-tab {\n  flex: none;\n  margin-bottom: -1px;\n  padding: 7px 12px 8px;\n  border: 0;\n  border-bottom: 2px solid transparent;\n  border-radius: 8px 8px 0 0;\n  background: none;\n  color: var(--hb-muted);\n  font: inherit;\n  font-size: 13.5px;\n  font-weight: 600;\n  white-space: nowrap;\n  cursor: pointer;\n  transition: color 0.15s, border-color 0.15s, background 0.15s;\n}\n.hb-tab:hover { color: var(--hb-ink-2); background: var(--hb-well); }\n.hb-tab-on, .hb-tab-on:hover { color: var(--hb-accent-ink); border-bottom-color: var(--hb-accent); background: none; }\n.hb-tab:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; }\n.hb-tab-badge { display: inline-block; min-width: 18px; margin-left: 6px; padding: 0 5px; border-radius: 99px;\n  background: var(--hb-well); color: var(--hb-ink-2); font-size: 11px; line-height: 18px; text-align: center;\n  font-variant-numeric: tabular-nums; vertical-align: 1px; }\n.hb-tab-on .hb-tab-badge { background: var(--hb-accent); color: #fff; }\n.hb-tab-panel { display: flex; flex-direction: column; gap: 10px; min-width: 0; }\n\n/* Columns: dashboards side by side, each block at its own height (a short card beside a tall one stays short). */\n.hb-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 10px; align-items: start; }\n.hb-column { min-width: 0; display: flex; flex-direction: column; gap: 10px; }\n/* Beside other blocks a table's card fills its column or cell (on its own it hugs its columns). */\n:is(.hb-column, .hb-grid-cell) > .hb-table-card { width: auto; }\n";
 
 // src/blocks/chart/chart.css
-var chart_default = "/* Charts are drawn at their real width and fill their place inside a layout block (a column, a cell, a tab). At the\n   top of a reply they stop at 720px; a long line (60+ points) takes the board's full width. */\n.hb-chart { margin: 0; padding: 14px 16px 10px; }\n.hb-blocks > .hb-chart:not(.hb-chart-wide) { max-width: 720px; }\n.hb-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }\n.hb-chart-title {\n  display: block;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 13px;\n  font-weight: 600;\n  color: var(--hb-muted);\n}\n.hb-chart-figure { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; min-width: 0; }\n.hb-chart-big {\n  font-size: 28px;\n  line-height: 1.15;\n  font-weight: 800;\n  letter-spacing: -0.03em;\n  font-variant-numeric: tabular-nums;\n}\n.hb-chart-at {\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 12px;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n}\n.hb-chart-other { margin-left: 8px; }\n.hb-chart-plot { position: relative; margin-top: 8px; }\n.hb-chart-svg { display: block; width: 100%; overflow: visible; touch-action: none; user-select: none; }\n.hb-chart-svg:focus-visible, .hb-pie-svg:focus-visible, .hb-hbar-grid:focus-visible {\n  outline: 2px solid var(--hb-accent);\n  outline-offset: 4px;\n  border-radius: 4px;\n}\n.hb-chart-source { margin-top: 2px; text-align: right; font-size: 11px; color: var(--hb-muted); }\n\n/* Marks and text inside the drawings */\n.hb-chart-axis, .hb-chart-tick { font-size: 11px; fill: var(--hb-muted); font-variant-numeric: tabular-nums; }\n.hb-chart-value { font-size: 11.5px; font-weight: 500; fill: var(--hb-ink-2); font-variant-numeric: tabular-nums; }\n.hb-chart-end { font-size: 11.5px; font-weight: 600; fill: var(--hb-ink); font-variant-numeric: tabular-nums; }\n/* Text drawn over lines (a change line's Start label): a rim of the page's colour behind the letters. */\n.hb-chart-halo { paint-order: stroke; stroke: var(--hb-surface); stroke-width: 3px; stroke-linejoin: round; }\n.hb-chart-rule { stroke: var(--hb-line); }\n.hb-chart-rule-strong { stroke: var(--hb-line-strong); }\n.hb-chart-dot { stroke: var(--hb-surface); stroke-width: 2; }\n.hb-chart-svg g, .hb-hbar-bar { transition: opacity 0.15s; }\n.hb-chart-draw { animation: hb-chart-draw 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }\n@keyframes hb-chart-draw { to { stroke-dashoffset: 0; } }\n\n/* The hover card (ChartTip) */\n.hb-tip {\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 5;\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  min-width: 120px;\n  padding: 8px 10px;\n  border: 1px solid var(--hb-line);\n  border-radius: 8px;\n  background: var(--hb-surface);\n  box-shadow: var(--hb-shadow);\n  color: var(--hb-ink);\n  font-size: 12.5px;\n  line-height: 1.35;\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n  pointer-events: none;\n  opacity: 0;\n  transition: opacity 120ms ease;\n}\n.hb-tip-on { opacity: 1; }\n.hb-tip-title, .hb-tip-note { font-size: 11.5px; color: var(--hb-muted); }\n.hb-tip-row { display: flex; align-items: center; gap: 8px; }\n.hb-tip-row i { flex: none; width: 8px; height: 8px; border-radius: 2px; }\n.hb-tip-name { flex: 1; color: var(--hb-ink-2); }\n.hb-tip-value { margin-left: 12px; font-weight: 600; }\n\n@media (prefers-reduced-motion: reduce) {\n  .hb-chart-draw { animation: none; stroke-dashoffset: 0; }\n  .hb-tip, .hb-chart-svg g, .hb-hbar-bar, .hb-slice, .hb-pie-legend tr { transition: none; }\n}\n\n.hb-legend {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 4px 12px;\n  margin-top: 6px;\n  font-size: 12px;\n  line-height: 16px;\n  color: var(--hb-muted);\n}\n.hb-legend-item { display: inline-flex; align-items: center; gap: 6px; }\n.hb-legend-dot { flex: none; width: 10px; height: 10px; border-radius: 999px; }\n.hb-legend-value { color: var(--hb-ink-2); font-variant-numeric: tabular-nums; }\n\n/* Pie and donut: the legend sits beside the drawing from 440px wide, below it when narrower. It stops at 420px so\n   amounts stay near their names when the donut fills a wide section. */\n.hb-pie { container-type: inline-size; }\n.hb-pie-body { position: relative; display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }\n@container (min-width: 440px) {\n  .hb-pie-body { flex-direction: row; align-items: center; gap: 20px; }\n  .hb-pie-body .hb-pie-svg { margin: 0; }\n}\n.hb-pie-svg { display: block; flex: none; margin: 0 auto; user-select: none; }\n.hb-pie-total { font-size: 17px; font-weight: 650; fill: var(--hb-ink); font-variant-numeric: tabular-nums; }\n.hb-slice { cursor: pointer; stroke: var(--hb-surface); stroke-width: 2; stroke-linejoin: round; transition: opacity 0.15s; }\n.hb-pie-legend { flex: 1; min-width: 0; max-width: 420px; border-collapse: collapse; font-size: 13px; line-height: 18px; font-variant-numeric: tabular-nums; }\n.hb-pie-legend tr { cursor: pointer; transition: opacity 0.15s; }\n.hb-pie-legend td { padding: 3px 12px 3px 0; vertical-align: top; }\n.hb-pie-legend td:last-child { padding-right: 0; }\n.hb-pie-swatch { width: 10px; }\n.hb-pie-swatch i { display: block; width: 10px; height: 10px; margin-top: 4px; border-radius: 3px; }\n.hb-pie-name { width: 100%; color: var(--hb-ink-2); overflow-wrap: anywhere; }\n.hb-pie-value { text-align: right; font-weight: 600; white-space: nowrap; }\n.hb-pie-share { text-align: right; color: var(--hb-muted); white-space: nowrap; }\n\n/* Horizontal bars: label | bar | value on each row. */\n.hb-hbar-box { position: relative; margin: 10px 0 4px; }\n.hb-hbar-grid {\n  display: grid;\n  grid-template-columns: fit-content(40%) minmax(0, 1fr) max-content;\n  gap: 8px 12px;\n  align-items: center;\n  font-size: 13px;\n}\n.hb-hbar-label { min-width: 64px; line-height: 17px; color: var(--hb-ink-2); }\n.hb-hbar-tracks, .hb-hbar-values { display: flex; flex-direction: column; gap: 4px; }\n.hb-hbar-track { position: relative; height: 14px; }\n.hb-hbar-zero { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--hb-line-strong); }\n.hb-hbar-bar { position: absolute; top: 0; bottom: 0; border-radius: 3px; }\n.hb-hbar-value { line-height: 14px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }\n.hb-hbar-many .hb-hbar-track { height: 12px; }\n.hb-hbar-many .hb-hbar-value { font-size: 12px; line-height: 12px; }\n.hb-hbar-up { color: var(--hb-good); }\n.hb-hbar-down { color: var(--hb-warn); }\n";
+var chart_default = "/* Charts are drawn at their real width and fill their place inside a layout block (a column, a cell, a tab). At the\n   top of a reply they stop at 720px; a long line (60+ points) takes the board's full width. */\n.hb-chart { margin: 0; padding: 14px 16px 10px; }\n.hb-blocks > .hb-chart:not(.hb-chart-wide) { max-width: 720px; }\n.hb-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }\n.hb-chart-title {\n  display: block;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 13px;\n  font-weight: 600;\n  color: var(--hb-muted);\n}\n.hb-chart-figure { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; min-width: 0; }\n.hb-chart-big {\n  font-size: 28px;\n  line-height: 1.15;\n  font-weight: 800;\n  letter-spacing: -0.03em;\n  font-variant-numeric: tabular-nums;\n}\n.hb-chart-at {\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 12px;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n}\n.hb-chart-other { margin-left: 8px; }\n.hb-chart-plot { position: relative; margin-top: 8px; }\n.hb-chart-svg { display: block; width: 100%; overflow: visible; touch-action: none; user-select: none; }\n.hb-chart-svg:focus-visible, .hb-pie-svg:focus-visible, .hb-hbar-grid:focus-visible {\n  outline: 2px solid var(--hb-accent);\n  outline-offset: 4px;\n  border-radius: 4px;\n}\n.hb-chart-source { margin-top: 2px; text-align: right; font-size: 11px; color: var(--hb-muted); }\n\n/* Marks and text inside the drawings */\n.hb-chart-axis, .hb-chart-tick { font-size: 11px; fill: var(--hb-muted); font-variant-numeric: tabular-nums; }\n.hb-chart-value { font-size: 11.5px; font-weight: 500; fill: var(--hb-ink-2); font-variant-numeric: tabular-nums; }\n.hb-chart-end { font-size: 11.5px; font-weight: 600; fill: var(--hb-ink); font-variant-numeric: tabular-nums; }\n/* Text drawn over lines (a change line's Start label): a rim of the page's colour behind the letters. */\n.hb-chart-halo { paint-order: stroke; stroke: var(--hb-surface); stroke-width: 3px; stroke-linejoin: round; }\n.hb-chart-rule { stroke: var(--hb-line); }\n.hb-chart-rule-strong { stroke: var(--hb-line-strong); }\n.hb-chart-dot { stroke: var(--hb-surface); stroke-width: 2; }\n/* A range's band: its series colour, soft, with the line colour as its edge. */\n.hb-chart-band { fill-opacity: 0.2; stroke: var(--hb-line-strong); stroke-width: 1.25; }\n.hb-chart-svg g, .hb-hbar-bar { transition: opacity 0.15s; }\n.hb-chart-draw { animation: hb-chart-draw 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }\n@keyframes hb-chart-draw { to { stroke-dashoffset: 0; } }\n\n/* The hover card (ChartTip) */\n.hb-tip {\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 5;\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  min-width: 120px;\n  padding: 8px 10px;\n  border: 1px solid var(--hb-line);\n  border-radius: 8px;\n  background: var(--hb-surface);\n  box-shadow: var(--hb-shadow);\n  color: var(--hb-ink);\n  font-size: 12.5px;\n  line-height: 1.35;\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n  pointer-events: none;\n  opacity: 0;\n  transition: opacity 120ms ease;\n}\n.hb-tip-on { opacity: 1; }\n.hb-tip-title, .hb-tip-note { font-size: 11.5px; color: var(--hb-muted); }\n.hb-tip-row { display: flex; align-items: center; gap: 8px; }\n.hb-tip-row i { flex: none; width: 8px; height: 8px; border-radius: 2px; }\n.hb-tip-name { flex: 1; color: var(--hb-ink-2); }\n.hb-tip-value { margin-left: 12px; font-weight: 600; }\n\n@media (prefers-reduced-motion: reduce) {\n  .hb-chart-draw { animation: none; stroke-dashoffset: 0; }\n  .hb-tip, .hb-chart-svg g, .hb-hbar-bar, .hb-slice, .hb-pie-legend tr { transition: none; }\n}\n\n.hb-legend {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 4px 12px;\n  margin-top: 6px;\n  font-size: 12px;\n  line-height: 16px;\n  color: var(--hb-muted);\n}\n.hb-legend-item { display: inline-flex; align-items: center; gap: 6px; }\n.hb-legend-dot { flex: none; width: 10px; height: 10px; border-radius: 999px; }\n.hb-legend-value { color: var(--hb-ink-2); font-variant-numeric: tabular-nums; }\n\n/* Pie and donut: the legend sits beside the drawing from 440px wide, below it when narrower. It stops at 420px so\n   amounts stay near their names when the donut fills a wide section. */\n.hb-pie { container-type: inline-size; }\n.hb-pie-body { position: relative; display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }\n@container (min-width: 440px) {\n  .hb-pie-body { flex-direction: row; align-items: center; gap: 20px; }\n  .hb-pie-body .hb-pie-svg { margin: 0; }\n}\n.hb-pie-svg { display: block; flex: none; margin: 0 auto; user-select: none; }\n.hb-pie-total { font-size: 17px; font-weight: 650; fill: var(--hb-ink); font-variant-numeric: tabular-nums; }\n.hb-slice { cursor: pointer; stroke: var(--hb-surface); stroke-width: 2; stroke-linejoin: round; transition: opacity 0.15s; }\n.hb-pie-legend { flex: 1; min-width: 0; max-width: 420px; border-collapse: collapse; font-size: 13px; line-height: 18px; font-variant-numeric: tabular-nums; }\n.hb-pie-legend tr { cursor: pointer; transition: opacity 0.15s; }\n.hb-pie-legend td { padding: 3px 12px 3px 0; vertical-align: top; }\n.hb-pie-legend td:last-child { padding-right: 0; }\n.hb-pie-swatch { width: 10px; }\n.hb-pie-swatch i { display: block; width: 10px; height: 10px; margin-top: 4px; border-radius: 3px; }\n.hb-pie-name { width: 100%; color: var(--hb-ink-2); overflow-wrap: anywhere; }\n.hb-pie-value { text-align: right; font-weight: 600; white-space: nowrap; }\n.hb-pie-share { text-align: right; color: var(--hb-muted); white-space: nowrap; }\n\n/* Horizontal bars: label | bar | value on each row. */\n.hb-hbar-box { position: relative; margin: 10px 0 4px; }\n.hb-hbar-grid {\n  display: grid;\n  grid-template-columns: fit-content(40%) minmax(0, 1fr) max-content;\n  gap: 8px 12px;\n  align-items: center;\n  font-size: 13px;\n}\n.hb-hbar-label { min-width: 64px; line-height: 17px; color: var(--hb-ink-2); }\n.hb-hbar-tracks, .hb-hbar-values { display: flex; flex-direction: column; gap: 4px; }\n.hb-hbar-track { position: relative; height: 14px; }\n.hb-hbar-zero { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--hb-line-strong); }\n.hb-hbar-bar { position: absolute; top: 0; bottom: 0; border-radius: 3px; }\n.hb-hbar-value { line-height: 14px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }\n.hb-hbar-many .hb-hbar-track { height: 12px; }\n.hb-hbar-many .hb-hbar-value { font-size: 12px; line-height: 12px; }\n.hb-hbar-up { color: var(--hb-good); }\n.hb-hbar-down { color: var(--hb-warn); }\n";
 
 // src/blocks/images/images.css
 var images_default = "/* Photos */\n.hb-photos { margin: 0; display: flex; flex-direction: column; gap: 8px; }\n.hb-photo-strip {\n  display: flex;\n  gap: 10px;\n  overflow-x: auto;\n  padding-bottom: 6px;\n  scroll-snap-type: x mandatory;\n  scrollbar-width: thin;\n}\n.hb-photo {\n  flex: 0 0 220px;\n  display: flex;\n  flex-direction: column;\n  justify-content: flex-start;\n  align-items: stretch;\n  height: auto;\n  margin: 0;\n  padding: 0;\n  overflow: hidden;\n  border: 1px solid var(--hb-line);\n  border-radius: 14px;\n  background: var(--hb-card);\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: zoom-in;\n  scroll-snap-align: start;\n}\n.hb-photo img { display: block; width: 100%; height: 150px; object-fit: cover; background: var(--hb-well); }\n.hb-photo-text { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px 10px; }\n.hb-photo-caption {\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  font-size: 13px;\n  line-height: 17px;\n  font-weight: 600;\n}\n.hb-photo-source { font-size: 11.5px; color: var(--hb-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.hb-photo-overlay {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483000;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 12px;\n  padding: 32px;\n  background: rgba(0, 0, 0, 0.82);\n  cursor: zoom-out;\n  animation: hb-appear 0.18s ease-out;\n}\n.hb-photo-overlay img { margin: 0; max-width: 100%; max-height: calc(100% - 48px); border-radius: 10px; object-fit: contain; }\n.hb-photo-overlay-text { max-width: 720px; text-align: center; font-size: 14px; color: rgba(255, 255, 255, 0.92); }\n.hb-photo-overlay-text span { color: rgba(255, 255, 255, 0.6); }\n";

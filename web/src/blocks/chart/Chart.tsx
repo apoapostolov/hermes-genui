@@ -1,15 +1,15 @@
-// Charts that go up and down: line, bar, area, stacked and combo. Pies and donuts, and horizontal bars, have files
-// of their own. Hand-drawn SVG at the width the chart has on screen (chart.css sets how wide that may be): the sums
-// behind it are in chartData.ts, where things go in layout.ts, the marks in *Marks.tsx.
+// Charts that go up and down: line, bar, area, stacked, combo, histogram and range. Pies and donuts, and horizontal
+// bars, have files of their own. Hand-drawn SVG at the width the chart has on screen (chart.css sets how wide that may
+// be): the sums behind it are in chartData.ts, where things go in layout.ts, the marks in *Marks.tsx.
 import { useId, useMemo, useRef, useState, type PointerEvent } from "react";
-import { changePct, chartScales, fmt, kindToDraw, stackSeries, totalAt, type ChartSpec } from "./chartData";
+import { binTotals, changePct, chartScales, fmt, fmtSpan, kindToDraw, stackSeries, totalAt, type ChartSpec } from "./chartData";
 import { seriesEnds, xyLayout, xyTip, type XYLayout } from "./layout";
 import { useWidth } from "./useWidth";
 import { pickKeys } from "./pick";
 import { ChartTip } from "./ChartTip";
 import { ChartLegend } from "./Legend";
-import { LineMarks, Crosshair } from "./LineMarks";
-import { BarMarks, ComboMarks, StackMarks } from "./ColumnMarks";
+import { LineMarks, Crosshair, Gridlines } from "./LineMarks";
+import { BarMarks, ComboMarks, HistogramMarks, RangeMarks, StackMarks } from "./ColumnMarks";
 import { AreaMarks } from "./AreaMarks";
 import { HBarChart } from "./HBarChart";
 import { PieChart } from "./PieChart";
@@ -60,11 +60,14 @@ function XYChart({ spec }: { spec: ChartSpec }) {
           onPointerDown={pickAt} onPointerMove={(e) => (e.buttons || e.pointerType === "mouse") && pickAt(e)}
           onPointerLeave={() => setHover(null)}>
           <XLabels spec={spec} layout={layout} />
+          {spec.type === "range" && layout.ticks.length > 0 && <Gridlines spec={spec} layout={layout} />}
           {spec.type === "line" && <LineMarks spec={spec} layout={layout} gid={gid} hover={hover} />}
           {spec.type === "bar" && <BarMarks spec={spec} layout={layout} hover={hover} />}
           {spec.type === "stacked" && bands && <StackMarks bands={bands} layout={layout} hover={hover} />}
           {spec.type === "area" && bands && <AreaMarks bands={bands} layout={layout} />}
           {spec.type === "combo" && <ComboMarks spec={spec} layout={layout} hover={hover} />}
+          {spec.type === "histogram" && <HistogramMarks spec={spec} layout={layout} hover={hover} />}
+          {spec.type === "range" && <RangeMarks spec={spec} layout={layout} hover={hover} />}
           {(spec.type === "area" || spec.type === "combo") && hover !== null && <Crosshair layout={layout} at={hover} />}
         </svg>
         <ChartTip tip={tip} />
@@ -83,16 +86,36 @@ function lastIndex(spec: ChartSpec): number {
   return last < 0 ? spec.x.length - 1 : last;
 }
 
+/** Where the big number is read when nothing is picked: a histogram's tallest bin, anything else's latest value. */
+function headlineAt(spec: ChartSpec): number {
+  if (spec.type !== "histogram") return lastIndex(spec);
+  return Math.max(binTotals(spec.series[0].data).tallest, 0);
+}
+
 /** The title, the line's change chip, and the big number: the value at the picked x label, or the latest. A stacked
- *  chart's number is the whole pile; the other series's values sit beside it. figure: false keeps only the title. */
+ *  chart's number is the whole pile; the other series's values sit beside it. A histogram shows the picked or tallest
+ *  bin's count beside how many it counted, a range the picked window's dot (both ends when there is no dot). figure:
+ *  false keeps only the title. */
 function Headline({ spec, hover }: { spec: ChartSpec; hover: number | null }) {
   const piled = spec.type === "stacked" || spec.type === "area";
   const pct = spec.type === "line" ? changePct(spec.series[0].data) : null;
-  const shown = hover ?? lastIndex(spec);
-  const big = piled ? totalAt(spec.series, shown) : spec.series[0].data[shown] ?? null;
-  const bigUnit = piled ? spec.unit : spec.series[0].unit ?? spec.unit;
+  const shown = hover ?? headlineAt(spec);
+  const first = spec.series[0];
+  const unit = piled ? spec.unit : first.unit ?? spec.unit;
+  const hist = spec.type === "histogram";
+  const span = spec.type === "range" ? first.span?.[shown] ?? null : null;
+  const counted = hist ? binTotals(first.data) : null;
+  const big = hist ? first.data[shown] ?? null
+    : span ? span.now ?? fmtSpan(span.low, span.high, unit)
+      : piled ? totalAt(spec.series, shown) : first.data[shown] ?? null;
   const listed = piled ? [] : spec.series.slice(1);  // a pile's parts have their values in the legend
   const withFigure = spec.figure !== false;
+  // The bin's range, the window behind a dot, or the hovered x label: what the big number is about.
+  const at = [
+    hover !== null || hist || span ? String(spec.x[shown]) : "",
+    counted ? `${counted.total} counted` : "",
+    span && span.now !== null && span.low !== null && span.high !== null ? fmtSpan(span.low, span.high, unit) : "",
+  ].filter(Boolean).join(" · ");
   return (
     <>
       <figcaption className="hb-chart-head">
@@ -101,9 +124,9 @@ function Headline({ spec, hover }: { spec: ChartSpec; hover: number | null }) {
       </figcaption>
       {withFigure && (
         <div className="hb-chart-figure">
-          <span className="hb-chart-big">{big === null ? "–" : fmt(big, bigUnit)}</span>
+          <span className="hb-chart-big">{big === null ? "–" : typeof big === "string" ? big : fmt(big, unit)}</span>
           <span className="hb-chart-at">
-            {hover !== null ? spec.x[shown] : ""}
+            {at}
             {listed.map((s, k) => {
               const v = s.data[shown] ?? null;
               return v === null ? null : <span key={k} className="hb-chart-other">{s.name ? `${s.name} ` : ""}{fmt(v, s.unit ?? spec.unit)}</span>;
