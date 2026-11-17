@@ -48,6 +48,19 @@ def test_source_with_url_links_it():
     assert out == "_Source: [screener](https://www.screener.in/x/)_"
 
 
+def test_source_list_keeps_kind_accessed_and_note():
+    out = render({"type": "source", "title": "Sources", "items": [
+        {"label": "Screener", "url": "https://screener.in/x", "kind": "web",
+         "accessed": "2026-11-17T14:32Z", "note": "Quarterly results"},
+        {"label": "Local export", "kind": "file"},
+    ]})
+    assert out == (
+        "**Sources**\n"
+        "_Sources: [Screener](https://screener.in/x) [web] · accessed 2026-11-17 · Quarterly results · "
+        "Local export [file]_"
+    )
+
+
 def test_divider():
     assert render({"type": "divider"}) == "---"
 

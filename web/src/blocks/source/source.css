@@ -1,2 +1,16 @@
 .hb-source { font-size: 11.5px; color: var(--hb-muted); }
 .hb-source a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.hb-source-list { display: flex; flex-direction: column; gap: 5px; }
+.hb-source-head { color: var(--hb-ink-2); font-weight: 600; }
+.hb-source-rows { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.hb-source-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; min-width: 0; }
+.hb-source-n { color: var(--hb-muted); font-variant-numeric: tabular-nums; }
+.hb-source-kind {
+  padding: 1px 6px; border-radius: 999px; font-size: 10px; line-height: 15px;
+  background: var(--hb-well); color: var(--hb-ink-2);
+}
+.hb-source-kind-web { background: var(--hb-accent-soft); color: var(--hb-accent-ink); }
+.hb-source-kind-tool { color: var(--hb-good); }
+.hb-source-kind-derived { color: var(--hb-warn); }
+.hb-source-accessed { color: var(--hb-muted); }
+.hb-source-note { flex-basis: 100%; padding-left: 16px; color: var(--hb-ink-2); }

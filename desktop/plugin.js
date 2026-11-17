@@ -623,9 +623,9 @@ function fmt(v, unit, { full = false } = {}) {
   const abs = Math.abs(v);
   const rupees = unit === "\u20B9" || unit === "INR";
   const sign = rupees ? "\u20B9" : unit && /^[$€£¥]$/.test(unit) ? unit : "";
-  const short = !full && abs >= SHORT_FROM;
+  const short2 = !full && abs >= SHORT_FROM;
   const digits = abs >= 1e3 ? 0 : 2;
-  const s = short ? formatCompact(abs, rupees || usesLakhCrore() ? "en-IN" : void 0) : rupees ? formatIndian(abs, digits) : formatNumber(abs, { digits });
+  const s = short2 ? formatCompact(abs, rupees || usesLakhCrore() ? "en-IN" : void 0) : rupees ? formatIndian(abs, digits) : formatNumber(abs, { digits });
   const signed = `${v < 0 ? "-" : ""}${sign}${s}`;
   return sign || !unit || unit === "pts" || unit.length > MAX_UNIT ? signed : `${signed} ${unit}`;
 }
@@ -3545,11 +3545,11 @@ function kpiValue(k, { full = false } = {}) {
   if (k.value === null) return "\u2013";
   if (typeof k.value === "string") return k.value;
   if (isYear(k)) return String(k.value);
-  const short = !full && Math.abs(k.value) >= SHORT_FROM;
-  if (short && k.unit && CURRENCY.test(k.unit)) return fmt(k.value, k.unit);
+  const short2 = !full && Math.abs(k.value) >= SHORT_FROM;
+  if (short2 && k.unit && CURRENCY.test(k.unit)) return fmt(k.value, k.unit);
   const money = formatAmount(k.value, k.unit);
   if (money !== null) return money;
-  const plain = short ? fmt(k.value) : formatNumber(k.value, { digits: Math.abs(k.value) >= 1e3 ? 0 : 1 });
+  const plain = short2 ? fmt(k.value) : formatNumber(k.value, { digits: Math.abs(k.value) >= 1e3 ? 0 : 1 });
   const attached = k.unit === "%" || k.unit?.startsWith("/");
   return attached ? `${plain}${k.unit}` : k.unit ? `${plain} ${k.unit}` : plain;
 }
@@ -4381,8 +4381,28 @@ function readPile(p, names, here) {
 import { useEffect as useEffect7, useMemo as useMemo5, useRef as useRef12, useState as useState20 } from "react";
 
 // src/blocks/source/Source.tsx
-import { jsx as jsx32 } from "react/jsx-runtime";
-function Source({ text, url }) {
+import { jsx as jsx32, jsxs as jsxs29 } from "react/jsx-runtime";
+function Row2({ item, index }) {
+  const name = item.url ? /* @__PURE__ */ jsx32("a", { href: item.url, target: "_blank", rel: "noreferrer", children: item.label }) : /* @__PURE__ */ jsx32("span", { children: item.label });
+  return /* @__PURE__ */ jsxs29("li", { className: "hb-source-row", children: [
+    /* @__PURE__ */ jsx32("span", { className: "hb-source-n", "aria-hidden": "true", children: index + 1 }),
+    name,
+    item.kind && /* @__PURE__ */ jsx32("span", { className: `hb-source-kind hb-source-kind-${item.kind}`, children: item.kind }),
+    item.accessed && /* @__PURE__ */ jsxs29("span", { className: "hb-source-accessed", children: [
+      "accessed ",
+      item.accessed
+    ] }),
+    item.note && /* @__PURE__ */ jsx32("span", { className: "hb-source-note", children: item.note })
+  ] });
+}
+function Source({ text, url, title, items }) {
+  if (items?.length) {
+    return /* @__PURE__ */ jsxs29("div", { className: "hb-source hb-source-list", children: [
+      title && /* @__PURE__ */ jsx32("div", { className: "hb-source-head", children: title }),
+      /* @__PURE__ */ jsx32("ol", { className: "hb-source-rows", children: items.map((item, i) => /* @__PURE__ */ jsx32(Row2, { item, index: i }, `${item.label}-${i}`)) })
+    ] });
+  }
+  if (!text) return null;
   if (!url) return /* @__PURE__ */ jsx32("div", { className: "hb-source", children: text });
   return /* @__PURE__ */ jsx32("div", { className: "hb-source", children: /* @__PURE__ */ jsx32("a", { href: url, target: "_blank", rel: "noreferrer", children: text }) });
 }
@@ -4418,14 +4438,14 @@ function dotColour(n, start, counts, k) {
 }
 
 // src/blocks/simulate/Piles.tsx
-import { Fragment as Fragment10, jsx as jsx33, jsxs as jsxs29 } from "react/jsx-runtime";
+import { Fragment as Fragment10, jsx as jsx33, jsxs as jsxs30 } from "react/jsx-runtime";
 var GROW_MS = 280;
 var DOT = 14;
 function Piles({ piles, amounts, start, per, most, playing, unit, label }) {
   const counts = amounts.map((a) => Math.max(0, Math.round((a ?? 0) / per)));
   const startDots = Math.max(0, Math.round(start / per));
   const tallest = Math.max(1, ...most.map((m) => Math.round(m / per)));
-  return /* @__PURE__ */ jsxs29(Fragment10, { children: [
+  return /* @__PURE__ */ jsxs30(Fragment10, { children: [
     /* @__PURE__ */ jsx33("div", { className: "hb-sim-piles", children: piles.map((pile, k) => /* @__PURE__ */ jsx33(
       Pile,
       {
@@ -4440,12 +4460,12 @@ function Piles({ piles, amounts, start, per, most, playing, unit, label }) {
       },
       k
     )) }),
-    /* @__PURE__ */ jsxs29("div", { className: "hb-legend", children: [
-      /* @__PURE__ */ jsxs29("span", { className: "hb-legend-item", children: [
+    /* @__PURE__ */ jsxs30("div", { className: "hb-legend", children: [
+      /* @__PURE__ */ jsxs30("span", { className: "hb-legend-item", children: [
         /* @__PURE__ */ jsx33("i", { className: "hb-legend-dot", style: { background: partColour(0) } }),
         `${label ?? "Start"} (a dot is ${fmt(per, unit, { full: true })})`
       ] }),
-      piles.map((pile, k) => /* @__PURE__ */ jsxs29("span", { className: "hb-legend-item", children: [
+      piles.map((pile, k) => /* @__PURE__ */ jsxs30("span", { className: "hb-legend-item", children: [
         /* @__PURE__ */ jsx33("i", { className: "hb-legend-dot", style: { background: partColour(k + 1) } }),
         pile.adds ?? pile.name
       ] }, k))
@@ -4489,7 +4509,7 @@ function Pile({ k, name, amount, counts, startDots, tallest, playing, unit }) {
     draw();
     return () => cancelAnimationFrame(frame);
   }, [count2, counts.join(), startDots, width, height, theme]);
-  return /* @__PURE__ */ jsxs29("div", { className: "hb-sim-pile", children: [
+  return /* @__PURE__ */ jsxs30("div", { className: "hb-sim-pile", children: [
     /* @__PURE__ */ jsx33("div", { className: "hb-sim-pile-name", children: name }),
     /* @__PURE__ */ jsx33("div", { className: "hb-sim-amount", children: shown }),
     /* @__PURE__ */ jsx33("canvas", { ref: canvas, className: "hb-sim-canvas", style: { height }, role: "img", "aria-label": `${name}: ${shown}, ${count2} dots` })
@@ -4498,7 +4518,7 @@ function Pile({ k, name, amount, counts, startDots, tallest, playing, unit }) {
 
 // src/blocks/simulate/SimChart.tsx
 import { useRef as useRef11 } from "react";
-import { jsx as jsx34, jsxs as jsxs30 } from "react/jsx-runtime";
+import { jsx as jsx34, jsxs as jsxs31 } from "react/jsx-runtime";
 var HEIGHT = 220;
 var PAD = { left: 52, right: 12, top: 10, bottom: 22 };
 function SimChart({ piles, lines, times, index, unit }) {
@@ -4515,9 +4535,9 @@ function SimChart({ piles, lines, times, index, unit }) {
   const xTicks = Array.from({ length: Math.floor(to / xStep + 1e-9) + 1 }, (_, k) => k * xStep);
   const now = times[index];
   const label = piles.map((p, k) => `${p.name} ${valueText(lines[k][index], unit)}`).join(", ");
-  return /* @__PURE__ */ jsxs30("div", { ref: box, className: "hb-sim-chart", children: [
-    /* @__PURE__ */ jsxs30("svg", { width: "100%", height: HEIGHT, viewBox: `0 0 ${width} ${HEIGHT}`, role: "img", "aria-label": `Line chart at ${fmt(now)}: ${label}`, children: [
-      yTicks.map((v) => /* @__PURE__ */ jsxs30("g", { children: [
+  return /* @__PURE__ */ jsxs31("div", { ref: box, className: "hb-sim-chart", children: [
+    /* @__PURE__ */ jsxs31("svg", { width: "100%", height: HEIGHT, viewBox: `0 0 ${width} ${HEIGHT}`, role: "img", "aria-label": `Line chart at ${fmt(now)}: ${label}`, children: [
+      yTicks.map((v) => /* @__PURE__ */ jsxs31("g", { children: [
         /* @__PURE__ */ jsx34("line", { x1: PAD.left, x2: width - PAD.right, y1: y(v), y2: y(v), className: "hb-sim-grid" }),
         /* @__PURE__ */ jsx34("text", { x: PAD.left - 6, y: y(v) + 4, textAnchor: "end", children: fmt(v, unit) })
       ] }, v)),
@@ -4525,13 +4545,13 @@ function SimChart({ piles, lines, times, index, unit }) {
       piles.map((_, k) => {
         const points = lines[k].slice(0, index + 1).flatMap((v, i) => v === null ? [] : [`${x(times[i]).toFixed(1)},${y(v).toFixed(1)}`]);
         const last = lines[k][index];
-        return /* @__PURE__ */ jsxs30("g", { style: { color: partColour(k + 1) }, children: [
+        return /* @__PURE__ */ jsxs31("g", { style: { color: partColour(k + 1) }, children: [
           /* @__PURE__ */ jsx34("polyline", { points: points.join(" "), className: "hb-sim-line" }),
           last !== null && /* @__PURE__ */ jsx34("circle", { cx: x(now), cy: y(last), r: 4.5, className: "hb-sim-point" })
         ] }, k);
       })
     ] }),
-    /* @__PURE__ */ jsx34("div", { className: "hb-legend", children: piles.map((p, k) => /* @__PURE__ */ jsxs30("span", { className: "hb-legend-item", children: [
+    /* @__PURE__ */ jsx34("div", { className: "hb-legend", children: piles.map((p, k) => /* @__PURE__ */ jsxs31("span", { className: "hb-legend-item", children: [
       /* @__PURE__ */ jsx34("i", { className: "hb-legend-dot", style: { background: partColour(k + 1) } }),
       p.name,
       /* @__PURE__ */ jsx34("span", { className: "hb-legend-value", children: valueText(lines[k][index], unit) })
@@ -4543,7 +4563,7 @@ function valueText(v, unit) {
 }
 
 // src/blocks/simulate/Simulate.tsx
-import { jsx as jsx35, jsxs as jsxs31 } from "react/jsx-runtime";
+import { jsx as jsx35, jsxs as jsxs32 } from "react/jsx-runtime";
 function Simulate(block) {
   const { title, t: time, inputs, values: fixed, piles, unit, source } = block;
   const root = useRef12(null);
@@ -4579,21 +4599,21 @@ function Simulate(block) {
     clock.current = v;
     setAt(v);
   }
-  return /* @__PURE__ */ jsxs31("div", { ref: root, className: "hb-card hb-sim", children: [
-    /* @__PURE__ */ jsxs31("div", { className: "hb-sim-head", children: [
+  return /* @__PURE__ */ jsxs32("div", { ref: root, className: "hb-card hb-sim", children: [
+    /* @__PURE__ */ jsxs32("div", { className: "hb-sim-head", children: [
       title && /* @__PURE__ */ jsx35("div", { className: "hb-card-title", children: /* @__PURE__ */ jsx35(InlineText, { text: title }) }),
-      /* @__PURE__ */ jsxs31("div", { className: "hb-sim-switch", role: "group", "aria-label": "View", children: [
+      /* @__PURE__ */ jsxs32("div", { className: "hb-sim-switch", role: "group", "aria-label": "View", children: [
         /* @__PURE__ */ jsx35("button", { type: "button", "aria-pressed": view === "dots", onClick: () => setView("dots"), children: "Dots" }),
         /* @__PURE__ */ jsx35("button", { type: "button", "aria-pressed": view === "chart", onClick: () => setView("chart"), children: "Line chart" })
       ] })
     ] }),
-    /* @__PURE__ */ jsxs31("div", { className: "hb-sim-controls", children: [
-      /* @__PURE__ */ jsxs31("button", { type: "button", className: "hb-pill hb-pill-solid hb-sim-play", onClick: play, children: [
+    /* @__PURE__ */ jsxs32("div", { className: "hb-sim-controls", children: [
+      /* @__PURE__ */ jsxs32("button", { type: "button", className: "hb-pill hb-pill-solid hb-sim-play", onClick: play, children: [
         /* @__PURE__ */ jsx35("svg", { width: "14", height: "14", viewBox: "0 0 24 24", "aria-hidden": "true", fill: "currentColor", children: /* @__PURE__ */ jsx35("path", { d: playing ? "M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" : "M8 5.5v13l10.5-6.5z" }) }),
         playing ? "Pause" : "Play"
       ] }),
-      /* @__PURE__ */ jsxs31("label", { className: "hb-calc-slider hb-sim-time", children: [
-        /* @__PURE__ */ jsxs31("span", { className: "hb-calc-head", children: [
+      /* @__PURE__ */ jsxs32("label", { className: "hb-calc-slider hb-sim-time", children: [
+        /* @__PURE__ */ jsxs32("span", { className: "hb-calc-head", children: [
           /* @__PURE__ */ jsx35("span", { className: "hb-calc-label", children: time.unit ? capital(time.unit) : time.name }),
           /* @__PURE__ */ jsx35("span", { className: "hb-calc-value", children: `${fmt(at2)} of ${fmt(time.to)}` })
         ] }),
@@ -4658,18 +4678,53 @@ function usePauseWhenHidden(root, playing, pause) {
 }
 
 // src/blocks/source/read.ts
+var KINDS2 = ["web", "file", "tool", "derived"];
+var MAX_ITEMS3 = 32;
+function short(v, max) {
+  if (typeof v !== "string") return void 0;
+  const s = v.trim();
+  return s ? s.slice(0, max) : void 0;
+}
+function safeUrl(v) {
+  const s = short(v, 500);
+  return s && /^https?:\/\/[^\s<>]+$/i.test(s) ? s : void 0;
+}
+function readItem2(raw, here) {
+  const label = short(raw?.label ?? raw?.name ?? raw?.title, 80);
+  if (!label) {
+    here.drop("source item needs a label");
+    return null;
+  }
+  const kind = KINDS2.find((k) => k === raw?.kind);
+  const accessed = short(raw?.accessed ?? raw?.accessed_at, 32)?.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+  const item = { label };
+  const url = safeUrl(raw?.url ?? raw?.src ?? raw?.href);
+  const note = short(raw?.note, 160);
+  if (url) item.url = url;
+  if (kind) item.kind = kind;
+  if (accessed) item.accessed = accessed;
+  if (note) item.note = note;
+  return item;
+}
 function readSource(raw, here) {
+  const title = short(raw.title, 80);
+  if (Array.isArray(raw.items)) {
+    const items = raw.items.map((item, i) => readItem2(item, here.at("items").at(i)));
+    const kept = items.filter((item) => item !== null).slice(0, MAX_ITEMS3);
+    if (raw.items.length > MAX_ITEMS3) here.drop("source keeps 32 items");
+    if (!kept.length) return here.drop("source needs a named item");
+    return { type: "source", ...title ? { title } : {}, items: kept };
+  }
   const named = [];
   if (Array.isArray(raw.sources)) {
-    for (const s of raw.sources) if (s && firstText([s.name, s.title])) named.push(s);
+    for (const s of raw.sources) if (s && short(s.name ?? s.title ?? s.label, 80)) named.push(s);
   }
-  let text = typeof raw.text === "string" ? raw.text : "";
-  if (!text) text = named.map((s) => firstText([s.name, s.title])).join(" \xB7 ");
+  let text = short(raw.text, 500) ?? "";
+  if (!text) text = named.map((s) => short(s.name ?? s.title ?? s.label, 80)).join(" \xB7 ");
   if (!text) return here.drop("source needs text");
   const candidates = [raw.url, ...named.map((s) => s.url)];
-  const url = candidates.find((u) => typeof u === "string" && /^https?:\/\//.test(u));
-  if (url) return { type: "source", text, url };
-  return { type: "source", text };
+  const url = candidates.find((u) => typeof u === "string" && /^https?:\/\/[^\s<>]+$/i.test(u.trim()));
+  return { type: "source", text, ...url ? { url: String(url).trim().slice(0, 500) } : {}, ...title ? { title } : {} };
 }
 
 // src/blocks/steps/read.ts
@@ -4709,7 +4764,7 @@ function readHolds(raw, here) {
 
 // src/blocks/steps/Steps.tsx
 import { useEffect as useEffect8, useRef as useRef13, useState as useState21 } from "react";
-import { jsx as jsx36, jsxs as jsxs32 } from "react/jsx-runtime";
+import { jsx as jsx36, jsxs as jsxs33 } from "react/jsx-runtime";
 function Steps({ title, for: flow, items }) {
   const [at2, setAt] = useState21(0);
   const [failed, setFailed] = useState21(() => /* @__PURE__ */ new Set());
@@ -4731,12 +4786,12 @@ function Steps({ title, for: flow, items }) {
     e.preventDefault();
   }
   const photo = step.image && !failed.has(at2) ? step.image : void 0;
-  return /* @__PURE__ */ jsxs32("div", { className: "hb-card hb-steps", role: "group", "aria-label": title ?? "Steps", onKeyDown, children: [
-    /* @__PURE__ */ jsxs32("div", { className: "hb-steps-head", children: [
+  return /* @__PURE__ */ jsxs33("div", { className: "hb-card hb-steps", role: "group", "aria-label": title ?? "Steps", onKeyDown, children: [
+    /* @__PURE__ */ jsxs33("div", { className: "hb-steps-head", children: [
       title && /* @__PURE__ */ jsx36("div", { className: "hb-card-title", children: title }),
       /* @__PURE__ */ jsx36("span", { className: "hb-steps-place", children: `${at2 + 1} of ${items.length}` })
     ] }),
-    /* @__PURE__ */ jsxs32("div", { className: "hb-steps-body", "aria-live": "polite", children: [
+    /* @__PURE__ */ jsxs33("div", { className: "hb-steps-body", "aria-live": "polite", children: [
       /* @__PURE__ */ jsx36("div", { className: "hb-steps-title", children: step.title }),
       step.text && /* @__PURE__ */ jsx36("p", { className: "hb-steps-text", children: /* @__PURE__ */ jsx36(InlineText, { text: step.text }) }),
       photo && /* @__PURE__ */ jsx36(
@@ -4752,7 +4807,7 @@ function Steps({ title, for: flow, items }) {
         at2
       )
     ] }),
-    /* @__PURE__ */ jsxs32("div", { className: "hb-steps-foot", children: [
+    /* @__PURE__ */ jsxs33("div", { className: "hb-steps-foot", children: [
       /* @__PURE__ */ jsx36("div", { className: "hb-steps-dots", children: items.map((s, i) => /* @__PURE__ */ jsx36(
         "button",
         {
@@ -4764,7 +4819,7 @@ function Steps({ title, for: flow, items }) {
         },
         i
       )) }),
-      /* @__PURE__ */ jsxs32("div", { className: "hb-steps-moves", children: [
+      /* @__PURE__ */ jsxs33("div", { className: "hb-steps-moves", children: [
         /* @__PURE__ */ jsx36("button", { type: "button", className: "hb-pill", disabled: at2 === 0, onClick: () => go(at2 - 1), children: "Back" }),
         /* @__PURE__ */ jsx36("button", { type: "button", className: "hb-pill hb-pill-solid", disabled: at2 === items.length - 1, onClick: () => go(at2 + 1), children: "Next" })
       ] })
@@ -4792,17 +4847,17 @@ function readStreak(raw, here) {
 }
 
 // src/blocks/streak/Streak.tsx
-import { jsx as jsx37, jsxs as jsxs33 } from "react/jsx-runtime";
+import { jsx as jsx37, jsxs as jsxs34 } from "react/jsx-runtime";
 function unitFor(count2, unit) {
   if (count2 === 1 && unit.endsWith("s")) return unit.slice(0, -1);
   return unit;
 }
 function Streak({ count: count2, label, unit, days }) {
-  return /* @__PURE__ */ jsxs33("div", { className: "hb-card hb-streak", children: [
-    /* @__PURE__ */ jsxs33("div", { className: "hb-streak-head", children: [
-      /* @__PURE__ */ jsxs33("div", { children: [
+  return /* @__PURE__ */ jsxs34("div", { className: "hb-card hb-streak", children: [
+    /* @__PURE__ */ jsxs34("div", { className: "hb-streak-head", children: [
+      /* @__PURE__ */ jsxs34("div", { children: [
         /* @__PURE__ */ jsx37("div", { className: "hb-streak-label", children: label }),
-        /* @__PURE__ */ jsxs33("div", { className: "hb-streak-count", children: [
+        /* @__PURE__ */ jsxs34("div", { className: "hb-streak-count", children: [
           formatNumber(count2, { digits: 3 }),
           " ",
           /* @__PURE__ */ jsx37("span", { children: unitFor(count2, unit) })
@@ -4810,7 +4865,7 @@ function Streak({ count: count2, label, unit, days }) {
       ] }),
       /* @__PURE__ */ jsx37("span", { className: "hb-streak-medal", children: /* @__PURE__ */ jsx37(Icon, { name: "star", size: 24, stroke: 2.4 }) })
     ] }),
-    days.length > 0 && /* @__PURE__ */ jsx37("div", { className: "hb-streak-week", style: { gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }, children: days.map((d, k) => /* @__PURE__ */ jsxs33("div", { className: d.today ? "hb-streak-day hb-streak-today" : "hb-streak-day", children: [
+    days.length > 0 && /* @__PURE__ */ jsx37("div", { className: "hb-streak-week", style: { gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }, children: days.map((d, k) => /* @__PURE__ */ jsxs34("div", { className: d.today ? "hb-streak-day hb-streak-today" : "hb-streak-day", children: [
       /* @__PURE__ */ jsx37("span", { className: "hb-streak-day-label", children: d.label }),
       d.done ? /* @__PURE__ */ jsx37("span", { className: "hb-streak-done", children: /* @__PURE__ */ jsx37(Icon, { name: "check", size: 15, stroke: 2.6 }) }) : /* @__PURE__ */ jsx37("span", { className: "hb-streak-date", children: d.date ?? "\xB7" }),
       /* @__PURE__ */ jsx37("span", { className: "hb-streak-dot" })
@@ -4987,7 +5042,7 @@ function bigNumber(cell) {
 }
 
 // src/blocks/table/Table.tsx
-import { jsx as jsx38, jsxs as jsxs34 } from "react/jsx-runtime";
+import { jsx as jsx38, jsxs as jsxs35 } from "react/jsx-runtime";
 var MINI_BARS_FROM = 3;
 function Table({ columns, rows, highlight, caption }) {
   const [sort, setSort] = useState22(null);
@@ -5005,20 +5060,20 @@ function Table({ columns, rows, highlight, caption }) {
     text.length > 28 ? "hb-wrap" : "",
     extra
   ].filter(Boolean).join(" ");
-  return /* @__PURE__ */ jsxs34("div", { className: "hb-card hb-table-card", children: [
+  return /* @__PURE__ */ jsxs35("div", { className: "hb-card hb-table-card", children: [
     caption && /* @__PURE__ */ jsx38("div", { className: "hb-chart-title hb-table-caption", children: /* @__PURE__ */ jsx38(InlineText, { text: caption }) }),
-    /* @__PURE__ */ jsx38("div", { className: "hb-table-scroll", children: /* @__PURE__ */ jsxs34("table", { className: columns.length >= 3 ? "hb-table hb-table-wide" : "hb-table", children: [
-      /* @__PURE__ */ jsx38("thead", { children: /* @__PURE__ */ jsx38("tr", { children: columns.map((name, c) => /* @__PURE__ */ jsx38("th", { "aria-sort": ariaSort(sort, c), className: cellClass(c, name, sort?.column === c ? "hb-sorted" : ""), children: /* @__PURE__ */ jsxs34("button", { type: "button", onClick: () => setSort(nextSort(sort, c)), children: [
+    /* @__PURE__ */ jsx38("div", { className: "hb-table-scroll", children: /* @__PURE__ */ jsxs35("table", { className: columns.length >= 3 ? "hb-table hb-table-wide" : "hb-table", children: [
+      /* @__PURE__ */ jsx38("thead", { children: /* @__PURE__ */ jsx38("tr", { children: columns.map((name, c) => /* @__PURE__ */ jsx38("th", { "aria-sort": ariaSort(sort, c), className: cellClass(c, name, sort?.column === c ? "hb-sorted" : ""), children: /* @__PURE__ */ jsxs35("button", { type: "button", onClick: () => setSort(nextSort(sort, c)), children: [
         /* @__PURE__ */ jsx38("span", { children: name }),
         /* @__PURE__ */ jsx38("span", { className: "hb-sort", "aria-hidden": "true", children: sortMark(sort, c) }),
         c === bestColumn && /* @__PURE__ */ jsx38("span", { className: "hb-chip hb-chip-soft", children: "Best" })
       ] }) }, c)) }) }),
-      /* @__PURE__ */ jsxs34("tbody", { children: [
+      /* @__PURE__ */ jsxs35("tbody", { children: [
         !rows.length && /* @__PURE__ */ jsx38("tr", { children: /* @__PURE__ */ jsx38("td", { className: "hb-table-empty", colSpan: columns.length, children: "No rows to show." }) }),
         order.map((r) => /* @__PURE__ */ jsx38("tr", { className: r === bestRow ? "hb-best" : void 0, children: rows[r].map((cell, c) => {
           const big = bigNumber(cell);
           const direction = change[c] ? changeOf(cell) : null;
-          return /* @__PURE__ */ jsxs34("td", { className: cellClass(c, cell, direction ? `hb-${direction}` : ""), title: big?.full, children: [
+          return /* @__PURE__ */ jsxs35("td", { className: cellClass(c, cell, direction ? `hb-${direction}` : ""), title: big?.full, children: [
             change[c] && withBars && /* @__PURE__ */ jsx38(MiniBar, { value: cellNumber(cell) ?? 0, largest: largest[c] }),
             big ? big.short : /* @__PURE__ */ jsx38(InlineText, { text: cell }),
             c === 0 && r === bestRow && /* @__PURE__ */ jsx38("span", { className: "hb-chip hb-chip-soft", children: "Best" })
@@ -5030,7 +5085,7 @@ function Table({ columns, rows, highlight, caption }) {
 }
 function MiniBar({ value, largest }) {
   const { left, width } = miniBar(value, largest);
-  return /* @__PURE__ */ jsxs34("span", { className: "hb-mini", "aria-hidden": "true", children: [
+  return /* @__PURE__ */ jsxs35("span", { className: "hb-mini", "aria-hidden": "true", children: [
     /* @__PURE__ */ jsx38("span", { className: "hb-mini-zero" }),
     /* @__PURE__ */ jsx38("span", { className: "hb-mini-bar", style: { left: `${left}%`, width: `${width}%` } })
   ] });
@@ -5102,7 +5157,7 @@ function readTile(item) {
 
 // src/blocks/tiles/Tiles.tsx
 import { useContext as useContext8, useState as useState23 } from "react";
-import { Fragment as Fragment11, jsx as jsx39, jsxs as jsxs35 } from "react/jsx-runtime";
+import { Fragment as Fragment11, jsx as jsx39, jsxs as jsxs36 } from "react/jsx-runtime";
 var WASHES = [1, 4, 8, 3, 6];
 function Tiles({ items }) {
   return /* @__PURE__ */ jsx39("div", { className: "hb-tiles", children: items.map((tile, i) => /* @__PURE__ */ jsx39(Tile, { tile, wash: WASHES[i % WASHES.length] }, i)) });
@@ -5117,10 +5172,10 @@ function Tile({ tile, wash }) {
   const [photoFailed, setPhotoFailed] = useState23(false);
   const tap = tapOf(tile, send, fill);
   const colour = `var(--hb-chart-${wash})`;
-  const content = /* @__PURE__ */ jsxs35(Fragment11, { children: [
+  const content = /* @__PURE__ */ jsxs36(Fragment11, { children: [
     tile.image && !photoFailed && /* @__PURE__ */ jsx39("img", { src: tile.image, alt: "", loading: "lazy", referrerPolicy: "no-referrer", onError: () => setPhotoFailed(true) }),
     tile.icon && /* @__PURE__ */ jsx39("span", { className: "hb-tile-icon", children: /* @__PURE__ */ jsx39(Icon, { name: tile.icon, size: 18, stroke: 2.2 }) }),
-    /* @__PURE__ */ jsxs35("span", { className: "hb-tile-text", children: [
+    /* @__PURE__ */ jsxs36("span", { className: "hb-tile-text", children: [
       /* @__PURE__ */ jsx39("span", { className: "hb-tile-title", children: tile.title }),
       tile.subtitle && /* @__PURE__ */ jsx39("span", { className: "hb-tile-subtitle", children: tile.subtitle })
     ] })
@@ -5181,31 +5236,31 @@ function readStop(it) {
 }
 
 // src/blocks/briefing/Briefing.tsx
-import { Fragment as Fragment12, jsx as jsx40, jsxs as jsxs36 } from "react/jsx-runtime";
+import { Fragment as Fragment12, jsx as jsx40, jsxs as jsxs37 } from "react/jsx-runtime";
 var deg2 = (v) => `${Math.round(v)}\xB0`;
 function Line({ counts }) {
   const parts2 = [];
   if (counts.need) {
-    if (counts.overdue) parts2.push(/* @__PURE__ */ jsxs36("span", { className: "hb-brief-bad", children: [
+    if (counts.overdue) parts2.push(/* @__PURE__ */ jsxs37("span", { className: "hb-brief-bad", children: [
       counts.overdue,
       " overdue"
     ] }, "o"));
-    parts2.push(/* @__PURE__ */ jsxs36("span", { children: [
+    parts2.push(/* @__PURE__ */ jsxs37("span", { children: [
       counts.need,
       " need you"
     ] }, "n"));
   } else {
     parts2.push(/* @__PURE__ */ jsx40("span", { children: "Nothing needs you today" }, "n"));
   }
-  const handled = counts.handled ? /* @__PURE__ */ jsxs36("span", { className: "hb-brief-good", children: [
+  const handled = counts.handled ? /* @__PURE__ */ jsxs37("span", { className: "hb-brief-good", children: [
     "\u2713 ",
     counts.handled,
     " handled"
   ] }) : null;
   const joined = parts2.flatMap((p, i) => i ? [", ", p] : [p]);
-  return /* @__PURE__ */ jsxs36("p", { className: "hb-brief-line", children: [
+  return /* @__PURE__ */ jsxs37("p", { className: "hb-brief-line", children: [
     joined,
-    handled && /* @__PURE__ */ jsxs36(Fragment12, { children: [
+    handled && /* @__PURE__ */ jsxs37(Fragment12, { children: [
       ", and ",
       handled
     ] }),
@@ -5214,13 +5269,13 @@ function Line({ counts }) {
 }
 function Briefing({ greeting, date, place, temp, condition, high, low, sky, counts }) {
   const range = [high !== void 0 ? `H ${deg2(high)}` : null, low !== void 0 ? `L ${deg2(low)}` : null].filter(Boolean).join(" \xB7 ");
-  return /* @__PURE__ */ jsxs36("section", { className: `hb-brief hb-brief-${sky}`, children: [
-    /* @__PURE__ */ jsxs36("div", { className: "hb-brief-top", children: [
-      /* @__PURE__ */ jsxs36("div", { className: "hb-brief-hello", children: [
+  return /* @__PURE__ */ jsxs37("section", { className: `hb-brief hb-brief-${sky}`, children: [
+    /* @__PURE__ */ jsxs37("div", { className: "hb-brief-top", children: [
+      /* @__PURE__ */ jsxs37("div", { className: "hb-brief-hello", children: [
         (date || place) && /* @__PURE__ */ jsx40("span", { className: "hb-brief-date", children: [date, place].filter(Boolean).join(" \xB7 ") }),
         /* @__PURE__ */ jsx40("h2", { children: greeting })
       ] }),
-      temp !== void 0 && /* @__PURE__ */ jsxs36("div", { className: "hb-brief-wx", children: [
+      temp !== void 0 && /* @__PURE__ */ jsxs37("div", { className: "hb-brief-wx", children: [
         /* @__PURE__ */ jsx40("span", { className: "hb-brief-temp", children: deg2(temp) }),
         /* @__PURE__ */ jsx40("span", { className: "hb-brief-sky", children: [condition, range].filter(Boolean).join(" \xB7 ") })
       ] })
@@ -5255,13 +5310,13 @@ function readBriefing(raw, here) {
 
 // src/blocks/prepared/Prepared.tsx
 import { useContext as useContext9, useState as useState24 } from "react";
-import { jsx as jsx41, jsxs as jsxs37 } from "react/jsx-runtime";
+import { jsx as jsx41, jsxs as jsxs38 } from "react/jsx-runtime";
 function IdeaCard({ idea, group }) {
   const { fill } = useContext9(BlockActions);
   const [broken, setBroken] = useState24(false);
-  return /* @__PURE__ */ jsxs37("button", { type: "button", className: "hb-prep-idea", onClick: () => fill(`Tell me more about ${idea.title} for ${group}`), children: [
+  return /* @__PURE__ */ jsxs38("button", { type: "button", className: "hb-prep-idea", onClick: () => fill(`Tell me more about ${idea.title} for ${group}`), children: [
     !broken && /* @__PURE__ */ jsx41("img", { src: idea.photo, alt: "", loading: "lazy", onError: () => setBroken(true) }),
-    /* @__PURE__ */ jsxs37("span", { className: "hb-prep-cap", children: [
+    /* @__PURE__ */ jsxs38("span", { className: "hb-prep-cap", children: [
       idea.title,
       idea.note && /* @__PURE__ */ jsx41("small", { children: idea.note })
     ] })
@@ -5269,8 +5324,8 @@ function IdeaCard({ idea, group }) {
 }
 function GroupView({ group }) {
   const { fill } = useContext9(BlockActions);
-  return /* @__PURE__ */ jsxs37("article", { className: "hb-prep-group", children: [
-    /* @__PURE__ */ jsxs37("div", { className: "hb-prep-head", children: [
+  return /* @__PURE__ */ jsxs38("article", { className: "hb-prep-group", children: [
+    /* @__PURE__ */ jsxs38("div", { className: "hb-prep-head", children: [
       /* @__PURE__ */ jsx41("span", { className: "hb-prep-title", children: group.title }),
       group.date && /* @__PURE__ */ jsx41("span", { className: "hb-prep-date", children: group.date })
     ] }),
@@ -5279,7 +5334,7 @@ function GroupView({ group }) {
   ] });
 }
 function Prepared({ groups }) {
-  return /* @__PURE__ */ jsxs37("div", { className: "hb-prep", children: [
+  return /* @__PURE__ */ jsxs38("div", { className: "hb-prep", children: [
     /* @__PURE__ */ jsx41("span", { className: "hb-prep-label", children: "Prepared for you" }),
     groups.map((g, i) => /* @__PURE__ */ jsx41(GroupView, { group: g }, i))
   ] });
@@ -5315,7 +5370,7 @@ function readPrepared(raw, here) {
 
 // src/blocks/tracker/read.ts
 var STATES2 = ["overdue", "today", "soon", "open"];
-var KINDS2 = ["closed", "tracking", "protected"];
+var KINDS3 = ["closed", "tracking", "protected"];
 var texts = (v, n, max) => (Array.isArray(v) ? v : []).map((x) => firstText([x], max)).filter((x) => Boolean(x)).slice(0, n);
 function details(raw) {
   if (!raw || typeof raw !== "object") return void 0;
@@ -5354,7 +5409,7 @@ function readTracker(raw, here) {
   (Array.isArray(raw.handled) ? raw.handled : []).slice(0, 6).forEach((r, i) => {
     const id = firstText([r?.id], 40);
     const title = firstText([r?.title], 80);
-    if (!id || !title || !KINDS2.includes(r?.kind)) {
+    if (!id || !title || !KINDS3.includes(r?.kind)) {
       here.at("handled").at(i).drop("row needs an id, a title, a kind");
       return;
     }
@@ -5374,7 +5429,7 @@ function readTracker(raw, here) {
 
 // src/blocks/tracker/Tracker.tsx
 import { useContext as useContext10, useEffect as useEffect9, useState as useState25 } from "react";
-import { Fragment as Fragment13, jsx as jsx42, jsxs as jsxs38 } from "react/jsx-runtime";
+import { Fragment as Fragment13, jsx as jsx42, jsxs as jsxs39 } from "react/jsx-runtime";
 var VIEW_KEY = "hermes-genui.tracker.view";
 var SEEN_KEY = "hermes-genui.tracker.handled";
 function stored(key) {
@@ -5392,22 +5447,22 @@ function store(key, value) {
 }
 function More({ d }) {
   if (!d) return null;
-  return /* @__PURE__ */ jsxs38("details", { className: "hb-tr-details", children: [
+  return /* @__PURE__ */ jsxs39("details", { className: "hb-tr-details", children: [
     /* @__PURE__ */ jsx42("summary", { children: "Details" }),
-    /* @__PURE__ */ jsxs38("dl", { children: [
-      d.from && /* @__PURE__ */ jsxs38(Fragment13, { children: [
+    /* @__PURE__ */ jsxs39("dl", { children: [
+      d.from && /* @__PURE__ */ jsxs39(Fragment13, { children: [
         /* @__PURE__ */ jsx42("dt", { children: "From" }),
         /* @__PURE__ */ jsx42("dd", { children: d.from })
       ] }),
-      d.received && /* @__PURE__ */ jsxs38(Fragment13, { children: [
+      d.received && /* @__PURE__ */ jsxs39(Fragment13, { children: [
         /* @__PURE__ */ jsx42("dt", { children: "Received" }),
         /* @__PURE__ */ jsx42("dd", { children: d.received })
       ] }),
-      d.about.length > 0 && /* @__PURE__ */ jsxs38(Fragment13, { children: [
+      d.about.length > 0 && /* @__PURE__ */ jsxs39(Fragment13, { children: [
         /* @__PURE__ */ jsx42("dt", { children: "About" }),
         /* @__PURE__ */ jsx42("dd", { children: d.about.join(" \xB7 ") })
       ] }),
-      d.trail.length > 0 && /* @__PURE__ */ jsxs38(Fragment13, { children: [
+      d.trail.length > 0 && /* @__PURE__ */ jsxs39(Fragment13, { children: [
         /* @__PURE__ */ jsx42("dt", { children: "So far" }),
         /* @__PURE__ */ jsx42("dd", { children: d.trail.join(" \u2192 ") })
       ] })
@@ -5416,14 +5471,14 @@ function More({ d }) {
 }
 function CardView({ card }) {
   const { fill } = useContext10(BlockActions);
-  return /* @__PURE__ */ jsxs38("article", { className: `hb-tr-card hb-tr-${card.state}`, children: [
-    /* @__PURE__ */ jsxs38("div", { className: "hb-tr-top", children: [
+  return /* @__PURE__ */ jsxs39("article", { className: `hb-tr-card hb-tr-${card.state}`, children: [
+    /* @__PURE__ */ jsxs39("div", { className: "hb-tr-top", children: [
       /* @__PURE__ */ jsx42("span", { className: "hb-tr-title", children: card.title }),
       card.amount && /* @__PURE__ */ jsx42("span", { className: "hb-tr-amount", children: card.amount })
     ] }),
     card.stateText && /* @__PURE__ */ jsx42("span", { className: `hb-tr-pill hb-tr-pill-${card.state}`, children: card.stateText }),
-    (card.link || card.help) && /* @__PURE__ */ jsxs38("div", { className: "hb-tr-acts", children: [
-      card.link && /* @__PURE__ */ jsxs38("a", { className: "hb-tr-go", href: card.link.url, target: "_blank", rel: "noreferrer", children: [
+    (card.link || card.help) && /* @__PURE__ */ jsxs39("div", { className: "hb-tr-acts", children: [
+      card.link && /* @__PURE__ */ jsxs39("a", { className: "hb-tr-go", href: card.link.url, target: "_blank", rel: "noreferrer", children: [
         card.link.label,
         " \u2197"
       ] }),
@@ -5433,9 +5488,9 @@ function CardView({ card }) {
   ] });
 }
 function RowView({ row, onReopen }) {
-  return /* @__PURE__ */ jsxs38("article", { className: `hb-tr-row hb-tr-${row.kind}`, children: [
-    /* @__PURE__ */ jsxs38("div", { className: "hb-tr-top", children: [
-      /* @__PURE__ */ jsxs38("span", { className: "hb-tr-title", children: [
+  return /* @__PURE__ */ jsxs39("article", { className: `hb-tr-row hb-tr-${row.kind}`, children: [
+    /* @__PURE__ */ jsxs39("div", { className: "hb-tr-top", children: [
+      /* @__PURE__ */ jsxs39("span", { className: "hb-tr-title", children: [
         row.title,
         row.amount ? ` \xB7 ${row.amount}` : ""
       ] }),
@@ -5466,15 +5521,15 @@ function Tracker({ need, handled }) {
     void rest?.(`/assistant/items/${id}`, { method: "POST", body: { status: "suggested" } });
   };
   const red = need.some((c) => c.state === "overdue");
-  return /* @__PURE__ */ jsxs38("div", { className: "hb-tr", children: [
-    /* @__PURE__ */ jsxs38("div", { className: "hb-tr-switch", role: "tablist", "aria-label": "Needs you or handled", children: [
-      /* @__PURE__ */ jsxs38("button", { type: "button", role: "tab", "aria-selected": view === "need", onClick: () => choose("need"), children: [
+  return /* @__PURE__ */ jsxs39("div", { className: "hb-tr", children: [
+    /* @__PURE__ */ jsxs39("div", { className: "hb-tr-switch", role: "tablist", "aria-label": "Needs you or handled", children: [
+      /* @__PURE__ */ jsxs39("button", { type: "button", role: "tab", "aria-selected": view === "need", onClick: () => choose("need"), children: [
         "Needs you ",
         /* @__PURE__ */ jsx42("span", { className: `hb-tr-badge${red ? " hb-tr-badge-red" : ""}`, children: need.length })
       ] }),
-      /* @__PURE__ */ jsxs38("button", { type: "button", role: "tab", "aria-selected": view === "done", onClick: () => choose("done"), children: [
+      /* @__PURE__ */ jsxs39("button", { type: "button", role: "tab", "aria-selected": view === "done", onClick: () => choose("done"), children: [
         "Handled ",
-        /* @__PURE__ */ jsxs38("span", { className: `hb-tr-badge hb-tr-badge-green${pulse ? " hb-tr-pulse" : ""}`, children: [
+        /* @__PURE__ */ jsxs39("span", { className: `hb-tr-badge hb-tr-badge-green${pulse ? " hb-tr-pulse" : ""}`, children: [
           "\u2713 ",
           rows.length
         ] })
@@ -5485,23 +5540,23 @@ function Tracker({ need, handled }) {
 }
 
 // src/blocks/timeline/Timeline.tsx
-import { jsx as jsx43, jsxs as jsxs39 } from "react/jsx-runtime";
+import { jsx as jsx43, jsxs as jsxs40 } from "react/jsx-runtime";
 function Timeline({ title, groups }) {
-  return /* @__PURE__ */ jsxs39("div", { className: "hb-card hb-timeline", children: [
+  return /* @__PURE__ */ jsxs40("div", { className: "hb-card hb-timeline", children: [
     title && /* @__PURE__ */ jsx43("div", { className: "hb-card-title", children: title }),
-    groups.map((g, gi) => /* @__PURE__ */ jsxs39("div", { className: "hb-timeline-group", children: [
+    groups.map((g, gi) => /* @__PURE__ */ jsxs40("div", { className: "hb-timeline-group", children: [
       g.label && /* @__PURE__ */ jsx43("span", { className: "hb-chip hb-chip-soft", children: g.label }),
       g.items.map((s, k) => {
         const last = k === g.items.length - 1;
-        return /* @__PURE__ */ jsxs39("div", { className: "hb-stop", children: [
+        return /* @__PURE__ */ jsxs40("div", { className: "hb-stop", children: [
           /* @__PURE__ */ jsx43("span", { className: "hb-stop-time", children: s.time ?? "" }),
-          /* @__PURE__ */ jsxs39("span", { className: "hb-stop-rail", children: [
+          /* @__PURE__ */ jsxs40("span", { className: "hb-stop-rail", children: [
             /* @__PURE__ */ jsx43("span", { className: "hb-stop-dot", children: s.icon ? /* @__PURE__ */ jsx43(Icon, { name: s.icon, size: 12, stroke: 2.4 }) : /* @__PURE__ */ jsx43("span", { className: "hb-stop-pip" }) }),
             !last && /* @__PURE__ */ jsx43("span", { className: "hb-stop-line" })
           ] }),
-          /* @__PURE__ */ jsxs39("div", { className: last ? "hb-stop-body" : "hb-stop-body hb-stop-body-gap", children: [
+          /* @__PURE__ */ jsxs40("div", { className: last ? "hb-stop-body" : "hb-stop-body hb-stop-body-gap", children: [
             /* @__PURE__ */ jsx43("div", { className: "hb-stop-title", children: s.title }),
-            s.place && /* @__PURE__ */ jsxs39("div", { className: "hb-stop-place", children: [
+            s.place && /* @__PURE__ */ jsxs40("div", { className: "hb-stop-place", children: [
               /* @__PURE__ */ jsx43(Icon, { name: "pin", size: 12, stroke: 2.2 }),
               s.place
             ] }),
@@ -5518,7 +5573,7 @@ import { jsx as jsx44 } from "react/jsx-runtime";
 var REGISTRY = {
   chart: { read: readChart, Component: ({ block }) => /* @__PURE__ */ jsx44(Chart, { spec: block.spec }) },
   kpis: { read: readKpis, Component: ({ block }) => /* @__PURE__ */ jsx44(Kpis, { items: block.items }) },
-  source: { read: readSource, Component: ({ block }) => /* @__PURE__ */ jsx44(Source, { text: block.text, url: block.url }) },
+  source: { read: readSource, Component: ({ block }) => /* @__PURE__ */ jsx44(Source, { ...block }) },
   timeline: { read: readTimeline, Component: ({ block }) => /* @__PURE__ */ jsx44(Timeline, { ...block }) },
   images: { read: readImages, Component: ({ block }) => /* @__PURE__ */ jsx44(Images, { block }) },
   callout: { read: readCallout, Component: ({ block }) => /* @__PURE__ */ jsx44(Callout, { ...block }) },
@@ -5644,7 +5699,7 @@ function Note({ text, pulse = false }) {
 import { useCallback as useCallback2, useEffect as useEffect11, useRef as useRef14, useState as useState27 } from "react";
 
 // src/live/RefreshBar.tsx
-import { jsx as jsx47, jsxs as jsxs40 } from "react/jsx-runtime";
+import { jsx as jsx47, jsxs as jsxs41 } from "react/jsx-runtime";
 function when(iso, now = /* @__PURE__ */ new Date()) {
   const at2 = new Date(iso);
   const time = at2.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
@@ -5652,15 +5707,15 @@ function when(iso, now = /* @__PURE__ */ new Date()) {
   return `${at2.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}, ${time}`;
 }
 function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) {
-  return /* @__PURE__ */ jsxs40("div", { className: "hb-refresh", role: "status", children: [
+  return /* @__PURE__ */ jsxs41("div", { className: "hb-refresh", role: "status", children: [
     /* @__PURE__ */ jsx47("span", { className: "hb-refresh-label", children: label }),
     /* @__PURE__ */ jsx47("span", { className: "hb-refresh-when", children: at2 ? `updated ${when(at2)}` : "not filled yet" }),
-    schedule && /* @__PURE__ */ jsxs40("span", { className: "hb-refresh-when", children: [
+    schedule && /* @__PURE__ */ jsxs41("span", { className: "hb-refresh-when", children: [
       "\xB7 refreshes ",
       schedule
     ] }),
     error && /* @__PURE__ */ jsx47("span", { className: "hb-refresh-error", children: error }),
-    /* @__PURE__ */ jsxs40(
+    /* @__PURE__ */ jsxs41(
       "button",
       {
         type: "button",
@@ -5679,7 +5734,7 @@ function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) 
 }
 
 // src/live/DashboardView.tsx
-import { jsx as jsx48, jsxs as jsxs41 } from "react/jsx-runtime";
+import { jsx as jsx48, jsxs as jsxs42 } from "react/jsx-runtime";
 function snapshotOf(b) {
   if (b.snapshots) return b.snapshots;
   if (b.at !== void 0 || b.refreshing !== void 0) {
@@ -5775,8 +5830,8 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
     if (Object.keys(ticks).length) await saveTicks(ticks);
     return { ok: true };
   };
-  return /* @__PURE__ */ jsxs41("div", { className: "hb-blocks hb-dash", children: [
-    board.blocks[0]?.type !== "briefing" && /* @__PURE__ */ jsxs41("header", { className: "hb-dash-head", children: [
+  return /* @__PURE__ */ jsxs42("div", { className: "hb-blocks hb-dash", children: [
+    board.blocks[0]?.type !== "briefing" && /* @__PURE__ */ jsxs42("header", { className: "hb-dash-head", children: [
       /* @__PURE__ */ jsx48("div", { className: "hb-dash-date", children: board.at.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }) }),
       /* @__PURE__ */ jsx48("h1", { children: board.greeting ?? board.title ?? "Today" })
     ] }),
@@ -5986,7 +6041,7 @@ var blockTag_default = "/* The block tag's own states */\n.hb-state {\n  display
 var atoms_default = "/* Small pieces: heading, text, divider, badge, link, image, bar */\n.hb-heading { font-size: 16px; line-height: 22px; font-weight: 700; letter-spacing: -0.01em; margin-top: 4px; }\n.hb-text { color: var(--hb-ink-2); }\n.hb-text strong { color: var(--hb-ink); font-weight: 650; }\n.hb-divider { height: 1px; background: var(--hb-line); margin: 2px 0; }\n\n.hb-badge { display: flex; align-items: center; }\n.hb-link a {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--hb-accent-ink);\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.hb-image { margin: 0; display: flex; flex-direction: column; gap: 6px; }\n.hb-image img {\n  display: block;\n  width: 100%;\n  max-height: 300px;\n  object-fit: cover;\n  border: 1px solid var(--hb-line);\n  border-radius: 16px;\n  background: var(--hb-well);\n}\n.hb-image figcaption { padding: 0 4px; font-size: 12px; line-height: 16px; color: var(--hb-muted); }\n.hb-bar { display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 11px 14px; }\n.hb-bar-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: 13px; }\n.hb-bar-label { flex: 1 0 auto; font-weight: 600; color: var(--hb-ink-2); }\n.hb-bar-amount { color: var(--hb-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }\n.hb-bar-track { height: 8px; border-radius: 999px; background: var(--hb-accent-soft); overflow: hidden; }\n.hb-bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-accent); }\n.hb-bar-fill { transform-origin: left; animation: hb-grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1); }\n@media (prefers-reduced-motion: reduce) {\n  .hb-bar-fill { animation: none; }\n}\n";
 
 // src/blocks/source/source.css
-var source_default = ".hb-source { font-size: 11.5px; color: var(--hb-muted); }\n.hb-source a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }\n";
+var source_default = ".hb-source { font-size: 11.5px; color: var(--hb-muted); }\n.hb-source a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }\n.hb-source-list { display: flex; flex-direction: column; gap: 5px; }\n.hb-source-head { color: var(--hb-ink-2); font-weight: 600; }\n.hb-source-rows { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }\n.hb-source-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; min-width: 0; }\n.hb-source-n { color: var(--hb-muted); font-variant-numeric: tabular-nums; }\n.hb-source-kind {\n  padding: 1px 6px; border-radius: 999px; font-size: 10px; line-height: 15px;\n  background: var(--hb-well); color: var(--hb-ink-2);\n}\n.hb-source-kind-web { background: var(--hb-accent-soft); color: var(--hb-accent-ink); }\n.hb-source-kind-tool { color: var(--hb-good); }\n.hb-source-kind-derived { color: var(--hb-warn); }\n.hb-source-accessed { color: var(--hb-muted); }\n.hb-source-note { flex-basis: 100%; padding-left: 16px; color: var(--hb-ink-2); }\n";
 
 // src/blocks/callout/callout.css
 var callout_default = ".hb-callout strong { color: var(--hb-ink); font-weight: 650; }\n.hb-callout {\n  display: flex;\n  gap: 10px;\n  padding: 11px 14px;\n  border-radius: 14px;\n  font-size: 13.5px;\n  line-height: 19px;\n}\n.hb-callout-icon { flex: none; margin-top: 1px; }\n.hb-callout-body { min-width: 0; color: var(--hb-ink-2); }\n.hb-callout-title { font-weight: 700; color: var(--hb-ink); }\n.hb-callout-info { background: var(--hb-accent-soft); }\n.hb-callout-info .hb-callout-icon { color: var(--hb-accent-ink); }\n.hb-callout-tip { background: color-mix(in srgb, var(--hb-good) 11%, transparent); }\n.hb-callout-tip .hb-callout-icon { color: var(--hb-good); }\n.hb-callout-warn { background: color-mix(in srgb, var(--hb-warn) 10%, transparent); }\n.hb-callout-warn .hb-callout-icon { color: var(--hb-warn); }\n";
