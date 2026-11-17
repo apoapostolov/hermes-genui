@@ -101,13 +101,58 @@ def test_button_with_url_is_a_link():
 
 def test_stat_with_change():
     assert render({"type": "stat", "label": "Saved", "value": 12500, "unit": "₹", "change": 8}) == (
-        "Saved: 12,500 ₹ (▲ 8%)"
+        "Saved: 12,500 ₹ (▲ 8.0%)"
     )
 
 
 def test_kpis_one_line_each():
     out = render(EXAMPLES["kpis"])
-    assert out == "Revenue: 72,275 ₹Cr (▲ 2.2%)\nNet margin: 18.6% (▼ 0.9pt)"
+    assert out == "Revenue: 72,275 ₹Cr (▲ 2.9%)\nChurn: 2.4% (▼ 0.7 pt)"
+
+
+def test_a_change_from_previous_is_what_the_card_draws():
+    # The card computes the same change from the same pair: a share of the previous number, points on a "%" figure.
+    assert render({"type": "stat", "label": "Down", "value": 80, "unit": "$", "previous": 100}) == (
+        "Down: 80 $ (▼ 20.0%)"
+    )
+    assert render({"type": "stat", "label": "Margin", "value": 18.6, "unit": "%", "previous": 19.5}) == (
+        "Margin: 18.6% (▼ 0.9 pt)"
+    )
+    assert render({"type": "stat", "label": "Up", "value": 120, "change_unit": "pt", "previous": 100}) == (
+        "Up: 120 (▲ 20.0 pt)"
+    )
+
+
+def test_previous_wins_over_a_written_change():
+    assert render({"type": "stat", "label": "Close", "value": 80, "previous": 100, "change": 2}) == (
+        "Close: 80 (▼ 20.0%)"
+    )
+
+
+def test_a_change_needs_two_numbers():
+    # previous null, a text value, or a percentage from zero: no chip at all, never a wrong one.
+    assert render({"type": "stat", "label": "Close", "value": 80, "previous": None, "change": 2}) == "Close: 80"
+    assert render({"type": "stat", "label": "Opponent", "value": "Leeds (H)", "previous": 2}) == "Opponent: Leeds (H)"
+    assert render({"type": "stat", "label": "From zero", "value": 70, "previous": 0}) == "From zero: 70"
+
+
+def test_a_change_of_zero_is_flat_not_missing():
+    assert render({"type": "kpis", "items": [{"label": "Flat", "value": 5, "previous": 5}]}) == "Flat: 5 (0.0%)"
+
+
+def test_a_change_tie_rounds_the_way_the_card_does():
+    # The card's toFixed rounds 0.25 up; Python's own format would round the tie to even and print 0.2.
+    assert render({"type": "stat", "label": "Close", "value": 1.25, "unit": "%", "previous": 1}) == (
+        "Close: 1.25% (▲ 0.3 pt)"
+    )
+
+
+def test_invert_tone_changes_no_text():
+    # A card where a fall is good news (churn) prints the same chip; only the colour it gets changes.
+    chip = {"label": "Churn", "value": 2.4, "unit": "%", "previous": 3.1}
+    assert render({"type": "stat", **chip, "invert_tone": True}) == render({"type": "stat", **chip}) == (
+        "Churn: 2.4% (▼ 0.7 pt)"
+    )
 
 
 def test_progress_and_bar():

@@ -45,7 +45,7 @@ export function KpiCard({ item, trendColour }: { item: KpiItem; trendColour?: st
       <div className={isText ? "hb-kpi-value hb-kpi-value-text" : "hb-kpi-value"} title={full !== shown ? full : undefined}>
         {shown}
       </div>
-      {change && <div className={`hb-kpi-change ${changeClass(item.change!)}`}>{change}</div>}
+      {change && <div className={changeClass(item)}>{change}</div>}
       {item.trend && <Sparkline values={item.trend} colour={trendColour} />}
     </div>
   );
@@ -63,8 +63,14 @@ export function Kpis({ items }: { items: KpiItem[] }) {
   );
 }
 
-function changeClass(change: number): string {
-  return change > 0 ? "hb-kpi-up" : change < 0 ? "hb-kpi-down" : "hb-kpi-flat";
+/** The chip's classes: which way it moved, and `hb-kpi-invert` when a fall is the good news (the stylesheet swaps the
+ *  tone the two directions get). A change of zero is flat: no arrow, no tone.
+ *  {change: -0.9} → "hb-kpi-change hb-kpi-down";  {change: 0} → "hb-kpi-change hb-kpi-flat";
+ *  {change: -0.9, invert_tone: true} → "hb-kpi-change hb-kpi-down hb-kpi-invert" */
+function changeClass(item: KpiItem): string {
+  const change = item.change ?? 0;
+  const direction = change > 0 ? "hb-kpi-up" : change < 0 ? "hb-kpi-down" : "hb-kpi-flat";
+  return `hb-kpi-change ${direction}${item.invert_tone ? " hb-kpi-invert" : ""}`;
 }
 
 // The sparkline's drawing box; the SVG stretches it to the card's width (the stroke keeps its thickness).

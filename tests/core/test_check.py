@@ -112,6 +112,24 @@ def test_stat_trend_is_checked_too():
         "0: trend must be a list of 2-60 numbers"]
 
 
+def test_a_previous_number_is_a_number_or_null():
+    figure = {"type": "stat", "label": "Close", "value": 80, "previous": 100}
+    assert check_blocks([figure]) == []
+    assert check_blocks([{**figure, "previous": None}]) == []
+    assert check_blocks([{**figure, "previous": 80.5}]) == []
+    for bad in ("high", True, float("nan"), float("inf"), 10**400, [1]):
+        assert check_blocks([{**figure, "previous": bad}]) == ["0: previous must be a number, or null"], bad
+
+
+def test_invert_tone_is_checked_on_a_kpi_and_a_stat():
+    assert check_blocks([{"type": "kpis", "items": [{"label": "Churn", "value": 2.4, "invert_tone": True}]}]) == []
+    assert check_blocks([{"type": "stat", "label": "Churn", "value": 2.4, "invert_tone": False}]) == []
+    assert check_blocks([{"type": "stat", "label": "Churn", "value": 2.4, "invert_tone": "yes"}]) == [
+        "0: invert_tone must be true or false"]
+    assert check_blocks([{"type": "kpis", "items": [{"label": "Churn", "value": 2.4, "invert_tone": None}]}]) == [
+        "0.items.0: invert_tone must be true or false"]
+
+
 def test_row_and_grid_child_limits():
     stats = [{"type": "stat", "label": f"s{i}", "value": i} for i in range(7)]
     assert check_blocks([{"type": "row", "children": stats[:4]}]) == ["0: a row holds at most 3 children"]
