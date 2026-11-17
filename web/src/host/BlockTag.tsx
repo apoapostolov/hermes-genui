@@ -1,5 +1,5 @@
 // What `::blocks{id="..."}` turns into inside a reply: a placeholder while the reply streams in, then the stored
-// blocks fetched by id and drawn, or a small note when that isn't possible. Never raw JSON.
+// blocks fetched by id and drawn, or nothing at all when that isn't possible. Never raw JSON.
 import { useContext, useEffect, useState } from "react";
 import { Blocks } from "../core/Blocks";
 import { readBlocks } from "../core/readBlocks";
@@ -13,8 +13,8 @@ type State = { kind: "loading" } | { kind: "drawn"; blocks: Block[] } | { kind: 
 /**
  * load fetches the stored JSON for an id (in the app: the plugin's REST route).
  *   streaming → "drawing…" (no fetch yet: the tag may still be arriving)
- *   id "zzz" → "Couldn't load this block" (never fetched)
- *   fetch fails, or nothing in it can be drawn → "Couldn't load this block"
+ *   id "zzz" → renders nothing (never fetched: a stray half-written tag must not leave a note in the reply)
+ *   fetch fails, or nothing in it can be drawn → renders nothing
  * The blocks drawn get the app's actions (send, fill, rest) with this tag's id added, so a checklist saves its ticks
  * with this board.
  */
@@ -39,9 +39,9 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
     };
   }, [id, streaming, validId]);
 
-  if (!validId && !streaming) return <Note text="Couldn't load this block" />;
+  if (!validId && !streaming) return null;
   if (streaming || state.kind === "loading") return <Note text="drawing…" pulse />;
-  if (state.kind === "failed") return <Note text="Couldn't load this block" />;
+  if (state.kind === "failed") return null;
   return <BlockActions.Provider value={{ ...actions, blockId: id }}><Blocks blocks={state.blocks} /></BlockActions.Provider>;
 }
 
