@@ -1,7 +1,8 @@
 // Options compared side by side. Click a header to sort (up, down, back); the highlighted row gets an accent edge and
 // a "Best" chip (a highlighted column, an accent underline on its header). Rises and falls in a change column are
 // coloured, with a mini bar from 3 rows up; big amounts are shortened, every digit kept in the hover. The table
-// scrolls inside its card (sideways when wide, down past ~520px with the header kept in view), never the page.
+// scrolls inside its card (sideways when wide, down past ~520px with the header kept in view), then passes the rest of
+// the wheel to the page, so a short table never traps the session's scroll.
 import { useState } from "react";
 import type { TableBlock } from "./read";
 import { bigNumber, changeOf, isChangeColumn, miniBar } from "./cells";

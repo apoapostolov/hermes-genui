@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { pinLocale } from "../../lib/locale.testing";
 import { readBlocks } from "../../core/readBlocks";
 import { Blocks } from "../../core/Blocks";
+import { withStyles } from "../../core/testing";
+import tableCss from "./table.css?raw";
 
 afterEach(() => {
   cleanup();
@@ -71,5 +73,18 @@ describe("Table", () => {
   it("says so when no row could be read", () => {
     render(<Blocks blocks={readBlocks([{ type: "table", columns: ["A", "B"], rows: [5] }])} />);
     expect(screen.getByText("No rows to show.")).toBeTruthy();
+  });
+  it("lets the wheel chain past a short table to the session", () => {
+    const unstyle = withStyles(tableCss);
+    try {
+      const { container } = render(<Blocks blocks={stocks()} />);
+      const scroller = container.querySelector(".hb-table-scroll") as HTMLElement;
+      const style = getComputedStyle(scroller);
+      expect(style.overflow).toBe("auto");
+      // jsdom reports an undeclared property as "", so the guard is that containment is gone.
+      expect(style.overscrollBehavior).not.toBe("contain");
+    } finally {
+      unstyle();
+    }
   });
 });
