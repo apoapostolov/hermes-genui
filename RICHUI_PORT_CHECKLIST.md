@@ -17,15 +17,19 @@ This tracks the rich-ui port work in [sagarmainkar/hermes-genui](https://github.
 | [#34](https://github.com/sagarmainkar/hermes-genui/pull/34) | [#21](https://github.com/sagarmainkar/hermes-genui/issues/21) | Scatter and waterfall chart kinds | Open | green |
 | [#35](https://github.com/sagarmainkar/hermes-genui/pull/35) | [#26](https://github.com/sagarmainkar/hermes-genui/issues/26) | Histogram and range chart kinds | Open | pending |
 | [#36](https://github.com/sagarmainkar/hermes-genui/pull/36) | [#22](https://github.com/sagarmainkar/hermes-genui/issues/22) | `null` means unknown, never 0 | Open | green |
-| [#37](https://github.com/sagarmainkar/hermes-genui/pull/37) | [#28](https://github.com/sagarmainkar/hermes-genui/issues/28) | Accessible names and roles across blocks | Open | pending |
+| [#37](https://github.com/sagarmainkar/hermes-genui/pull/37) | [#28](https://github.com/sagarmainkar/hermes-genui/issues/28) | Accessible names and roles across blocks | Open | green |
+| [#38](https://github.com/sagarmainkar/hermes-genui/pull/38) | completion | Structured source list: kind, date and note | Open | green |
+| [#39](https://github.com/sagarmainkar/hermes-genui/pull/39) | completion | Chart controls: stepped, sortDesc and height | Open | green |
+| [#40](https://github.com/sagarmainkar/hermes-genui/pull/40) | completion | Phase tracker: compact density and source ids | Open | green |
+| [#41](https://github.com/sagarmainkar/hermes-genui/pull/41) | completion | Structured table: typed columns, filter, pages, aggregates, sources | Open | green |
 
 ## Remaining port queue
 
-None. Every issue in the rich-ui port list has an open PR.
+None. Every issue and partial counterpart in the rich-ui port list has an open PR.
 
 ## Definition of done for each row
 
-- Branch pushed to `apoapostolov/hermes-genui`, PR open against `sagarmainkar/hermes-genui:main`, linked to its issue.
+- Branch pushed to `apoapostolov/hermes-genui`, PR open against `sagarmainkar/hermes-genui:main`, linked to its issue or marked as completion work.
 - Reader, React renderer, Python checker and text fallback updated together where the field changes meaning.
 - Focus, keyboard and reduced-motion behavior inherited from the existing control, not reimplemented.
 - `AGENTS.md` updated in the same session when the change introduces a visual or interaction aspect the contract did not already name.
