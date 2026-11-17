@@ -55,6 +55,7 @@ Register the type in the `Block` union and in `web/src/registry.tsx` too. `regis
 ## Interaction contract
 
 - Use the native element that matches the action. A row that sends a message is `<button type="button">` with the message as its `title`. A row that opens a URL is `<a target="_blank" rel="noreferrer">`. An inert row is a `div` and must not look tappable.
+- A checklist state is a shape on the same checkbox mark plus the state word. A stored tick and `done: true` stay authoritative; `state` adds context but never replaces a saved tick. Owner and note sit on that row, not in a second card.
 - Reuse the shared controls before drawing a new one: `Chip`, `Pill`, `Slider`, `Tabs`, `Source`, `Bar`, `KpiCard`, `Chart`, `InlineText` and `Icon`. If an icon is missing, copy the 24x24 `currentColor`, `aria-hidden` box from `Icon.tsx`.
 - Keep inline `style` for computed geometry and chart colours drawn from `var(--hb-*)`. No literal colour, no layout number in JS when a class can carry it.
 - Give a drawing that is a picture `role="img"` and an accessible name built from the data it shows. Give decorative marks `aria-hidden`. Screen-reader users cannot read `<text>` inside an SVG, so carry axis names and caveats in the accessible name.
