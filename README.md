@@ -377,6 +377,10 @@ flowchart LR
 
 **What stays local**, in your profile under `plugin-data/hermes-genui/`:
 - **Boards** are saved as JSON, with checklist ticks next to them.
+- **Photo URLs** (`photo-urls.txt`): the URLs `find_photos` returned, plus https image URLs returned by Hermes's own
+  `image_generate`. Local file paths are never recorded. These are the only images a block may draw.
+- **The stand-in photo tool** is off by default. Switching `photo_test_tool` on registers `standin_photos`, which
+  returns a fixed https link, a local path or a dead link so the photo path can be tried without an image key.
 - **The assistant's memory** (`assistant/`): its settings, the items it tracks (title, dates, amount, the sender,
   when the mail came, up to four short facts such as an order number, and a history), a log of its checks, and the
   next two weeks of your calendar. Chats see one-line summaries of items, never mail text.

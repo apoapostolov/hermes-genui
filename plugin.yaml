@@ -17,9 +17,14 @@ license: MIT
 homepage: https://github.com/sagarmainkar/hermes-genui
 tags: [desktop, generative-ui, charts, dashboards, visualization, photos, markets, recipes, assistant]
 requires_hermes: ">=0.22.5"
-provides_tools: [show_blocks, block_guide, market_history, find_photos, save_recipe, dashboard, board_page, assistant_setup, assistant_items, assistant_open, assistant_inbox, assistant_calendar, assistant_report, assistant_ideas]
-provides_hooks: [pre_llm_call, transform_llm_output]
+provides_tools: [show_blocks, block_guide, market_history, find_photos, standin_photos, save_recipe, dashboard, board_page, assistant_setup, assistant_items, assistant_open, assistant_inbox, assistant_calendar, assistant_report, assistant_ideas]
+provides_hooks: [pre_llm_call, post_tool_call, transform_llm_output]
 config_schema:
+  photo_test_tool:
+    type: bool
+    default: false
+    label: Turn on the stand-in photo tool
+    description: Registers standin_photos, which returns an https link, a local path or a broken link. Off by default so it costs nothing in the model's guide.
   unsplash_access_key:
     type: secret
     env: UNSPLASH_ACCESS_KEY
