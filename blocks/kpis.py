@@ -31,18 +31,25 @@ def check_stat(block: dict, path: str) -> list[tuple[str, str]]:
 
 
 def _check_figure(item: object, path: str, what: str) -> list[tuple[str, str]]:
-    """One kpis item or a stat: a label, a value, and a trend of 2-60 finite numbers when one is given.
+    """One kpis item or a stat: a label, a value, and a trend of 2-60 finite numbers with gaps allowed when one is given.
 
     The optional fields are not checked, because the reader draws what it can and skips the rest: a `previous`,
-    `invert_tone` or `change` it cannot use costs the chip, not the board.
+    `invert_tone` or `change` it cannot use costs the chip, not the board. A null value is one nobody measured; it
+    reads "no data" and costs the board nothing.
 
     {"label": "Close", "value": 80, "trend": [100, 90, 80]} → []
     {"label": "Close", "value": 80, "trend": [100]} → [(path, "trend must be a list of 2-60 numbers")]
     {"label": "Close", "value": 80, "previous": 100} → []
     {"label": "Close", "value": 80, "previous": "high", "invert_tone": "yes"} → [] (the reader ignores both)
+    {"label": "Chargebacks", "value": None} → [] (a value nobody measured; it reads "no data")
+    {"label": "Chargebacks"} → [(path, "item needs label and value")]
     {"label": "", "value": 80} → [(path, "item needs label and value")]
     """
-    if not (isinstance(item, dict) and has_text(item.get("label")) and item.get("value") not in (None, "")):
+    if not (isinstance(item, dict) and has_text(item.get("label"))):
+        return [(path, f"{what} needs label and value")]
+    if "value" not in item or item["value"] == "":
+        return [(path, f"{what} needs label and value")]
+    if item["value"] is not None and not _is_finite(item["value"]) and not has_text(item["value"]):
         return [(path, f"{what} needs label and value")]
     if "trend" in item and not _is_trend(item["trend"]):
         return [(path, "trend must be a list of 2-60 numbers")]
@@ -50,9 +57,14 @@ def _check_figure(item: object, path: str, what: str) -> list[tuple[str, str]]:
 
 
 def _is_trend(trend: object) -> bool:
-    """[100, 90.5, 80] → True;  [1] → False;  [1, "2"] → False;  [1, nan] → False;  61 numbers → False"""
+    """A list of 2-60 slots, each a finite number or null (a gap the sparkline breaks at), with 2 numbers at least.
+
+    [100, 90.5, 80] → True;  [100, None, 80] → True;  [1] → False;  [1, "2"] → False;  [1, nan] → False;  61 → False
+    """
     fewest, most = TREND_POINTS
-    return isinstance(trend, list) and fewest <= len(trend) <= most and all(_is_finite(v) for v in trend)
+    return (isinstance(trend, list) and fewest <= len(trend) <= most
+            and all(v is None or _is_finite(v) for v in trend)
+            and sum(1 for v in trend if v is not None) >= fewest)
 
 
 def _is_finite(v: object) -> bool:
@@ -134,11 +146,16 @@ def _chip(item: dict) -> str:
 
 def _figure(item: dict) -> str:
     """One stat or KPI as a line: {"label": "Revenue", "value": 72275, "unit": "₹Cr", "previous": 70223}
-    → "Revenue: 72,275 ₹Cr (▲ 2.9%)"."""
-    label, value = first_of(item, "label", "title"), safe_text(item.get("value"))
-    if not label or not value:
+    → "Revenue: 72,275 ₹Cr (▲ 2.9%)". An unknown value says "no data" with no unit, so it isn't read as a 0:
+    {"label": "Chargebacks", "value": None} → "Chargebacks: no data"."""
+    label = first_of(item, "label", "title")
+    if not label:
         return ""
-    line = f"{label}: {with_unit(value, safe_text(item.get('unit'), 20))}"
+    raw = item.get("value")
+    value = "no data" if raw is None else with_unit(safe_text(raw), safe_text(item.get("unit"), 20))
+    if not value:
+        return ""
+    line = f"{label}: {value}"
     chip = _chip(item)
     return f"{line} {chip}" if chip else line
 

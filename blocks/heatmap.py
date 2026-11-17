@@ -29,8 +29,18 @@ def check_heatmap(block: dict, path: str) -> list[tuple[str, str]]:
     return []
 
 
+def _cell(value: object) -> str:
+    """One heatmap cell: a number as written, and anything else a dash. The web reader keeps a number per cell and a
+    blank where there isn't one (num(cells[j]) → null), so a null and a word are both an unknown here.
+
+    4.1 → "4.1";  None → "–";  "n/a" → "–"
+    """
+    return table_cell(value) if is_number(value) else "–"
+
+
 def text_heatmap(block: dict) -> str:
-    """The title (and unit), then rows by columns as a small Markdown table of the values."""
+    """The title (and unit), then rows by columns as a small Markdown table of the values; a cell the model wrote as
+    null reads "–", an unknown that isn't a measured zero."""
     rows, cols, values = block.get("rows"), block.get("cols"), block.get("values")
     if not all(isinstance(side, list) and side for side in (rows, cols, values)):
         return ""
@@ -38,7 +48,7 @@ def text_heatmap(block: dict) -> str:
     body = []
     for i, label in enumerate(rows[:12]):
         line = values[i] if i < len(values) and isinstance(values[i], list) else []
-        body.append([table_cell(label)] + [table_cell(v) for v in line[: len(cols)]])
+        body.append([table_cell(label)] + [_cell(v) for v in line[: len(cols)]])
     title, unit = safe_text(block.get("title")), safe_text(block.get("unit"), 20)
     head = (f"**{title or 'Heatmap'}**" + (f" ({unit})" if unit else "")) if title or unit else ""
     return "\n".join(([head] if head else []) + md_table([""] + [table_cell(c) for c in cols], body))

@@ -15,12 +15,18 @@ describe("kpis and stat", () => {
       type: "stat", label: "Saved", value: 42000, unit: "₹", change: 12, change_unit: "%",
     });
   });
-  it("keeps a trend's finite numbers, the last 60 at most", () => {
+  it("keeps a trend's slots, a gap left where the model gave none, the last 60 at most", () => {
     const read = (trend: unknown) => (readBlocks([{ type: "kpis", items: [{ label: "Close", value: 80, trend }] }])[0] as any).items[0];
-    expect(read([100, "90", null, 85, Infinity, 80]).trend).toEqual([100, 85, 80]);
+    expect(read([100, "90", null, 85, Infinity, 80]).trend).toEqual([100, null, null, 85, null, 80]);
+    expect(read([100, null, 80]).trend).toEqual([100, null, 80]);
     expect(read(Array.from({ length: 80 }, (_, i) => i)).trend).toEqual(Array.from({ length: 60 }, (_, i) => i + 20));
     expect("trend" in read([5, "6"])).toBe(false);
+    expect("trend" in read([5, null])).toBe(false);
     expect("trend" in read("1,2,3")).toBe(false);
+  });
+  it("keeps a null value as unknown, and keeps a written zero as the number it is", () => {
+    const items = (readBlocks([{ type: "kpis", items: [{ label: "Chargebacks", value: null }, { label: "Returns", value: 0 }] }])[0] as any).items;
+    expect(items.map((i: any) => i.value)).toEqual([null, 0]);
   });
   it("reads a stat's trend too", () => {
     expect((readBlocks([{ type: "stat", label: "Saved", value: 3, trend: [1, 2, 3] }])[0] as any).trend).toEqual([1, 2, 3]);

@@ -9,9 +9,9 @@ const MAX_ITEMS = 12;
 /**
  * list: rich rows for rankings, search results, places or a short set of picks.
  * - items (also `rows`), up to 12: {title (also `name`/`label`, else `text`), subtitle (also `description`/`detail`/
- *   `note`/`text`), value: the right-hand text (also `price`/`rating`/`score`/`meta`/`badge`; numbers become text),
- *   icon or image (https), run (a tap sends it as the user's message) or url (https, opens in the browser)}. A plain
- *   string is a title-only row. `ask` isn't read: a row sends, it doesn't fill the composer.
+ *   `note`/`text`), value: the right-hand text (also `price`/`rating`/`score`/`meta`/`badge`; numbers become text, a
+ *   null reads "–"), icon or image (https), run (a tap sends it as the user's message) or url (https, opens in the
+ *   browser). A plain string is a title-only row. `ask` isn't read: a row sends, it doesn't fill the composer.
  * - ranked: true numbers the rows (also `numbered`). title: optional heading over the list.
  * - max: a number above 0, what a full bar means; the largest bar is used when absent, zero, negative or not a number.
  *   items[].bar: a number (null or anything else draws no bar) gives that row a track against max; `value` stays the
@@ -66,11 +66,27 @@ function readListItem(item: any): ListItem | null {
   return clean({
     title,
     subtitle: firstWords([item.subtitle, item.description, item.detail, item.note, textUnder], 160),
-    value: firstTextOrNumber([item.value, item.price, item.rating, item.score, item.meta, item.badge, bar], 30),
+    value: valueOf(item, bar),
     bar,
     icon: icon(item.icon),
     image: https(item.image),
     run: firstText([item.run], 300),
     url: https(item.url),
   });
+}
+
+/**
+ * The value slot's text: the first of `value`, `price`, `rating`, `score`, `meta`, `badge` the row carries. A null in
+ * that field is a value written down as unknown, so the slot reads "–" and not blank; an unreadable one falls through
+ * to the next name. A row with none of those fields falls back to its bar number, as the Python text does.
+ *   {price: null} → "–";  {rating: 4.6} → "4.6";  {value: "", badge: "Iconic"} → "Iconic";  {} → undefined
+ */
+function valueOf(item: any, bar: number | undefined): string | undefined {
+  for (const field of ["value", "price", "rating", "score", "meta", "badge"]) {
+    if (!(field in item)) continue;
+    if (item[field] === null) return "–";
+    const text = firstTextOrNumber([item[field]], 30);
+    if (text !== undefined) return text;
+  }
+  return bar === undefined ? undefined : firstTextOrNumber([bar], 30);
 }

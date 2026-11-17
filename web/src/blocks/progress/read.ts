@@ -10,8 +10,10 @@ export type Shape = "line" | "circle" | "dashboard";
 export type Threshold = { at: number; label?: string | number; tone?: Tone };
 /** One part of the track, drawn from where the last one ended. */
 export type Segment = { value: number; label?: string; tone?: Tone };
+/** `value` and `goal` may be null: a reading nobody took. Either draws an empty track and reads "no data" in its
+ *  place, so a model that doesn't know the figure keeps the card instead of writing a 0. */
 export type ProgressBlock = {
-  type: "progress"; title: string; value: number; goal: number; unit?: string; steps: Step[];
+  type: "progress"; title: string; value: number | null; goal: number | null; unit?: string; steps: Step[];
   shape?: Shape; show_percent?: boolean; tone?: Tone; thresholds?: Threshold[]; segments?: Segment[];
 };
 
@@ -71,15 +73,17 @@ function readSegment(raw: any, here: Trail): Segment | null {
  *    thresholds: [{at: 60, tone: "good"}, {at: 85, tone: "warn"}, {at: 100, tone: "bad"}]}
  *   → the same, drawn as a gauge whose fill is red
  * Thresholds replace steps when both are given (a track has marks or checkpoints, not both).
- * Dropped: no title, no numeric value, or a goal that isn't above 0.
+ *   {type: "progress", title: "Level 5", value: null, goal: 120} → kept, value null (an unknown reading, not a 0)
+ * Dropped: no title, a value or goal that isn't a number and isn't null, or a goal of 0 or less.
  */
 export function readProgress(raw: any, here: Trail): ProgressBlock | null {
   const title = str(raw.title, 40);
   if (!title) return here.drop("progress needs a title");
   const value = num(raw.value);
-  if (value === null) return here.drop("progress needs a numeric value");
+  if (value === null && raw.value !== null) return here.drop("progress needs a numeric value");
   const goal = num(raw.goal);
-  if (goal === null || goal <= 0) return here.drop("progress needs a goal above 0");
+  if (goal === null && raw.goal !== null) return here.drop("progress needs a goal above 0");
+  if (goal !== null && goal <= 0) return here.drop("progress needs a goal above 0");
 
   const thresholds: Threshold[] = [];
   const rawThresholds = Array.isArray(raw.thresholds) ? raw.thresholds : [];

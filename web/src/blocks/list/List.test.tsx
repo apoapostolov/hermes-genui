@@ -103,6 +103,12 @@ describe("List", () => {
 });
 
 describe("list rows", () => {
+  it("show a dash where a row's value is unknown", () => {
+    const c = draw({ type: "list", items: [{ title: "Shop A", subtitle: "Closed", value: null }, { title: "Shop B", value: 0 }] });
+    const rows = c.querySelectorAll(".hb-list-row");
+    expect(rows[0].textContent).toContain("–");
+    expect(rows[1].textContent).toContain("0");
+  });
   it("send their run on a tap; a url row stays a link", () => {
     const { send, container } = drawWithActions([{ type: "list", items: [
       { title: "Third Wave", run: "Directions to Third Wave" }, { title: "Dyu", url: "https://dyu.example" }] }]);

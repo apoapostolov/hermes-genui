@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Blocks } from "../../core/Blocks";
 import { readBlocks } from "../../core/readBlocks";
+import { SimChart } from "./SimChart";
 
 afterEach(() => {
   cleanup();
@@ -71,5 +72,15 @@ describe("Simulate", () => {
   it("makes each dot stand for more when the piles would pass 600 dots", () => {
     const { container } = draw({ ...SIM, view: { ...SIM.view, per: 1000 } });
     expect(container.querySelector(".hb-legend")!.textContent).toContain("(a dot is ₹10,000)");
+  });
+});
+
+describe("SimChart with a sample a formula can't work out", () => {
+  it("breaks the line where the value is unknown instead of bridging the gap", () => {
+    const { container } = render(<SimChart piles={[{ name: "Simple", formula: "P" }]} lines={[[100, null, 120]]} times={[0, 1, 2]} index={2} />);
+    const lines = [...container.querySelectorAll("polyline.hb-sim-line")];
+    expect(lines.length).toBe(2);  // 0 … and … 2, with nothing drawn across the null
+    expect(lines.every((line) => line.getAttribute("points")!.split(" ").length === 1)).toBe(true);
+    expect(container.querySelector("circle.hb-sim-point")).toBeTruthy();
   });
 });

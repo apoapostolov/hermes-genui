@@ -26,6 +26,11 @@ describe("table reader", () => {
     expect(r.blocks[0]).toEqual({ type: "table", columns: ["A", "B"], rows: [] });
     expect(r.dropped.map((d) => d.why)).toContain("table has no rows");
   });
+  it("writes a null cell as a dash and leaves a column an object row doesn't carry blank", () => {
+    const r = readBlocksNoted([{ type: "table", columns: ["Shop", "Price", "Change"],
+      rows: [["Shop A", 12, null], { Shop: "Shop B", Price: 0 }] }]);
+    expect((r.blocks[0] as any).rows).toEqual([["Shop A", "12", "–"], ["Shop B", "0", ""]]);
+  });
 });
 
 describe("table sorting", () => {

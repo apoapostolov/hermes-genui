@@ -1,7 +1,9 @@
 // A line chart's marks: one line per series without a fill, a dot and a label at each line's end (the last value for
 // one series, each name for several), and for tone "change" a line that is green above its start and orange below.
+// A gap (null) ends the line there: the next known point starts a new stroke, and a single observation between gaps
+// gets a dot of its own, so the line is never drawn across a stretch the model didn't measure.
 import { fmt, partColour, type ChartSpec } from "./chartData";
-import { linePath, textWidth } from "./geometry";
+import { linePath, lineRuns, textWidth, type Point } from "./geometry";
 import { isChangeLine, seriesEnds, startLabelY, TICK_GAP, valueColour, type XYLayout } from "./layout";
 
 type Props = { spec: ChartSpec; layout: XYLayout; gid: string; hover: number | null };
@@ -21,12 +23,21 @@ export function LineMarks({ spec, layout, gid, hover }: Props) {
       {showZero && <line x1={left} x2={right} y1={zero} y2={zero} className="hb-chart-rule-strong" strokeDasharray="3 3" />}
       {start !== null && <StartMark spec={spec} layout={layout} gid={gid} start={start} />}
       {spec.series.map((s, k) => {
-        const pts = pointsOf(s.data, layout);
-        if (!pts.length) return null;
+        const runs = lineRuns(slotsOf(s.data, layout));
+        if (!runs.length) return null;
+        const stroke = start !== null ? `url(#change-${gid})` : partColour(k);
+        const end = seriesEnds(s.data).last;
         return (
-          <path key={k} d={linePath(pts, spec.stepped)} fill="none" stroke={start !== null ? `url(#change-${gid})` : partColour(k)}
-            strokeWidth={one ? 2.25 : 1.75} strokeLinejoin="round" strokeLinecap="round"
-            pathLength={1} strokeDasharray="1" strokeDashoffset="1" className="hb-chart-line hb-chart-draw" />
+          <g key={k}>
+            {runs.filter((r) => r.pts.length > 1).map((r, j) => (
+              <path key={j} d={linePath(r.pts, spec.stepped)} fill="none" stroke={stroke}
+                strokeWidth={one ? 2.25 : 1.75} strokeLinejoin="round" strokeLinecap="round"
+                pathLength={1} strokeDasharray="1" strokeDashoffset="1" className="hb-chart-line hb-chart-draw" />
+            ))}
+            {runs.filter((r) => r.pts.length === 1 && r.from !== end).map((r, j) => (
+              <circle key={j} cx={r.pts[0][0]} cy={r.pts[0][1]} r="2.5" fill={stroke} className="hb-chart-dot" />
+            ))}
+          </g>
         );
       })}
       {layout.ends.map((e) => (
@@ -66,6 +77,11 @@ function Gridlines({ spec, layout }: { spec: ChartSpec; layout: XYLayout }) {
 /** A series's points in drawing units, gaps left out. */
 function pointsOf(data: (number | null)[], { xAt, yAt }: XYLayout): [number, number][] {
   return data.flatMap((v, i) => (v === null ? [] : [[xAt(i), yAt(v)] as [number, number]]));
+}
+
+/** A series's points in drawing units with a gap left in place as null, so a line can be broken there (lineRuns). */
+function slotsOf(data: (number | null)[], { xAt, yAt }: XYLayout): (Point | null)[] {
+  return data.map((v, i) => (v === null ? null : [xAt(i), yAt(v)]));
 }
 
 /** A change line's start: the gradient that turns its stroke orange below the first value, and a dashed line there

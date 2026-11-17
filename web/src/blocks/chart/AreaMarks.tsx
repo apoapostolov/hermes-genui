@@ -1,6 +1,7 @@
 // A stacked area chart's marks: each part filled between its band's bottom and top, its top edge drawn as a line.
+// A gap (null) breaks both the fill and its top edge, so a part is never drawn across a stretch with no value.
 import { partColour, type Band } from "./chartData";
-import { linePath } from "./geometry";
+import { linePath, lineRuns, type Point } from "./geometry";
 import type { XYLayout } from "./layout";
 
 export function AreaMarks({ bands, layout }: { bands: (Band | null)[][]; layout: XYLayout }) {
@@ -13,20 +14,20 @@ export function AreaMarks({ bands, layout }: { bands: (Band | null)[][]; layout:
 }
 
 function Area({ bands, layout, colour }: { bands: (Band | null)[]; layout: XYLayout; colour: string }) {
-  const top: [number, number][] = [];
-  const bottom: [number, number][] = [];
-  bands.forEach((b, i) => {
-    if (b === null) return;
-    top.push([layout.xAt(i), layout.yAt(b.to)]);
-    bottom.push([layout.xAt(i), layout.yAt(b.from)]);
-  });
-  if (!top.length) return null;
-  const topEdge = linePath(top);
-  const backAlongBottom = linePath(bottom.reverse()).replace(/^M/, "L");
+  const tops: (Point | null)[] = bands.map((b, i) => (b === null ? null : [layout.xAt(i), layout.yAt(b.to)]));
   return (
     <g>
-      <path d={`${topEdge} ${backAlongBottom} Z`} fill={colour} fillOpacity=".3" />
-      <path d={topEdge} fill="none" stroke={colour} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+      {lineRuns(tops).filter((run) => run.pts.length > 1).map((run, j) => {
+        const bottoms = run.pts.map((_, k) => layout.yAt(bands[run.from + k]!.from));
+        const backAlongBottom = linePath(run.pts.map(([x], k) => [x, bottoms[k]] as Point).reverse()).replace(/^M/, "L");
+        const topEdge = linePath(run.pts);
+        return (
+          <g key={j}>
+            <path d={`${topEdge} ${backAlongBottom} Z`} fill={colour} fillOpacity=".3" />
+            <path d={topEdge} fill="none" stroke={colour} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+          </g>
+        );
+      })}
     </g>
   );
 }

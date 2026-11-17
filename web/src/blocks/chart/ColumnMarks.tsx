@@ -1,9 +1,10 @@
 // Column charts' marks: bars (each series its own colour, values printed on top when few), stacked bars, and a
 // combo's bars with its lines. Columns are rounded only at their far end and stand on a baseline; while one column
-// is picked the others fade.
+// is picked the others fade. A gap (null) draws no bar: a tick at the baseline marks the place, so a missing value
+// isn't read as a zero.
 import type { Band, ChartSpec } from "./chartData";
 import { fmt, partColour } from "./chartData";
-import { barPath, linePath } from "./geometry";
+import { barPath, linePath, lineRuns, type Point } from "./geometry";
 import type { XYLayout } from "./layout";
 
 type Props = { spec: ChartSpec; layout: XYLayout; hover: number | null };
@@ -12,6 +13,12 @@ const SERIES_GAP = 2;  // between the bars of one group
 
 /** How strongly column i shows while `hover` is picked: the picked one fully, the rest faded. */
 const shade = (hover: number | null, i: number) => (hover === null || hover === i ? 1 : 0.55);
+
+/** Where a column has no value: a short tick on the baseline, never a bar (a zero bar has no height either). */
+export function GapTick({ x, width, zero }: { x: number; width: number; zero: number }) {
+  const w = Math.min(4, width);
+  return <rect x={x + (width - w) / 2} y={zero - 4} width={w} height={8} rx="1" className="hb-chart-gap" />;
+}
 
 /** The line the columns stand on, at zero. */
 function Baseline({ layout }: { layout: XYLayout }) {
@@ -26,9 +33,11 @@ export function BarMarks({ spec, layout, hover }: Props) {
   return (
     <g>
       {spec.series.map((s, k) => s.data.map((v, i) => {
-        if (v === null) return null;
         const x = xAt(i) - (bar * count) / 2 + k * bar;
         const width = count > 1 ? bar - SERIES_GAP : bar;
+        if (v === null) {
+          return <g key={`${k}-${i}`} opacity={shade(hover, i)}><GapTick x={x} width={width} zero={zero} /></g>;
+        }
         const end = yAt(v);
         return (
           <g key={`${k}-${i}`} opacity={shade(hover, i)}>
@@ -61,25 +70,28 @@ export function StackMarks({ bands, layout, hover }: { bands: (Band | null)[][];
 }
 
 /** A combo: the first series as columns, the rest as lines with a dot on each value, on their own scale if they have
- *  one. */
+ *  one. Gaps are left as they are: a tick for a missing column, a break in a line. */
 export function ComboMarks({ spec, layout, hover }: Props) {
   const { xAt, yAt, bar } = layout;
   const zero = yAt(0);
   return (
     <g>
-      {spec.series[0].data.map((v, i) => v === null ? null : (
-        <path key={i} d={barPath(xAt(i) - bar / 2, bar, zero, yAt(v))} fill={partColour(0)} opacity={shade(hover, i)} className="hb-chart-bar" />
-      ))}
+      {spec.series[0].data.map((v, i) => (v === null
+        ? <g key={i} opacity={shade(hover, i)}><GapTick x={xAt(i) - bar / 2} width={bar} zero={zero} /></g>
+        : <path key={i} d={barPath(xAt(i) - bar / 2, bar, zero, yAt(v))} fill={partColour(0)} opacity={shade(hover, i)} className="hb-chart-bar" />))}
       <Baseline layout={layout} />
       {spec.series.slice(1).map((s, j) => {
         const y = layout.yOf(s);
-        const pts = s.data.flatMap((v, i) => (v === null ? [] : [[xAt(i), y(v)] as [number, number]]));
-        if (!pts.length) return null;
+        const slots: (Point | null)[] = s.data.map((v, i) => (v === null ? null : [xAt(i), y(v)]));
+        const runs = lineRuns(slots);
+        if (!runs.length) return null;
         const colour = partColour(j + 1);
         return (
           <g key={j}>
-            <path d={linePath(pts, spec.stepped)} fill="none" stroke={colour} strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round" />
-            {pts.map(([cx, cy], i) => <circle key={i} cx={cx} cy={cy} r="3.5" fill={colour} className="hb-chart-dot" />)}
+            {runs.filter((r) => r.pts.length > 1).map((r, x) => (
+              <path key={x} d={linePath(r.pts, spec.stepped)} fill="none" stroke={colour} strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round" />
+            ))}
+            {runs.flatMap((r) => r.pts).map(([cx, cy], i) => <circle key={i} cx={cx} cy={cy} r="3.5" fill={colour} className="hb-chart-dot" />)}
           </g>
         );
       })}

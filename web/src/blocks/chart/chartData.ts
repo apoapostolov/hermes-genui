@@ -227,6 +227,23 @@ export function seriesName(series: { name?: string }[], k: number): string {
   return series[k].name ?? (series.length === 1 ? "Value" : `Series ${k + 1}`);
 }
 
+/** The x labels no series has a number for, in order: an unknown reading is named, not left to be guessed.
+ *  x ["Mon", "Tue"], data [3, null] → ["Tue"];  data [3, 4] → [] */
+export function missingLabels(spec: ChartSpec): string[] {
+  return spec.x.filter((_, i) => spec.series.every((s) => s.data[i] === null || s.data[i] === undefined)).map(String);
+}
+
+/** A chart's name for screen readers: the title (or the only series' name), the span of its labels, and which labels
+ *  nothing was measured for, so a gap is read out and not mistaken for a zero.
+ *  {title: "Orders", x: ["Mon", "Tue"], series: [{data: [3, null]}]} → "Orders, Mon to Tue, Tue no data" */
+export function chartLabel(spec: ChartSpec): string {
+  const title = spec.title ?? (spec.series.length === 1 ? spec.series[0].name : undefined) ?? "Chart";
+  const span = spec.x.length > 1 ? [`${spec.x[0]} to ${spec.x[spec.x.length - 1]}`] : [];
+  const gaps = missingLabels(spec);
+  const note = !gaps.length ? [] : gaps.length <= 4 ? [`${gaps.join(", ")} no data`] : [`${gaps.length} of ${spec.x.length} labels with no data`];
+  return [title, ...span, ...note].join(", ");
+}
+
 type Scale = { min: number; max: number };
 
 /** The scales an up-and-down chart (not a pie or hbar) is drawn against. Stacked bars and areas: one, from zero to the

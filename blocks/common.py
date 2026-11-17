@@ -203,15 +203,29 @@ def change_chip(change: object, unit: object = "%") -> str:
 
 
 def out_of(label: str, value: object, goal: object, unit: object) -> str:
-    """("Level 4", 95, 120, "XP") → "Level 4: 95 / 120 XP"."""
-    if not label or not is_number(value) or not is_number(goal):
+    """The value against its goal. An unknown figure (None) keeps its place and reads "no data"; the other still shows.
+
+    ("Level 4", 95, 120, "XP") → "Level 4: 95 / 120 XP";  ("Level 5", None, 120, "XP") → "Level 5: no data / 120 XP";
+    ("Level 5", 95, None, "XP") → "Level 5: 95 / no data"
+    """
+    if not label or not (is_number(value) or value is None) or not (is_number(goal) or goal is None):
         return ""
-    return f"{label}: {fmt_num(value)} / {with_unit(fmt_num(goal), safe_text(unit, 20))}"
+    shown = "no data" if value is None else fmt_num(value)
+    target = "no data" if goal is None else with_unit(fmt_num(goal), safe_text(unit, 20))
+    return f"{label}: {shown} / {target}"
 
 
 def table_cell(value: object) -> str:
     """A table cell: short, one line, its pipes escaped. "a|b" → "a\\|b"."""
     return safe_text(value, MAX_CELL).replace("|", "\\|")
+
+
+def cell_value(value: object) -> str:
+    """A table cell whose null means unknown: a written null shows a dash, so it isn't read as an empty cell or a 0.
+
+    12 → "12";  None → "–";  "n/a" → "n/a"
+    """
+    return "–" if value is None else table_cell(value)
 
 
 def md_table(header: list[str], rows: list[list[str]]) -> list[str]:
