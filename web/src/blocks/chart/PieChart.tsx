@@ -50,6 +50,8 @@ export function PieChart({ spec }: { spec: ChartSpec }) {
   const [picked, setPicked] = useState<number | null>(null);
   const [tip, setTip] = useState<Tip | null>(null);
   const svg = useRef<SVGSVGElement>(null);
+  const box = spec.height ?? BOX;
+  const scale = box / BOX;
   const values = spec.series[0].data as number[];
   const total = values.reduce((sum, v) => sum + v, 0);
   const unit = spec.series[0].unit ?? spec.unit;
@@ -79,7 +81,7 @@ export function PieChart({ spec }: { spec: ChartSpec }) {
     const drawing = el.getBoundingClientRect();
     const around = body.getBoundingClientRect();
     const label = String(spec.x[i]);
-    setTip({ x: drawing.left - around.left + x, y: drawing.top - around.top + y, title: label,
+    setTip({ x: drawing.left - around.left + x * scale, y: drawing.top - around.top + y * scale, title: label,
       rows: [{ colour: sliceColour(label, i), name: seriesName(spec.series, 0), value: fmt(values[i], unit, { full: true }) }],
       note: valuesAreShares ? undefined : shareNote(values, values[i]) });
   }
@@ -97,7 +99,7 @@ export function PieChart({ spec }: { spec: ChartSpec }) {
         </div>
       )}
       <div className="hb-pie-body">
-        <svg ref={svg} width={BOX} height={BOX} viewBox={`0 0 ${BOX} ${BOX}`} className="hb-pie-svg" role="img"
+        <svg ref={svg} width={box} height={box} viewBox={`0 0 ${BOX} ${BOX}`} className="hb-pie-svg" role="img"
           aria-label={spec.title ?? "chart"} {...pickKeys(values.length, picked, pick)}>
           {slices.map((s, i) => (
             <path key={i} d={slicePath(s.start, s.end, hole)} fill={sliceColour(String(spec.x[i]), i)} opacity={faded(i)}

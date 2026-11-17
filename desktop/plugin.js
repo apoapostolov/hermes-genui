@@ -1017,10 +1017,18 @@ function barPath(x, width, base, end, radius = 4) {
   return `M${f(x)},${f(base)}V${f(end + toward * r)}Q${f(x)},${f(end)} ${f(x + r)},${f(end)}H${f(x2 - r)}Q${f(x2)},${f(end)} ${f(x2)},${f(end + toward * r)}V${f(base)}Z`;
 }
 var STRAIGHT_UP_TO = 12;
-function linePath(pts) {
+function linePath(pts, stepped = false) {
+  if (stepped) return steppedPath(pts);
   if (pts.length > STRAIGHT_UP_TO) return smoothPath(pts);
   const f = (n) => +n.toFixed(1);
   return pts.map(([x, y], i) => `${i ? "L" : "M"}${f(x)},${f(y)}`).join("");
+}
+function steppedPath(pts) {
+  if (!pts.length) return "";
+  const f = (n) => +n.toFixed(1);
+  let d = `M${f(pts[0][0])},${f(pts[0][1])}`;
+  for (let i = 1; i < pts.length; i++) d += `L${f(pts[i][0])},${f(pts[i - 1][1])}L${f(pts[i][0])},${f(pts[i][1])}`;
+  return d;
 }
 function smoothPath(pts) {
   if (!pts.length) return "";
@@ -1083,7 +1091,7 @@ var unitOf = (spec, s) => s.unit ?? spec.unit;
 function xyLayout(spec, width, scales) {
   const n = spec.x.length;
   const slotted = spec.type === "bar" || spec.type === "stacked" || spec.type === "combo";
-  const H = slotted ? COLUMNS_H : LINES_H;
+  const H = spec.height ?? (slotted ? COLUMNS_H : LINES_H);
   const base = H - BOTTOM;
   const endTexts = spec.type === "line" ? lineEndTexts(spec) : [];
   const ticks = gridTicks(spec);
@@ -1305,7 +1313,7 @@ function LineMarks({ spec, layout, gid, hover }) {
       return /* @__PURE__ */ jsx8(
         "path",
         {
-          d: linePath(pts),
+          d: linePath(pts, spec.stepped),
           fill: "none",
           stroke: start !== null ? `url(#change-${gid})` : partColour(k),
           strokeWidth: one ? 2.25 : 1.75,
@@ -1419,7 +1427,7 @@ function ComboMarks({ spec, layout, hover }) {
       if (!pts.length) return null;
       const colour = partColour(j + 1);
       return /* @__PURE__ */ jsxs6("g", { children: [
-        /* @__PURE__ */ jsx9("path", { d: linePath(pts), fill: "none", stroke: colour, strokeWidth: "2.25", strokeLinejoin: "round", strokeLinecap: "round" }),
+        /* @__PURE__ */ jsx9("path", { d: linePath(pts, spec.stepped), fill: "none", stroke: colour, strokeWidth: "2.25", strokeLinejoin: "round", strokeLinecap: "round" }),
         pts.map(([cx, cy], i) => /* @__PURE__ */ jsx9("circle", { cx, cy, r: "3.5", fill: colour, className: "hb-chart-dot" }, i))
       ] }, j);
     })
@@ -1504,6 +1512,7 @@ function HBarChart({ spec }) {
           className: `hb-hbar-grid${single ? "" : " hb-hbar-many"}`,
           role: "img",
           "aria-label": spec.title ?? "chart",
+          style: spec.height ? { minHeight: spec.height } : void 0,
           ...pickKeys(spec.x.length, picked, pick, true),
           onPointerLeave: () => pick(null),
           children: spec.x.map((label, i) => /* @__PURE__ */ jsxs8(Fragment3, { children: [
@@ -1570,6 +1579,8 @@ function PieChart({ spec }) {
   const [picked, setPicked] = useState6(null);
   const [tip, setTip] = useState6(null);
   const svg = useRef3(null);
+  const box = spec.height ?? BOX;
+  const scale = box / BOX;
   const values = spec.series[0].data;
   const total = values.reduce((sum, v) => sum + v, 0);
   const unit = spec.series[0].unit ?? spec.unit;
@@ -1594,8 +1605,8 @@ function PieChart({ spec }) {
     const around = body.getBoundingClientRect();
     const label = String(spec.x[i]);
     setTip({
-      x: drawing.left - around.left + x,
-      y: drawing.top - around.top + y,
+      x: drawing.left - around.left + x * scale,
+      y: drawing.top - around.top + y * scale,
       title: label,
       rows: [{ colour: sliceColour(label, i), name: seriesName(spec.series, 0), value: fmt(values[i], unit, { full: true }) }],
       note: valuesAreShares ? void 0 : shareNote(values, values[i])
@@ -1615,8 +1626,8 @@ function PieChart({ spec }) {
         "svg",
         {
           ref: svg,
-          width: BOX,
-          height: BOX,
+          width: box,
+          height: box,
           viewBox: `0 0 ${BOX} ${BOX}`,
           className: "hb-pie-svg",
           role: "img",
@@ -2416,7 +2427,22 @@ function readSpec(d) {
   };
   if (typeof d.figure === "boolean") spec.figure = d.figure;
   if (d.tone === "change") spec.tone = "change";
+  if (d.stepped === true) spec.stepped = true;
+  if (typeof d.height === "number" && isFinite(d.height)) spec.height = Math.round(Math.min(480, Math.max(120, d.height)));
+  if (d.sortDesc === true && type === "bar") sortByFirstSeries(spec);
   return spec;
+}
+function sortByFirstSeries(spec) {
+  const values = spec.series[0]?.data ?? [];
+  const order = spec.x.map((_, i) => i).sort((a, b) => {
+    const av = values[a] ?? null, bv = values[b] ?? null;
+    if (av === null && bv === null) return a - b;
+    if (av === null) return 1;
+    if (bv === null) return -1;
+    return bv - av || a - b;
+  });
+  spec.x = order.map((i) => spec.x[i]);
+  spec.series = spec.series.map((s) => ({ ...s, data: order.map((i) => s.data[i] ?? null) }));
 }
 function readSeries(s, k, type, chartUnit) {
   const name = typeof s.name === "string" ? s.name : void 0;

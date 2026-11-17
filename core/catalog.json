@@ -38,7 +38,7 @@
    "kind": "chart",
    "for": "A trend, a comparison, or parts of a whole.",
    "use_when": "line: trends. bar: periods or items; bars turn sideways for long labels or rankings; time stays upright. hbar: rankings, 2-5 named items. donut, pie: parts of a whole, 3-7 parts. stacked: parts of a total over time. area: growth that builds up. combo: two measures. 2-3 items on several metrics: a table, not a chart each.",
-   "fields": "kind (as above). title. x: labels. series: [{name, data: numbers, null for a gap}], 1-3 (stacked, area: up to 6; pie, donut: 1). combo: first series bars, the rest lines (another unit gets its own axis). unit: \"%\", \"₹Cr\", \"$M\" or a word. tone: \"change\" colours one line by gain or loss. source: site name.",
+   "fields": "kind (as above). title. x: labels. series: [{name, data: numbers, null for a gap}], 1-3 (stacked, area: up to 6; pie, donut: 1). combo: first bars, rest lines, own axis. stepped holds line value. sortDesc ranks bars by first series. height 120-480. unit: \"%\", \"₹Cr\", \"$M\" or a word. tone: \"change\" colours one line by gain or loss. source: site name.",
    "example": {
     "type": "chart",
     "kind": "bar",
@@ -354,7 +354,7 @@
    "kind": "steps",
    "for": "A walkthrough with Back / Next.",
    "use_when": "After a flow: each step lights its node and changes the stage.",
-   "fields": "title. for: a flow id. items 2-12: [{title, text ≤600, node, image, holds: {node id: chips}, send: true (packet from the last lit node), tick: 1-20 (rerun its group)}].",
+   "fields": "title. for: a flow id. items 2-12: [{title, text ≤600, node, image, holds: {node id: chips}, send: packet from last lit node, tick: 1-20 reruns group}].",
    "example": {
     "type": "steps",
     "for": "tf",
@@ -613,7 +613,7 @@
    "kind": "form",
    "for": "Fields to fill; Send posts one message.",
    "use_when": "Before a big answer when two or more key choices are unknown: ask with ONE form, every field prefilled with your best guess, then build from the answer message. Not for a single yes/no (use actions).",
-   "fields": "id, title. fields ≤12: {id, kind: select|radio|checkbox|slider|text, label, value, required, group: a heading shared with the fields after it}. options for select, radio, checkbox: text or {value, label, note}. slider: min, max, step, unit, ends: [left, right]. text: placeholder, multiline.",
+   "fields": "id, title. fields ≤12: {id, kind: select|radio|checkbox|slider|text, label, value, required, group: a heading shared with the fields after it}. options: text or {value, label, note}. slider: min, max, step, unit, ends: [left, right]. text: placeholder, multiline.",
    "example": {
     "type": "form",
     "id": "trip",

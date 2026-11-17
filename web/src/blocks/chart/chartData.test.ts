@@ -25,6 +25,18 @@ describe("chart reading", () => {
       { name: "Revenue", data: [65799, 67087] }, { name: "Margin", unit: "%", data: [18.4, 16] }] }])[0] as any;
     expect(c.spec.series.map((s: any) => s.right)).toEqual([false, true]);
   });
+  it("reads stepped, clamps height and sorts bars descending", () => {
+    const stepped = readBlocks([{ type: "chart", kind: "line", stepped: true, height: 900,
+      x: ["a", "b"], series: [{ data: [1, 2] }] }])[0] as any;
+    expect(stepped.spec.stepped).toBe(true);
+    expect(stepped.spec.height).toBe(480);
+
+    const bars = readBlocks([{ type: "chart", kind: "bar", sortDesc: true, x: ["a", "b", "c"],
+      series: [{ data: [2, 9, 5] }, { data: [20, 90, 50] }] }])[0] as any;
+    expect(bars.spec.x).toEqual(["b", "c", "a"]);
+    expect(bars.spec.series[0].data).toEqual([9, 5, 2]);
+    expect(bars.spec.series[1].data).toEqual([90, 50, 20]);
+  });
 });
 
 describe("isOrderedLabel", () => {

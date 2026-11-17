@@ -78,7 +78,7 @@ export function ComboMarks({ spec, layout, hover }: Props) {
         const colour = partColour(j + 1);
         return (
           <g key={j}>
-            <path d={linePath(pts)} fill="none" stroke={colour} strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round" />
+            <path d={linePath(pts, spec.stepped)} fill="none" stroke={colour} strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round" />
             {pts.map(([cx, cy], i) => <circle key={i} cx={cx} cy={cy} r="3.5" fill={colour} className="hb-chart-dot" />)}
           </g>
         );

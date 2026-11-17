@@ -65,7 +65,7 @@ const unitOf = (spec: ChartSpec, s: ChartSeries) => s.unit ?? spec.unit;
 export function xyLayout(spec: ChartSpec, width: number, scales: { left: Scale; right: Scale | null }): XYLayout {
   const n = spec.x.length;
   const slotted = spec.type === "bar" || spec.type === "stacked" || spec.type === "combo";
-  const H = slotted ? COLUMNS_H : LINES_H;
+  const H = spec.height ?? (slotted ? COLUMNS_H : LINES_H);
   const base = H - BOTTOM;
   const endTexts = spec.type === "line" ? lineEndTexts(spec) : [];
   const ticks = gridTicks(spec);
