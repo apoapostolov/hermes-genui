@@ -7,7 +7,7 @@ export type KpiItem = {
   unit?: string;
   change?: number | null;
   change_unit?: "%" | "pt";
-  trend?: number[];
+  trend?: (number | null)[];
 };
 
 // A trend is a small line under the number: it needs 2 points, and more than 60 would not show in it.
@@ -17,9 +17,11 @@ export type KpisBlock = { type: "kpis"; items: KpiItem[] };
 export type StatBlock = { type: "stat" } & KpiItem;
 
 /**
- * One headline number (a kpis item, or a stat). The value may be a number or short text ("Leeds United (H)");
+ * One headline number (a kpis item, or a stat). The value may be a number, short text ("Leeds United (H)"), or null:
+ * a null is a number nobody measured, drawn and written as "no data" (never as 0 or a dash).
  * change_unit is "pt" only when asked for, otherwise "%". trend: see readTrend.
  *   {label: "Revenue", value: 72275, unit: "₹Cr", change: 2.2} → {label: "Revenue", value: 72275, unit: "₹Cr", change: 2.2, change_unit: "%"}
+ *   {label: "Chargebacks", value: null} → {label: "Chargebacks", value: null, change_unit: "%"}
  */
 export function readKpi(item: any): KpiItem {
   let value: number | string | null = num(item.value);
@@ -35,13 +37,16 @@ export function readKpi(item: any): KpiItem {
 }
 
 /**
- * A trend's finite numbers, the latest 60 at most; undefined with fewer than 2.
- *   [100, "90", null, 85, 80] → [100, 85, 80];  [5, "6"] → undefined;  "1,2,3" → undefined
+ * A trend as drawn: one slot per point, a null kept where the model measured nothing, the latest 60 slots at most;
+ * undefined with fewer than 2 numbers. A slot kept empty is what breaks the sparkline; dropping it would slide the
+ * later points into the wrong places.
+ *   [100, "90", null, 85, 80] → [100, null, null, 85, 80];  [5, "6"] → undefined;  "1,2,3" → undefined
  */
-function readTrend(v: unknown): number[] | undefined {
+function readTrend(v: unknown): (number | null)[] | undefined {
   if (!Array.isArray(v)) return undefined;
-  const numbers = v.map(num).filter((n): n is number => n !== null);
-  return numbers.length >= TREND_FEWEST ? numbers.slice(-TREND_MOST) : undefined;
+  const slots = v.slice(-TREND_MOST).map((x) => num(x));
+  const known = slots.filter((n) => n !== null).length;
+  return known >= TREND_FEWEST ? slots : undefined;
 }
 
 /**

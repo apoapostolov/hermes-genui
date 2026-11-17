@@ -72,4 +72,11 @@ describe("Table", () => {
     render(<Blocks blocks={readBlocks([{ type: "table", columns: ["A", "B"], rows: [5] }])} />);
     expect(screen.getByText("No rows to show.")).toBeTruthy();
   });
+  it("draws a null cell as a dash, so it doesn't read as a zero", () => {
+    const { container } = render(<Blocks blocks={readBlocks([{ type: "table", columns: ["Shop", "Units", "Change"],
+      rows: [["Shop A", 12, null], ["Shop B", 0, "-1%"]] }])} />);
+    const cells = [...container.querySelectorAll("tbody td:nth-child(3)")].map((td) => td.textContent);
+    expect(cells).toEqual(["–", "-1%"]);
+    expect(container.querySelector("tbody td:nth-child(2)")!.textContent).toBe("12");
+  });
 });

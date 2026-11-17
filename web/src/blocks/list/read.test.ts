@@ -6,6 +6,10 @@ import { readBlocksNoted } from "../../core/readBlocks";
 const one = (block: unknown) => readBlocksNoted([block]);
 
 describe("list", () => {
+  it("keeps a null value as a dash in the value slot, not as a blank row", () => {
+    const r = one({ type: "list", items: [{ title: "Shop A", value: null }, { title: "Shop B", value: null, badge: "Iconic" }, { title: "Shop C" }] });
+    expect((r.blocks[0] as any).items).toEqual([{ title: "Shop A", value: "–" }, { title: "Shop B", value: "–" }, { title: "Shop C" }]);
+  });
   it("reads rich rows, ranked, with an icon, a photo and a link", () => {
     const r = one({ type: "list", title: "Cafés", ranked: true, items: [
       { title: "Third Wave", subtitle: "Koramangala 5th Block", value: "4.5", icon: "food" },

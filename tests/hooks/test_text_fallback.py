@@ -129,9 +129,10 @@ def test_chart_first_to_last_per_series():
     )
 
 
-def test_chart_skips_gaps_and_zero_start():
+def test_chart_starts_at_its_first_number_and_names_its_gaps():
     chart = {"type": "chart", "title": "T", "x": ["a", "b", "c"], "series": [{"name": "S", "data": [None, 0, 5]}]}
-    assert render(chart) == "**T**: S 0 → 5"
+    # 0 is a measured start, so there is no % chip; the gap is named instead of being silently skipped.
+    assert render(chart) == "**T**: S 0 → 5, 1 gap (a)"
 
 
 def test_pie_shows_top_slices_with_shares():

@@ -2,7 +2,7 @@
 // of their own. Hand-drawn SVG at the width the chart has on screen (chart.css sets how wide that may be): the sums
 // behind it are in chartData.ts, where things go in layout.ts, the marks in *Marks.tsx.
 import { useId, useMemo, useRef, useState, type PointerEvent } from "react";
-import { changePct, chartScales, fmt, kindToDraw, stackSeries, totalAt, type ChartSpec } from "./chartData";
+import { changePct, chartLabel, chartScales, fmt, kindToDraw, stackSeries, totalAt, type ChartSpec } from "./chartData";
 import { seriesEnds, xyLayout, xyTip, type XYLayout } from "./layout";
 import { useWidth } from "./useWidth";
 import { pickKeys } from "./pick";
@@ -56,7 +56,7 @@ function XYChart({ spec }: { spec: ChartSpec }) {
       <Headline spec={spec} hover={hover} />
       <div ref={plot} className="hb-chart-plot">
         <svg ref={svg} width="100%" height={layout.H} viewBox={`0 0 ${layout.W} ${layout.H}`} className="hb-chart-svg"
-          role="img" aria-label={spec.title ?? "chart"} {...pickKeys(n, hover, setHover)}
+          role="img" aria-label={chartLabel(spec)} {...pickKeys(n, hover, setHover)}
           onPointerDown={pickAt} onPointerMove={(e) => (e.buttons || e.pointerType === "mouse") && pickAt(e)}
           onPointerLeave={() => setHover(null)}>
           <XLabels spec={spec} layout={layout} />

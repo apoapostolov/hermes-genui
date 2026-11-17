@@ -1,7 +1,9 @@
 // The line chart view: a line per formula from time 0 to now, against a scale that fits the whole run, so the line
-// draws itself as time moves on. A legend under it gives each value now.
+// draws itself as time moves on. A sample a formula can't work out (null) breaks its line rather than being bridged.
+// A legend under it gives each value now.
 import { useRef } from "react";
 import { fmt, partColour } from "../chart/chartData";
+import { lineRuns } from "../chart/geometry";
 import { useWidth } from "../chart/useWidth";
 import type { SimPile } from "./read";
 import { niceAbove } from "./sim";
@@ -36,11 +38,13 @@ export function SimChart({ piles, lines, times, index, unit }: Props) {
         ))}
         {xTicks.map((t) => <text key={t} x={x(t)} y={HEIGHT - 6} textAnchor="middle">{fmt(t)}</text>)}
         {piles.map((_, k) => {
-          const points = lines[k].slice(0, index + 1).flatMap((v, i) => (v === null ? [] : [`${x(times[i]).toFixed(1)},${y(v).toFixed(1)}`]));
+          const runs = lineRuns(lines[k].slice(0, index + 1).map((v, i) => (v === null ? null : [x(times[i]), y(v)] as [number, number])));
           const last = lines[k][index];
           return (
             <g key={k} style={{ color: partColour(k + 1) }}>
-              <polyline points={points.join(" ")} className="hb-sim-line" />
+              {runs.map((run, j) => (
+                <polyline key={j} points={run.pts.map(([cx, cy]) => `${cx.toFixed(1)},${cy.toFixed(1)}`).join(" ")} className="hb-sim-line" />
+              ))}
               {last !== null && <circle cx={x(now)} cy={y(last)} r={4.5} className="hb-sim-point" />}
             </g>
           );
