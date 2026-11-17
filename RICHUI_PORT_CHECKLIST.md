@@ -14,7 +14,9 @@ This tracks the rich-ui port work in [sagarmainkar/hermes-genui](https://github.
 | [#31](https://github.com/sagarmainkar/hermes-genui/pull/31) | [#23](https://github.com/sagarmainkar/hermes-genui/issues/23) | KPI change from `previous`, cost tone inversion | Open | green |
 | [#32](https://github.com/sagarmainkar/hermes-genui/pull/32) | [#27](https://github.com/sagarmainkar/hermes-genui/issues/27) | Checklist item states, owner and note | Open | green |
 | [#33](https://github.com/sagarmainkar/hermes-genui/pull/33) | [#17](https://github.com/sagarmainkar/hermes-genui/issues/17) | Progress shapes, thresholds and segments | Open | green |
-| [#34](https://github.com/sagarmainkar/hermes-genui/pull/34) | [#21](https://github.com/sagarmainkar/hermes-genui/issues/21) | Scatter and waterfall chart kinds | Open | pending |
+| [#34](https://github.com/sagarmainkar/hermes-genui/pull/34) | [#21](https://github.com/sagarmainkar/hermes-genui/issues/21) | Scatter and waterfall chart kinds | Open | green |
+| [#35](https://github.com/sagarmainkar/hermes-genui/pull/35) | [#26](https://github.com/sagarmainkar/hermes-genui/issues/26) | Histogram and range chart kinds | Open | pending |
+| [#36](https://github.com/sagarmainkar/hermes-genui/pull/36) | [#22](https://github.com/sagarmainkar/hermes-genui/issues/22) | `null` means unknown, never 0 | Open | pending |
 
 ## Remaining port queue
 
@@ -22,9 +24,7 @@ Ordered by estimated implementation cost. A row becomes a PR row above when its 
 
 | Order | Issue | Scope | UI bible aspect to add when it lands |
 | --- | --- | --- | --- |
-| 1 | [#26](https://github.com/sagarmainkar/hermes-genui/issues/26) | Histogram and range chart kinds | Binned and band marks inside the chart frame, with the same axis and hover contract |
-| 2 | [#28](https://github.com/sagarmainkar/hermes-genui/issues/28) | Accessible names and roles across blocks | One naming ladder across blocks and where a dedicated role changes an existing drawing |
-| 3 | [#22](https://github.com/sagarmainkar/hermes-genui/issues/22) | `null` means unknown, never 0 | Gap rendering, zero rendering and unknown rendering as one cross-block rule |
+| 1 | [#28](https://github.com/sagarmainkar/hermes-genui/issues/28) | Accessible names and roles across blocks | One naming ladder across blocks and where a dedicated role changes an existing drawing |
 
 ## Definition of done for each row
 
