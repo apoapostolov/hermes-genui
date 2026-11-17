@@ -48,6 +48,9 @@
 .hb-chart-halo { paint-order: stroke; stroke: var(--hb-surface); stroke-width: 3px; stroke-linejoin: round; }
 .hb-chart-rule { stroke: var(--hb-line); }
 .hb-chart-rule-strong { stroke: var(--hb-line-strong); }
+/* A waterfall's connector: the balance carried across to the next bar. A guide, so the gridline's colour, not the
+   darker one an axis takes. */
+.hb-waterfall-link { stroke: var(--hb-line); stroke-width: 1; }
 .hb-chart-dot { stroke: var(--hb-surface); stroke-width: 2; }
 .hb-chart-svg g, .hb-hbar-bar { transition: opacity 0.15s; }
 .hb-chart-draw { animation: hb-chart-draw 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }

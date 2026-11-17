@@ -140,6 +140,40 @@ def test_pie_shows_top_slices_with_shares():
     assert render(pie) == "**Mix**: A 50%, B 20%, C 15%, D 10%, +1 more"
 
 
+def test_scatter_reads_its_ranges_and_highest_point():
+    chart = {"type": "chart", "kind": "scatter", "title": "Price against mileage", "unit": "₹L", "series": [
+        {"name": "Listed cars", "points": [
+            {"x": 62, "y": 1.2, "label": "Maruti 800"}, {"x": 9, "y": 24.6, "label": "Fortuner"},
+            {"x": 40, "y": 8, "label": "City"}, {"x": 30, "y": None}]}]}
+    assert render(chart) == ("**Price against mileage** (₹L): 3 points; mileage 9 to 62, price 1.2 to 24.6; "
+                             "highest 24.6 at 9 (Fortuner)")
+
+
+def test_scatter_with_two_groups_gives_each_its_range():
+    chart = {"type": "chart", "kind": "scatter", "title": "Range against price", "unit": "km", "series": [
+        {"name": "Petrol", "points": [{"x": 610, "y": 8.2}, {"x": 540, "y": 9.1}]},
+        {"name": "Diesel", "points": [{"x": 690, "y": 9.4}, {"x": 480, "y": 9.9}]}]}
+    assert render(chart) == ("**Range against price** (km): Petrol 2 points, price 540 to 610; "
+                             "Diesel 2 points, price 480 to 690")
+
+
+def test_waterfall_reads_its_steps_and_closing_balance():
+    chart = {"type": "chart", "kind": "waterfall", "title": "Revenue to net profit", "unit": "₹Cr", "series": [
+        {"points": [{"label": "Gross revenue", "value": 120, "total": True}, {"label": "Returns", "value": -8},
+                    {"label": "Discounts", "value": -5}, {"label": "Net profit", "total": True}]}]}
+    assert render(chart) == ("**Revenue to net profit** (₹Cr): Gross revenue 120 → -8 Returns → -5 Discounts → "
+                             "Net profit 107")
+
+
+def test_waterfall_names_an_unknown_step_and_leaves_the_close_unstated():
+    chart = {"type": "chart", "kind": "waterfall", "title": "Account balance", "unit": "€", "series": [
+        {"points": [{"label": "Opening", "value": 2140, "total": True}, {"label": "Salary", "value": 3200},
+                    {"label": "Rent", "value": -1450}, {"label": "card", "value": None},
+                    {"label": "closing", "total": True}]}]}
+    assert render(chart) == ("**Account balance** (€): Opening 2,140 → +3,200 Salary → -1,450 Rent → "
+                             "card, unknown → closing not stated")
+
+
 # --- tables ---------------------------------------------------------------------------------------
 
 def test_table_is_markdown():

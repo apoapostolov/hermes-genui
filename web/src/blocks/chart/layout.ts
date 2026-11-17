@@ -1,8 +1,11 @@
-// Where everything goes in an up-and-down chart (line, bar, area, stacked, combo), worked out from the spec and the
-// width it has on screen: the plot's edges, where a label or value sits, how wide a column is, which x labels and
-// value labels are written, and the labels at the ends of lines. Also what the hover card says at a point.
-import { fmt, partColour, seriesName, type ChartSeries, type ChartSpec } from "./chartData";
+// Where everything goes in an up-and-down chart (line, bar, area, stacked, combo), in a scatter, and in a waterfall,
+// worked out from the spec and the width it has on screen: the plot's edges, where a label or value sits, how wide a
+// column is, which x labels and value labels are written, and the labels at the ends of lines. Also what the hover
+// card says at a point.
+import { axisNames, fmt, partColour, scatterPoints, seriesName, waterfallBars,
+  type ChartPoint, type ChartSeries, type ChartSpec, type WaterfallBar } from "./chartData";
 import { columnLayout, niceTicks, spreadLabels, textWidth, xLabelsShown } from "./geometry";
+import { cutAtWord } from "../../core/fields";
 import { formatChange } from "../../lib/format";
 import type { Tip } from "./ChartTip";
 
@@ -189,4 +192,137 @@ function tipNote(spec: ChartSpec, i: number): string | undefined {
   const first = data[start] as number;
   if (v === null || i <= start || first === 0) return undefined;
   return `${formatChange(((v - first) / Math.abs(first)) * 100)} since start`;
+}
+
+// A scatter is 230px high: it carries numbers along the bottom as well as up the side, so it needs a little more room
+// under the plot than a line does.
+const SCATTER_H = 230, SCATTER_BOTTOM = 30;
+
+/** A dot of a scatter on the drawing: its series, its point, its two numbers and where it sits. */
+export type Dot = { series: number; point: ChartPoint; x: number; y: number; cx: number; cy: number };
+
+export type ScatterLayout = {
+  W: number; H: number; left: number; right: number; top: number; base: number;
+  xAt: (x: number) => number; yAt: (y: number) => number;
+  /** The round values written along the bottom and up the side. */
+  xTicks: number[]; yTicks: number[];
+  /** The points that have a place, in reading order: left to right, then top to bottom. */
+  dots: Dot[];
+};
+
+/** Round values for a scale, covering the range it was given: (9, 62) -> [0, 20, 40, 60, 80]. */
+function ticksOf(scale: Scale): number[] {
+  return niceTicks(scale.min, scale.max);
+}
+
+/**
+ * Where a scatter's dots go: both axes carry round values (the ticksOf of the scales chartScales gives it), the values
+ * up the side take room on the left, and the numbers along the bottom sit under the plot. Dots keep the reading order
+ * scatterPoints gave them, so the arrow keys walk left to right.
+ *   4 cars at 600px → dots at their x and y, y values written on the left, x values under the plot
+ */
+export function scatterLayout(spec: ChartSpec, width: number, scales: { left: Scale; x?: Scale }): ScatterLayout {
+  const xTicks = ticksOf(scales.x ?? { min: 0, max: 1 });
+  const yTicks = ticksOf(scales.left);
+  const H = SCATTER_H;
+  const base = H - SCATTER_BOTTOM;
+  const top = TOP + 6;
+  const tickRoom = yTicks.length ? TICK_GAP + Math.max(...yTicks.map((t) => textWidth(fmt(t, spec.unit)))) : 0;
+  const left = SIDE + tickRoom;
+  const right = width - SIDE;
+  const x0 = xTicks[0] ?? 0, x1 = xTicks[xTicks.length - 1] ?? 1;
+  const y0 = yTicks[0] ?? 0, y1 = yTicks[yTicks.length - 1] ?? 1;
+  const xAt = (v: number) => left + ((right - left) * (v - x0)) / (x1 - x0 || 1);
+  const yAt = (v: number) => base - ((base - top) * (v - y0)) / (y1 - y0 || 1);
+  const dots = scatterPoints(spec.series).map((p) => ({ ...p, cx: xAt(p.x), cy: yAt(p.y) }));
+  return { W: width, H, left, right, top, base, xAt, yAt, xTicks, yTicks, dots };
+}
+
+/**
+ * The hover card on a scatter's dot: the point's name (or its series), then where it sits on each axis.
+ *   {label: "Maruti 800", x: 62, y: 1.2} titled "Price against mileage" → "Maruti 800", "mileage 62" · "price 1.2"
+ */
+export function scatterTip(spec: ChartSpec, i: number, layout: ScatterLayout): Tip {
+  const dot = layout.dots[i];
+  const names = axisNames(spec.title);
+  const unit = spec.series[dot.series].unit ?? spec.unit;
+  return {
+    x: dot.cx, y: dot.cy,
+    title: dot.point.label ?? seriesName(spec.series, dot.series),
+    rows: [{ colour: partColour(dot.series), name: `${names.x ?? "x"} ${fmt(dot.x)}`,
+      value: `${names.y ?? "y"} ${fmt(dot.y, unit, { full: true })}` }],
+  };
+}
+
+// A waterfall prints its values on eight bars or fewer, when each one fits its column: a monthly bridge leaves the
+// numbers to the hover card.
+const WATERFALL_VALUE_LABELS = 8;
+
+export type WaterfallLayout = {
+  W: number; H: number; left: number; right: number; top: number; base: number;
+  slot: number; bar: number;
+  xAt: (i: number) => number; yAt: (v: number) => number;
+  /** The round values written on the left; the scale always keeps zero in view. */
+  ticks: number[];
+  /** Whether each bar's value is written on it (eight bars or fewer, each value fitting its column). */
+  valueLabels: boolean;
+  /** Each point's label, cut to the room under its column. */
+  labels: string[];
+  /** The bars as drawn: a step's band, a total's balance, or null for an unknown step and everything after it. */
+  bars: (WaterfallBar | null)[];
+};
+
+/**
+ * Where a bridge's bars go: a column per point, each step from the balance it starts at to the one it ends at, each
+ * total from zero. The scale keeps zero in view, the values are written on eight bars or fewer when they fit, and the
+ * labels under the columns are cut to the room they have (the hover card keeps them whole).
+ *   6 steps at 600px → 96px columns, values on top;  20 steps at 600px → 30px columns, no values
+ */
+export function waterfallLayout(spec: ChartSpec, width: number): WaterfallLayout {
+  const bars = waterfallBars(spec.series[0]?.points ?? []);
+  const n = bars.length;
+  const ends = bars.flatMap((b) => (b === null ? [] : [b.from, b.to]));
+  const ticks = ends.length ? niceTicks(Math.min(0, ...ends), Math.max(0, ...ends)) : [0];
+  const H = COLUMNS_H;
+  const base = H - BOTTOM;
+  const tickRoom = TICK_GAP + Math.max(...ticks.map((t) => textWidth(fmt(t, spec.unit))));
+  const left = 4 + tickRoom;
+  const right = width - 4;
+  const columns = columnLayout(right - left, n, 1);
+  const xAt = (i: number) => left + columns.start + columns.slot * (i + 0.5);
+  const drawn = bars.filter((b): b is WaterfallBar => b !== null);
+  const values = drawn.map((b) => waterfallValue(b, spec.unit));
+  const valueLabels = drawn.length <= WATERFALL_VALUE_LABELS
+    && values.every((v) => textWidth(v, 11.5) <= columns.slot - 4);
+  const top = TOP + (valueLabels ? VALUE_ROOM : 0);
+  const yAt = (v: number) => base - ((base - top) * (v - ticks[0])) / ((ticks[ticks.length - 1] - ticks[0]) || 1);
+  const labels = spec.x.map((label) => cutAtWord(String(label), Math.max(6, Math.floor((columns.slot - 6) / (11 * 0.6)))));
+  return { W: width, H, left, right, top, base, slot: columns.slot, bar: columns.bar, xAt, yAt,
+    ticks, valueLabels, labels, bars };
+}
+
+/** A waterfall bar's value as it is written on the bar and in the hover card: a step with its sign, a total's balance.
+ *  (from 0 to 2140, total) → "2,140";  (from 120 to 112) → "-8";  (from 112 to 117) → "+5" */
+export function waterfallValue(bar: WaterfallBar, unit?: string): string {
+  if (bar.total) return fmt(bar.to, unit);
+  const step = bar.to - bar.from;
+  return `${step > 0 ? "+" : ""}${fmt(step, unit)}`;
+}
+
+/**
+ * The hover card on a waterfall bar: the point's name, its direction in words and its amount, and the balance it
+ * produced.  (label "Returns", 120 → 112) → "Returns", "▼ decrease -8", "balance 112"
+ */
+export function waterfallTip(spec: ChartSpec, i: number, layout: WaterfallLayout): Tip {
+  const bar = layout.bars[i] as WaterfallBar;
+  const unit = spec.series[0]?.unit ?? spec.unit;
+  const step = bar.to - bar.from;
+  const rise = step >= 0;
+  return {
+    x: layout.xAt(i), y: layout.yAt(Math.max(bar.from, bar.to)),
+    title: String(spec.x[i]),
+    rows: [{ colour: bar.total ? partColour(0) : rise ? "var(--hb-good)" : "var(--hb-warn)",
+      name: bar.total ? "Total" : rise ? "▲ increase" : "▼ decrease", value: waterfallValue(bar, unit) }],
+    note: `balance ${fmt(bar.to, unit, { full: true })}`,
+  };
 }

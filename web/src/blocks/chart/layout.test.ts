@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { chartScales, type ChartSpec } from "./chartData";
 import { pinLocale } from "../../lib/locale.testing";
-import { startLabelY, xyLayout, xyTip } from "./layout";
+import { scatterLayout, scatterTip, startLabelY, waterfallLayout, waterfallTip, waterfallValue, xyLayout, xyTip } from "./layout";
 
 beforeEach(() => pinLocale("en-US"));
 afterEach(() => vi.restoreAllMocks());
@@ -124,5 +124,112 @@ describe("startLabelY (the Start label beside a change line's dashed start)", ()
   it("stays on the drawing: below near the top, above near the bottom", () => {
     expect(place([[8, 12], [60, 80]], 12)).toBe(26);
     expect(place([[8, 190], [60, 120]], 190)).toBe(184);
+  });
+});
+
+const cars: ChartSpec = { type: "scatter", title: "Price against mileage", x: [],
+  unit: "₹L", series: [{ name: "Listed cars", data: [], points: [
+    { x: 62, y: 1.2, label: "Maruti 800" }, { x: 9, y: 24.6, label: "Fortuner" },
+    { x: 40, y: 8, label: "City" }, { x: 30, y: null, label: "Unknown" }] }] };
+const scatter = (spec = cars, width = 600) => scatterLayout(spec, width, chartScales(spec, null));
+
+describe("scatterLayout", () => {
+  it("draws both scales with round values, and only the points with two numbers", () => {
+    const l = scatter();
+    expect(l.H).toBe(230);
+    expect(l.dots.map((d) => d.x)).toEqual([9, 40, 62]);
+    expect(l.xTicks).toEqual([0, 25, 50, 75]);
+    expect(l.yTicks[0]).toBeLessThanOrEqual(1.2);
+    expect(l.yTicks.at(-1)).toBeGreaterThanOrEqual(24.6);
+  });
+
+  it("leaves room for the values up the side and puts the dots inside the plot", () => {
+    const l = scatter();
+    expect(l.left).toBeGreaterThan(20);
+    for (const d of l.dots) {
+      expect(d.cx).toBeGreaterThanOrEqual(l.left);
+      expect(d.cx).toBeLessThanOrEqual(l.right);
+      expect(d.cy).toBeGreaterThanOrEqual(l.top);
+      expect(d.cy).toBeLessThanOrEqual(l.base);
+    }
+  });
+
+  it("puts a higher value higher up and a bigger one further right", () => {
+    const [fortuner, city, maruti] = scatter().dots;
+    expect(fortuner.cy).toBeLessThan(maruti.cy);
+    expect(city.cx).toBeLessThan(maruti.cx);
+  });
+});
+
+describe("scatterTip", () => {
+  it("names the point and where it sits on each axis", () => {
+    const tip = scatterTip(cars, 2, scatter());
+    expect(tip.title).toBe("Maruti 800");
+    expect(tip.rows).toEqual([{ colour: "var(--hb-chart-1)", name: "mileage 62", value: "price ₹1.2L" }]);
+  });
+
+  it("falls back to the series name and to x and y when the title names no axes", () => {
+    const plain: ChartSpec = { type: "scatter", x: [], series: [{ name: "Cars", data: [], points: [{ x: 5, y: 7 }] }] };
+    const tip = scatterTip(plain, 0, scatter(plain));
+    expect(tip.title).toBe("Cars");
+    expect(tip.rows[0].name).toBe("x 5");
+    expect(tip.rows[0].value).toBe("y 7");
+  });
+});
+
+const bridge: ChartSpec = { type: "waterfall", title: "Revenue to net profit", unit: "₹Cr",
+  x: ["Gross revenue", "Returns", "Discounts", "Net profit"], series: [{ name: "Bridge", data: [], points: [
+    { label: "Gross revenue", value: 120, total: true }, { label: "Returns", value: -8 },
+    { label: "Discounts", value: -5 }, { label: "Net profit", total: true }] }] };
+
+describe("waterfallLayout", () => {
+  it("keeps zero in view and works the scale out from the bars", () => {
+    const l = waterfallLayout(bridge, 600);
+    expect(l.ticks[0]).toBeLessThanOrEqual(0);
+    expect(l.ticks.at(-1)).toBeGreaterThanOrEqual(120);
+    expect(l.bars.map((b) => (b ? [b.from, b.to] : null))).toEqual([[0, 120], [120, 112], [112, 107], [0, 107]]);
+  });
+
+  it("centres the columns and writes eight values at most", () => {
+    const l = waterfallLayout(bridge, 600);
+    expect(l.slot).toBe(96);
+    expect(l.xAt(1) - l.xAt(0)).toBe(96);
+    expect(l.xAt(1) + l.xAt(2)).toBeCloseTo(l.left + l.right);
+    expect(l.valueLabels).toBe(true);
+    const many: ChartSpec = { ...bridge, x: bridge.x.flatMap((label) => [label, label]),
+      series: [{ data: [], points: Array.from({ length: 8 }, (_, i) => ({ label: `s${i}`, value: i + 1 })) }] };
+    expect(waterfallLayout(many, 600).valueLabels).toBe(true);
+    const more: ChartSpec = { ...many, x: Array.from({ length: 9 }, (_, i) => `s${i}`),
+      series: [{ data: [], points: Array.from({ length: 9 }, (_, i) => ({ label: `s${i}`, value: i + 1 })) }] };
+    expect(waterfallLayout(more, 600).valueLabels).toBe(false);
+  });
+
+  it("cuts a long label to the room under its column", () => {
+    const l = waterfallLayout({ ...bridge, x: ["cost of goods", "b", "c", "d"] }, 200);
+    expect(l.labels[0].endsWith("…")).toBe(true);
+    expect(l.labels[0].length).toBeLessThan("cost of goods".length);
+  });
+});
+
+describe("waterfallValue", () => {
+  it("writes a step with its sign and a total as its balance", () => {
+    expect(waterfallValue({ from: 120, to: 112, total: false }, "₹Cr")).toBe("-₹8 Cr");
+    expect(waterfallValue({ from: 112, to: 117, total: false }, "₹Cr")).toBe("+₹5 Cr");
+    expect(waterfallValue({ from: 0, to: 2140, total: true }, "€")).toBe("€2,140");
+  });
+});
+
+describe("waterfallTip", () => {
+  it("names the step, its direction and the balance it produced", () => {
+    const tip = waterfallTip(bridge, 1, waterfallLayout(bridge, 600));
+    expect(tip.title).toBe("Returns");
+    expect(tip.rows).toEqual([{ colour: "var(--hb-warn)", name: "▼ decrease", value: "-₹8 Cr" }]);
+    expect(tip.note).toBe("balance ₹112 Cr");
+  });
+
+  it("gives a total its own colour and no direction", () => {
+    const tip = waterfallTip(bridge, 3, waterfallLayout(bridge, 600));
+    expect(tip.rows[0].name).toBe("Total");
+    expect(tip.rows[0].colour).toBe("var(--hb-chart-1)");
   });
 });

@@ -94,6 +94,67 @@ def test_chart_tone_is_change_on_a_line_chart_only():
     assert check_blocks([{**chart_with(two), "tone": "change"}]) == ['0: tone "change" is for a one-series line chart']
 
 
+def scatter(*series: dict) -> dict:
+    return {"type": "chart", "kind": "scatter", "series": list(series)}
+
+
+def test_scatter_points_need_a_number_on_both_scales():
+    ok = scatter({"name": "Cars", "points": [{"x": 9, "y": 24.6}, {"x": 62, "y": None}]})
+    assert check_blocks([ok]) == []
+    assert check_blocks([{**ok, "tone": "change"}]) == ['0: tone "change" is for a one-series line chart']
+
+
+def test_scatter_reports_the_point_that_cannot_be_placed():
+    assert check_blocks([scatter({"points": [{"x": "9", "y": 1}]})]) == [
+        "0.series.0.points.0: point needs a numeric x"]
+    assert check_blocks([scatter({"points": [{"x": 9, "y": "1.2"}]})]) == [
+        "0.series.0.points.0: point's y is a number, or null for unknown"]
+    assert check_blocks([scatter({"points": [{"x": 9, "y": None}]})]) == [
+        "0: scatter needs at least one point with a y"]
+    assert check_blocks([scatter({"points": [{"x": 9}, "nope"]})]) == ["0.series.0.points.1: point is not an object"]
+
+
+def test_scatter_takes_two_series_of_at_most_200_points():
+    one = {"points": [{"x": 9, "y": 1}]}
+    assert check_blocks([scatter(one, {"points": [{"x": 2, "y": 2}]})]) == []
+    assert check_blocks([scatter(one, one, one)]) == ["0: a scatter chart takes 1-2 series"]
+    assert check_blocks([scatter({"points": [{"x": i, "y": 1} for i in range(201)]})]) == [
+        "0.series.0: a scatter series takes at most 200 points"]
+    assert check_blocks([scatter({"points": "nope"})]) == ["0.series.0: series needs a points list"]
+    assert check_blocks([{"type": "chart", "kind": "scatter"}]) == ["0: scatter needs 1-2 series with points"]
+
+
+def waterfall(*series: dict) -> dict:
+    return {"type": "chart", "kind": "waterfall", "series": list(series)}
+
+
+def test_waterfall_points_are_steps_or_totals():
+    bridge = waterfall({"points": [
+        {"label": "Gross revenue", "value": 120, "total": True}, {"label": "Returns", "value": -8},
+        {"label": "Card", "value": None}, {"label": "Net profit", "total": True}]})
+    assert check_blocks([bridge]) == []
+    assert check_blocks([{**bridge, "tone": "change"}]) == ['0: tone "change" is for a one-series line chart']
+
+
+def test_waterfall_reports_a_point_it_cannot_read():
+    assert check_blocks([waterfall({"points": [{"label": "Returns", "value": "8"}]})]) == [
+        "0.series.0.points.0: point's value is a number, or null for unknown"]
+    assert check_blocks([waterfall({"points": [{"label": "Card"}]})]) == [
+        "0: waterfall needs at least one point with a value or a total"]
+    assert check_blocks([waterfall({"points": [{"label": "x" * 41, "value": 1}]})]) == [
+        "0.series.0.points.0: label is text of at most 40 characters"]
+    assert check_blocks([waterfall({"points": ["nope"]})]) == [
+        "0.series.0.points.0: point is not an object"]
+
+
+def test_waterfall_is_one_series_of_points():
+    one = {"points": [{"value": 1}]}
+    assert check_blocks([waterfall(one)]) == []
+    assert check_blocks([waterfall(one, one)]) == ["0: a waterfall chart takes 1 series"]
+    assert check_blocks([waterfall({"points": 5})]) == ["0: series needs a points list"]
+    assert check_blocks([{"type": "chart", "kind": "waterfall"}]) == ["0: waterfall needs 1 series with points"]
+
+
 def test_kpi_trend_is_2_to_60_numbers():
     def kpis(trend: object) -> dict:
         return {"type": "kpis", "items": [{"label": "Close", "value": 3100},
