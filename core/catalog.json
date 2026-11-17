@@ -219,25 +219,15 @@
   },
   {
    "kind": "progress",
-   "for": "A value on a track to a goal; checkpoints ticked.",
-   "use_when": "Savings, challenges, training.",
-   "fields": "title. value. goal (> 0). unit. steps ≤6: [{label, at: number}].",
+   "for": "A track to a goal.",
+   "use_when": "Training, savings.",
+   "fields": "title, value, goal>0, unit, shape line|circle|dashboard, show_percent, tone good|warn|bad, steps≤6 {label,at}, thresholds≤6 {at,label,tone}, segments≤5 {value,label,tone}",
    "example": {
     "type": "progress",
     "title": "Level 4",
     "value": 95,
     "goal": 120,
-    "unit": "XP",
-    "steps": [
-     {
-      "label": "60 XP",
-      "at": 60
-     },
-     {
-      "label": "120 XP",
-      "at": 120
-     }
-    ]
+    "unit": "XP"
    }
   },
   {

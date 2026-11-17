@@ -933,10 +933,10 @@ function readCalcChart(raw, ids, here) {
 }
 function labelFor(label, name) {
   if (!label) return void 0;
-  const place = `{${name}}`;
+  const place2 = `{${name}}`;
   const placeholders = label.match(/\{[^{}]*\}/g) ?? [];
-  const named = placeholders.length === 1 ? label.replace(placeholders[0], place) : label;
-  return named.split(place).map((part) => part.replace(/[{}]/g, "")).join(place).trim() || void 0;
+  const named = placeholders.length === 1 ? label.replace(placeholders[0], place2) : label;
+  return named.split(place2).map((part) => part.replace(/[{}]/g, "")).join(place2).trim() || void 0;
 }
 function bound(v) {
   return num(v) ?? str(v, 300) ?? null;
@@ -2329,12 +2329,12 @@ function readUpNext(raw, here) {
 // src/blocks/weather/Weather.tsx
 import { jsx as jsx19, jsxs as jsxs16 } from "react/jsx-runtime";
 var deg = (v) => `${Math.round(v)}\xB0`;
-function Weather({ temp, place, condition, high, low }) {
+function Weather({ temp, place: place2, condition, high, low }) {
   const range = [high !== void 0 ? `High ${deg(high)}` : null, low !== void 0 ? `${deg(low)} tonight` : null].filter(Boolean).join(" \xB7 ");
   return /* @__PURE__ */ jsxs16("div", { className: "hb-card hb-weather", children: [
     /* @__PURE__ */ jsx19("span", { className: "hb-weather-temp", children: deg(temp) }),
     /* @__PURE__ */ jsxs16("span", { className: "hb-weather-text", children: [
-      /* @__PURE__ */ jsx19("span", { className: "hb-weather-where", children: condition ? `${condition} in ${place}` : place }),
+      /* @__PURE__ */ jsx19("span", { className: "hb-weather-where", children: condition ? `${condition} in ${place2}` : place2 }),
       range && /* @__PURE__ */ jsx19("span", { className: "hb-weather-range", children: range })
     ] })
   ] });
@@ -2343,15 +2343,15 @@ function Weather({ temp, place, condition, high, low }) {
 // src/blocks/weather/read.ts
 function readWeather(raw, here) {
   const temp = num(raw.temp);
-  const place = firstText([raw.place, raw.city], 80);
-  if (temp === null || !place) {
+  const place2 = firstText([raw.place, raw.city], 80);
+  if (temp === null || !place2) {
     here.drop("weather needs a temp and a place");
     return null;
   }
   return clean({
     type: "weather",
     temp,
-    place,
+    place: place2,
     condition: firstText([raw.condition, raw.sky], 40),
     high: num(raw.high) ?? void 0,
     low: num(raw.low) ?? void 0
@@ -2621,13 +2621,13 @@ function Flip({ title, cards }) {
     )
   ] });
 }
-function Card2({ card, place, turned, onTurn }) {
+function Card2({ card, place: place2, turned, onTurn }) {
   const [photoFailed, setPhotoFailed] = useState10(false);
   const photo = card.image && !photoFailed ? card.image : void 0;
   const label = turned ? `${card.front}: ${card.back}` : `${card.front}, tap to see the answer`;
   return /* @__PURE__ */ jsx21("button", { type: "button", className: "hb-flip-card", onClick: onTurn, "aria-pressed": turned, "aria-label": label, children: /* @__PURE__ */ jsxs18("span", { className: turned ? "hb-flip-inner hb-flip-turned" : "hb-flip-inner", children: [
     /* @__PURE__ */ jsxs18("span", { className: "hb-flip-face hb-flip-front", children: [
-      /* @__PURE__ */ jsx21("span", { className: "hb-flip-label", children: place }),
+      /* @__PURE__ */ jsx21("span", { className: "hb-flip-label", children: place2 }),
       /* @__PURE__ */ jsx21("span", { className: "hb-flip-question", children: /* @__PURE__ */ jsx21(InlineText, { text: card.front }) }),
       /* @__PURE__ */ jsxs18("span", { className: "hb-flip-foot", children: [
         /* @__PURE__ */ jsx21("span", { children: "Tap to turn" }),
@@ -2696,20 +2696,20 @@ function arc(a, control, b, count2 = 16) {
 // src/blocks/flow/walk.ts
 function flowState(nodes, groups, steps, at2) {
   const holds = nodes.map((n) => n.holds ?? []);
-  const place = (id) => id === void 0 ? -1 : nodes.findIndex((n) => n.id === id);
+  const place2 = (id) => id === void 0 ? -1 : nodes.findIndex((n) => n.id === id);
   const moving = isMoving(nodes, steps);
   let seen = /* @__PURE__ */ new Set();
   let layers = groups.map(() => 0);
   let lit;
   for (const step of steps.slice(0, at2 + 1)) {
-    const i = place(step.node);
+    const i = place2(step.node);
     if (i === 0 && seen.size) {
       seen = /* @__PURE__ */ new Set();
       layers = groups.map(() => 0);
     }
     if (i >= 0) seen.add(i);
     for (const [id, chips] of Object.entries(step.holds ?? {})) {
-      const k = place(id);
+      const k = place2(id);
       if (k >= 0) holds[k] = chips;
     }
     const g = groups.findIndex((gr) => i >= gr.from && i <= gr.to);
@@ -4246,18 +4246,97 @@ function amountOf(value, goal, unit) {
   if (!unit || joined !== plain && joined !== `${plain} ${unit}`) return `${fmt(value, unit)} / ${joined}`;
   return `${fmt(value)} / ${plain} ${unit}`;
 }
-function Progress({ title, value, goal, unit, steps }) {
-  const share = trackShare(value, goal, steps);
-  return /* @__PURE__ */ jsxs28("div", { className: "hb-card hb-progress", children: [
+function percentOf(value, goal) {
+  return Math.round(Math.max(0, Math.min(1, value / goal)) * 100);
+}
+function zoneTone(value, thresholds, fallback = "good") {
+  const toned = thresholds.filter((t) => t.tone !== void 0).sort((a, b) => a.at - b.at);
+  if (!toned.length) return fallback;
+  const band = toned.find((t) => value <= t.at);
+  return band ? band.tone : toned[toned.length - 1].tone;
+}
+var place = (at2, goal) => Math.max(0, Math.min(1, at2 / goal));
+var pctOf = (share) => `${Math.round(share * 1e4) / 100}%`;
+function bandsOf(thresholds, goal) {
+  const bands = [];
+  let from = 0;
+  for (const t of [...thresholds].sort((a, b) => a.at - b.at)) {
+    if (!t.tone) continue;
+    const to = Math.max(from, place(t.at, goal));
+    if (to > from) bands.push({ from, to, tone: t.tone });
+    from = to;
+  }
+  return bands;
+}
+function Progress({ title, value, goal, unit, steps, shape = "line", show_percent, tone, thresholds = [], segments = [] }) {
+  const marks = thresholds.length ? thresholds : [];
+  const checkpoints = marks.length ? [] : steps;
+  const ring = shape === "circle" || shape === "dashboard";
+  const share = ring ? place(value, goal) : trackShare(value, goal, checkpoints);
+  const percent = percentOf(value, goal);
+  const active = zoneTone(value, marks, tone ?? "good");
+  return /* @__PURE__ */ jsxs28("div", { className: `hb-card hb-progress hb-progress-tone-${active}`, children: [
     /* @__PURE__ */ jsxs28("div", { className: "hb-progress-head", children: [
       /* @__PURE__ */ jsx31("span", { className: "hb-progress-icon", children: /* @__PURE__ */ jsx31(Icon, { name: "trophy", size: 19, stroke: 2.2 }) }),
       /* @__PURE__ */ jsx31("span", { className: "hb-card-title", children: title }),
       /* @__PURE__ */ jsxs28("span", { className: "hb-progress-amount", children: [
         /* @__PURE__ */ jsx31(Icon, { name: "flame", size: 15, stroke: 2.2 }),
         amountOf(value, goal, unit)
+      ] }),
+      show_percent && !ring && /* @__PURE__ */ jsxs28("span", { className: "hb-progress-pct", children: [
+        percent,
+        "%"
       ] })
     ] }),
-    steps.length === 0 ? /* @__PURE__ */ jsx31("div", { className: "hb-progress-track", children: /* @__PURE__ */ jsx31("span", { className: "hb-progress-fill", style: { width: `${share * 100}%` } }) }) : /* @__PURE__ */ jsx31(Checkpoints, { steps, value, share, unit })
+    ring ? /* @__PURE__ */ jsx31(Ring, { shape, share, percent: show_percent ? percent : null, marks, segments, goal }) : segments.length ? /* @__PURE__ */ jsx31(Segments, { segments, goal, unit }) : checkpoints.length ? /* @__PURE__ */ jsx31(Checkpoints, { steps: checkpoints, value, share, unit }) : /* @__PURE__ */ jsx31(Bar2, { share, marks, goal, unit })
+  ] });
+}
+function Bar2({ share, marks, goal, unit }) {
+  const bands = bandsOf(marks, goal);
+  const track = `hb-progress-track${marks.length ? " hb-progress-track-zoned" : ""}`;
+  const body = /* @__PURE__ */ jsxs28(Fragment9, { children: [
+    /* @__PURE__ */ jsxs28("div", { className: track, children: [
+      bands.map((b, k) => /* @__PURE__ */ jsx31(
+        "span",
+        {
+          className: `hb-progress-band hb-progress-band-${b.tone}`,
+          style: { left: pctOf(b.from), width: pctOf(b.to - b.from) }
+        },
+        k
+      )),
+      /* @__PURE__ */ jsx31("span", { className: "hb-progress-fill", style: { width: pctOf(share) } })
+    ] }),
+    marks.map((m, k) => /* @__PURE__ */ jsx31("span", { className: "hb-progress-mark", style: { left: pctOf(place(m.at, goal)) } }, k)),
+    /* @__PURE__ */ jsx31(MarkLabels, { marks, goal, unit })
+  ] });
+  return marks.length ? /* @__PURE__ */ jsx31("div", { className: "hb-progress-line", children: body }) : body;
+}
+function MarkLabels({ marks, goal, unit }) {
+  const labelled = marks.filter((m) => m.label !== void 0);
+  if (!labelled.length) return null;
+  return /* @__PURE__ */ jsx31("div", { className: "hb-progress-mark-labels", children: labelled.map((m, k) => /* @__PURE__ */ jsx31("span", { style: { left: pctOf(Math.min(0.96, Math.max(0.04, place(m.at, goal)))) }, children: typeof m.label === "number" ? fmt(m.label, unit) : m.label }, k)) });
+}
+function Segments({ segments, goal, unit }) {
+  let at2 = 0;
+  const parts2 = segments.map((s, k) => {
+    const from = at2;
+    at2 = Math.min(1, at2 + Math.max(0, s.value / goal));
+    return { key: k, left: from, width: at2 - from, label: s.label, value: s.value, tone: s.tone ?? "good" };
+  });
+  return /* @__PURE__ */ jsxs28(Fragment9, { children: [
+    /* @__PURE__ */ jsx31("div", { className: "hb-progress-track hb-progress-track-zoned hb-progress-track-parts", children: parts2.filter((p) => p.width > 0).map((p) => /* @__PURE__ */ jsx31(
+      "span",
+      {
+        className: `hb-progress-seg hb-progress-seg-${p.tone}`,
+        style: { left: pctOf(p.left), width: pctOf(p.width) }
+      },
+      p.key
+    )) }),
+    parts2.some((p) => p.label) && /* @__PURE__ */ jsx31("div", { className: "hb-legend", children: parts2.filter((p) => p.label).map((p) => /* @__PURE__ */ jsxs28("span", { className: "hb-legend-item", children: [
+      /* @__PURE__ */ jsx31("i", { className: `hb-legend-dot hb-progress-dot-${p.tone}` }),
+      p.label,
+      /* @__PURE__ */ jsx31("span", { className: "hb-legend-value", children: fmt(p.value, unit) })
+    ] }, p.key)) })
   ] });
 }
 function Checkpoints({ steps, value, share, unit }) {
@@ -4276,8 +4355,104 @@ function Checkpoints({ steps, value, share, unit }) {
     /* @__PURE__ */ jsx31("div", { className: "hb-progress-labels", style: { gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }, children: steps.map((s, k) => /* @__PURE__ */ jsx31("span", { children: typeof s.label === "number" ? fmt(s.label, unit) : s.label }, k)) })
   ] });
 }
+var RING_R = 50;
+function spot(at2, radius, shape) {
+  const start = shape === "dashboard" ? -135 : 0;
+  const sweep = shape === "dashboard" ? 270 : 360;
+  const angle = (start + sweep * at2) * Math.PI / 180;
+  return [60 + radius * Math.sin(angle), 60 - radius * Math.cos(angle)];
+}
+function ringLength(shape) {
+  return 2 * Math.PI * RING_R * (shape === "dashboard" ? 270 / 360 : 1);
+}
+function Ring({ shape, share, percent, marks, segments, goal }) {
+  const length = ringLength(shape);
+  const track = shape === "dashboard" ? /* @__PURE__ */ jsx31("path", { className: "hb-progress-ring-track", d: "M 25 95 A 50 50 0 1 1 95 95" }) : /* @__PURE__ */ jsx31("circle", { className: "hb-progress-ring-track", cx: "60", cy: "60", r: RING_R });
+  let at2 = 0;
+  const parts2 = segments.map((s) => {
+    const from = at2;
+    at2 = Math.min(1, at2 + Math.max(0, s.value / goal));
+    return { from, to: at2, tone: s.tone ?? "good" };
+  });
+  return /* @__PURE__ */ jsxs28("div", { className: `hb-progress-ring${shape === "dashboard" ? " hb-progress-ring-dash" : ""}`, children: [
+    /* @__PURE__ */ jsxs28("svg", { viewBox: "0 0 120 120", "aria-hidden": "true", children: [
+      track,
+      parts2.length ? parts2.filter((p) => p.to > p.from).map((p, k) => /* @__PURE__ */ jsx31(
+        "circle",
+        {
+          className: `hb-progress-ring-fill hb-progress-ring-${p.tone}`,
+          cx: "60",
+          cy: "60",
+          r: RING_R,
+          transform: shape === "circle" ? "rotate(-90 60 60)" : void 0,
+          strokeDasharray: `${length * (p.to - p.from)} ${length}`,
+          strokeDashoffset: -length * p.from
+        },
+        k
+      )) : /* @__PURE__ */ jsx31(
+        "circle",
+        {
+          className: "hb-progress-ring-fill",
+          cx: "60",
+          cy: "60",
+          r: RING_R,
+          transform: shape === "circle" ? "rotate(-90 60 60)" : void 0,
+          strokeDasharray: `${length * share} ${length}`
+        }
+      ),
+      marks.map((m, k) => {
+        const [x1, y1] = spot(place(m.at, goal), RING_R - 9, shape);
+        const [x2, y2] = spot(place(m.at, goal), RING_R + 9, shape);
+        return /* @__PURE__ */ jsx31("line", { className: "hb-progress-ring-mark", x1, y1, x2, y2 }, k);
+      })
+    ] }),
+    percent !== null && /* @__PURE__ */ jsxs28("span", { className: "hb-progress-ring-pct", children: [
+      percent,
+      "%"
+    ] })
+  ] });
+}
 
 // src/blocks/progress/read.ts
+var TONES3 = {
+  good: "good",
+  success: "good",
+  positive: "good",
+  ok: "good",
+  warn: "warn",
+  warning: "warn",
+  caution: "warn",
+  bad: "bad",
+  danger: "bad",
+  negative: "bad",
+  error: "bad"
+};
+var SHAPES = { line: "line", bar: "line", circle: "circle", ring: "circle", dashboard: "dashboard", gauge: "dashboard" };
+function progressTone(v) {
+  return typeof v === "string" ? TONES3[v.toLowerCase()] : void 0;
+}
+function progressShape(v) {
+  return typeof v === "string" ? SHAPES[v.toLowerCase()] : void 0;
+}
+function readStep(raw, here) {
+  const label = str(raw?.label, 28) ?? num(raw?.label);
+  const at2 = num(raw?.at);
+  if (label === void 0 || label === null || at2 === null) {
+    return here.drop("checkpoint needs a label and a number `at`");
+  }
+  return { label, at: at2 };
+}
+function readThreshold(raw, here) {
+  const at2 = num(raw?.at);
+  if (at2 === null) return here.drop("threshold needs a number `at`");
+  const label = str(raw?.label, 28) ?? num(raw?.label);
+  return clean({ at: at2, label: label === null ? void 0 : label, tone: progressTone(raw?.tone) });
+}
+function readSegment(raw, here) {
+  const value = num(raw?.value);
+  if (value === null || value < 0) return here.drop("segment needs a number `value` of 0 or more");
+  return clean({ value, label: str(raw?.label, 28), tone: progressTone(raw?.tone) });
+}
 function readProgress(raw, here) {
   const title = str(raw.title, 40);
   if (!title) return here.drop("progress needs a title");
@@ -4285,19 +4460,43 @@ function readProgress(raw, here) {
   if (value === null) return here.drop("progress needs a numeric value");
   const goal = num(raw.goal);
   if (goal === null || goal <= 0) return here.drop("progress needs a goal above 0");
+  const thresholds = [];
+  const rawThresholds = Array.isArray(raw.thresholds) ? raw.thresholds : [];
+  rawThresholds.forEach((t, i) => {
+    const mark = readThreshold(t, here.at("thresholds").at(i));
+    if (mark) thresholds.push(mark);
+  });
+  thresholds.sort((a, b) => a.at - b.at);
   const steps = [];
   const rawSteps = Array.isArray(raw.steps) ? raw.steps : [];
-  rawSteps.forEach((st, i) => {
-    const label = str(st?.label, 28) ?? num(st?.label);
-    const at2 = num(st?.at);
-    if (label === void 0 || label === null || at2 === null) {
-      here.at("steps").at(i).drop("checkpoint needs a label and a number `at`");
-      return;
-    }
-    steps.push({ label, at: at2 });
+  if (thresholds.length && rawSteps.length) {
+    here.at("steps").drop("thresholds replace steps");
+  } else {
+    rawSteps.forEach((st, i) => {
+      const step = readStep(st, here.at("steps").at(i));
+      if (step) steps.push(step);
+    });
+    steps.sort((a, b) => a.at - b.at);
+  }
+  const segments = [];
+  const rawSegments = Array.isArray(raw.segments) ? raw.segments : [];
+  rawSegments.forEach((s, i) => {
+    const segment = readSegment(s, here.at("segments").at(i));
+    if (segment) segments.push(segment);
   });
-  steps.sort((a, b) => a.at - b.at);
-  return clean({ type: "progress", title, value, goal, unit: str(raw.unit, 12), steps: keepFirst(steps, 6, here, "checkpoints") });
+  return clean({
+    type: "progress",
+    title,
+    value,
+    goal,
+    unit: str(raw.unit, 12),
+    shape: progressShape(raw.shape),
+    show_percent: raw.show_percent === true ? true : void 0,
+    tone: progressTone(raw.tone),
+    steps: keepFirst(steps, 6, here, "checkpoints"),
+    thresholds: thresholds.length ? keepFirst(thresholds, 6, here, "thresholds") : void 0,
+    segments: segments.length ? keepFirst(segments, 5, here, "segments") : void 0
+  });
 }
 
 // src/blocks/simulate/read.ts
@@ -5212,12 +5411,12 @@ function Line({ counts }) {
     "."
   ] });
 }
-function Briefing({ greeting, date, place, temp, condition, high, low, sky, counts }) {
+function Briefing({ greeting, date, place: place2, temp, condition, high, low, sky, counts }) {
   const range = [high !== void 0 ? `H ${deg2(high)}` : null, low !== void 0 ? `L ${deg2(low)}` : null].filter(Boolean).join(" \xB7 ");
   return /* @__PURE__ */ jsxs36("section", { className: `hb-brief hb-brief-${sky}`, children: [
     /* @__PURE__ */ jsxs36("div", { className: "hb-brief-top", children: [
       /* @__PURE__ */ jsxs36("div", { className: "hb-brief-hello", children: [
-        (date || place) && /* @__PURE__ */ jsx40("span", { className: "hb-brief-date", children: [date, place].filter(Boolean).join(" \xB7 ") }),
+        (date || place2) && /* @__PURE__ */ jsx40("span", { className: "hb-brief-date", children: [date, place2].filter(Boolean).join(" \xB7 ") }),
         /* @__PURE__ */ jsx40("h2", { children: greeting })
       ] }),
       temp !== void 0 && /* @__PURE__ */ jsxs36("div", { className: "hb-brief-wx", children: [
@@ -5934,6 +6133,8 @@ var tokens_default = `/* Hermes GenUI: every class starts with hb- so nothing le
   --hb-accent-ink: color-mix(in srgb, var(--hb-accent) 85%, var(--hb-ink));
   --hb-good: var(--ui-success, #1a7f37);
   --hb-warn: #c2410c;
+  /* The one tone the theme has no variable for: a red for a value in a bad band (a load over its limit). */
+  --hb-bad: var(--ui-danger, #b42318);
   /* The page behind the blocks, for the few marks that must hide what's under them (a progress checkpoint). */
   --hb-surface: var(--background, Canvas);
   /* A raised card (a chart's hover card). */
@@ -5964,6 +6165,7 @@ var tokens_default = `/* Hermes GenUI: every class starts with hb- so nothing le
    shadow. */
 .dark .hb-blocks {
   --hb-warn: #f0883e;
+  --hb-bad: var(--ui-danger, #f0796c);
   --hb-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 /* A stronger line, for chart axes, checkboxes and inputs. */
@@ -6110,7 +6312,7 @@ var layers_default = `/* Layers: the stack on a canvas beside the slab's note, B
 `;
 
 // src/blocks/progress/progress.css
-var progress_default = "/* Progress: a track toward a goal, with checkpoints */\n.hb-progress {\n  background: color-mix(in srgb, var(--hb-good) 9%, transparent);\n  border-color: color-mix(in srgb, var(--hb-good) 22%, transparent);\n}\n.hb-progress-head { display: flex; align-items: center; gap: 8px; }\n.hb-progress-head .hb-card-title { min-width: 0; }\n.hb-progress-icon { display: flex; color: var(--hb-good); }\n.hb-progress-amount {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  margin-left: auto;\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--hb-ink-2);\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-progress-amount svg { color: var(--hb-good); }\n.hb-progress-track {\n  display: block;\n  height: 8px;\n  margin: 16px 0 4px;\n  overflow: hidden;\n  border-radius: 999px;\n  background: color-mix(in srgb, var(--hb-good) 20%, transparent);\n}\n.hb-progress-fill { transform-origin: left; animation: hb-grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1); }\n.hb-progress-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-good); }\n.hb-progress-nodes { position: relative; height: 24px; margin-top: 16px; }\n.hb-progress-track-steps { position: absolute; top: 8px; margin: 0; }\n.hb-progress-fill-steps { position: absolute; top: 8px; height: 8px; }\n.hb-progress-node {\n  position: absolute;\n  top: 0;\n  display: grid;\n  place-items: center;\n  width: 32px;\n  height: 24px;\n  margin-left: -16px;\n  border: 2px solid color-mix(in srgb, var(--hb-good) 35%, var(--hb-surface));\n  border-radius: 999px;\n  background: var(--hb-surface);\n  color: color-mix(in srgb, var(--hb-good) 75%, var(--hb-surface));\n}\n.hb-progress-node-done { border-color: var(--hb-good); background: var(--hb-good); color: #fff; }\n.hb-progress-labels { display: grid; margin-top: 8px; }\n.hb-progress-labels span {\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  padding: 0 2px;\n  text-align: center;\n  font-size: 11.5px;\n  line-height: 14px;\n  font-weight: 500;\n  color: var(--hb-muted);\n  overflow-wrap: anywhere;\n}\n@media (prefers-reduced-motion: reduce) {\n  .hb-progress-fill { animation: none; }\n}\n";
+var progress_default = "/* Progress: a track toward a goal, with checkpoints, threshold bands and segments */\n.hb-progress {\n  /* The card, its icon, the fill and the ring take the tone of the value: good by default, warn or bad from a band. */\n  --hb-tone: var(--hb-good);\n  background: color-mix(in srgb, var(--hb-tone) 9%, transparent);\n  border-color: color-mix(in srgb, var(--hb-tone) 22%, transparent);\n}\n.hb-progress-tone-warn { --hb-tone: var(--hb-warn); }\n.hb-progress-tone-bad { --hb-tone: var(--hb-bad); }\n.hb-progress-head { display: flex; align-items: center; gap: 8px; }\n.hb-progress-head .hb-card-title { min-width: 0; }\n.hb-progress-icon { display: flex; color: var(--hb-tone); }\n.hb-progress-amount {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  margin-left: auto;\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--hb-ink-2);\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-progress-amount svg { color: var(--hb-tone); }\n.hb-progress-pct {\n  margin-left: 10px;\n  font-size: 13px;\n  font-weight: 650;\n  color: var(--hb-tone);\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-progress-track {\n  display: block;\n  height: 8px;\n  margin: 16px 0 4px;\n  overflow: hidden;\n  border-radius: 999px;\n  background: color-mix(in srgb, var(--hb-tone) 20%, transparent);\n}\n.hb-progress-fill { transform-origin: left; animation: hb-grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1); }\n.hb-progress-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-tone); }\n.hb-progress-nodes { position: relative; height: 24px; margin-top: 16px; }\n.hb-progress-track-steps { position: absolute; top: 8px; margin: 0; }\n.hb-progress-fill-steps { position: absolute; top: 8px; height: 8px; }\n\n/* A marked track: the ticks and their labels are placed over and under the bar, so the wrapper holds the positions. */\n.hb-progress-line { position: relative; margin: 16px 0 4px; }\n.hb-progress-line .hb-progress-track { position: relative; margin: 0; }\n.hb-progress-track-zoned { position: relative; }\n.hb-progress-band { position: absolute; top: 0; bottom: 0; }\n.hb-progress-band-good { background: color-mix(in srgb, var(--hb-good) 34%, transparent); }\n.hb-progress-band-warn { background: color-mix(in srgb, var(--hb-warn) 34%, transparent); }\n.hb-progress-band-bad { background: color-mix(in srgb, var(--hb-bad) 34%, transparent); }\n.hb-progress-mark {\n  position: absolute;\n  top: -3px;\n  width: 2px;\n  height: 14px;\n  margin-left: -1px;\n  border-radius: 1px;\n  background: var(--hb-ink-2);\n  opacity: 0.55;\n  pointer-events: none;\n}\n.hb-progress-mark-labels { position: relative; height: 15px; margin-top: 6px; }\n.hb-progress-mark-labels span {\n  position: absolute;\n  transform: translateX(-50%);\n  max-width: 45%;\n  overflow: hidden;\n  font-size: 11px;\n  line-height: 15px;\n  font-weight: 500;\n  color: var(--hb-muted);\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n\n/* Parts of one track: each starts where the last ended, cut apart by a hairline of the panel behind them. The track\n   under them stays neutral, so the part that is still empty never reads as another green stage. */\n.hb-progress-track-parts { background: var(--hb-well); }\n.hb-progress-seg { position: absolute; top: 0; bottom: 0; }\n.hb-progress-seg + .hb-progress-seg { border-left: 2px solid var(--hb-surface); }\n.hb-progress-seg-good { background: var(--hb-good); }\n.hb-progress-seg-warn { background: var(--hb-warn); }\n.hb-progress-seg-bad { background: var(--hb-bad); }\n.hb-progress-dot-good { background: var(--hb-good); }\n.hb-progress-dot-warn { background: var(--hb-warn); }\n.hb-progress-dot-bad { background: var(--hb-bad); }\n\n/* Ring and gauge: one stroked path, the toned part drawn over the track, the figure in the middle. */\n.hb-progress-ring { position: relative; width: 132px; margin: 10px auto 2px; }\n.hb-progress-ring svg { display: block; width: 100%; height: auto; overflow: visible; }\n.hb-progress-ring-track {\n  fill: none;\n  stroke: color-mix(in srgb, var(--hb-tone) 20%, transparent);\n  stroke-width: 10;\n  stroke-linecap: round;\n}\n.hb-progress-ring-fill { fill: none; stroke: var(--hb-tone); stroke-width: 10; }\n.hb-progress-ring-good { stroke: var(--hb-good); }\n.hb-progress-ring-warn { stroke: var(--hb-warn); }\n.hb-progress-ring-bad { stroke: var(--hb-bad); }\n/* A tick across the ring, in the same ink as the bar's mark, so it reads on a pale and on a dark card. */\n.hb-progress-ring-mark { stroke: var(--hb-ink-2); stroke-width: 3; stroke-linecap: round; opacity: 0.55; }\n.hb-progress-ring-pct {\n  position: absolute;\n  inset: 0;\n  display: grid;\n  place-items: center;\n  font-size: 20px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n  color: var(--hb-ink);\n  font-variant-numeric: tabular-nums;\n}\n.hb-progress-ring-dash .hb-progress-ring-pct { padding-bottom: 12px; }\n\n@media (prefers-reduced-motion: reduce) {\n  .hb-progress-fill { animation: none; }\n}\n";
 
 // src/blocks/streak/streak.css
 var streak_default = "/* Streak */\n.hb-streak { padding: 0; overflow: hidden; }\n.hb-streak-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px 12px; }\n.hb-streak-label {\n  font-size: 12px;\n  font-weight: 600;\n  letter-spacing: 0.06em;\n  text-transform: uppercase;\n  color: var(--hb-accent-ink);\n}\n.hb-streak-count {\n  font-size: 32px;\n  line-height: 38px;\n  font-weight: 800;\n  letter-spacing: -0.03em;\n  font-variant-numeric: tabular-nums;\n}\n.hb-streak-count span { text-transform: capitalize; }\n.hb-streak-medal {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 56px;\n  height: 56px;\n  margin-left: auto;\n  border-radius: 999px;\n  color: #fff;\n  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--hb-chart-2) 45%, #fff), var(--hb-chart-2) 55%,\n    color-mix(in srgb, var(--hb-chart-2) 75%, #000));\n  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--hb-chart-2) 70%, transparent);\n}\n.hb-streak-week { display: grid; padding: 12px 8px; border-top: 1px solid var(--hb-line); }\n.hb-streak-day { display: flex; flex-direction: column; align-items: center; gap: 6px; }\n.hb-streak-day-label { font-size: 12.5px; color: var(--hb-muted); }\n.hb-streak-done {\n  display: grid;\n  place-items: center;\n  width: 32px;\n  height: 32px;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n}\n.hb-streak-date {\n  display: grid;\n  place-items: center;\n  width: 32px;\n  height: 32px;\n  font-size: 16px;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n}\n.hb-streak-dot { width: 4px; height: 4px; border-radius: 999px; }\n.hb-streak-today .hb-streak-day-label, .hb-streak-today .hb-streak-date { font-weight: 700; color: var(--hb-ink); }\n.hb-streak-today .hb-streak-dot { background: var(--hb-ink-2); }\n";
