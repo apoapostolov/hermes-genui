@@ -33,6 +33,22 @@ describe("List", () => {
     expect(c.querySelector(".hb-list-initial")).toBeNull();
   });
 
+  it("draws a fixed-width bar beside numeric rows and keeps other rows unchanged", () => {
+    const c = draw({ type: "list", title: "Budget used", max: 100, items: [
+      { title: "Rent", bar: 62, value: "62 of 100" },
+      { title: "Travel", bar: 128, value: "128 of 100" },
+      { title: "Zero", bar: 0 },
+      { title: "Unknown", bar: null, value: "no data" }] });
+    const rows = c.querySelectorAll(".hb-list-row");
+    expect(rows.length).toBe(4);
+    const fills = [...c.querySelectorAll(".hb-list-bar-fill")] as HTMLElement[];
+    expect(fills.map((f) => f.style.width)).toEqual(["62%", "100%", "0%"]);
+    expect(c.querySelectorAll(".hb-list-bar").length).toBe(3);
+    expect(rows[3].querySelector(".hb-list-bar")).toBeNull();
+    expect(rows[3].querySelector(".hb-list-value")!.textContent).toBe("no data");
+    expect(rows[0].querySelector(".hb-list-bar")!.getAttribute("aria-hidden")).toBe("true");
+  });
+
   it("opens a row's url as a plain link, and shows a letter when its photo fails to load", () => {
     const c = draw({ type: "list", items: [{ title: "Dyu Art Café", image: "https://x.example/dyu.jpg", url: "https://dyu.example" }] });
     const link = c.querySelector("a.hb-list-row") as HTMLAnchorElement;

@@ -8,16 +8,17 @@ import { InlineText } from "../../lib/InlineText";
 import { Icon } from "../../lib/Icon";
 import { avatarColour, initialOf, rowLead } from "./rowAvatar";
 
-export function List({ title, ranked, items }: ListBlock) {
+export function List({ title, ranked, items, max }: ListBlock) {
+  const ceiling = (max ?? Math.max(0, ...items.map((item) => item.bar ?? 0))) || undefined;
   return (
     <div className="hb-card hb-list">
       {title && <div className="hb-list-heading"><InlineText text={title} /></div>}
-      {items.map((item, i) => <ListRow key={i} item={item} rank={ranked ? i + 1 : null} />)}
+      {items.map((item, i) => <ListRow key={i} item={item} rank={ranked ? i + 1 : null} ceiling={ceiling} />)}
     </div>
   );
 }
 
-function ListRow({ item, rank }: { item: ListItem; rank: number | null }) {
+function ListRow({ item, rank, ceiling }: { item: ListItem; rank: number | null; ceiling: number | undefined }) {
   const { send } = useContext(BlockActions);
   const [photoFailed, setPhotoFailed] = useState(false);
   const lead = rowLead(item, rank !== null, photoFailed);
@@ -35,6 +36,11 @@ function ListRow({ item, rank }: { item: ListItem; rank: number | null }) {
         <span className="hb-list-title"><InlineText text={item.title} /></span>
         {item.subtitle && <span className="hb-list-subtitle"><InlineText text={item.subtitle} /></span>}
       </span>
+      {item.bar !== undefined && ceiling && (
+        <span className="hb-list-bar" aria-hidden="true">
+          <span className="hb-list-bar-fill" style={{ width: `${Math.max(0, Math.min(1, item.bar / ceiling)) * 100}%` }} />
+        </span>
+      )}
       {item.value && <span className="hb-list-value"><InlineText text={item.value} /></span>}
       {(item.run || item.url) && <Chevron />}
     </>

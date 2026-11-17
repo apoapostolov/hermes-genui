@@ -26,6 +26,20 @@ describe("list", () => {
       { title: "CTR", subtitle: "Benne dosa", value: "Iconic" },
     ]);
   });
+  it("reads bars and max, using the bar as the right-hand text when no value was written", () => {
+    const r = one({ type: "list", max: 100, items: [
+      { title: "Rent", bar: 62, value: "62 of 100" },
+      { title: "Travel", bar: 128 },
+      { title: "Mubi", bar: null, value: "no data" },
+      { title: "Broken", bar: -1 }] });
+    expect(r.blocks[0]).toEqual({ type: "list", ranked: false, max: 100, items: [
+      { title: "Rent", value: "62 of 100", bar: 62 },
+      { title: "Travel", value: "128", bar: 128 },
+      { title: "Mubi", value: "no data" },
+      { title: "Broken" }] });
+    const largest = one({ type: "list", items: [{ title: "A", bar: 30 }, { title: "B", bar: 60 }] });
+    expect((largest.blocks[0] as any).max).toBeUndefined();
+  });
   it("keeps run (a tap sends it) and ignores ask", () => {
     const r = one({ type: "list", items: [{ title: "Third Wave", run: "Directions to Third Wave", ask: "Open?" }] });
     expect((r.blocks[0] as any).items).toEqual([{ title: "Third Wave", run: "Directions to Third Wave" }]);

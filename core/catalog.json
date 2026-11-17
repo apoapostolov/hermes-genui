@@ -196,9 +196,9 @@
   },
   {
    "kind": "list",
-   "for": "Rows: rank, icon or photo, title, subtitle, value.",
-   "use_when": "Rankings, top picks, results.",
-   "fields": "title. ranked: true numbers rows. items ≤12: [{title, subtitle, value, icon or image, run: sent on tap, or url}].",
+   "for": "Rows: rank, lead, title, subtitle, value.",
+   "use_when": "Rankings, picks, results.",
+   "fields": "title. ranked numbers rows. max: full bar. items ≤12: [{title, subtitle, value, bar: number, icon/image, run: sends, or url}].",
    "example": {
     "type": "list",
     "title": "Cafés nearby",

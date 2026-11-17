@@ -1,6 +1,9 @@
 """list: rows with a title, a subtitle and a value; ranked rows are numbered."""
 
-from .common import NO_SEND, acts_before_the_model, first_list, first_of, has_any_text, has_text, safe_text
+from .common import (
+    NO_SEND, acts_before_the_model, first_list, first_of, fmt_num,
+    has_any_text, has_text, is_number, safe_text,
+)
 
 
 def check_list(block: dict, path: str) -> list[tuple[str, str]]:
@@ -16,6 +19,17 @@ def check_list(block: dict, path: str) -> list[tuple[str, str]]:
              if isinstance(item, dict) and acts_before_the_model(item.get("run"))]
     if risky:
         return risky
+    bars = []
+    for i, item in enumerate(rows):
+        if not isinstance(item, dict) or item.get("bar") is None or "bar" not in item:
+            continue
+        value = item.get("bar")
+        if not is_number(value) or value < 0:
+            bars.append((f"{path}.{key}.{i}.bar", "bar must be a number or null"))
+        else:
+            bars.append(None)
+    if any(problem is not None for problem in bars):
+        return [problem for problem in bars if problem is not None]
     for item in rows:
         if has_text(item) or (isinstance(item, dict) and has_any_text(item, "title", "name", "label", "text")):
             return []
@@ -31,7 +45,9 @@ def text_list(block: dict) -> str:
         name = first_of(row, "title", "name", "label", "text") if isinstance(row, dict) else ""
         if not name:
             continue
-        subtitle, value = safe_text(row.get("subtitle")), safe_text(row.get("value"), 40)
+        subtitle = safe_text(row.get("subtitle"))
+        bar = row.get("bar") if isinstance(row, dict) else None
+        value = safe_text(row.get("value"), 40) or (fmt_num(bar) if is_number(bar) else "")
         mark = f"{len(lines) + 1}." if block.get("ranked") else "-"
         lines.append(f"{mark} {name}" + (f" — {subtitle}" if subtitle else "") + (f" · {value}" if value else ""))
     title = safe_text(block.get("title"))
