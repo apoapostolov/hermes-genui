@@ -72,7 +72,7 @@ PHOTO = {"type": "images", "title": "Lisbon", "images": [{"url": "https://a.exam
 def test_photos_must_come_from_find_photos(store_dir):
     result = tools.show_blocks({"blocks": [PHOTO]})
     assert result == ("Not drawn. Fix these and call show_blocks again:\n"
-                      "- 0.images.0: use only photo URLs that find_photos returned")
+                      "- 0.images.0: use only image URLs that a Hermes tool returned")
     assert list(store_dir.glob("*.json")) == []
 
 
@@ -103,7 +103,7 @@ ATOM = {"type": "image", "url": "https://a.example/lake.jpg", "caption": "Ooty l
 def test_image_atom_must_come_from_find_photos(store_dir):
     result = tools.show_blocks({"blocks": [{"type": "grid", "children": [ATOM, {"type": "badge", "text": "New"}]}]})
     assert result == ("Not drawn. Fix these and call show_blocks again:\n"
-                      "- 0.children.0.url: use only photo URLs that find_photos returned")
+                      "- 0.children.0.url: use only image URLs that a Hermes tool returned")
     plugin_store.remember_photo_urls(["https://a.example/lake.jpg"])
     assert tools.show_blocks({"blocks": [ATOM]}).strip().splitlines()[-1].startswith('::blocks{id="')
 
@@ -115,8 +115,8 @@ def test_flip_and_list_photos_must_come_from_find_photos(store_dir):
                                         {"title": "Matamaal", "image": "https://a.example/m.jpg"}]}
     result = tools.show_blocks({"blocks": [flip, listed]})
     assert result == ("Not drawn. Fix these and call show_blocks again:\n"
-                      "- 0.cards.1.image: use only photo URLs that find_photos returned\n"
-                      "- 1.items.2.image: use only photo URLs that find_photos returned")
+                      "- 0.cards.1.image: use only image URLs that a Hermes tool returned\n"
+                      "- 1.items.2.image: use only image URLs that a Hermes tool returned")
 
 
 def test_tile_photos_must_come_from_find_photos(store_dir):
@@ -124,7 +124,7 @@ def test_tile_photos_must_come_from_find_photos(store_dir):
                                         {"title": "Osaka", "ask": "Plan Osaka", "image": "https://a.example/o.jpg"}]}
     result = tools.show_blocks({"blocks": [tiles]})
     assert result == ("Not drawn. Fix these and call show_blocks again:\n"
-                      "- 0.items.2.image: use only photo URLs that find_photos returned")
+                      "- 0.items.2.image: use only image URLs that a Hermes tool returned")
     plugin_store.remember_photo_urls(["https://a.example/o.jpg"])
     assert tools.show_blocks({"blocks": [tiles]}).strip().splitlines()[-1].startswith('::blocks{id="')
 
@@ -151,7 +151,7 @@ def test_unknown_photo_inside_a_tab_is_refused(store_dir):
     section = {"type": "section", "title": "S", "children": [ATOM]}
     result = tools.show_blocks({"blocks": [two_tabs([TIMELINE], [section])]})
     assert result == ("Not drawn. Fix these and call show_blocks again:\n"
-                      "- 0.tabs.1.children.0.children.0.url: use only photo URLs that find_photos returned")
+                      "- 0.tabs.1.children.0.children.0.url: use only image URLs that a Hermes tool returned")
     plugin_store.remember_photo_urls(["https://a.example/lake.jpg"])
     assert tools.show_blocks({"blocks": [two_tabs([TIMELINE], [ATOM])]}).strip().splitlines()[-1].startswith("::blocks")
 
@@ -210,6 +210,6 @@ def test_step_photos_must_come_from_find_photos(store_dir):
     steps = {"type": "steps", "items": [{"title": "A"}, {"title": "B", "image": "https://a.example/s.jpg"}]}
     out = tools.show_blocks({"blocks": [steps]})
     assert out == ("Not drawn. Fix these and call show_blocks again:\n"
-                   "- 0.items.1.image: use only photo URLs that find_photos returned")
+                   "- 0.items.1.image: use only image URLs that a Hermes tool returned")
     plugin_store.remember_photo_urls(["https://a.example/s.jpg"])
     assert "::blocks{" in tools.show_blocks({"blocks": [steps]})

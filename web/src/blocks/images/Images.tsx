@@ -3,27 +3,50 @@
 import { useEffect, useState } from "react";
 import type { ImagesBlock, Photo } from "./read";
 
+const GRID_FROM = 4; // four or more pictures open a compact grid; no layout field for the model to write
+
 export function Images({ block }: { block: ImagesBlock }) {
   const [failed, setFailed] = useState<Set<string>>(new Set());
   const [open, setOpen] = useState<Photo | null>(null);
   const shown = block.images.filter((p) => !failed.has(p.url));
   if (!shown.length) return null;
   const fail = (url: string) => setFailed((before) => new Set(before).add(url));
+  const grid = shown.length >= GRID_FROM;
+  const download = (p: Photo) => (
+    <a className="hb-photo-download" href={p.url} download={p.caption || "photo"} aria-label={`Download ${p.caption ?? "photo"}`}
+       onClick={(e) => e.stopPropagation()}><span aria-hidden="true">↓</span></a>
+  );
 
   return (
-    <figure className="hb-photos">
+    <figure className={grid ? "hb-photos hb-photos-grid" : "hb-photos"}>
       {block.title && <figcaption className="hb-chart-title">{block.title}</figcaption>}
       <div className="hb-photo-strip">
-        {shown.map((p) => (
-          <button key={p.url} type="button" className="hb-photo" onClick={() => setOpen(p)} aria-label={p.caption ?? "Open photo"}>
-            <img src={p.url} alt={p.caption ?? ""} loading="lazy" referrerPolicy="no-referrer" onError={() => fail(p.url)} />
-            {(p.caption || p.source) && (
-              <span className="hb-photo-text">
+        {shown.map((p) => grid ? (
+          <div key={p.url} className="hb-photo">
+            <button type="button" className="hb-photo-open" onClick={() => setOpen(p)} aria-label={p.caption ?? "Open photo"}>
+              <img src={p.url} alt={p.caption ?? ""} loading="lazy" referrerPolicy="no-referrer" onError={() => fail(p.url)} />
+            </button>
+            <div className="hb-photo-text">
+              <button type="button" className="hb-photo-label" onClick={() => setOpen(p)}>
                 {p.caption && <span className="hb-photo-caption">{p.caption}</span>}
                 {p.source && <span className="hb-photo-source">{p.source}</span>}
-              </span>
-            )}
-          </button>
+              </button>
+              {download(p)}
+            </div>
+          </div>
+        ) : (
+          <div key={p.url} className="hb-photo">
+            <button type="button" className="hb-photo-open" onClick={() => setOpen(p)} aria-label={p.caption ?? "Open photo"}>
+              <img src={p.url} alt={p.caption ?? ""} loading="lazy" referrerPolicy="no-referrer" onError={() => fail(p.url)} />
+              {(p.caption || p.source) && (
+                <span className="hb-photo-text">
+                  {p.caption && <span className="hb-photo-caption">{p.caption}</span>}
+                  {p.source && <span className="hb-photo-source">{p.source}</span>}
+                </span>
+              )}
+            </button>
+            {download(p)}
+          </div>
         ))}
       </div>
       {open && <Overlay photo={open} onClose={() => setOpen(null)} />}
