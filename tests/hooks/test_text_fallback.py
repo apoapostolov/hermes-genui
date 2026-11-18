@@ -298,6 +298,29 @@ def test_checklist():
     assert render(EXAMPLES["checklist"]) == "**Packing**\n- [ ] Jacket\n- [ ] ID card"
 
 
+def test_checklist_states_read_as_words_beside_the_item():
+    board = {"type": "checklist", "title": "Archive move", "items": [
+        {"text": "Freeze writes", "done": True},
+        {"text": "Copy the 2019 shard", "state": "active", "owner": "Priya"},
+        {"text": "Verify checksums", "state": "blocked", "note": "Waiting on the storage team"},
+        {"text": "Announce the cutover", "state": "pending"},
+        {"text": "Backfill the 2020 shard", "state": "skipped", "note": "Moved to March"},
+        {"text": "Drop the old index", "state": "done"},
+    ]}
+    assert render(board) == (
+        "**Archive move**\n"
+        "- [x] Freeze writes\n"
+        "- [ ] Copy the 2019 shard (in progress, Priya)\n"
+        "- [ ] Verify checksums (blocked: Waiting on the storage team)\n"
+        "- [ ] Announce the cutover (not started)\n"
+        "- [ ] Backfill the 2020 shard (skipped: Moved to March)\n"
+        "- [x] Drop the old index")
+
+
+def test_checklist_note_alone_needs_no_word():
+    assert render({"type": "checklist", "items": [{"text": "Ship", "note": "Friday"}]}) == "- [ ] Ship (Friday)"
+
+
 def test_tiles():
     tiles = {"type": "tiles", "items": [{"title": "Arashiyama", "subtitle": "Bamboo", "ask": "a"},
                                         {"title": "Gion", "run": "b"}]}

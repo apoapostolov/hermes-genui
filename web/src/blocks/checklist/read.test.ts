@@ -40,3 +40,46 @@ describe("checklist item ids", () => {
     expect((read as { items: unknown[] }).items).toEqual([{ text: "Pay Xfinity", id: "a1b2" }, { text: "Reply to Emma" }]);
   });
 });
+
+describe("checklist item state, owner and note", () => {
+  it("keeps the state, owner and note an item carries", () => {
+    const r = one({ type: "checklist", title: "Archive move", items: [
+      { text: "Copy the 2019 shard", state: "active", owner: "Priya" },
+      { text: "Verify checksums", state: "blocked", note: "Waiting on the storage team" },
+      { text: "Backfill the 2020 shard", state: "skipped" },
+      { text: "Announce the cutover", state: "pending" },
+      "Freeze writes",
+    ] });
+    expect(r.dropped).toEqual([]);
+    expect(r.blocks[0]).toEqual({ type: "checklist", title: "Archive move", numbered: false, ticked: [], path: "0", items: [
+      { text: "Copy the 2019 shard", state: "active", owner: "Priya" },
+      { text: "Verify checksums", state: "blocked", note: "Waiting on the storage team" },
+      { text: "Backfill the 2020 shard", state: "skipped" },
+      { text: "Announce the cutover", state: "pending" },
+      { text: "Freeze writes" },
+    ] });
+  });
+  it("reads state done as a starting tick, like done: true, and keeps no state on it", () => {
+    const r = one({ type: "checklist", items: [{ text: "Bump the manifest", state: "done" }, { text: "Publish", done: true }, "Post"] });
+    expect(r.dropped).toEqual([]);
+    expect(r.blocks[0]).toEqual({ type: "checklist", numbered: false, ticked: [0, 1], path: "0",
+      items: [{ text: "Bump the manifest" }, { text: "Publish" }, { text: "Post" }] });
+  });
+  it("leaves an unknown state out with a note at the item's path, and keeps the item", () => {
+    const r = one({ type: "checklist", groups: [{ label: "Move", items: [{ text: "Ship", state: "waiting" }, { text: "Tell Priya", state: "Active" }] }] });
+    expect(r.blocks[0]).toMatchObject({ items: [{ text: "Ship", group: "Move" }, { text: "Tell Priya", group: "Move" }] });
+    expect(r.dropped).toEqual([
+      { path: "0.groups.0.items.0", why: "item state is pending, active, done, blocked or skipped" },
+      { path: "0.groups.0.items.1", why: "item state is pending, active, done, blocked or skipped" }]);
+  });
+  it("trims an owner at 40 characters and a note at 120, and drops an empty one", () => {
+    const r = one({ type: "checklist", items: [
+      { text: "One", owner: `  ${"o".repeat(60)}  `, note: "n".repeat(200) },
+      { text: "Two", owner: "   ", note: "" },
+    ] });
+    const items = (r.blocks[0] as { items: { owner?: string; note?: string }[] }).items;
+    expect(items[0].owner).toBe("o".repeat(40));
+    expect(items[0].note).toBe("n".repeat(120));
+    expect(items[1]).toEqual({ text: "Two" });
+  });
+});

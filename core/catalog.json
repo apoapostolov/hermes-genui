@@ -185,8 +185,8 @@
   },
   {
    "kind": "source",
-   "for": "A small line naming the data's source.",
-   "use_when": "Last block, for outside data.",
+   "for": "A line naming the data's source.",
+   "use_when": "Last block, outside data.",
    "fields": "text. url (optional).",
    "example": {
     "type": "source",
@@ -438,9 +438,9 @@
   },
   {
    "kind": "checklist",
-   "for": "Items to tick; ticks are saved.",
-   "use_when": "Packing lists, to-dos, steps.",
-   "fields": "title. items: [text | {text, group}], ≤40. numbered: true for steps.",
+   "for": "Items to tick; ticks saved.",
+   "use_when": "Packing, to-dos, steps.",
+   "fields": "title. items ≤40: text | {text, group, state: pending|active|done|blocked|skipped, owner, note}. numbered.",
    "example": {
     "type": "checklist",
     "title": "Packing",
@@ -686,7 +686,7 @@
    "group": "container",
    "for": "2-6 small blocks in two columns.",
    "use_when": "Stats, photos or bars.",
-   "fields": "children: 2-6 small blocks.",
+   "fields": "children: 2-6.",
    "example": {
     "type": "grid",
     "children": [
@@ -754,7 +754,7 @@
    "group": "container",
    "for": "2-6 labelled tabs. Top level only.",
    "use_when": "A view per profile, stock or scenario.",
-   "fields": "tabs: [{label (≤30 chars), children: any blocks but tabs}].",
+   "fields": "tabs: [{label ≤30, children: any blocks but tabs}].",
    "example": {
     "type": "tabs",
     "tabs": [
