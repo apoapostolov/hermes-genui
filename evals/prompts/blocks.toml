@@ -1,0 +1,241 @@
+# The prompt set: requests a user might type, and what a good answer draws. evals/run.py runs them against a model;
+# tests/evals/test_prompts_file.py checks this file's format in CI.
+#
+# Each [[prompt]] has:
+#   id            unique, short, kebab-case: "<block>-<what>" or "none-<what>"
+#   text          what the user types. Put the data in it: the runner gives the model no tools but show_blocks.
+#   expect        the block type a good answer uses, or "none" when nothing should be drawn
+# and optionally:
+#   alternatives  other block types that are just as good, e.g. ["chart"] for a ranked list
+#   also          block types that must appear as well, for answers made of several blocks
+#   kind          for expect = "chart": the chart kind it should be (line, bar, hbar, combo, pie, donut, ...)
+#   from          where the prompt came from: "seed", or an issue such as "#21"
+#
+# Aim for at least two prompts per block, a few that combine blocks, and a few where nothing should be drawn.
+
+# Data
+
+[[prompt]]
+id = "chart-line"
+text = "Plot my monthly electricity bill this year in rupees: Jan 2100, Feb 1950, Mar 2300, Apr 2800, May 3400, Jun 3600."
+expect = "chart"
+from = "seed"
+
+[[prompt]]
+id = "chart-combo"
+text = "Chart revenue (₹Cr) and margin (%) for the last four quarters: Q1 120 and 14, Q2 135 and 15.5, Q3 128 and 13, Q4 150 and 16."
+expect = "chart"
+kind = "combo"
+from = "seed"
+
+[[prompt]]
+id = "chart-parts"
+text = "My monthly spending: rent $1,800, groceries $650, car $420, eating out $310. Show how it splits."
+expect = "chart"
+from = "seed"
+
+[[prompt]]
+id = "kpis-quarter"
+text = "Quarter summary: revenue $4.2M, up 12%; margin 18%, down 1 point; new customers 340, up 25%. Show the headline numbers."
+expect = "kpis"
+alternatives = ["stat"]
+from = "seed"
+
+[[prompt]]
+id = "table-phones"
+text = "Compare iPhone 17, Pixel 10 and Galaxy S26: price $799 / $799 / $899, battery 3,800 / 4,700 / 4,000 mAh, main camera 48 / 50 / 50 MP, weight 177 / 204 / 168 g."
+expect = "table"
+from = "seed"
+
+[[prompt]]
+id = "list-rents"
+text = "Rank these cities by average 2BHK rent: Mumbai ₹55k, Bengaluru ₹38k, Pune ₹28k, Hyderabad ₹30k, Chennai ₹27k."
+expect = "list"
+alternatives = ["chart", "table"]
+from = "seed"
+
+[[prompt]]
+id = "list-rents-us"
+text = "Rank these US cities by average one-bedroom rent: New York $4,100, San Francisco $3,300, Boston $3,000, Austin $1,600, Chicago $2,100."
+expect = "list"
+alternatives = ["chart", "table"]
+from = "seed"
+
+[[prompt]]
+id = "chart-uk-sales"
+text = "Our UK online shop's monthly sales in pounds: Jan £18,200, Feb £16,900, Mar £21,400, Apr £23,800, May £22,100, Jun £26,500. Show the trend."
+expect = "chart"
+from = "seed"
+
+[[prompt]]
+id = "heatmap-gym"
+text = "My gym visits by weekday over 3 weeks (1 = went). Week 1 Mon-Sun: 1,0,1,0,1,1,0. Week 2: 1,1,0,0,1,0,0. Week 3: 0,1,1,1,1,1,0. Show the pattern."
+expect = "heatmap"
+from = "seed"
+
+[[prompt]]
+id = "progress-bike"
+text = "I'm saving €2,000 for a new bike and have €1,300 so far. Show my progress."
+expect = "progress"
+alternatives = ["bar"]
+from = "seed"
+
+[[prompt]]
+id = "streak-meditation"
+text = "I've meditated every day this week from Monday to Friday, and today is Saturday. Show my streak."
+expect = "streak"
+from = "seed"
+
+# Plans and time
+
+[[prompt]]
+id = "timeline-jaipur"
+text = "Plan 2 days in Jaipur. Day 1: Amber Fort at 9, lunch at LMB at 1, Hawa Mahal at 4. Day 2: City Palace at 10, Jantar Mantar at noon, Nahargarh Fort for sunset."
+expect = "timeline"
+from = "seed"
+
+[[prompt]]
+id = "timeline-new-york"
+text = "Plan a weekend in New York. Saturday: Central Park at 9am, the Met at 11, pizza in the Village at 1pm, a Broadway show at 7:30pm. Sunday: brunch in Brooklyn at 10, the High Line at 1pm, the Top of the Rock at sunset."
+expect = "timeline"
+from = "seed"
+
+[[prompt]]
+id = "calendar-tuesday"
+text = "Here's Tuesday 2026-11-24: standup at 9:30, design review 11 to 12 in Room 4, dentist at 17:00. Show my day."
+expect = "calendar"
+alternatives = ["timeline"]
+from = "seed"
+
+[[prompt]]
+id = "upnext-coming"
+text = "Coming up: electricity bill $84 due Nov 25, an Amazon package arriving Nov 26, Mom's birthday Nov 28. Show what's coming."
+expect = "upnext"
+from = "seed"
+
+[[prompt]]
+id = "weather-new-york"
+text = "It's 58°F and cloudy in New York right now, high 64, low 49. Show the weather."
+expect = "weather"
+from = "seed"
+
+[[prompt]]
+id = "checklist-goa"
+text = "Make me a packing list for a 3-day beach trip to Goa."
+expect = "checklist"
+from = "seed"
+
+# Explain
+
+[[prompt]]
+id = "flow-upi"
+text = "Explain how a UPI payment travels from my phone to the shop's bank."
+expect = "flow"
+from = "seed"
+
+[[prompt]]
+id = "steps-transformer"
+text = "Walk me through, step by step, how a transformer predicts the next word."
+expect = "steps"
+also = ["flow"]
+from = "seed"
+
+[[prompt]]
+id = "layers-osi"
+text = "Explain the layers of the OSI network model, from the bottom up."
+expect = "layers"
+from = "seed"
+
+[[prompt]]
+id = "flip-capitals"
+text = "Make me flash cards to revise the capitals of Japan, Kenya, Peru, Canada, Egypt and Australia."
+expect = "flip"
+from = "seed"
+
+# Interactive
+
+[[prompt]]
+id = "calculator-emi"
+text = "Home loan of ₹50 lakh at 8.5% for 20 years. What's my EMI? Let me play with the numbers."
+expect = "calculator"
+from = "seed"
+
+[[prompt]]
+id = "calculator-mortgage"
+text = "I'm looking at a $400,000 mortgage at 6.5% over 30 years. What's the monthly payment, and let me try a 15-year term or a bigger down payment."
+expect = "calculator"
+from = "seed"
+
+[[prompt]]
+id = "simulate-interest"
+text = "Show how $10,000 grows over 30 years at 7%, simple interest against compound interest."
+expect = "simulate"
+alternatives = ["calculator", "chart"]
+from = "seed"
+
+[[prompt]]
+id = "form-getaway"
+text = "Help me plan a weekend getaway."
+expect = "form"
+from = "seed"
+
+# Several blocks
+
+[[prompt]]
+id = "report-bakery"
+text = "Quarterly report for my bakery. Revenue: Jul ₹3.1L, Aug ₹3.4L, Sep ₹3.9L. Costs: Jul ₹2.2L, Aug ₹2.3L, Sep ₹2.5L. Sales share: sourdough 38%, croissants 27%, cookies 20%, other 15%."
+expect = "chart"
+also = ["kpis"]
+from = "seed"
+
+[[prompt]]
+id = "dashboard-fitness"
+text = "Make a dashboard of my week: steps Mon to Sun 8k, 10k, 6k, 12k, 9k, 4k, 11k against a 10k daily goal, and 26 miles walked of my 30 mile weekly goal."
+expect = "chart"
+also = ["progress"]
+from = "seed"
+
+[[prompt]]
+id = "tabs-rent-buy"
+text = "Compare renting against buying a flat in Pune, each as its own view: rent ₹35k a month; buying means ₹15L down and a ₹52k EMI. Show the monthly cost and the 10-year total for each."
+expect = "tabs"
+alternatives = ["columns", "table"]
+from = "seed"
+
+# Nothing to draw
+
+[[prompt]]
+id = "none-capital"
+text = "What's the capital of Peru?"
+expect = "none"
+from = "seed"
+
+[[prompt]]
+id = "none-haiku"
+text = "Write a haiku about monsoon rain."
+expect = "none"
+from = "seed"
+
+[[prompt]]
+id = "none-python"
+text = "How do I reverse a list in Python?"
+expect = "none"
+from = "seed"
+
+[[prompt]]
+id = "none-translate"
+text = "How do you say 'good morning' in Marathi?"
+expect = "none"
+from = "seed"
+
+[[prompt]]
+id = "none-thanks"
+text = "Thanks, that's all for today!"
+expect = "none"
+from = "seed"
+
+[[prompt]]
+id = "none-convert"
+text = "How many kilometres is 26.2 miles?"
+expect = "none"
+from = "seed"

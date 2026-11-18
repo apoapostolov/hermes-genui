@@ -41,6 +41,7 @@ dashboard/            manifest.json and plugin_api.py: the REST API Hermes mount
 recipes/              shipped recipe skills;  desktop/plugin.js: the built Desktop half (shipped)
 templates/            briefs for kept dashboards (what an executive or security dashboard should cover)
 tests/                mirrors the layout (tests/core, tests/tools, ...); fixtures/describe.txt pins the description
+evals/                the prompt set (prompts/blocks.toml) and run.py, which scores a model on it (see evals/README.md)
 
 web/src/
   plugin.tsx          the entry: registers the `::blocks` tag and injects the styles
@@ -123,6 +124,9 @@ Say the new type is `gauge`.
    and `tests/hooks/test_text_fallback.py`. The registry tests on both sides fail until the catalog and both
    registries agree.
 7. **Build.** Run the checks below, then `npm run build` in `web/` to update `desktop/plugin.js` (it is shipped).
+8. **Evals.** Add at least two prompts for `gauge` to `evals/prompts/blocks.toml`, run them on at least two models
+   (one a small local model) with `evals/run.py --block gauge --markdown`, and paste the tables into the pull request.
+   [evals/README.md](evals/README.md) explains how to run them and what counts as a pass.
 
 ## Checks
 
@@ -145,12 +149,17 @@ Every pull request runs the same checks on GitHub (`.github/workflows/checks.yml
   - Each block adds text to the `show_blocks` description, which every user pays for on every message. Its size is
     capped by a test.
   - So a proposal shows why the existing blocks can't do the job, and the JSON the model would write.
+- **Changing what the model reads? Run the evals.** That covers a new block, a new or changed field, the catalog
+  wording in `core/catalog.json`, the prompt section, the visual reminder and the tool descriptions. Run the prompts
+  your change touches before and after it, on at least two models, and paste the results into the pull request.
+  How to run them and how a pass is decided: [evals/README.md](evals/README.md). A change is welcome when its own
+  prompts pass and nothing that passed before now fails.
 - **One pull request per change.** Use the checklist in the PR template. Write tests first; fixes need a test that
   failed before.
 - **What reviewers check:**
   - **Security:** no model or web content becomes markup; fetches go through `tools/photos/safety.py`; Python checks
     are strict and web readers lenient.
-  - **The model's side:** clear, short catalog wording, and the description stays under budget.
+  - **The model's side:** clear, short catalog wording, the description stays under budget, and the eval results.
   - **Accessibility:** keyboard, screen reader labels, reduced motion, light and dark, phone width.
   - **A text fallback** for every block.
 - **Keys** are read only through Hermes (`agent.secret_scope.get_secret`), never from files or the environment.

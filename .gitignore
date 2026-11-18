@@ -17,3 +17,6 @@ __pycache__/
 # Local agent worktrees and settings
 .claude/
 .playwright-mcp/
+
+# Model runs from evals/run.py
+evals/results/
