@@ -4,26 +4,21 @@ import { formatAmount, formatCompact, formatIndian, formatNumber, formatPercent 
 import { usesLakhCrore } from "../../lib/locale";
 
 /** Every kind the chart block draws. */
-export const CHART_KINDS = ["line", "bar", "area", "stacked", "hbar", "combo", "pie", "donut", "scatter", "waterfall"] as const;
+export const CHART_KINDS = ["line", "bar", "area", "stacked", "hbar", "combo", "pie", "donut", "scatter", "waterfall", "histogram", "range"] as const;
 export type ChartKind = (typeof CHART_KINDS)[number];
 
 /** One point of a scatter, or one bar of a waterfall: a scatter reads x and y, a waterfall reads value and total. */
 export type ChartPoint = {
-  /** scatter: the number along the bottom scale. */
-  x?: number;
-  /** scatter: the number up the side; null is unknown, so the point isn't drawn. */
-  y?: number | null;
-  /** waterfall: the signed step from the bar before it. */
-  value?: number | null;
-  /** the point's name: the hover card's title, the text line's word for it, a waterfall bar's label. */
-  label?: string;
-  /** waterfall: a bar pinned from zero to the running balance, not a step. Only true counts. */
-  total?: boolean;
+  x?: number; y?: number | null; value?: number | null; label?: string; total?: boolean;
 };
 
-/** One series: its values (null for a gap), and for a combo's line its own unit and whether it has the right scale.
- *  Scatter and waterfall series carry points instead (their data is empty). */
-export type ChartSeries = { name?: string; data: (number | null)[]; unit?: string; right?: boolean; points?: ChartPoint[] };
+/** A range chart's window at one x: its bottom, its top, and the optional dot; each may be unknown (null). */
+export type ChartSpan = { low: number | null; high: number | null; now: number | null };
+
+/** One series: its numbers (null for a gap), a combo's own unit and right scale, a scatter's or waterfall's points,
+ *  or a range's windows. */
+export type ChartSeries = { name?: string; data: (number | null)[]; unit?: string; right?: boolean;
+  points?: ChartPoint[]; span?: ChartSpan[] };
 
 /** A chart ready to draw (readChart in chart.ts makes one). */
 export type ChartSpec = {
@@ -40,10 +35,12 @@ export type ChartSpec = {
 };
 
 // Other names models use for the same kinds, written without spaces, dashes or underscores.
-const KIND_ALIASES: Record<string, ChartKind> = { doughnut: "donut", stackedbar: "stacked", horizontalbar: "hbar", barh: "hbar" };
+const KIND_ALIASES: Record<string, ChartKind> = { doughnut: "donut", stackedbar: "stacked", horizontalbar: "hbar", barh: "hbar",
+  hist: "histogram", rangebar: "range", floatingbar: "range" };
 
 /** The kind to draw for the name the model wrote: a known name (any case) or an alias is that kind, anything else is a
- *  line. "pie" -> pie; "Donut" -> donut; "stacked_bar" -> stacked; "scatter" -> scatter; undefined -> line. */
+ *  line. "pie" -> pie; "Donut" -> donut; "stacked_bar" -> stacked; "hist" -> histogram; "scatter" -> scatter; undefined ->
+ *  line. */
 export function chartKind(name: unknown): ChartKind {
   if (typeof name !== "string") return "line";
   const plain = name.toLowerCase().replace(/[\s_-]/g, "");
@@ -52,12 +49,12 @@ export function chartKind(name: unknown): ChartKind {
   return KIND_ALIASES[plain] ?? "line";
 }
 
-/** How many series a kind draws: stacked bars and areas show up to 6 parts (a budget's categories), a scatter keeps
- *  two groups of points, a waterfall is one set of bars, the rest 3. */
+/** How many series a kind draws: stacked bars and areas show up to 6 parts, a scatter keeps two groups, a waterfall,
+ *  a histogram and a range hold one, the rest 3. */
 export function maxSeries(kind: ChartKind): number {
   if (kind === "stacked" || kind === "area") return 6;
   if (kind === "scatter") return 2;
-  if (kind === "waterfall") return 1;
+  if (kind === "waterfall" || kind === "histogram" || kind === "range") return 1;
   return 3;
 }
 
@@ -316,9 +313,10 @@ export function seriesName(series: { name?: string }[], k: number): string {
 type Scale = { min: number; max: number };
 
 /** The scales an up-and-down chart (not a pie or hbar) is drawn against. Stacked bars and areas: one, from zero to the
- *  tallest pile. A scatter: the values up the side and, on `x`, the numbers along the bottom. Otherwise the left one
- *  fits every series without the right scale (from zero for bars and a combo's bars) and the right one, only in a
- *  combo, fits the series that have it.
+ *  tallest pile. A scatter: the values up the side and, on `x`, the numbers along the bottom. A range: one, from its
+ *  lowest window bottom to its highest top (or dot). Otherwise the left one fits every series without the right scale
+ *  (from zero for bars, a combo's bars and a histogram's counts) and the right one, only in a combo, fits the series
+ *  that have it.
  *  Combo of revenue (₹Cr, 65799-72275) and margin (%, 18.2-19.6) -> left 0 to ~78000, right ~18.1 to ~19.7;
  *  a line chart -> left fits the values, right null;
  *  a scatter of mileage 9-62 against price 1.2-24.6 -> x ~6 to ~66, left ~0.5 to ~28. */
@@ -332,11 +330,27 @@ export function chartScales(spec: ChartSpec, bands: (Band | null)[][] | null): {
     const ends = bands.flat().flatMap((b) => (b === null ? [] : [b.from, b.to]));
     return { left: scaleFor(ends, true), right: null };
   }
+  if (spec.type === "range") {
+    const edges = spec.series.flatMap((s) => (s.span ?? []).flatMap((b) => (b ? numbersOf([b.low, b.high, b.now]) : [])));
+    return { left: scaleFor(edges.length ? edges : numbersOf(spec.series[0].data), false), right: null };
+  }
   const leftValues = spec.series.filter((s) => !s.right).flatMap((s) => numbersOf(s.data));
   const rightValues = spec.series.filter((s) => s.right).flatMap((s) => numbersOf(s.data));
-  const fromZero = spec.type === "bar" || spec.type === "combo";
+  const fromZero = spec.type === "bar" || spec.type === "combo" || spec.type === "histogram";
   const right = rightValues.length ? scaleFor(rightValues, false) : null;
   return { left: scaleFor(leftValues, fromZero), right };
+}
+
+/** How many values a histogram counted, and which bin holds the most (the first of a tie; -1 for none counted).
+ *  [4, 12, 9, null, 0] → { total: 25, tallest: 1 } */
+export function binTotals(data: (number | null)[]): { total: number; tallest: number } {
+  let total = 0, tallest = -1, most = -1;
+  data.forEach((v, i) => {
+    if (v === null) return;
+    total += v;
+    if (v > most) { most = v; tallest = i; }
+  });
+  return { total, tallest };
 }
 
 function numbersOf(data: (number | null)[]): number[] {
@@ -370,4 +384,14 @@ export function fmt(v: number, unit?: string, { full = false }: { full?: boolean
     : rupees ? formatIndian(abs, digits) : formatNumber(abs, { digits });
   const signed = `${v < 0 ? "-" : ""}${sign}${s}`;
   return sign || !unit || unit === "pts" || unit.length > MAX_UNIT ? signed : `${signed} ${unit}`;
+}
+
+/** A range's window as text: both ends with the unit on each, the one end that is known, or a dash when neither is.
+ *  (18, 34, "min") → "18 min–34 min";  (18, 34, "%") → "18%–34%";  (null, 34, "min") → "34 min";  (null, null) → "–" */
+export function fmtSpan(low: number | null, high: number | null, unit?: string, { full = false }: { full?: boolean } = {}) {
+  if (low === null || high === null) {
+    const one = low ?? high;
+    return one === null ? "–" : fmt(one, unit, { full });
+  }
+  return `${fmt(low, unit, { full })}–${fmt(high, unit, { full })}`;
 }

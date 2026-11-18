@@ -1,6 +1,6 @@
-// Column charts' marks: bars (each series its own colour, values printed on top when few), stacked bars, and a
-// combo's bars with its lines. Columns are rounded only at their far end and stand on a baseline; while one column
-// is picked the others fade.
+// Column charts' marks: bars (each series its own colour, values printed on top when few), stacked bars, a combo's bars
+// with its lines, a histogram's touching columns and a range's low-to-high bands. Columns are rounded only at their far
+// end and stand on a baseline; while one column is picked the others fade.
 import type { Band, ChartSpec } from "./chartData";
 import { fmt, partColour } from "./chartData";
 import { barPath, linePath } from "./geometry";
@@ -80,6 +80,57 @@ export function ComboMarks({ spec, layout, hover }: Props) {
           <g key={j}>
             <path d={linePath(pts)} fill="none" stroke={colour} strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round" />
             {pts.map(([cx, cy], i) => <circle key={i} cx={cx} cy={cy} r="3.5" fill={colour} className="hb-chart-dot" />)}
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+/** A histogram's columns: one per bin, as wide as its slot with a hairline between them so the shape of the
+ *  distribution reads, standing on zero. A bin of 0 is a known zero and draws no column; a bin with no count draws
+ *  nothing at all. */
+export function HistogramMarks({ spec, layout, hover }: Props) {
+  const { xAt, yAt, slot } = layout;
+  const zero = yAt(0);
+  const width = Math.max(slot - 1, 1);
+  const unit = spec.series[0].unit ?? spec.unit;
+  return (
+    <g>
+      {spec.series[0].data.map((v, i) => v === null ? null : (
+        <g key={i} opacity={shade(hover, i)}>
+          {v !== 0 && (
+            <rect x={xAt(i) - width / 2} y={Math.min(yAt(v), zero)} width={width}
+              height={Math.max(Math.abs(zero - yAt(v)), 1)} rx="2" fill={partColour(0)} className="hb-chart-bar" />
+          )}
+          {layout.valueLabels && (
+            <text x={xAt(i)} y={yAt(v) - 6} textAnchor="middle" className="hb-chart-value">{fmt(v, unit)}</text>
+          )}
+        </g>
+      ))}
+      <Baseline layout={layout} />
+    </g>
+  );
+}
+
+/** A range's windows: a low-to-high band per x, filled in the series colour with its edge in the line colour, and the
+ *  dot where the latest reading sits — outside the band when it falls there. */
+export function RangeMarks({ spec, layout, hover }: Props) {
+  const { xAt, yAt, bar, left, right, base } = layout;
+  return (
+    <g>
+      <line x1={left} x2={right} y1={base} y2={base} className="hb-chart-rule" />
+      {(spec.series[0].span ?? []).map((w, i) => {
+        if (!w || (w.low === null && w.high === null && w.now === null)) return null;
+        const cx = xAt(i);
+        const low = w.low, high = w.high;
+        return (
+          <g key={i} opacity={shade(hover, i)}>
+            {low !== null && high !== null && (
+              <rect x={cx - bar / 2} y={yAt(high)} width={bar} height={Math.max(yAt(low) - yAt(high), 1)}
+                rx="3" fill={partColour(0)} className="hb-chart-band" />
+            )}
+            {w.now !== null && <circle cx={cx} cy={yAt(w.now)} r="4" fill={partColour(0)} className="hb-chart-dot" />}
           </g>
         );
       })}

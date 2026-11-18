@@ -49,7 +49,7 @@ export function LineMarks({ spec, layout, gid, hover }: Props) {
 }
 
 /** Faint lines across the plot at the layout's round values, each value written at its left end ("-10%", "0%"). */
-function Gridlines({ spec, layout }: { spec: ChartSpec; layout: XYLayout }) {
+export function Gridlines({ spec, layout }: { spec: ChartSpec; layout: XYLayout }) {
   const { left, right, yAt } = layout;
   return (
     <g>
