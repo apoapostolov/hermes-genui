@@ -3,7 +3,7 @@
    when wider than the chat, down past 520px with the header kept in view. */
 .hb-table-card { width: fit-content; max-width: 100%; padding: 4px 0 0; overflow: hidden; }
 .hb-table-caption { padding: 10px 16px 2px; }
-.hb-table-scroll { max-height: 520px; overflow: auto; overscroll-behavior: contain; }
+.hb-table-scroll { max-height: 520px; overflow: auto; }
 .hb-table {
   border-collapse: separate;
   border-spacing: 0;
