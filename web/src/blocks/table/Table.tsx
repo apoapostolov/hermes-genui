@@ -4,7 +4,8 @@
 // scrolls inside its card (sideways when wide, down past ~520px with the header kept in view), then passes the rest of
 // the wheel to the page, so a short table never traps the session's scroll.
 import { useState } from "react";
-import type { TableBlock } from "./read";
+import type { LegacyTable, TableBlock } from "./read";
+import { StructuredTable } from "./StructuredTable";
 import { bigNumber, changeOf, isChangeColumn, miniBar } from "./cells";
 import { cellNumber, isNumberColumn, nextSort, sortedOrder, type SortState } from "./sort";
 import { InlineText } from "../../lib/InlineText";
@@ -12,7 +13,9 @@ import { InlineText } from "../../lib/InlineText";
 // Mini bars need a few rows to compare; with 2 the coloured numbers say it all.
 const MINI_BARS_FROM = 3;
 
-export function Table({ columns, rows, highlight, caption }: TableBlock) {
+export function Table(props: TableBlock) {
+  if ("structured" in props && props.structured) return <StructuredTable {...props} />;
+  const { columns, rows, highlight, caption } = props as LegacyTable;
   const [sort, setSort] = useState<SortState>(null);
   const order = sortedOrder(rows, sort);
   const bestRow = highlight && "row" in highlight ? highlight.row : -1;

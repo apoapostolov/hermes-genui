@@ -4,7 +4,8 @@ import re
 
 from .common import change_chip, fmt_num, is_number, safe_text, short_text
 
-CHART_KINDS = ("line", "bar", "area", "stacked", "hbar", "combo", "pie", "donut", "scatter", "waterfall", "histogram", "range")
+CHART_KINDS = ("line", "bar", "area", "stacked", "hbar", "combo", "pie", "donut",
+               "scatter", "waterfall", "histogram", "range")
 KIND_ALIASES = {"doughnut": "donut", "stackedbar": "stacked", "horizontalbar": "hbar", "barh": "hbar",
                 "hist": "histogram", "rangebar": "range", "floatingbar": "range"}
 SCATTER_POINTS = 200   # a scatter series's cap, the same one the web reader keeps
@@ -404,7 +405,7 @@ def text_chart(block: dict) -> str:
     elif kind == "range":
         body = _windows_line(x, series[0])
     else:
-        body = "; ".join(line for line in (_series_line(s) for s in series[:6]) if line)
+        body = "; ".join(line for line in (_series_line(s, x) for s in series[:6]) if line)
     if not body:
         return ""
     unit = safe_text(block.get("unit"), 20)
@@ -455,45 +456,3 @@ def _windows_line(x: list, series: dict) -> str:
             part += " (above the band)" if now > high else " (below the band)" if now < low else ""
         parts.append(part)
     return "; ".join(parts)
-
-
-def text_chart(block: dict) -> str:
-    """One line: the title (and unit), then each series first → last, a histogram's bins and counts, a range's windows,
-    or a pie's top slices.
-
-    → "**Revenue vs profit** (₹Cr): Revenue 67,087 → 72,275 (▲ 7.7%); Net profit 10,720 → 13,420 (▲ 25.2%)"
-    → "**Calls**: 16 counted in 2 bins: 0-50 4, 50-100 12"
-    """
-    series = [s for s in block.get("series", []) if isinstance(s, dict)]
-    x = list(block.get("x") or [])
-    if block.get("sortDesc") is True and chart_kind(block.get("kind")) == "bar" and series:
-        values = [v if is_number(v) else None for v in series[0].get("data", [])]
-        order = sorted(range(len(x)), key=lambda i: (values[i] is None, -(values[i] or 0), i))
-        x = [x[i] for i in order if i < len(x)]
-        series = [
-            {**s, "data": [s.get("data", [])[i] if i < len(s.get("data", [])) else None for i in order]}
-            for s in series
-        ]
-    if not series:
-        return ""
-    kind = chart_kind(block.get("kind"))
-    title = safe_text(block.get("title"), 80)
-    if kind in ("pie", "donut"):
-        body = _slices(block.get("x") or [], series[0])
-    elif kind == "scatter":
-        body = _scatter_line(series, title)
-    elif kind == "waterfall":
-        body = _waterfall_line(series[0])
-    elif kind == "histogram":
-        body = _bins_line(block.get("x") or [], series[0])
-    elif kind == "range":
-        body = _windows_line(block.get("x") or [], series[0])
-    else:
-        body = "; ".join(line for line in (_series_line(s, block.get("x") or []) for s in series[:6]) if line)
-    if not body:
-        return ""
-    unit = safe_text(block.get("unit"), 20)
-    head = f"**{title or 'Chart'}**" + (f" ({unit})" if unit else "")
-    line = f"{head}: {body}"
-    caveat = safe_text(block.get("caveat"), 120)
-    return f"{line}\n_{caveat}_" if caveat else line
