@@ -13,7 +13,7 @@ table: Options compared on the same attributes. Use for: Phones, plans, hotels. 
 Example: {"type":"table","caption":"Phones under ₹50k","columns":["Phone","Price","Camera"],"highlight":{"row":0},"rows":[["Pixel 10a","₹44,999","Best in class"],["Nothing 4","₹39,999","OK"]]}
 callout: A tinted box: a warning, a tip or the takeaway. Use for: Warnings, tips, the verdict. One per reply. Fields: tone: info | tip | warn. title. text.
 Example: {"type":"callout","tone":"tip","text":"Pixel for photos; Nothing for price."}
-source: A line naming the data's source. Use for: Last block, outside data. Fields: text. url (optional).
+source: A small line naming the data's source. Use for: Last block, for outside data. Fields: text+url or items ≤32: [{label, url, kind: web|file|tool|derived, accessed, note}]; title names list
 Example: {"type":"source","text":"screener.in · TCS · Jun 2026 quarter","url":"https://www.screener.in/company/TCS/"}
 list: Rows: rank, lead, title, subtitle, value. Use for: Rankings, picks, results. Fields: title. ranked rows. max: full bar. items ≤12: [{title, subtitle, value (null –), bar: number, icon/image, run: sends, or url}].
 Example: {"type":"list","title":"Cafés nearby","ranked":true,"items":[{"title":"Third Wave","subtitle":"80 Feet Road","value":"4.5★"},{"title":"Dyu Art Café","subtitle":"Garden seats","value":"4.4★"}]}

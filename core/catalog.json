@@ -182,9 +182,9 @@
   },
   {
    "kind": "source",
-   "for": "A line naming the data's source.",
-   "use_when": "Last block, outside data.",
-   "fields": "text. url (optional).",
+   "for": "A small line naming the data's source.",
+   "use_when": "Last block, for outside data.",
+   "fields": "text+url or items ≤32: [{label, url, kind: web|file|tool|derived, accessed, note}]; title names list",
    "example": {
     "type": "source",
     "text": "screener.in · TCS · Jun 2026 quarter",
