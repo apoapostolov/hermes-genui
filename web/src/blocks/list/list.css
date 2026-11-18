@@ -61,6 +61,8 @@
   color: var(--hb-muted);
 }
 .hb-list-value { flex: none; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hb-list-bar { flex: none; width: 64px; height: 6px; border-radius: 999px; background: var(--hb-accent-soft); overflow: hidden; }
+.hb-list-bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-accent); }
 .hb-list-chevron { flex: none; color: var(--hb-muted); }
 .hb-section .hb-list { padding: 0; }
 

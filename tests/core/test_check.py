@@ -164,6 +164,13 @@ def test_list_needs_a_row_with_a_title():
     assert check_blocks([{"type": "list"}]) == ["0: list needs at least one item with a title"]
 
 
+def test_list_bar_must_be_a_number_or_null():
+    good = {"type": "list", "items": [{"title": "Rent", "bar": 62}, {"title": "Mubi", "bar": None}]}
+    assert check_blocks([good]) == []
+    bad = {"type": "list", "items": [{"title": "Rent", "bar": "62"}]}
+    assert check_blocks([bad]) == ["0.items.0.bar: bar must be a number or null"]
+
+
 def test_progress_needs_title_value_and_a_goal_above_zero():
     assert check_blocks([{"type": "progress", "title": "Trip fund", "value": 5, "goal": 10}]) == []
     assert check_blocks([{"type": "progress", "value": 5, "goal": 10}]) == ["0: progress needs a title"]

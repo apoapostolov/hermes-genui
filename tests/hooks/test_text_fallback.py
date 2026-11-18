@@ -237,6 +237,12 @@ def test_list_ranked_and_bulleted():
     assert render(plain) == "- Plain\n- Named · 3"
 
 
+def test_list_uses_the_bar_when_no_value_was_written():
+    block = {"type": "list", "ranked": True, "items": [
+        {"title": "Rent", "bar": 34500}, {"title": "Travel", "bar": 9800, "value": "9.8k"}]}
+    assert render(block) == "1. Rent · 34,500\n2. Travel · 9.8k"
+
+
 def test_flip_cards():
     assert render(EXAMPLES["flip"]) == (
         "**Asian Games**\n- Q: Most golds? — A: China · 201\n- Q: Host city? — A: Nagoya"
