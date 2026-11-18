@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { pinLocale } from "../../lib/locale.testing";
 import { Blocks } from "../../core/Blocks";
 import { readBlocks } from "../../core/readBlocks";
-import { amountOf, trackShare } from "./Progress";
+import { amountOf, percentOf, trackShare, zoneTone } from "./Progress";
 
 afterEach(cleanup);
 
@@ -51,5 +51,97 @@ describe("progress amount in the user's locale", () => {
     pinLocale("de-DE");
     const { container } = render(<Blocks blocks={readBlocks([{ type: "progress", title: "Steps", value: 1234, goal: 10000 }])} />);
     expect(container.querySelector(".hb-progress-amount")!.textContent).toBe("1.234 / 10.000");
+  });
+});
+
+const card = (block: Record<string, unknown>) => render(<Blocks blocks={readBlocks([block])} />).container;
+
+describe("progress shapes, bands and parts", () => {
+  it("holds the percent between 0 and 100 and reads the band the value falls in", () => {
+    expect(percentOf(14, 21.1)).toBe(66);
+    expect(percentOf(150, 120)).toBe(100);
+    expect(percentOf(-5, 120)).toBe(0);
+    const marks = [{ at: 60, tone: "good" as const }, { at: 85, tone: "warn" as const }, { at: 100, tone: "bad" as const }];
+    expect(zoneTone(50, marks)).toBe("good");
+    expect(zoneTone(70, marks)).toBe("warn");
+    expect(zoneTone(88, marks)).toBe("bad");
+    expect(zoneTone(50, [])).toBe("good");
+    expect(zoneTone(50, [], "warn")).toBe("warn");
+  });
+  it("draws a ring with the percent in the middle", () => {
+    const c = card({ type: "progress", title: "Savings goal", value: 7200, goal: 10000, unit: "₹", shape: "circle", show_percent: true });
+    expect(c.querySelector(".hb-progress-ring circle.hb-progress-ring-track")).toBeTruthy();
+    expect(c.querySelector(".hb-progress-ring-pct")!.textContent).toBe("72%");
+    expect(c.querySelectorAll(".hb-progress-ring-fill").length).toBe(1);
+    expect(c.querySelector(".hb-progress")!.className).toContain("hb-progress-tone-good");
+  });
+  it("leaves a ring bare when the percent is not asked for, and draws a gauge as an open arc", () => {
+    expect(card({ type: "progress", title: "Load", value: 88, goal: 100, shape: "dashboard" }).querySelector(".hb-progress-ring-pct")).toBeNull();
+    const c = card({ type: "progress", title: "Load", value: 88, goal: 100, shape: "dashboard" });
+    expect(c.querySelector(".hb-progress-ring-dash")).toBeTruthy();
+    expect(c.querySelector(".hb-progress-ring-track")!.tagName.toLowerCase()).toBe("path");
+  });
+  it("fills in the tone of the band, tints the bands and ticks every mark", () => {
+    const c = card({ type: "progress", title: "Server load", value: 88, goal: 100, unit: "%",
+      thresholds: [{ at: 60, tone: "good" }, { at: 85, tone: "warn", label: "Busy" }, { at: 100, tone: "bad" }] });
+    expect(c.querySelector(".hb-progress")!.className).toContain("hb-progress-tone-bad");
+    expect(c.querySelectorAll(".hb-progress-band").length).toBe(3);
+    expect(c.querySelectorAll(".hb-progress-mark").length).toBe(3);
+    expect(Array.from(c.querySelectorAll(".hb-progress-mark-labels span"), (s) => s.textContent)).toEqual(["Busy"]);
+    expect((c.querySelector(".hb-progress-fill") as HTMLElement).style.width).toBe("88%");
+  });
+  it("keeps the real amount while the fill stops at full", () => {
+    const c = card({ type: "progress", title: "Overspent", value: 150, goal: 120 });
+    expect((c.querySelector(".hb-progress-fill") as HTMLElement).style.width).toBe("100%");
+    expect(c.querySelector(".hb-progress-amount")!.textContent).toBe("150 / 120");
+  });
+  it("writes the percent beside a line only when asked", () => {
+    expect(card({ type: "progress", title: "Steps", value: 8000, goal: 10000, show_percent: true }).querySelector(".hb-progress-pct")!.textContent).toBe("80%");
+    expect(card({ type: "progress", title: "Steps", value: 8000, goal: 10000 }).querySelector(".hb-progress-pct")).toBeNull();
+  });
+  it("takes the block's own tone when no mark is toned", () => {
+    const c = card({ type: "progress", title: "Fees", value: 90, goal: 100, tone: "warn" });
+    expect(c.querySelector(".hb-progress")!.className).toContain("hb-progress-tone-warn");
+  });
+  it("draws parts end to end and leaves the rest of the track empty", () => {
+    const c = card({ type: "progress", title: "Sprint work", value: 60, goal: 100,
+      segments: [{ value: 40, label: "Done", tone: "good" }, { value: 20, label: "In review", tone: "warn" }] });
+    const parts = Array.from(c.querySelectorAll(".hb-progress-seg"), (s) => ({ left: (s as HTMLElement).style.left, width: (s as HTMLElement).style.width }));
+    expect(parts).toEqual([{ left: "0%", width: "40%" }, { left: "40%", width: "20%" }]);
+    expect(c.querySelector(".hb-progress-fill")).toBeNull();
+    expect(Array.from(c.querySelectorAll(".hb-legend-item > :last-child"), (s) => s.textContent)).toEqual(["40", "20"]);
+    expect(c.textContent).toContain("In review");
+  });
+  it("drops what is past the goal rather than drawing a part wider than the track", () => {
+    const c = card({ type: "progress", title: "Over", value: 60, goal: 100,
+      segments: [{ value: 60 }, { value: 50 }] });
+    const widths = Array.from(c.querySelectorAll(".hb-progress-seg"), (s) => (s as HTMLElement).style.width);
+    expect(widths).toEqual(["60%", "40%"]);
+  });
+  it("draws marks instead of checkpoints when both are given", () => {
+    const c = card({ type: "progress", title: "Both", value: 60, goal: 100,
+      steps: [{ label: "Half", at: 50 }], thresholds: [{ at: 80, label: "Pass" }] });
+    expect(c.querySelectorAll(".hb-progress-node").length).toBe(0);
+    expect(c.querySelectorAll(".hb-progress-mark").length).toBe(1);
+    expect(c.textContent).toContain("Pass");
+  });
+  it("keeps a plain bar to one track and one fill", () => {
+    const c = card({ type: "progress", title: "Trip fund", value: 5, goal: 10 });
+    expect(c.querySelectorAll(".hb-progress-line").length).toBe(0);
+    expect(c.querySelectorAll(".hb-progress-band").length).toBe(0);
+    expect(c.querySelectorAll(".hb-progress-mark").length).toBe(0);
+    expect((c.querySelector(".hb-progress-fill") as HTMLElement).style.width).toBe("50%");
+  });
+  it("fills a ring by value over goal even when checkpoints are given", () => {
+    const c = card({ type: "progress", title: "Level 4", value: 60, goal: 120, shape: "circle",
+      steps: [{ label: "60", at: 60 }, { label: "120", at: 120 }] });
+    const [filled, length] = c.querySelector(".hb-progress-ring-fill")!.getAttribute("stroke-dasharray")!.split(" ").map(Number);
+    expect(filled / length).toBeCloseTo(0.5, 5);
+    expect(c.querySelectorAll(".hb-progress-node").length).toBe(0);
+  });
+  it("puts a tick on the gauge for each mark", () => {
+    const c = card({ type: "progress", title: "Load", value: 88, goal: 100, shape: "gauge",
+      thresholds: [{ at: 60 }, { at: 85 }, { at: 100 }] });
+    expect(c.querySelectorAll(".hb-progress-ring-mark").length).toBe(3);
   });
 });
