@@ -392,19 +392,19 @@ from = "#38"
 
 [[prompt]]
 id = "source-single-line"
-text = "Put the source under the figure: World Bank, GDP growth 2024."
+text = "Our exports grew 6.5% in 2024. Put the source under it: the 2024 annual report, page 12."
 expect = "source"
 from = "#38"
 
 [[prompt]]
 id = "table-city-shortlist"
-text = "Compare six cities for a move: rent for a 2-bed, average salary, commute to the centre, sunshine hours and population. Give me a table I can filter down to the ones under €1,200 rent."
+text = "Compare six cities for a move. Lisbon: €1,150 rent for a 2-bed, €1,420 average salary, 22 min commute, 2,800 sunshine hours, 545k people. Porto: €820, €1,180, 18 min, 2,450 h, 230k. Valencia: €780, €1,310, 20 min, 2,700 h, 800k. Prague: €950, €1,520, 25 min, 1,700 h, 1.4m. Budapest: €720, €1,290, 27 min, 1,980 h, 1.8m. Tallinn: €690, €1,460, 16 min, 1,900 h, 450k. Give me a table I can filter down to the ones under €1,200 rent."
 expect = "table"
 from = "#41"
 
 [[prompt]]
 id = "table-inventory-paged"
-text = "My stock list has 40 rows: item, SKU, cost, price, units left. Show it as a table I can page through and sort by units left, cheapest first."
+text = "Show this stock as a table I can page through and sort by units left, cheapest first: A4 notebook, NB-A4-01, cost €1.20, price €2.40, 34 left. Ballpoint pen, BP-BLK-12, €0.18, €0.45, 210. Desk lamp, DL-LED-02, €8.50, €18.00, 12. Stapler, ST-HD-01, €4.20, €9.50, 7. A5 notebook, NB-A5-02, €0.95, €2.10, 68. Marker set, MK-COL-06, €2.80, €6.00, 25. Paperclip box, PC-100-01, €0.75, €1.90, 140. Whiteboard, WB-90-01, €22.00, €48.00, 4."
 expect = "table"
 from = "#41"
 
