@@ -7,6 +7,8 @@ STATES = ("pending", "active", "done", "blocked", "skipped")
 STATE_RULE = "item state is pending, active, done, blocked or skipped"
 OWNER_RULE = "item owner is plain text up to 40 characters"
 NOTE_RULE = "item note is plain text up to 120 characters"
+DENSITY_RULE = "density can only be compact or expanded"
+SOURCE_IDS_RULE = "item sourceIds is up to 4 plain strings of 40 characters"
 
 # How a state reads in the plain-text version: lower case, a word rather than a colour. done is carried by the tick.
 STATE_WORDS = {"pending": "not started", "active": "in progress", "blocked": "blocked", "skipped": "skipped"}
@@ -23,7 +25,10 @@ def check_checklist(block: dict, path: str) -> list[tuple[str, str]]:
     items = block.get("items")
     if not isinstance(items, list) or not 1 <= len(items) <= 40:
         return [(path, "checklist needs 1-40 items")]
-    problems = [
+    problems = []
+    if "density" in block and block["density"] not in ("compact", "expanded"):
+        problems.append((path, DENSITY_RULE))
+    problems += [
         (f"{path}.items.{i}", "item needs text")
         for i, it in enumerate(items)
         if not (has_text(it) or (isinstance(it, dict) and has_text(it.get("text"))))
@@ -60,6 +65,12 @@ def _item_problems(item: dict, path: str) -> list[tuple[str, str]]:
             continue
         if not (isinstance(value, str) and 0 < len(value) <= limit and safe_text(value) == value):
             problems.append((path, rule))
+    ids = item.get("sourceIds")
+    if ids is not None and not (
+        isinstance(ids, list) and 1 <= len(ids) <= 4
+        and all(isinstance(i, str) and 0 < len(i) <= 40 and safe_text(i) == i for i in ids)
+    ):
+        problems.append((path, SOURCE_IDS_RULE))
     return problems
 
 
@@ -86,11 +97,14 @@ def _item_line(item: object) -> str:
         owner = safe_text(item.get("owner"))[:40]
         note = safe_text(item.get("note"))[:120]
         done = item.get("done") is True or state == "done"
+        raw_ids = item.get("sourceIds")
+        ids = [safe_text(i)[:40] for i in raw_ids[:4] if isinstance(i, str)] if isinstance(raw_ids, list) else []
+        sources = f"sources {', '.join(ids[:4])}" if ids else ""
     else:
-        text, state, owner, note, done = safe_text(item), "", "", "", False
+        text, state, owner, note, done, sources = safe_text(item), "", "", "", False, ""
     if not text:
         return ""
-    aside = ", ".join(part for part in (STATE_WORDS.get(state, ""), owner) if part)
+    aside = ", ".join(part for part in (STATE_WORDS.get(state, ""), owner, sources) if part)
     if note:
         aside = f"{aside}: {note}" if aside else note
     return f"- [{'x' if done else ' '}] {text}" + (f" ({aside})" if aside else "")

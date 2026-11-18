@@ -10,10 +10,9 @@ export const STATE_RULE = "item state is pending, active, done, blocked or skipp
 
 /** text: what to do. group: the heading its items share. id: a short stable name for the item.
  *  state: where the work stands. owner: who holds it, up to 40 characters. note: one line under the text, up to 120. */
-export type ChecklistItem = { text: string; group?: string; id?: string; state?: ItemState; owner?: string; note?: string };
-/** path: where the checklist sits in the stored board ("2", "0.children.1"): its ticks are saved under that key.
- *  ticked: the items the model said are already done (the starting ticks, before anything is saved). */
-export type ChecklistBlock = { type: "checklist"; title?: string; numbered: boolean; items: ChecklistItem[]; ticked: number[]; path: string };
+export type ChecklistItem = { text: string; group?: string; id?: string; state?: ItemState; owner?: string; note?: string; sourceIds?: string[] };
+/** compact draws one segment per item; expanded (the default) draws the rows. */
+export type ChecklistBlock = { type: "checklist"; title?: string; numbered: boolean; items: ChecklistItem[]; ticked: number[]; path: string; density?: "compact" | "expanded" };
 
 const MAX_ITEMS = 40;
 
@@ -39,15 +38,17 @@ export function readChecklist(raw: any, here: Trail): ChecklistBlock | null {
   const items: ChecklistItem[] = [];
   const ticked: number[] = [];
   kept.forEach((item, i) => {
-    items.push(clean({ text: item.text, group: item.group, id: item.id, state: item.state, owner: item.owner, note: item.note }));
+    items.push(clean({ text: item.text, group: item.group, id: item.id, state: item.state, owner: item.owner, note: item.note,
+      sourceIds: item.sourceIds }));
     if (item.done) ticked.push(i);
   });
   const numbered = raw.numbered === true || raw.ordered === true;
   const title = firstText([raw.title, raw.label], 80);
-  return clean({ type: "checklist" as const, title, numbered, items, ticked, path: here.path });
+  const density: "compact" | undefined = raw.density === "compact" ? "compact" : undefined;
+  return clean({ type: "checklist" as const, title, numbered, items, ticked, path: here.path, density });
 }
 
-type Found = { text: string; group?: string; done: boolean; id?: string; state?: ItemState; owner?: string; note?: string };
+type Found = { text: string; group?: string; done: boolean; id?: string; state?: ItemState; owner?: string; note?: string; sourceIds?: string[] };
 
 /** The items wherever the model put them: a flat list (items, tasks, steps), then lists inside groups.
  *  {items: ["A"], groups: [{label: "G", items: ["B"]}]} → [{text: "A"}, {text: "B", group: "G"}] (each with done: false) */
@@ -93,7 +94,18 @@ function readItem(item: any, groupLabel: string | undefined, here: Trail): Found
     state: state === "done" ? undefined : state,
     owner: firstText([item.owner], 40),
     note: firstText([item.note], 120),
+    sourceIds: readSourceIds(item.sourceIds ?? item.sources, here),
   };
+}
+
+/** Source ids an item rests on: up to four plain strings, each 40 characters. A bad entry is dropped, not shown. */
+function readSourceIds(raw: unknown, here: Trail): string[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const ids = raw.slice(0, 4)
+    .map((id) => (typeof id === "string" && id.trim() ? id.trim().slice(0, 40) : undefined))
+    .filter((id): id is string => id !== undefined);
+  if (raw.length > 4) here.drop("item keeps 4 source ids");
+  return ids.length ? ids : undefined;
 }
 
 /** An item's state, one of the five words; undefined when absent. An unknown word is left out with a note at the

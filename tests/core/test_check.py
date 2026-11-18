@@ -843,3 +843,13 @@ def test_checklist_items_may_carry_a_state_an_owner_and_a_note():
         "0.items.3: item note is plain text up to 120 characters",
         "0.items.4: item owner is plain text up to 40 characters",
     ]
+
+
+def test_checklist_phase_tracker_controls_are_checked():
+    ok = [{"type": "checklist", "density": "compact", "items": [
+        {"text": "Copy", "state": "active", "sourceIds": ["src-1", "src-2"]}]}]
+    assert check_blocks(ok) == []
+    assert check_blocks([{**ok[0], "density": "tiny"}]) == ["0: density can only be compact or expanded"]
+    assert check_blocks([{"type": "checklist", "items": [
+        {"text": "Copy", "sourceIds": ["a", "b", "c", "d", "e"]}]}]) == [
+        "0.items.0: item sourceIds is up to 4 plain strings of 40 characters"]

@@ -16,7 +16,14 @@ const STATE_WORDS: Record<ItemState, string | undefined> = {
   skipped: "Skipped",
 };
 
-export function Checklist({ title, numbered, items, ticked, path }: ChecklistBlock) {
+/** The compact strip has no room for a state word, so the button's label and title carry it. */
+function segmentName(item: ChecklistItem, on: boolean): string {
+  const state = on ? "done" : item.state ? STATE_WORDS[item.state]?.toLowerCase() ?? item.state : "not started";
+  const sources = item.sourceIds?.length ? `, sources ${item.sourceIds.join(", ")}` : "";
+  return `${item.text}, ${state}${sources}`;
+}
+
+export function Checklist({ title, numbered, items, ticked, path, density }: ChecklistBlock) {
   const [ticks, tap] = useSavedTicks(path, ticked, items.length);
   const uid = useId();
   const done = ticks.length;
@@ -34,7 +41,8 @@ export function Checklist({ title, numbered, items, ticked, path }: ChecklistBlo
     const wordId = word ? `${uid}-state-${index}` : undefined;
     const ownerId = item.owner ? `${uid}-owner-${index}` : undefined;
     const noteId = item.note ? `${uid}-note-${index}` : undefined;
-    const describedBy = [wordId, ownerId, noteId].filter(Boolean).join(" ") || undefined;
+    const sourceId = item.sourceIds?.length ? `${uid}-source-${index}` : undefined;
+    const describedBy = [wordId, ownerId, noteId, sourceId].filter(Boolean).join(" ") || undefined;
     const classes = ["hb-check", on ? "hb-check-on" : state ? `hb-check-${state}` : "", pointer === index ? "hb-check-pointer" : ""];
     return (
       <div key={index} className="hb-checklist-row">
@@ -48,6 +56,7 @@ export function Checklist({ title, numbered, items, ticked, path }: ChecklistBlo
               {item.owner && <span className="hb-check-owner" id={ownerId}>{item.owner}</span>}
             </span>
             {item.note && <span className="hb-check-note" id={noteId}>{item.note}</span>}
+            {item.sourceIds?.length && <span className="hb-check-source" id={sourceId}>sources {item.sourceIds.join(", ")}</span>}
           </span>
         </button>
       </div>
@@ -65,6 +74,24 @@ export function Checklist({ title, numbered, items, ticked, path }: ChecklistBlo
       <div className="hb-checklist-track" aria-hidden="true">
         <span className="hb-checklist-fill" style={{ width: `${(done / items.length) * 100}%` }} />
       </div>
+      {density === "compact" && (
+        <div className="hb-checklist-compact" role="group" aria-label={title ?? "Phases"}>
+          {items.map((item, index) => {
+            const on = ticks.includes(index);
+            const state = on ? undefined : item.state;
+            const classes = ["hb-check-seg", on ? "hb-check-on" : state ? `hb-check-${state}` : "",
+              pointer === index ? "hb-check-pointer" : ""];
+            return (
+              <button type="button" key={index} role="checkbox" aria-checked={on}
+                aria-current={pointer === index ? "step" : undefined}
+                aria-label={segmentName(item, on)} title={segmentName(item, on)}
+                onClick={() => tap(index)} className={classes.join(" ").trim()}>
+                <span className="hb-sr">{segmentName(item, on)}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
       {segmentsOf(items).map((segment, si) =>
         segment.label ? (
           <div key={si} className="hb-checklist-group" role="group" aria-labelledby={`${uid}-group-${si}`}>

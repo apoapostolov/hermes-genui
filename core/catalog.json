@@ -427,7 +427,7 @@
    "kind": "checklist",
    "for": "Items to tick; ticks saved.",
    "use_when": "Packing, to-dos, steps.",
-   "fields": "title. items ≤40: text | {text, group, state: pending|active|done|blocked|skipped, owner, note}. numbered.",
+   "fields": "title. density: compact|expanded. items ≤40: text | {text, group, state: pending|active|done|blocked|skipped, owner, note, sourceIds ≤4}. numbered.",
    "example": {
     "type": "checklist",
     "title": "Packing",
