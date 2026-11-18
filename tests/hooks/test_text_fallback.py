@@ -271,6 +271,11 @@ def test_range_with_a_dot_below_its_window():
             "x": ["Indiranagar"], "series": [{"low": [38000], "high": [52000], "now": [35000]}]}
     assert render(band) == "**Rent** (₹): Indiranagar 38,000-52,000, now 35,000 (below the band)"
 
+def test_chart_sort_desc_orders_the_text_by_the_first_series():
+    chart = {"type": "chart", "kind": "bar", "sortDesc": True, "title": "Spend",
+             "x": ["a", "b", "c"], "series": [{"name": "S", "data": [2, 9, 5]}]}
+    assert render(chart) == "**Spend**: S 9 → 2 (▼ 77.8%)"
+
 
 # --- tables ---------------------------------------------------------------------------------------
 

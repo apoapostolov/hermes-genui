@@ -38,7 +38,7 @@
    "kind": "chart",
    "for": "A trend, a comparison, parts of a whole, or a bridge.",
    "use_when": "line: trends. bar: periods or items; sideways for long labels; time stays upright. hbar: rankings, 2-5 named items. donut, pie: parts of a whole, 3-7 parts. stacked: parts of a total over time. area: growth that builds up. combo: two measures. scatter: two measures. waterfall: steps to a total. histogram: counts in equal bins. range: low-to-high bands. 2-3 items on several metrics: a table, not a chart each.",
-   "fields": "kind. title. x: labels. series: [{name, data, null=gap}], 1-3 (stacked/area 6; pie/donut 1); a gap breaks the line. combo: first bars, rest lines; another unit gets a right axis. scatter: [{x, y, label}], 2 series, 200 pts. waterfall: [{label, value, total}], null stops. histogram: one series of counts. range: one series {low, high, now: arrays}. unit: \"%\", \"₹Cr\". tone: \"change\" colours a line. caveat ≤120. xLabel/yLabel ≤40: axes. source: site.",
+   "fields": "kind. title. x: labels. series: [{name, data, null=gap}], 1-3 (stacked/area 6; pie/donut 1); a gap breaks the line. combo: first bars, rest lines; another unit gets a right axis. scatter: [{x, y, label}], 2 series, 200 pts. waterfall: [{label, value, total}], null stops. histogram: one series of counts. range: one series {low, high, now: arrays}. stepped, sortDesc, height 120-480. unit: \"%\", \"₹Cr\". tone: \"change\" colours a line. caveat ≤120. xLabel/yLabel ≤40: axes. source: site.",
    "example": {
     "type": "chart",
     "kind": "bar",
@@ -406,7 +406,7 @@
    "kind": "tiles",
    "for": "2-8 cover cards.",
    "use_when": "Choices to explore.",
-   "fields": "items: [{title, subtitle: short, image, icon, ask: fills the composer | run: sends}]. No ask/run: a static card.",
+   "fields": "items: [{title, subtitle: short, image, icon, ask: fills the composer | run: sends}]. No ask/run: static.",
    "example": {
     "type": "tiles",
     "items": [
@@ -444,7 +444,7 @@
    "kind": "calendar",
    "for": "A day at a glance: big date, its events, the week.",
    "use_when": "Today, a day's plan or agenda.",
-   "fields": "date: YYYY-MM-DD. events ≤12: [{title, start: \"09:30\", end, place}]. week ≤7: [{date, count}]. ask: fills composer.",
+   "fields": "date: YYYY-MM-DD. events ≤12: [{title, start: \"09:30\", end, place}]. week ≤7: [{date, count}]. ask: composer.",
    "example": {
     "type": "calendar",
     "date": "2026-11-14",
@@ -499,7 +499,7 @@
    "kind": "calculator",
    "for": "Sliders; results update live.",
    "use_when": "EMI, SIP, what-ifs; never do this maths in text.",
-   "fields": "inputs ≤6: [{id, label, min, max, step, value, unit}]. outputs ≤6: [{label, formula, unit}]. formula: ids, numbers, + - * / ^ ( ) < > ==, min, max, round, abs, if, emi, sip, pct, prepay_years|prepay_interest, balance|principal_paid|interest_paid, sip_value. chart (live): {kind: line|area|bar, title, unit, x: {name, from, to, step: numbers or formulas, label: \"Year {<x name>}\"}, series ≤3: [{name, formula using x's name}]}.",
+   "fields": "inputs ≤6: [{id, label, min, max, step, value, unit}]. outputs ≤6: [{label, formula, unit}]. formula: ids, numbers, + - * / ^ ( ) < > ==, min, max, round, abs, if, emi, sip, pct, prepay_years|prepay_interest, balance|principal_paid|interest_paid, sip_value. chart (live): {kind: line|area|bar, title, unit, x: {name, from, to, step, label}, series ≤3: [{name, formula using x's name}]}.",
    "example": {
     "type": "calculator",
     "inputs": [

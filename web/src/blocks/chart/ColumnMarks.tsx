@@ -89,7 +89,7 @@ export function ComboMarks({ spec, layout, hover }: Props) {
         return (
           <g key={j}>
             {runs.filter((r) => r.pts.length > 1).map((r, x) => (
-              <path key={x} d={linePath(r.pts)} fill="none" stroke={colour} strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round" />
+              <path key={x} d={linePath(r.pts, spec.stepped)} fill="none" stroke={colour} strokeWidth="2.25" strokeLinejoin="round" strokeLinecap="round" />
             ))}
             {runs.flatMap((r) => r.pts).map(([cx, cy], i) => <circle key={i} cx={cx} cy={cy} r="3.5" fill={colour} className="hb-chart-dot" />)}
           </g>

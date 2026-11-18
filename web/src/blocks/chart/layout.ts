@@ -75,7 +75,7 @@ export function xyLayout(spec: ChartSpec, width: number, scales: { left: Scale; 
   const hasAxis = drawn !== "hbar" && drawn !== "pie" && drawn !== "donut";
   const xRoom = hasAxis && spec.xLabel ? X_TITLE_ROOM : 0;
   const yRoom = hasAxis && spec.yLabel ? Y_TITLE_ROOM : 0;
-  const H = (slotted ? COLUMNS_H : LINES_H) + xRoom + yRoom;
+  const H = spec.height ?? (slotted ? COLUMNS_H : LINES_H) + xRoom + yRoom;
   const base = H - BOTTOM - xRoom;
   const endTexts = spec.type === "line" ? lineEndTexts(spec) : [];
   const ticks = gridTicks(spec);

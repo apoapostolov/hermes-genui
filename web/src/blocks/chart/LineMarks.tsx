@@ -30,7 +30,7 @@ export function LineMarks({ spec, layout, gid, hover }: Props) {
         return (
           <g key={k}>
             {runs.filter((r) => r.pts.length > 1).map((r, j) => (
-              <path key={j} d={linePath(r.pts)} fill="none" stroke={stroke}
+              <path key={j} d={linePath(r.pts, spec.stepped)} fill="none" stroke={stroke}
                 strokeWidth={one ? 2.25 : 1.75} strokeLinejoin="round" strokeLinecap="round"
                 pathLength={1} strokeDasharray="1" strokeDashoffset="1" className="hb-chart-line hb-chart-draw" />
             ))}

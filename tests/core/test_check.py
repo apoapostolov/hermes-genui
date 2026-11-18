@@ -191,6 +191,16 @@ def test_waterfall_is_one_series_of_points():
     assert check_blocks([waterfall({"points": 5})]) == ["0: series needs a points list"]
     assert check_blocks([{"type": "chart", "kind": "waterfall"}]) == ["0: waterfall needs 1 series with points"]
 
+def test_chart_drawing_controls_are_checked():
+    rising = [{"name": "Close", "data": [1, 2]}]
+    assert check_blocks([{**chart_with(rising), "stepped": True, "height": 240}]) == []
+    assert check_blocks([{**chart_with(rising), "stepped": False}]) == ['0: stepped can only be true']
+    assert check_blocks([{**chart_with(rising, kind="bar"), "stepped": True}]) == [
+        '0: stepped is for a line or combo chart']
+    assert check_blocks([{**chart_with(rising, kind="bar"), "sortDesc": True}]) == []
+    assert check_blocks([{**chart_with(rising), "sortDesc": True}]) == ['0: sortDesc is for a bar chart']
+    assert check_blocks([{**chart_with(rising), "height": 100}]) == ['0: height must be 120 to 480']
+
 
 def test_kpi_trend_is_2_to_60_numbers():
     def kpis(trend: object) -> dict:
@@ -833,4 +843,3 @@ def test_checklist_items_may_carry_a_state_an_owner_and_a_note():
         "0.items.3: item note is plain text up to 120 characters",
         "0.items.4: item owner is plain text up to 40 characters",
     ]
-

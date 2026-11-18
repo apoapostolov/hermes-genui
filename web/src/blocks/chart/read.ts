@@ -101,6 +101,9 @@ function specOf(d: any, type: ChartKind, x: (string | number)[], series: ChartSe
     unit: typeof unit === "string" ? unit : undefined, source: typeof d.source === "string" ? d.source : undefined };
   if (typeof d.figure === "boolean") spec.figure = d.figure;
   if (d.tone === "change") spec.tone = "change";
+  if (d.stepped === true) spec.stepped = true;
+  if (typeof d.height === "number" && isFinite(d.height)) spec.height = Math.round(Math.min(480, Math.max(120, d.height)));
+  if (d.sortDesc === true && type === "bar") sortByFirstSeries(spec);
   const caveat = caption(d.caveat, 120);
   if (caveat) spec.caveat = caveat;
   if (type !== "pie" && type !== "donut") {
@@ -117,13 +120,26 @@ function specOf(d: any, type: ChartKind, x: (string | number)[], series: ChartSe
   return spec;
 }
 
+/** Reorder a bar chart's columns by the first series, largest first; gaps go last. */
+function sortByFirstSeries(spec: ChartSpec): void {
+  const values = spec.series[0]?.data ?? [];
+  const order = spec.x.map((_, i) => i).sort((a, b) => {
+    const av = values[a] ?? null, bv = values[b] ?? null;
+    if (av === null && bv === null) return a - b;
+    if (av === null) return 1;
+    if (bv === null) return -1;
+    return bv - av || a - b;
+  });
+  spec.x = order.map((i) => spec.x[i]);
+  spec.series = spec.series.map((s) => ({ ...s, data: order.map((i) => s.data[i] ?? null) }));
+}
+
 /** A number as written, or null: anything else (a string, NaN, Infinity) is unknown, not zero. */
 function num(v: unknown): number | null {
   return typeof v === "number" && Number.isFinite(v) ? v : null;
 }
 
-/** One series as written → its name, its numbers (anything else a gap), its own unit, and which scale it uses. A
- *  histogram counts, so a negative count is a gap. */
+/** A number as written, or null: a histogram's negative count is unknown too. */
 function readSeries(s: any, k: number, type: ChartKind, chartUnit: string | undefined): ChartSeries {
   const name = typeof s.name === "string" ? s.name : undefined;
   const data = s.data.map((v: any) => {

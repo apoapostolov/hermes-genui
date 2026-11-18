@@ -87,7 +87,23 @@ def check_chart(block: dict, path: str) -> list[tuple[str, str]]:
             return [(path, "a histogram needs a count above zero")]
     if kind in ("pie", "donut") and not any(v > 0 for v in numbers):
         return [(path, f"a {kind} needs at least one positive value")]
-    return _check_tone(block, kind, len(series), path)
+    return _check_tone(block, kind, len(series), path) + _check_controls(block, kind, path)
+
+
+def _check_controls(block: dict, kind: str, path: str) -> list[tuple[str, str]]:
+    """The optional drawing controls: stepped for line and combo, sortDesc for bar, height 120-480."""
+    problems = []
+    if "stepped" in block and block["stepped"] is not True:
+        problems.append((path, 'stepped can only be true'))
+    elif block.get("stepped") is True and kind not in ("line", "combo"):
+        problems.append((path, 'stepped is for a line or combo chart'))
+    if "sortDesc" in block and block["sortDesc"] is not True:
+        problems.append((path, 'sortDesc can only be true'))
+    elif block.get("sortDesc") is True and kind != "bar":
+        problems.append((path, "sortDesc is for a bar chart"))
+    if "height" in block and not (is_number(block["height"]) and 120 <= block["height"] <= 480):
+        problems.append((path, "height must be 120 to 480"))
+    return problems
 
 
 def _check_scatter(block: dict, path: str) -> list[tuple[str, str]]:
@@ -363,6 +379,40 @@ def text_chart(block: dict) -> str:
     → "**Cash flow** (€): Opening 2,140 → +3,200 Salary → -1,450 Rent → card, unknown → closing not stated"
     → "**Revenue** (₹Cr): Revenue 67,087 → 74,010 (▲ 10.3%)\n_Q3 onward is a projection._"
     """
+    series = [s for s in block.get("series", []) if isinstance(s, dict)]
+    x = list(block.get("x") or [])
+    if block.get("sortDesc") is True and chart_kind(block.get("kind")) == "bar" and series:
+        values = [v if is_number(v) else None for v in series[0].get("data", [])]
+        order = sorted(range(len(x)), key=lambda i: (values[i] is None, -(values[i] or 0), i))
+        x = [x[i] for i in order if i < len(x)]
+        series = [
+            {**s, "data": [s.get("data", [])[i] if i < len(s.get("data", [])) else None for i in order]}
+            for s in series
+        ]
+    if not series:
+        return ""
+    kind = chart_kind(block.get("kind"))
+    title = safe_text(block.get("title"), 80)
+    if kind in ("pie", "donut"):
+        body = _slices(x, series[0])
+    elif kind == "scatter":
+        body = _scatter_line(series, title)
+    elif kind == "waterfall":
+        body = _waterfall_line(series[0])
+    elif kind == "histogram":
+        body = _bins_line(x, series[0])
+    elif kind == "range":
+        body = _windows_line(x, series[0])
+    else:
+        body = "; ".join(line for line in (_series_line(s) for s in series[:6]) if line)
+    if not body:
+        return ""
+    unit = safe_text(block.get("unit"), 20)
+    head = f"**{title or 'Chart'}**" + (f" ({unit})" if unit else "")
+    line = f"{head}: {body}"
+    caveat = safe_text(block.get("caveat"), 120)
+    return f"{line}\n_{caveat}_" if caveat else line
+
 
 def _bins_line(x: list, series: dict, top: int = 8) -> str:
     """A histogram read left to right: how many it counted, then the bins with their counts (up to 8 of them), or for a
@@ -415,6 +465,15 @@ def text_chart(block: dict) -> str:
     → "**Calls**: 16 counted in 2 bins: 0-50 4, 50-100 12"
     """
     series = [s for s in block.get("series", []) if isinstance(s, dict)]
+    x = list(block.get("x") or [])
+    if block.get("sortDesc") is True and chart_kind(block.get("kind")) == "bar" and series:
+        values = [v if is_number(v) else None for v in series[0].get("data", [])]
+        order = sorted(range(len(x)), key=lambda i: (values[i] is None, -(values[i] or 0), i))
+        x = [x[i] for i in order if i < len(x)]
+        series = [
+            {**s, "data": [s.get("data", [])[i] if i < len(s.get("data", [])) else None for i in order]}
+            for s in series
+        ]
     if not series:
         return ""
     kind = chart_kind(block.get("kind"))

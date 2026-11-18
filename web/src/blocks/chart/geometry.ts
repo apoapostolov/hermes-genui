@@ -83,10 +83,20 @@ export function lineRuns(pts: (Point | null)[]): Run[] {
 
 /** A line through the points: straight segments for 12 points or fewer, so each value sits where it reads, and a
  *  smooth curve for longer series. [[0, 10], [5, 20], [10, 15]] → "M0,10L5,20L10,15" */
-export function linePath(pts: Point[]): string {
+export function linePath(pts: [number, number][], stepped = false): string {
+  if (stepped) return steppedPath(pts);
   if (pts.length > STRAIGHT_UP_TO) return smoothPath(pts);
   const f = (n: number) => +n.toFixed(1);
   return pts.map(([x, y], i) => `${i ? "L" : "M"}${f(x)},${f(y)}`).join("");
+}
+
+/** A stepped line: hold each value until the next x label, then jump. [[0,10],[5,20]] → "M0,10L5,10L5,20". */
+function steppedPath(pts: [number, number][]): string {
+  if (!pts.length) return "";
+  const f = (n: number) => +n.toFixed(1);
+  let d = `M${f(pts[0][0])},${f(pts[0][1])}`;
+  for (let i = 1; i < pts.length; i++) d += `L${f(pts[i][0])},${f(pts[i - 1][1])}L${f(pts[i][0])},${f(pts[i][1])}`;
+  return d;
 }
 
 /** A smooth line through the points (Catmull-Rom as cubic Béziers). */
