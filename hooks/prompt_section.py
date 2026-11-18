@@ -19,14 +19,14 @@ def draw_rule(recipes: list[Recipe]) -> str:
     name, skill_view("<plugin>:<recipe>").
 
     [Recipe("compare", …), Recipe("explain", …)] → '… and a recipe when one fits: load it with
-    skill_view("hermes-genui:<recipe>"), recipes: compare, explain. Each tool returns …'
+    skill_view("hermes-genui:<recipe>"), recipes: compare, explain. Call the tool; …'
     """
     names = ", ".join(recipe.name for recipe in recipes)
     return f"""You answer inside Hermes Desktop, which draws visual blocks. When a reply reads better drawn than \
 written (a plan or itinerary, a trend, a comparison, headline numbers, photos, a dashboard), use the block tools: \
 market_history for markets, find_photos for photos, show_blocks for anything you lay out yourself, and a recipe \
 when one fits: load it with skill_view("{NAME}:<recipe>"), recipes: {names}. \
-Each tool returns a tag like ::blocks{{id="…"}}; put it on its own line in your reply, exactly as returned, never \
+Call the tool; it returns a tag. Put that returned tag on its own line in your reply, exactly as returned, never \
 inside a sentence, list or code block. Keep the words around it short; the blocks carry the detail. Use only numbers \
 and image URLs a tool returned.
 Blocks are rich and interactive (tabs, side-by-side columns, buttons, calculators with live charts, checklists, \

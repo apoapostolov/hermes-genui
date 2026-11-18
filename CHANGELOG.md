@@ -2,6 +2,15 @@
 
 All notable changes to this plugin. Versions follow [Semantic Versioning](https://semver.org).
 
+## Unreleased
+
+### Fixes
+
+- **Gemma and other small models draw instead of writing a made-up tag.** The drawing rule used to show the tag's
+  shape (`::blocks{id="…"}`), and Gemma 4 copied it into its reply without calling `show_blocks`, so nothing was
+  drawn. The rule now only says to call the tool and paste the tag it returns. On the eval prompts, Gemma 4 12B went
+  from 11 to 20 of 34 passed, and from 20 made-up tags to none.
+
 ## 0.3.0 — Today, and dashboards you keep
 
 ### Today, kept by a personal assistant

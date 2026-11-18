@@ -87,3 +87,12 @@ def test_text_surfaces_are_told_not_to_draw():
 def test_desktop_rule_names_the_personal_assistant_within_the_cap():
     rule = prompt.drawing_rule({"platform": "local"})
     assert "personal-assistant" in rule and len(rule) <= prompt.MAX_CHARS
+
+
+def test_desktop_rule_never_shows_the_tag_so_the_model_calls_the_tool():
+    # Shown the tag's shape (::blocks{id="…"}), Gemma 4 wrote made-up tags and never called show_blocks: 20 of 34
+    # eval prompts on Gemma 4 12B, 0 once the rule only said to call the tool and paste what it returns (#43).
+    rule = prompt.drawing_rule({"platform": "local"})
+    assert "::blocks" not in rule
+    assert "Call the tool; it returns a tag." in rule
+    assert len(rule) <= prompt.MAX_CHARS
