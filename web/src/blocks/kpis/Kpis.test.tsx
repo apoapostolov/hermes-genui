@@ -81,6 +81,35 @@ describe("kpi card", () => {
   });
 });
 
+describe("a change from a previous number", () => {
+  it("prints the chip the reader worked out, in one decimal, and marks an inverted tone", () => {
+    const { container } = render(<Blocks blocks={readBlocks([{ type: "kpis", items: [
+      { label: "Revenue", value: 72275, unit: "₹Cr", previous: 70223 },
+      { label: "Churn", value: 2.4, unit: "%", previous: 3.1, invert_tone: true }] }])} />);
+    const chips = [...container.querySelectorAll(".hb-kpi-change")];
+    expect(chips.map((c) => c.textContent)).toEqual(["▲ 2.9%", "▼ 0.7 pt"]);
+    expect(chips.map((c) => c.className)).toEqual([
+      "hb-kpi-change hb-kpi-up",
+      "hb-kpi-change hb-kpi-down hb-kpi-invert",
+    ]);
+  });
+  it("draws a flat chip for a change of zero, and none when a side is unknown", () => {
+    const { container } = render(<Blocks blocks={readBlocks([{ type: "kpis", items: [
+      { label: "Flat", value: 5, previous: 5 }, { label: "Unknown", value: 5, previous: null }] }])} />);
+    const chips = [...container.querySelectorAll(".hb-kpi-change")];
+    expect(chips.map((c) => c.textContent)).toEqual(["0.0%"]);
+    expect(chips[0].className).toBe("hb-kpi-change hb-kpi-flat");
+  });
+  it("gives a stat its chip from previous as well", () => {
+    render(<Blocks blocks={readBlocks([{ type: "stat", label: "Margin", value: 18.6, unit: "%", previous: 19.5 }])} />);
+    expect(screen.getByText("▼ 0.9 pt")).toBeTruthy();
+  });
+  it("rounds a tie the way the text fallback does", () => {
+    const { container } = render(<Blocks blocks={readBlocks([{ type: "stat", label: "Close", value: 1.25, unit: "%", previous: 1 }])} />);
+    expect(container.querySelector(".hb-kpi-change")!.textContent).toBe("▲ 0.3 pt");
+  });
+});
+
 describe("sparkline path", () => {
   it("spans the box, highest at the top, a flat trend across the middle", () => {
     expect(sparkPath([0, 10])).toBe("M0 26L120 2");

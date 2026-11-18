@@ -3637,7 +3637,7 @@ function KpiCard({ item, trendColour }) {
   return /* @__PURE__ */ jsxs23("div", { className: "hb-card hb-kpi", children: [
     /* @__PURE__ */ jsx26("div", { className: "hb-kpi-label", children: item.label }),
     /* @__PURE__ */ jsx26("div", { className: isText ? "hb-kpi-value hb-kpi-value-text" : "hb-kpi-value", title: full !== shown ? full : void 0, children: shown }),
-    change && /* @__PURE__ */ jsx26("div", { className: `hb-kpi-change ${changeClass(item.change)}`, children: change }),
+    change && /* @__PURE__ */ jsx26("div", { className: changeClass(item), children: change }),
     item.trend && /* @__PURE__ */ jsx26(Sparkline, { values: item.trend, colour: trendColour })
   ] });
 }
@@ -3645,8 +3645,10 @@ function Kpis({ items }) {
   const several = items.filter((k) => k.trend).length >= 2;
   return /* @__PURE__ */ jsx26("div", { className: "hb-kpis", children: items.map((k, i) => /* @__PURE__ */ jsx26(KpiCard, { item: k, trendColour: several ? partColour(i) : void 0 }, i)) });
 }
-function changeClass(change) {
-  return change > 0 ? "hb-kpi-up" : change < 0 ? "hb-kpi-down" : "hb-kpi-flat";
+function changeClass(item) {
+  const change = item.change ?? 0;
+  const direction = change > 0 ? "hb-kpi-up" : change < 0 ? "hb-kpi-down" : "hb-kpi-flat";
+  return `hb-kpi-change ${direction}${item.invert_tone ? " hb-kpi-invert" : ""}`;
 }
 var SPARK_W = 120;
 var SPARK_H = 28;
@@ -3673,13 +3675,26 @@ function readKpi(item) {
   let value = num(item.value);
   if (value === null) value = str(item.value, 40) ?? null;
   const unit = typeof item.unit === "string" ? item.unit : void 0;
-  const changeUnit = item.change_unit === "pt" ? "pt" : "%";
-  const kpi = { label: item.label, value, unit, change: num(item.change), change_unit: changeUnit };
+  const changeUnit = readChangeUnit(item.change_unit, unit);
+  const change = "previous" in item ? changeFrom(item.previous, value, changeUnit) : num(item.change);
+  const kpi = { label: item.label, value, unit, change, change_unit: changeUnit };
   if (kpi.unit === void 0) delete kpi.unit;
   if (kpi.change === null) delete kpi.change;
+  if (item.invert_tone === true) kpi.invert_tone = true;
   const trend = readTrend(item.trend);
   if (trend) kpi.trend = trend;
   return kpi;
+}
+function readChangeUnit(written, unit) {
+  if (written === "%" || written === "pt") return written;
+  return unit === "%" ? "pt" : "%";
+}
+function changeFrom(previous, value, unit) {
+  const before = num(previous);
+  if (before === null || typeof value !== "number") return null;
+  const moved = value - before;
+  if (unit === "pt") return moved;
+  return before === 0 ? null : moved / Math.abs(before) * 100;
 }
 function readTrend(v) {
   if (!Array.isArray(v)) return void 0;
@@ -6079,7 +6094,7 @@ var source_default = ".hb-source { font-size: 11.5px; color: var(--hb-muted); }\
 var callout_default = ".hb-callout strong { color: var(--hb-ink); font-weight: 650; }\n.hb-callout {\n  display: flex;\n  gap: 10px;\n  padding: 11px 14px;\n  border-radius: 14px;\n  font-size: 13.5px;\n  line-height: 19px;\n}\n.hb-callout-icon { flex: none; margin-top: 1px; }\n.hb-callout-body { min-width: 0; color: var(--hb-ink-2); }\n.hb-callout-title { font-weight: 700; color: var(--hb-ink); }\n.hb-callout-info { background: var(--hb-accent-soft); }\n.hb-callout-info .hb-callout-icon { color: var(--hb-accent-ink); }\n.hb-callout-tip { background: color-mix(in srgb, var(--hb-good) 11%, transparent); }\n.hb-callout-tip .hb-callout-icon { color: var(--hb-good); }\n.hb-callout-warn { background: color-mix(in srgb, var(--hb-warn) 10%, transparent); }\n.hb-callout-warn .hb-callout-icon { color: var(--hb-warn); }\n";
 
 // src/blocks/kpis/kpis.css
-var kpis_default = "/* Headline numbers */\n/* Cards keep a readable width (130-200px) instead of stretching across a wide chat. */\n.hb-kpis {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(130px, 200px));\n  gap: 8px;\n}\n.hb-kpi { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 10px 12px; }\n.hb-kpi-label { font-size: 12px; font-weight: 500; color: var(--hb-muted); }\n.hb-kpi-value {\n  font-size: 22px;\n  line-height: 1.2;\n  font-weight: 650;\n  letter-spacing: -0.01em;\n  font-variant-numeric: tabular-nums;\n  overflow-wrap: anywhere;\n}\n.hb-kpi-value-text { font-size: 15px; font-weight: 700; }\n.hb-kpi-change { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }\n.hb-kpi-up { color: var(--hb-good); }\n.hb-kpi-down { color: var(--hb-warn); }\n.hb-kpi-flat { color: var(--hb-muted); }\n.hb-kpi-spark { display: block; width: 100%; height: 28px; margin-top: 6px; overflow: visible; }\n.hb-kpi-spark path {\n  fill: none;\n  stroke: var(--hb-chart-1);\n  stroke-width: 1.75;\n  stroke-linejoin: round;\n  stroke-linecap: round;\n  vector-effect: non-scaling-stroke;\n}\n";
+var kpis_default = "/* Headline numbers */\n/* Cards keep a readable width (130-200px) instead of stretching across a wide chat. */\n.hb-kpis {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(130px, 200px));\n  gap: 8px;\n}\n.hb-kpi { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 10px 12px; }\n.hb-kpi-label { font-size: 12px; font-weight: 500; color: var(--hb-muted); }\n.hb-kpi-value {\n  font-size: 22px;\n  line-height: 1.2;\n  font-weight: 650;\n  letter-spacing: -0.01em;\n  font-variant-numeric: tabular-nums;\n  overflow-wrap: anywhere;\n}\n.hb-kpi-value-text { font-size: 15px; font-weight: 700; }\n.hb-kpi-change { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }\n.hb-kpi-up { color: var(--hb-good); }\n.hb-kpi-down { color: var(--hb-warn); }\n.hb-kpi-flat { color: var(--hb-muted); }\n/* A card where a fall is the good news (invert_tone): the two directions keep their class and swap their tone. */\n.hb-kpi-change.hb-kpi-invert.hb-kpi-up { color: var(--hb-warn); }\n.hb-kpi-change.hb-kpi-invert.hb-kpi-down { color: var(--hb-good); }\n.hb-kpi-spark { display: block; width: 100%; height: 28px; margin-top: 6px; overflow: visible; }\n.hb-kpi-spark path {\n  fill: none;\n  stroke: var(--hb-chart-1);\n  stroke-width: 1.75;\n  stroke-linejoin: round;\n  stroke-linecap: round;\n  vector-effect: non-scaling-stroke;\n}\n";
 
 // src/blocks/timeline/timeline.css
 var timeline_default = "/* Timeline */\n.hb-timeline { display: flex; flex-direction: column; gap: 14px; }\n.hb-timeline-group { display: flex; flex-direction: column; }\n.hb-timeline-group > .hb-chip { margin-bottom: 10px; }\n.hb-stop { display: grid; grid-template-columns: 46px 22px 1fr; column-gap: 8px; }\n.hb-stop-time {\n  padding-top: 2px;\n  text-align: right;\n  font-size: 12.5px;\n  font-weight: 600;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n}\n.hb-stop-rail { display: flex; flex-direction: column; align-items: center; }\n.hb-stop-dot {\n  display: grid;\n  place-items: center;\n  flex: none;\n  width: 22px;\n  height: 22px;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n}\n.hb-stop-pip { width: 6px; height: 6px; border-radius: 999px; background: var(--hb-accent); }\n.hb-stop-line { flex: 1; width: 1px; margin: 4px 0; background: var(--hb-line); }\n.hb-stop-body { min-width: 0; }\n.hb-stop-body-gap { padding-bottom: 14px; }\n.hb-stop-title { font-size: 14.5px; line-height: 21px; font-weight: 600; }\n.hb-stop-place {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  margin-top: 1px;\n  font-size: 12.5px;\n  color: var(--hb-muted);\n}\n.hb-stop-note { margin-top: 3px; font-size: 13px; line-height: 18px; color: var(--hb-ink-2); }\n";

@@ -7,6 +7,7 @@ export type KpiItem = {
   unit?: string;
   change?: number | null;
   change_unit?: "%" | "pt";
+  invert_tone?: true;
   trend?: number[];
 };
 
@@ -17,21 +18,48 @@ export type KpisBlock = { type: "kpis"; items: KpiItem[] };
 export type StatBlock = { type: "stat" } & KpiItem;
 
 /**
- * One headline number (a kpis item, or a stat). The value may be a number or short text ("Leeds United (H)");
- * change_unit is "pt" only when asked for, otherwise "%". trend: see readTrend.
+ * One headline number (a kpis item, or a stat). The value may be a number or short text ("Leeds United (H)").
+ * `change_unit` defaults to points on a "%" card (a margin moving from 18.6% to 17.7% fell 0.9 points) and to "%"
+ * elsewhere; an explicit one is kept. `previous` makes the change from that number and wins over a written `change`;
+ * `invert_tone` says a fall is the good news. trend: see readTrend.
  *   {label: "Revenue", value: 72275, unit: "₹Cr", change: 2.2} → {label: "Revenue", value: 72275, unit: "₹Cr", change: 2.2, change_unit: "%"}
+ *   {label: "Revenue", value: 72275, unit: "₹Cr", previous: 70223} → {…, change: 2.92…, change_unit: "%"}
+ *   {label: "Net margin", value: 18.6, unit: "%", previous: 19.5} → {…, change: -0.9, change_unit: "pt"}
  */
 export function readKpi(item: any): KpiItem {
   let value: number | string | null = num(item.value);
   if (value === null) value = str(item.value, 40) ?? null;
   const unit = typeof item.unit === "string" ? item.unit : undefined;
-  const changeUnit = item.change_unit === "pt" ? "pt" : "%";
-  const kpi: KpiItem = { label: item.label, value, unit, change: num(item.change), change_unit: changeUnit };
+  const changeUnit = readChangeUnit(item.change_unit, unit);
+  const change = "previous" in item ? changeFrom(item.previous, value, changeUnit) : num(item.change);
+  const kpi: KpiItem = { label: item.label, value, unit, change, change_unit: changeUnit };
   if (kpi.unit === undefined) delete kpi.unit;
   if (kpi.change === null) delete kpi.change;
+  if (item.invert_tone === true) kpi.invert_tone = true;
   const trend = readTrend(item.trend);
   if (trend) kpi.trend = trend;
   return kpi;
+}
+
+/** A change's unit: the one written, else points on a "%" card and "%" on any other.
+ *  ("pt", "₹") → "pt";  (undefined, "%") → "pt";  (undefined, "₹Cr") → "%";  ("furlongs", "%") → "pt" */
+function readChangeUnit(written: unknown, unit: string | undefined): "%" | "pt" {
+  if (written === "%" || written === "pt") return written;
+  return unit === "%" ? "pt" : "%";
+}
+
+/**
+ * The change from a previous number, in `unit`; null when either side is unknown or a percentage would divide by zero.
+ *   (100, 70, "%") → -30;  (70223, 72275, "%") → 2.92…;  (19.5, 18.6, "pt") → -0.9
+ *   (null, 70, "%") → null;  ("many", 70, "%") → null;  (0, 70, "%") → null;  (0, 70, "pt") → 70
+ *   ("n/a", 70, "pt") → null (a text value has no number to subtract from)
+ */
+function changeFrom(previous: unknown, value: number | string | null, unit: "%" | "pt"): number | null {
+  const before = num(previous);
+  if (before === null || typeof value !== "number") return null;
+  const moved = value - before;
+  if (unit === "pt") return moved;
+  return before === 0 ? null : (moved / Math.abs(before)) * 100;
 }
 
 /**
