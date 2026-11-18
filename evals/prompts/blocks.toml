@@ -239,3 +239,183 @@ id = "none-convert"
 text = "How many kilometres is 26.2 miles?"
 expect = "none"
 from = "seed"
+
+# Proposed blocks and fields (open feature pull requests)
+#
+# Each prompt below comes from the issue behind one of the open feature pull requests, and is written so the field
+# that pull request proposes is the clearest way to answer it. Today's guide has none of those fields yet, so these
+# runs are the baseline their results will be compared against once 0.4 moves each block's fields into its own spec.
+# `kind` is only set where the chart kind already exists; the scatter, waterfall, histogram and range prompts get
+# their kind once those kinds land.
+
+[[prompt]]
+id = "chart-forecast-caveat"
+text = "Chart my shop's revenue: 2023 £82k, 2024 £94k, 2025 £101k, 2026 £118k, 2027 £145k. Only 2027 is a guess, and the card has to say so rather than leaving it to the title."
+expect = "chart"
+from = "#24"
+
+[[prompt]]
+id = "chart-commute-axes"
+text = "Average commute by office: 3 km 18 min, 6 km 26 min, 11 km 38 min, 17 km 44 min, 24 km 52 min. Plot it and name both axes, because minutes against distance is the whole point."
+expect = "chart"
+kind = "line"
+from = "#24"
+
+[[prompt]]
+id = "table-price-caveat"
+text = "Put the three broadband plans side by side: Basic 100 Mbps £24 a month, Plus 500 Mbps £32, Max 1 Gbps £45. Prices were checked on 12 November, so say that under the table."
+expect = "table"
+from = "#24"
+
+[[prompt]]
+id = "none-caveat-sentence"
+text = "Just answer in a sentence: the 2027 revenue figure in that chart is a projection, right?"
+expect = "none"
+from = "#24"
+
+[[prompt]]
+id = "chart-height-weight"
+text = "Scatter the height and weight of my five mates: Ana 162 cm 58 kg, Ben 178 cm 74 kg, Cho 171 cm 66 kg, Dev 185 cm 90 kg, Eli 168 cm 61 kg. Both numbers matter, so each point needs its place on two scales."
+expect = "chart"
+from = "#21"
+
+[[prompt]]
+id = "chart-cash-waterfall"
+text = "Walk last quarter's cash from opening to closing: opening 41k, sales +28k, refunds -6k, rent -9k, salaries -14k, closing 40k. I want each move and the two totals, not one line through five numbers."
+expect = "chart"
+from = "#21"
+
+[[prompt]]
+id = "chart-order-spread"
+text = "How spread out were my 120 orders? 150-300: 18, 300-450: 31, 450-600: 34, 600-750: 25, 750-900: 12. Show the counts in those bands as one shape."
+expect = "chart"
+from = "#26"
+
+[[prompt]]
+id = "chart-delhi-range"
+text = "Delhi this week: Mon 12-26, Tue 13-27, Wed 15-29, Thu 16-28, Fri 14-25, Sat 11-23, Sun 12-24, and it's 21 right now. Show each day's low to high with where 21 sits today."
+expect = "chart"
+from = "#26"
+
+[[prompt]]
+id = "chart-stock-steps"
+text = "Stock on hand: Jan 42, Feb 38, Mar 51, Apr 47, May 33, Jun 29. It only moves when a delivery lands, so draw flat runs with jumps instead of a sloped line."
+expect = "chart"
+kind = "line"
+from = "#39"
+
+[[prompt]]
+id = "chart-channel-sorted"
+text = "Signups by channel: referral 2,310, email 1,240, social 1,050, paid 860, events 190. Biggest first, so I don't have to read the numbers to see the ranking."
+expect = "chart"
+kind = "bar"
+from = "#39"
+
+[[prompt]]
+id = "chart-weekly-compact"
+text = "Page views this week: Mon 1.2k, Tue 1.4k, Wed 1.1k, Thu 1.6k, Fri 1.5k, Sat 0.9k, Sun 1.3k. Keep the card short, it goes into a status note that already has a table in it."
+expect = "chart"
+from = "#39"
+
+[[prompt]]
+id = "list-rent-bars"
+text = "Rank eight cities by average rent and draw the lengths, so the gap between Mumbai and Chennai is visible without reading digits: Mumbai 55k, Bengaluru 38k, Hyderabad 30k, Pune 28k, Chennai 27k, Ahmedabad 19k, Jaipur 17k, Kochi 16k."
+expect = "list"
+alternatives = ["chart"]
+from = "#25"
+
+[[prompt]]
+id = "list-shoes-shortlist"
+text = "Shortlist three running shoes for me: Brooks Ghost 16 at $140 for easy miles, Saucony Endorphin Speed 4 at $170 for tempo, Hoka Clifton 10 at $150 for long slow days. It's a pick, not a numbers contest, so say who each one suits."
+expect = "list"
+from = "#25"
+
+[[prompt]]
+id = "kpis-support-movement"
+text = "Support this month against last: churn 3.4% from 4.1%, first response 2h10m from 3h05m, CSAT 91% from 88%, open tickets 148 from 129. Show the movement, and remember that lower churn and a faster response are the good direction."
+expect = "kpis"
+from = "#23"
+
+[[prompt]]
+id = "kpis-quarter-compare"
+text = "Q4 against Q3: revenue $4.6M from $4.2M, margin 19% from 18%, new customers 340 from 372. Work out the change on each card instead of making me subtract."
+expect = "kpis"
+from = "#23"
+
+[[prompt]]
+id = "checklist-site-launch"
+text = "Where the site launch stands: design approved, content being written by Maya, DNS blocked until the old host replies, legal review skipped for now, photography done. Mark which are blocked or in progress and who owns each."
+expect = "checklist"
+from = "#27"
+
+[[prompt]]
+id = "checklist-flat-move"
+text = "Flat move next Saturday: book the van (Priya, done), cancel the internet (me, waiting on the contract number), pack the kitchen (both of us, halfway), hand back the keys (landlord, not started)."
+expect = "checklist"
+from = "#27"
+
+[[prompt]]
+id = "checklist-move-phases"
+text = "Our office move in eight stages, grouped by phase and kept compact: lease signed, fit-out quotes, contractor picked, network ordered, furniture ordered, packing plan, move weekend, handover. Name the two places the dates came from."
+expect = "checklist"
+from = "#40"
+
+[[prompt]]
+id = "checklist-two-week-packing"
+text = "Packing list for two weeks in Japan in April, twenty items at most, tight and not a wall of text."
+expect = "checklist"
+from = "#40"
+
+[[prompt]]
+id = "progress-ring-savings"
+text = "I've saved €1,300 of the €2,000 I need for a bike. Show it as a ring, with how far along I am as a percentage."
+expect = "progress"
+from = "#17"
+
+[[prompt]]
+id = "progress-speed-gauge"
+text = "My line tests at 340 Mbps on a 500 Mbps plan. Show it as a gauge with bands at 100, 250 and 400 so I can see how close to the plan I'm getting."
+expect = "progress"
+from = "#17"
+
+[[prompt]]
+id = "progress-budget-segments"
+text = "Split this month's €1,000 budget across one track: rent 450, food 250, transport 120, savings 180."
+expect = "progress"
+from = "#17"
+
+[[prompt]]
+id = "source-list-report"
+text = "Where the numbers came from: the Statista 2024 ecommerce report, the EU VAT page I checked on 3 November, and our own sales export from the CRM. List them at the bottom as sources, with what each one is."
+expect = "source"
+from = "#38"
+
+[[prompt]]
+id = "source-single-line"
+text = "Put the source under the figure: World Bank, GDP growth 2024."
+expect = "source"
+from = "#38"
+
+[[prompt]]
+id = "table-city-shortlist"
+text = "Compare six cities for a move: rent for a 2-bed, average salary, commute to the centre, sunshine hours and population. Give me a table I can filter down to the ones under €1,200 rent."
+expect = "table"
+from = "#41"
+
+[[prompt]]
+id = "table-inventory-paged"
+text = "My stock list has 40 rows: item, SKU, cost, price, units left. Show it as a table I can page through and sort by units left, cheapest first."
+expect = "table"
+from = "#41"
+
+[[prompt]]
+id = "chart-missing-reading"
+text = "Sensor readings: Mon 21.4, Tue 22.1, Wed missing, Thu 23.8, Fri 24.0. Wednesday has no reading, so don't draw it as zero."
+expect = "chart"
+from = "#22"
+
+[[prompt]]
+id = "table-no-answer"
+text = "Survey responses by team: Eng 12, Sales blank because nobody answered, Support 7, Design 4. Keep the blank visibly blank."
+expect = "table"
+from = "#22"
