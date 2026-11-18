@@ -1,4 +1,4 @@
-import { chartKind, isOnRightScale, maxSeries, pieSlices, type ChartKind, type ChartSeries, type ChartSpec } from "./chartData";
+import { chartKind, isOnRightScale, kindToDraw, maxSeries, pieSlices, type ChartKind, type ChartSeries, type ChartSpec } from "./chartData";
 import type { Trail } from "../../core/fields";
 
 export type ChartBlock = { type: "chart"; spec: ChartSpec };
@@ -16,12 +16,22 @@ export type ChartBlock = { type: "chart"; spec: ChartSpec };
  *   {..., figure: false} → spec.figure false;  {..., figure: "false"} → no spec.figure (the default: shown)
  * tone: "change" (exactly that string) colours a one-series line by direction from its first value; anything else is
  * ignored.  {..., tone: "change"} → spec.tone "change";  {..., tone: "Change"} → no spec.tone
+ * caveat: a limit of the data, trimmed and capped at 120 characters; shown on every kind and read by the text
+ * fallback. xLabel and yLabel: axis captions, trimmed and capped at 40; pie and donut have no axis to name. On hbar
+ * the single horizontal caption takes xLabel, or yLabel when only a value-axis name was written.
  * Dropped: no x labels, no series with a number, or a pie with no positive value.
  */
 export function readChart(raw: any, here: Trail): ChartBlock | null {
   const spec = readSpec(raw);
   if (!spec) return here.drop("chart needs x labels and at least one series");
   return { type: "chart", spec };
+}
+
+/** A written caption as one line, trimmed and capped before it reaches the card; empty and whitespace-only are absent. */
+function caption(value: unknown, max: number): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const text = value.trim().slice(0, max);
+  return text || undefined;
 }
 
 function readSpec(d: any): ChartSpec | null {
@@ -44,6 +54,19 @@ function readSpec(d: any): ChartSpec | null {
     series, unit, source: typeof d.source === "string" ? d.source : undefined };
   if (typeof d.figure === "boolean") spec.figure = d.figure;
   if (d.tone === "change") spec.tone = "change";
+  const caveat = caption(d.caveat, 120);
+  if (caveat) spec.caveat = caveat;
+  if (type !== "pie" && type !== "donut") {
+    const xLabel = caption(d.xLabel, 40);
+    const yLabel = caption(d.yLabel, 40);
+    const drawn = kindToDraw(spec);
+    if (xLabel && drawn !== "hbar") spec.xLabel = xLabel;
+    if (yLabel && drawn !== "hbar") spec.yLabel = yLabel;
+    if (drawn === "hbar") {
+      const valueLabel = xLabel ?? yLabel;
+      if (valueLabel) spec.xLabel = valueLabel;
+    }
+  }
   return spec;
 }
 

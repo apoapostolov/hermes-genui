@@ -134,6 +134,12 @@ def test_chart_skips_gaps_and_zero_start():
     assert render(chart) == "**T**: S 0 → 5"
 
 
+def test_chart_caveat_is_a_second_italic_line():
+    chart = {"type": "chart", "title": "T", "x": ["a", "b"], "series": [{"name": "S", "data": [1, 2]}],
+             "caveat": "  Q3 onward is a projection.  "}
+    assert render(chart) == "**T**: S 1 → 2 (▲ 100%)\n_Q3 onward is a projection._"
+
+
 def test_pie_shows_top_slices_with_shares():
     pie = {"type": "chart", "kind": "donut", "title": "Mix", "x": ["A", "B", "C", "D", "E"],
            "series": [{"name": "Share", "data": [50, 20, 15, 10, 5]}]}

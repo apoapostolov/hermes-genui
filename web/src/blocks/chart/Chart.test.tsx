@@ -36,6 +36,20 @@ describe("Chart", () => {
     expect(container.querySelectorAll("path.hb-slice").length).toBe(3);
   });
 
+  it("puts the caveat outside the image and captions the axes in the drawing's margin", () => {
+    const blocks = chart({ kind: "line", title: "Revenue", x: ["Q1", "Q2", "Q3"],
+      series: [{ name: "Revenue", data: [10, 12, 14] }], xLabel: "Quarter", yLabel: "Revenue",
+      caveat: "Q3 onward is a projection.", source: "company filings" });
+    const { container } = render(<Blocks blocks={blocks} />);
+    expect(container.querySelector(".hb-chart-caveat")!.textContent).toBe("Q3 onward is a projection.");
+    const svg = container.querySelector("svg.hb-chart-svg")!;
+    expect(svg.getAttribute("aria-label")).toContain("Quarter along the bottom. Revenue up the side.");
+    expect(svg.getAttribute("aria-label")).toContain("Q3 onward is a projection.");
+    const titles = [...container.querySelectorAll("text.hb-chart-axis")].map((t) => t.textContent);
+    expect(titles).toContain("Quarter");
+    expect(titles).toContain("Revenue");
+  });
+
   it("draws a row per hbar label", () => {
     const blocks = chart({ kind: "hbar", x: ["IT", "Pharma", "Realty"], unit: "%", series: [{ data: [18.4, 12.1, -7.8] }] });
     const { container } = render(<Blocks blocks={blocks} />);

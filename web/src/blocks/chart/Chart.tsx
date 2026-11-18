@@ -2,7 +2,7 @@
 // of their own. Hand-drawn SVG at the width the chart has on screen (chart.css sets how wide that may be): the sums
 // behind it are in chartData.ts, where things go in layout.ts, the marks in *Marks.tsx.
 import { useId, useMemo, useRef, useState, type PointerEvent } from "react";
-import { changePct, chartScales, fmt, kindToDraw, stackSeries, totalAt, type ChartSpec } from "./chartData";
+import { changePct, chartLabel, chartScales, fmt, kindToDraw, stackSeries, totalAt, type ChartSpec } from "./chartData";
 import { seriesEnds, xyLayout, xyTip, type XYLayout } from "./layout";
 import { useWidth } from "./useWidth";
 import { pickKeys } from "./pick";
@@ -56,10 +56,11 @@ function XYChart({ spec }: { spec: ChartSpec }) {
       <Headline spec={spec} hover={hover} />
       <div ref={plot} className="hb-chart-plot">
         <svg ref={svg} width="100%" height={layout.H} viewBox={`0 0 ${layout.W} ${layout.H}`} className="hb-chart-svg"
-          role="img" aria-label={spec.title ?? "chart"} {...pickKeys(n, hover, setHover)}
+          role="img" aria-label={chartLabel(spec)} {...pickKeys(n, hover, setHover)}
           onPointerDown={pickAt} onPointerMove={(e) => (e.buttons || e.pointerType === "mouse") && pickAt(e)}
           onPointerLeave={() => setHover(null)}>
           <XLabels spec={spec} layout={layout} />
+          <AxisTitles spec={spec} layout={layout} />
           {spec.type === "line" && <LineMarks spec={spec} layout={layout} gid={gid} hover={hover} />}
           {spec.type === "bar" && <BarMarks spec={spec} layout={layout} hover={hover} />}
           {spec.type === "stacked" && bands && <StackMarks bands={bands} layout={layout} hover={hover} />}
@@ -71,6 +72,7 @@ function XYChart({ spec }: { spec: ChartSpec }) {
       </div>
       {multiLegend && <ChartLegend series={spec.series} />}
       {piled && spec.series.length > 1 && <ChartLegend series={spec.series} at={hover ?? lastIndex(spec)} unit={spec.unit} />}
+      {spec.caveat && <div className="hb-chart-caveat">{spec.caveat}</div>}
       {spec.source && <div className="hb-chart-source">{spec.source}</div>}
     </figure>
   );
@@ -123,8 +125,19 @@ function XLabels({ spec, layout }: { spec: ChartSpec; layout: XYLayout }) {
   return (
     <g>
       {layout.xLabels.map((i) => (
-        <text key={i} x={layout.xAt(i)} y={layout.H - 7} textAnchor={anchor(i)} className="hb-chart-axis">{String(spec.x[i])}</text>
+        <text key={i} x={layout.xAt(i)} y={layout.base + 19} textAnchor={anchor(i)} className="hb-chart-axis">{String(spec.x[i])}</text>
       ))}
+    </g>
+  );
+}
+
+/** Axis captions in the drawing's own margin, using the same 11px muted type as the ticks. They are part of the svg
+ *  image; the accessible name carries the same words for a screen reader. */
+function AxisTitles({ spec, layout }: { spec: ChartSpec; layout: XYLayout }) {
+  return (
+    <g>
+      {spec.yLabel && <text x={layout.left} y={layout.top - 6} className="hb-chart-axis">{spec.yLabel}</text>}
+      {spec.xLabel && <text x={layout.left} y={layout.H - 2} className="hb-chart-axis">{spec.xLabel}</text>}
     </g>
   );
 }

@@ -1,7 +1,7 @@
 // Where everything goes in an up-and-down chart (line, bar, area, stacked, combo), worked out from the spec and the
 // width it has on screen: the plot's edges, where a label or value sits, how wide a column is, which x labels and
 // value labels are written, and the labels at the ends of lines. Also what the hover card says at a point.
-import { fmt, partColour, seriesName, type ChartSeries, type ChartSpec } from "./chartData";
+import { fmt, kindToDraw, partColour, seriesName, type ChartSeries, type ChartSpec } from "./chartData";
 import { columnLayout, niceTicks, spreadLabels, textWidth, xLabelsShown } from "./geometry";
 import { formatChange } from "../../lib/format";
 import type { Tip } from "./ChartTip";
@@ -27,6 +27,7 @@ export type XYLayout = {
 
 const COLUMNS_H = 210, LINES_H = 220;   // the drawing's height in px
 const TOP = 10, BOTTOM = 26, VALUE_ROOM = 16, SIDE = 8;
+const X_TITLE_ROOM = 16, Y_TITLE_ROOM = 14;  // an axis caption grows the drawing; the plot keeps its own height
 const MAX_VALUE_LABELS = 12, LINE_LABEL_GAP = 80, END_NAME_MAX = 16;
 /** The gap between a gridline's value, written on the left, and the plot. */
 export const TICK_GAP = 8;
@@ -65,8 +66,12 @@ const unitOf = (spec: ChartSpec, s: ChartSeries) => s.unit ?? spec.unit;
 export function xyLayout(spec: ChartSpec, width: number, scales: { left: Scale; right: Scale | null }): XYLayout {
   const n = spec.x.length;
   const slotted = spec.type === "bar" || spec.type === "stacked" || spec.type === "combo";
-  const H = slotted ? COLUMNS_H : LINES_H;
-  const base = H - BOTTOM;
+  const drawn = kindToDraw(spec);
+  const hasAxis = drawn !== "hbar" && drawn !== "pie" && drawn !== "donut";
+  const xRoom = hasAxis && spec.xLabel ? X_TITLE_ROOM : 0;
+  const yRoom = hasAxis && spec.yLabel ? Y_TITLE_ROOM : 0;
+  const H = (slotted ? COLUMNS_H : LINES_H) + xRoom + yRoom;
+  const base = H - BOTTOM - xRoom;
   const endTexts = spec.type === "line" ? lineEndTexts(spec) : [];
   const ticks = gridTicks(spec);
   const tickRoom = ticks.length ? TICK_GAP + Math.max(...ticks.map((t) => textWidth(fmt(t, spec.unit)))) : 0;
@@ -84,7 +89,7 @@ export function xyLayout(spec: ChartSpec, width: number, scales: { left: Scale; 
 
   const valueLabels = spec.type === "bar" && n * perSlot <= MAX_VALUE_LABELS
     && spec.series.every((s) => s.data.every((v) => v === null || textWidth(fmt(v, unitOf(spec, s)), 11.5) <= columns.slot / perSlot));
-  const top = TOP + (valueLabels ? VALUE_ROOM : 0);
+  const top = TOP + (valueLabels ? VALUE_ROOM : 0) + yRoom;
   const scaleY = ({ min, max }: Scale) => (v: number) => top + (base - top) * (1 - (v - min) / (max - min || 1));
   const yAt = scaleY(ticks.length ? { min: ticks[0], max: ticks[ticks.length - 1] } : scales.left);
   const yRight = scales.right ? scaleY(scales.right) : yAt;
