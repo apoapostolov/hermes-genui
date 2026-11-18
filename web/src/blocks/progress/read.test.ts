@@ -22,6 +22,16 @@ describe("progress", () => {
     expect(one({ type: "progress", title: "x", value: "5", goal: 10 }).dropped).toEqual([{ path: "0", why: "progress needs a numeric value" }]);
     expect(one({ type: "progress", title: "x", value: 5, goal: 0 }).dropped).toEqual([{ path: "0", why: "progress needs a goal above 0" }]);
   });
+  it("keeps a null value or goal as a figure nobody knows", () => {
+    const r = one({ type: "progress", title: "Level 5", value: null, goal: 120, unit: "XP" });
+    expect(r.dropped).toEqual([]);
+    expect(r.blocks[0]).toEqual({ type: "progress", title: "Level 5", value: null, goal: 120, unit: "XP", steps: [] });
+    const goal = one({ type: "progress", title: "Level 5", value: 95, goal: null, unit: "XP" });
+    expect(goal.dropped).toEqual([]);
+    expect((goal.blocks[0] as any).goal).toBeNull();
+    // a goal of 0 or less is still a mistake: the track is a share of it.
+    expect(one({ type: "progress", title: "x", value: 5, goal: -1 }).dropped).toEqual([{ path: "0", why: "progress needs a goal above 0" }]);
+  });
 });
 
 describe("progress drawing", () => {

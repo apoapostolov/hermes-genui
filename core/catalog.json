@@ -1,5 +1,5 @@
 {
- "about": "JSON blocks in order; invalid blocks skipped. Use sourced numbers only.",
+ "about": "JSON blocks in order; invalid blocks skipped. Use sourced numbers only; a null is no data, never 0.",
  "icons": [
   "mail",
   "rupee",
@@ -38,14 +38,14 @@
    "kind": "chart",
    "for": "A trend, a comparison, parts of a whole, or a bridge.",
    "use_when": "line: trends. bar: periods or items; sideways for long labels; time stays upright. hbar: rankings, 2-5 named items. donut, pie: parts of a whole, 3-7 parts. stacked: parts of a total over time. area: growth that builds up. combo: two measures. scatter: two measures. waterfall: steps to a total. histogram: counts in equal bins. range: low-to-high bands. 2-3 items on several metrics: a table, not a chart each.",
-   "fields": "kind. title. x: labels. series: [{name, data, null=gap}], 1-3 (stacked/area 6; pie/donut 1). combo: first bars, rest lines; another unit gets a right axis. scatter: [{x, y, label}], 2 series, 200 pts. waterfall: [{label, value, total}], null stops. histogram: one series of counts. range: one series {low, high, now: arrays}. unit: \"%\", \"₹Cr\". tone: \"change\" colours a line. caveat ≤120. xLabel/yLabel ≤40: axes. source: site.",
+   "fields": "kind. title. x: labels. series: [{name, data, null=gap}], 1-3 (stacked/area 6; pie/donut 1); a gap breaks the line. combo: first bars, rest lines; another unit gets a right axis. scatter: [{x, y, label}], 2 series, 200 pts. waterfall: [{label, value, total}], null stops. histogram: one series of counts. range: one series {low, high, now: arrays}. unit: \"%\", \"₹Cr\". tone: \"change\" colours a line. caveat ≤120. xLabel/yLabel ≤40: axes. source: site.",
    "example": {
     "type": "chart",
     "kind": "bar",
     "title": "Revenue vs profit",
     "x": [
-     "Dec 2025",
-     "Jun 2026"
+     "Dec",
+     "Jun"
     ],
     "unit": "₹Cr",
     "series": [
@@ -68,9 +68,9 @@
   },
   {
    "kind": "kpis",
-   "for": "2-4 headline numbers.",
+   "for": "2-4 headline numbers, change and trend.",
    "use_when": "A report's top.",
-   "fields": "items: [{label, value: number|text, unit, previous, change, change_unit, invert_tone, trend: 2-60 numbers}]; previous: % or pt by unit.",
+   "fields": "items ≤4: [{label, value: number|text|null, unit, previous, change, change_unit, invert_tone, trend: 2-60 numbers}]; previous: % or pt by unit.",
    "example": {
     "type": "kpis",
     "items": [
@@ -143,7 +143,7 @@
    "kind": "table",
    "for": "Options compared on the same attributes.",
    "use_when": "Phones, plans, hotels.",
-   "fields": "columns ≤8. rows ≤30, a cell per column. highlight: {row: n} | {column: n} from 0, badged Best. caption.",
+   "fields": "columns ≤8. rows ≤30, a cell per column (null prints –). highlight: {row|column: n}, badged Best. caption.",
    "example": {
     "type": "table",
     "caption": "Phones under ₹50k",
@@ -195,7 +195,7 @@
    "kind": "list",
    "for": "Rows: rank, lead, title, subtitle, value.",
    "use_when": "Rankings, picks, results.",
-   "fields": "title. ranked rows. max: full bar. items ≤12: [{title, subtitle, value, bar: number, icon/image, run: sends, or url}].",
+   "fields": "title. ranked rows. max: full bar. items ≤12: [{title, subtitle, value (null –), bar: number, icon/image, run: sends, or url}].",
    "example": {
     "type": "list",
     "title": "Cafés nearby",
@@ -216,9 +216,9 @@
   },
   {
    "kind": "progress",
-   "for": "A track to a goal.",
+   "for": "A track to a goal; checkpoints ticked.",
    "use_when": "Training, savings.",
-   "fields": "title, value, goal>0, unit, shape line|circle|dashboard, show_percent, tone good|warn|bad, steps≤6 {label,at}, thresholds≤6 {at,label,tone}, segments≤5 {value,label,tone}",
+   "fields": "title. value (null: empty track), goal>0, unit, shape line|circle|dashboard, show_percent, tone good|warn|bad, steps≤6 {label,at}, thresholds≤6 {at,label,tone}, segments≤5 {value,label,tone}",
    "example": {
     "type": "progress",
     "title": "Level 4",
@@ -255,7 +255,7 @@
    "kind": "heatmap",
    "for": "A grid of cells shaded by value.",
    "use_when": "Sectors by quarter, habits by weekday.",
-   "fields": "title. rows, cols: ≤12 labels each. values: a list per row. unit. scale: diverging (default with a value < 0) | sequential.",
+   "fields": "title. rows, cols ≤12 labels. values: a list per row (null: no data). unit. scale: diverging (default if any < 0) | sequential.",
    "example": {
     "type": "heatmap",
     "title": "Banks, % change",
@@ -406,7 +406,7 @@
    "kind": "tiles",
    "for": "2-8 cover cards.",
    "use_when": "Choices to explore.",
-   "fields": "items: [{title, subtitle: short, image, icon, ask: fills the composer | run: sends}]. No ask/run: a static card, only for pure facts.",
+   "fields": "items: [{title, subtitle: short, image, icon, ask: fills the composer | run: sends}]. No ask/run: a static card.",
    "example": {
     "type": "tiles",
     "items": [
@@ -499,7 +499,7 @@
    "kind": "calculator",
    "for": "Sliders; results update live.",
    "use_when": "EMI, SIP, what-ifs; never do this maths in text.",
-   "fields": "inputs ≤6: [{id, label, min, max, step, value, unit}]. outputs ≤6: [{label, formula, unit}]. formula: ids, numbers, + - * / ^ ( ) < > ==, min, max, round(x, n), abs, if(c, a, b), emi(p, rate%, years), sip(monthly, rate%, years), pct(part, whole), prepay_years|prepay_interest(p, rate%, years, yearly_extra), balance|principal_paid|interest_paid(p, rate%, years, after_years), sip_value(monthly, rate%, after_years). chart (live): {kind: line|area|bar, title, unit, x: {name, from, to, step: numbers or formulas, label: \"Year {<x name>}\"}, series ≤3: [{name, formula using x's name}]}.",
+   "fields": "inputs ≤6: [{id, label, min, max, step, value, unit}]. outputs ≤6: [{label, formula, unit}]. formula: ids, numbers, + - * / ^ ( ) < > ==, min, max, round, abs, if, emi, sip, pct, prepay_years|prepay_interest, balance|principal_paid|interest_paid, sip_value. chart (live): {kind: line|area|bar, title, unit, x: {name, from, to, step: numbers or formulas, label: \"Year {<x name>}\"}, series ≤3: [{name, formula using x's name}]}.",
    "example": {
     "type": "calculator",
     "inputs": [
@@ -600,7 +600,7 @@
    "kind": "form",
    "for": "Fields to fill; Send posts one message.",
    "use_when": "Before a big answer when two or more key choices are unknown: ask with ONE form, every field prefilled with your best guess, then build from the answer message. Not for a single yes/no (use actions).",
-   "fields": "id, title. fields ≤12: {id, kind: select|radio|checkbox|slider|text, label, value, required, group: shared heading}. options: text or {value, label, note}. slider: min, max, step, unit, ends: [left, right]. text: placeholder, multiline.",
+   "fields": "id, title. fields ≤12: {id, kind: select|radio|checkbox|slider|text, label, value, required, group: shared heading}. options: text or {value, label, note}. slider: min, max, step, unit, ends. text: placeholder, multiline.",
    "example": {
     "type": "form",
     "id": "trip",

@@ -197,7 +197,7 @@ export function xyTip(spec: ChartSpec, i: number, layout: XYLayout): Tip {
     pile += Math.max(v, 0);
     y = Math.min(y, layout.yOf(s)(spec.type === "stacked" || spec.type === "area" ? pile : v));
   });
-  return { x: layout.xAt(i), y, title: String(spec.x[i]), rows, note: tipNote(spec, i) };
+  return { x: layout.xAt(i), y, title: String(spec.x[i]), rows, note: rows.length ? tipNote(spec, i) : "no data" };
 }
 
 /** A histogram's card at bin i: the bin's label, its count, and "not counted" where the bin has no count. */

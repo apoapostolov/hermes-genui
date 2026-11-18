@@ -126,6 +126,8 @@ export function chartLabel(spec: ChartSpec): string {
     parts.push(`${fmt(values[0], unit)} to ${fmt(values[values.length - 1], unit)}${direction}`);
   }
   if (spec.caveat) parts.push(spec.caveat);
+  const gaps = missingLabels(spec);
+  if (gaps.length) parts.push(gaps.length <= 4 ? `${gaps.join(", ")} no data` : `${gaps.length} of ${spec.x.length} labels with no data`);
   return parts.join(". ");
 }
 
@@ -308,6 +310,12 @@ export function shareNote(values: (number | null)[], v: number): string | undefi
  *  [{name: "Close"}] at 0 → "Close";  [{}] at 0 → "Value";  [{}, {}] at 1 → "Series 2" */
 export function seriesName(series: { name?: string }[], k: number): string {
   return series[k].name ?? (series.length === 1 ? "Value" : `Series ${k + 1}`);
+}
+
+/** The x labels no series has a number for, in order: an unknown reading is named, not left to be guessed.
+ *  x ["Mon", "Tue"], data [3, null] → ["Tue"];  data [3, 4] → [] */
+export function missingLabels(spec: ChartSpec): string[] {
+  return spec.x.filter((_, i) => spec.series.every((s) => s.data[i] === null || s.data[i] === undefined)).map(String);
 }
 
 type Scale = { min: number; max: number };

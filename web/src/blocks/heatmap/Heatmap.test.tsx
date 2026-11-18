@@ -26,4 +26,12 @@ describe("Heatmap", () => {
     expect(screen.getByText("7")).toBeTruthy();
     expect(screen.getByText(/JPM · M8/)).toBeTruthy();
   });
+
+  it("reads a cell with no number as no data, so it isn't heard as a zero", () => {
+    draw({ type: "heatmap", title: "Banks", rows: ["JPM"], cols: ["Q1", "Q2"], values: [[4.1, null]], unit: "%" });
+    const cell = screen.getByRole("button", { name: "JPM, Q2: no data" });
+    expect(cell.textContent).toBe("");
+    expect(cell.getAttribute("style")).toContain("var(--hb-well)");
+    expect(screen.getByRole("button", { name: "JPM, Q1: 4.1%" })).toBeTruthy();
+  });
 });

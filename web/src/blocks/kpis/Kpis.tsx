@@ -16,12 +16,14 @@ const CURRENCY = /^[$₹€£¥]$/;
 /**
  * A kpi value as it reads: money units through formatAmount, % stuck to the number, other units after it. The number
  * is in the user's locale (rupees stay Indian), shortened from 100,000 up unless `full` is asked for (the hover).
+ * A null value reads "no data": nothing was measured, so it is not written as 0 or as a bare dash.
  *   {value: 72275, unit: "₹Cr"} → "₹72,275 Cr";  {value: 18.6, unit: "%"} → "18.6%" (in de-DE "18,6%");
  *   {value: 9, unit: "/10"} → "9/10";  {value: 24310.5, unit: "pts"} → "24,311 pts" (in de-DE "24.311 pts")
  *   {value: 4213500000, unit: "$"} → "$4.21B" (full: "$4,213,500,000");  {value: 250000, unit: "pts"} → "250K pts"
+ *   {value: null, unit: "₹"} → "no data"
  */
 export function kpiValue(k: KpiItem, { full = false }: { full?: boolean } = {}): string {
-  if (k.value === null) return "–";
+  if (k.value === null) return "no data";
   if (typeof k.value === "string") return k.value;
   if (isYear(k)) return String(k.value);
   const short = !full && Math.abs(k.value) >= SHORT_FROM;
@@ -33,16 +35,19 @@ export function kpiValue(k: KpiItem, { full = false }: { full?: boolean } = {}):
   return attached ? `${plain}${k.unit}` : k.unit ? `${plain} ${k.unit}` : plain;
 }
 
-/** One card. `trendColour` colours its trend line; without it the line takes the first chart colour. */
+/** One card. `trendColour` colours its trend line; without it the line takes the first chart colour. A card whose
+ *  value is unknown says "no data" in the quiet text colour, so it doesn't read as a figure. */
 export function KpiCard({ item, trendColour }: { item: KpiItem; trendColour?: string }) {
   const shown = kpiValue(item);
   const full = kpiValue(item, { full: true });
   const change = formatChange(item.change, item.change_unit);
   const isText = typeof item.value === "string";
+  const empty = item.value === null;
+  const valueClass = ["hb-kpi-value", isText ? "hb-kpi-value-text" : "", empty ? "hb-kpi-value-empty" : ""].filter(Boolean).join(" ");
   return (
     <div className="hb-card hb-kpi">
       <div className="hb-kpi-label">{item.label}</div>
-      <div className={isText ? "hb-kpi-value hb-kpi-value-text" : "hb-kpi-value"} title={full !== shown ? full : undefined}>
+      <div className={valueClass} title={full !== shown ? full : undefined}>
         {shown}
       </div>
       {change && <div className={changeClass(item)}>{change}</div>}
@@ -79,7 +84,7 @@ const SPARK_H = 28;
 const SPARK_PAD = 2;
 
 /** A trend as a small line under the number: no axes, no labels, hidden from screen readers (the number says it). */
-function Sparkline({ values, colour }: { values: number[]; colour?: string }) {
+function Sparkline({ values, colour }: { values: (number | null)[]; colour?: string }) {
   return (
     <svg className="hb-kpi-spark" viewBox={`0 0 ${SPARK_W} ${SPARK_H}`} preserveAspectRatio="none" aria-hidden="true">
       <path d={sparkPath(values)} style={colour ? { stroke: colour } : undefined} />
@@ -89,16 +94,30 @@ function Sparkline({ values, colour }: { values: number[]; colour?: string }) {
 
 /**
  * The line's path across the box, the highest value at the top and the lowest at the bottom (2px in from each edge);
- * a flat trend runs across the middle.
- *   [0, 10] → "M0 26L120 2";  [0, 10, 5] → "M0 26L60 2L120 14";  [5, 5] → "M0 14L120 14"
+ * a flat trend runs across the middle. Every point keeps its slot, so a null leaves its place empty and the line
+ * breaks there rather than joining the points either side of a stretch nobody measured.
+ *   [0, 10] → "M0 26L120 2";  [0, 10, 5] → "M0 26L60 2L120 14";  [5, 5] → "M0 14L120 14";
+ *   [0, null, 10] → "M0 26M120 2" (two strokes, no line across the gap)
  */
-export function sparkPath(values: number[]): string {
-  const lo = Math.min(...values);
-  const hi = Math.max(...values);
+export function sparkPath(values: (number | null)[]): string {
+  const known = values.filter((v): v is number => v !== null);
+  if (!known.length) return "";
+  const lo = Math.min(...known);
+  const hi = Math.max(...known);
   const span = SPARK_H - 2 * SPARK_PAD;
   const y = (v: number) => (hi === lo ? SPARK_H / 2 : SPARK_PAD + (1 - (v - lo) / (hi - lo)) * span);
   const x = (i: number) => (i / (values.length - 1)) * SPARK_W;
-  return values.map((v, i) => `${i ? "L" : "M"}${round(x(i))} ${round(y(v))}`).join("");
+  let d = "";
+  let pen = false;
+  values.forEach((v, i) => {
+    if (v === null) {
+      pen = false;
+      return;
+    }
+    d += `${pen ? "L" : "M"}${round(x(i))} ${round(y(v))}`;
+    pen = true;
+  });
+  return d;
 }
 
 function round(n: number): number {

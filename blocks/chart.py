@@ -215,10 +215,14 @@ def _check_tone(block: dict, kind: str, series_count: int, path: str) -> list[tu
     return []
 
 
-def _series_line(series: dict) -> str:
-    """One series, first value to last: {"name": "Revenue", "data": [67087, None, 72275]}
-    → "Revenue 67,087 → 72,275 (▲ 7.7%)". No % when the first value is 0."""
-    data = [v for v in series.get("data", []) if is_number(v)]
+def _series_line(series: dict, labels: list) -> str:
+    """One series, first value to last, then how many of its slots hold no value and up to three of their labels.
+
+    {"name": "Shop A", "data": [12, None, 0, 9, 14]} → "Shop A 12 → 14, 1 gap (Tue)".
+    No % when the first value is 0; first → last keeps working on the observed values, so the chip is unchanged.
+    """
+    raw = series.get("data", [])
+    data = [v for v in raw if is_number(v)]
     if not data:
         return ""
     name = safe_text(series.get("name"))
@@ -226,6 +230,13 @@ def _series_line(series: dict) -> str:
     line = f"{name} {fmt_num(first)} → {fmt_num(last)}".strip()
     if first:
         line += " " + change_chip(round((last - first) / abs(first) * 100, 1))
+    missing = [safe_text(label, 24) for label, v in zip(labels, raw, strict=False) if v is None]
+    if missing:
+        shown = [label for label in missing if label][:3]
+        named = ", ".join(shown) if shown else "unlabelled"
+        if len(missing) > len(shown):
+            named += f" and {len(missing) - len(shown)} more"
+        line += f", {len(missing)} gap{'' if len(missing) == 1 else 's'} ({named})"
     return line
 
 
@@ -419,7 +430,7 @@ def text_chart(block: dict) -> str:
     elif kind == "range":
         body = _windows_line(block.get("x") or [], series[0])
     else:
-        body = "; ".join(line for line in (_series_line(s) for s in series[:6]) if line)
+        body = "; ".join(line for line in (_series_line(s, block.get("x") or []) for s in series[:6]) if line)
     if not body:
         return ""
     unit = safe_text(block.get("unit"), 20)

@@ -1,6 +1,6 @@
 """table: columns and rows, sortable on Hermes Desktop."""
 
-from .common import md_table, safe_text, table_cell
+from .common import cell_value, md_table, safe_text, table_cell
 
 MAX_TABLE_ROWS = 12
 
@@ -35,7 +35,8 @@ def check_table(block: dict, path: str) -> list[tuple[str, str]]:
 def text_table(block: dict) -> str:
     """The caption in bold, then a Markdown table of up to 12 rows and a note on how many were left out.
 
-    rows may be cell lists or objects keyed by column name: {"A": 1, "B": 2.5} → "| 1 | 2.5 |"
+    rows may be cell lists or objects keyed by column name: {"A": 1, "B": 2.5} → "| 1 | 2.5 |". A cell written as
+    null is a value nobody knows and prints a dash; a column an object row doesn't carry prints blank.
     """
     names, rows = block.get("columns"), block.get("rows")
     if not isinstance(names, list) or not names or not isinstance(rows, list) or not rows:
@@ -45,9 +46,9 @@ def text_table(block: dict) -> str:
     cells = []
     for row in rows[:MAX_TABLE_ROWS]:
         if isinstance(row, dict):
-            cells.append([table_cell(row.get(name)) if isinstance(name, str) else "" for name in names])
+            cells.append([cell_value(row[name]) if isinstance(name, str) and name in row else "" for name in names])
         elif isinstance(row, list):
-            cells.append([table_cell(v) for v in row])
+            cells.append([cell_value(v) for v in row])
     caption = safe_text(block.get("caption") or block.get("title"))
     lines = ([f"**{caption}**"] if caption else []) + md_table(columns, cells)
     if len(rows) > MAX_TABLE_ROWS:

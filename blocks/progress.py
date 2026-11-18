@@ -18,10 +18,14 @@ def check_progress(block: dict, path: str) -> list[tuple[str, str]]:
     """
     if not has_text(block.get("title")):
         return [(path, "progress needs a title")]
-    if not is_number(block.get("value")):
+    if "value" not in block:
         return [(path, "progress needs a numeric value")]
-    goal = block.get("goal")
-    if not is_number(goal) or goal <= 0:
+    if block["value"] is not None and not is_number(block["value"]):
+        return [(path, "progress needs a numeric value")]
+    if "goal" not in block:
+        return [(path, "progress needs a goal above 0")]
+    goal = block["goal"]
+    if goal is not None and (not is_number(goal) or goal <= 0):
         return [(path, "progress needs a goal above 0")]
     problems = []
     if block.get("shape") is not None and block.get("shape") not in SHAPES:
@@ -127,6 +131,8 @@ def bands(block: dict) -> list[tuple[float, float, str]]:
     """The bands between toned marks, as (from, to, tone): marks at 60 good / 85 warn / 100 bad on a goal of 100 →
     [(0, 60, "good"), (60, 85, "warn"), (85, 100, "bad")]."""
     goal = block["goal"]
+    if not is_number(goal):
+        return []
     found, start = [], 0.0
     for mark in marks(block):
         if mark.get("tone") is None:
@@ -144,6 +150,8 @@ def zone_tone(block: dict) -> str:
     marks 60 good / 85 warn / 100 bad: a value of 50 → "good", 70 → "warn", 88 → "bad"
     """
     fallback = block.get("tone") if block.get("tone") in TONES else "good"
+    if block.get("value") is None:
+        return fallback
     found = bands(block)
     if not found:
         return fallback
@@ -178,7 +186,8 @@ def text_progress(block: dict) -> str:
     if not base:
         return ""
     unit = block.get("unit")
-    if block.get("show_percent") is True and safe_text(unit, 20) != "%":
+    if (block.get("show_percent") is True and safe_text(unit, 20) != "%"
+            and is_number(block.get("value")) and is_number(block.get("goal"))):
         base += f" ({percent_of(block['value'], block['goal'])}%)"
     tone = zone_tone(block)
     if tone != "good":
