@@ -16,21 +16,29 @@ describe("BlockTag", () => {
     expect(load).not.toHaveBeenCalled();
   });
 
-  it("refuses a malformed id without loading", () => {
+  it("renders nothing for a malformed id, without loading", () => {
     const load = vi.fn();
-    render(<BlockTag id="zzz" streaming={false} load={load} />);
-    expect(screen.getByText("Couldn't load this block")).toBeTruthy();
+    const { container } = render(<BlockTag id="zzz" streaming={false} load={load} />);
+    expect(container.firstChild).toBeNull();
+    expect(screen.queryByText("Couldn't load this block")).toBeNull();
+    expect(container.querySelector(".hb-state")).toBeNull();
     expect(load).not.toHaveBeenCalled();
   });
 
-  it("shows a note when loading fails", async () => {
-    render(<BlockTag id="7f3a09bc" streaming={false} load={() => Promise.reject(new Error("404"))} />);
-    await waitFor(() => expect(screen.getByText("Couldn't load this block")).toBeTruthy());
+  it("renders nothing when loading fails", async () => {
+    const { container } = render(<BlockTag id="7f3a09bc" streaming={false} load={() => Promise.reject(new Error("404"))} />);
+    await waitFor(() => expect(container.querySelector(".hb-state")).toBeNull());
+    expect(screen.queryByText("Couldn't load this block")).toBeNull();
+    expect(container.firstChild).toBeNull();
   });
 
-  it("shows a note when the stored data has nothing drawable", async () => {
-    render(<BlockTag id="7f3a09bc" streaming={false} load={() => Promise.resolve({ blocks: [{ type: "weather" }] })} />);
-    await waitFor(() => expect(screen.getByText("Couldn't load this block")).toBeTruthy());
+  it("renders nothing when the stored data has nothing drawable", async () => {
+    const { container } = render(
+      <BlockTag id="7f3a09bc" streaming={false} load={() => Promise.resolve({ blocks: [{ type: "weather" }] })} />,
+    );
+    await waitFor(() => expect(container.querySelector(".hb-state")).toBeNull());
+    expect(screen.queryByText("Couldn't load this block")).toBeNull();
+    expect(container.firstChild).toBeNull();
   });
 
   it("draws the stored blocks", async () => {

@@ -5631,9 +5631,9 @@ function BlockTag({ id, streaming, load }) {
       live = false;
     };
   }, [id, streaming, validId]);
-  if (!validId && !streaming) return /* @__PURE__ */ jsx46(Note, { text: "Couldn't load this block" });
+  if (!validId && !streaming) return null;
   if (streaming || state.kind === "loading") return /* @__PURE__ */ jsx46(Note, { text: "drawing\u2026", pulse: true });
-  if (state.kind === "failed") return /* @__PURE__ */ jsx46(Note, { text: "Couldn't load this block" });
+  if (state.kind === "failed") return null;
   return /* @__PURE__ */ jsx46(BlockActions.Provider, { value: { ...actions, blockId: id }, children: /* @__PURE__ */ jsx46(Blocks, { blocks: state.blocks }) });
 }
 function Note({ text, pulse = false }) {
