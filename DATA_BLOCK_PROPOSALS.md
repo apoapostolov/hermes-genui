@@ -1,6 +1,6 @@
-# GenUI port checklist
+# GenUI data-block proposals
 
-This tracks the rich-ui port work in [sagarmainkar/hermes-genui](https://github.com/sagarmainkar/hermes-genui). The visual contract lives in [AGENTS.md](AGENTS.md). Add one row when a PR opens and update its status here in the same pass.
+This tracks the data-block proposals in [sagarmainkar/hermes-genui](https://github.com/sagarmainkar/hermes-genui). The visual contract lives in [AGENTS.md](AGENTS.md). Add one row when a PR opens and update its status here in the same pass.
 
 ## Opened PRs
 
@@ -23,9 +23,9 @@ This tracks the rich-ui port work in [sagarmainkar/hermes-genui](https://github.
 | [#40](https://github.com/sagarmainkar/hermes-genui/pull/40) | completion | Phase tracker: compact density and source ids | Open | green |
 | [#41](https://github.com/sagarmainkar/hermes-genui/pull/41) | completion | Structured table: typed columns, filter, pages, aggregates, sources | Open | green |
 
-## Remaining port queue
+## Remaining proposals
 
-None. Every issue and partial counterpart in the rich-ui port list has an open PR.
+None. Every issue and data-block proposal in this list has an open PR.
 
 ## Definition of done for each row
 
