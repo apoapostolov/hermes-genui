@@ -3,9 +3,10 @@
 import json
 import math
 
+from ..blocks.chart import CHART_KINDS
 from ..core import store, surface
-from ..core.catalog_text import describe
-from ..core.check import IMAGE_URL_FIELDS, MAX_NESTING, check_blocks, child_lists, too_deep
+from ..core.catalog_text import describe, spec
+from ..core.check import IMAGE_URL_FIELDS, MAX_NESTING, check_blocks, child_lists, guess_kinds, too_deep
 
 __all__ = ["SHOW_BLOCKS_SCHEMA", "child_lists", "paste_instruction", "resolve_includes", "show_blocks",
            "tag_for", "unknown_photos"]
@@ -30,8 +31,43 @@ def paste_instruction(block_id: str, includable: bool = False) -> str:
     return f"(To place this board inside a bigger layout instead, use {include} in show_blocks.)\n{paste}"
 
 
-def _not_drawn(problems: list[str]) -> str:
-    return "Not drawn. Fix these and call show_blocks again:\n" + "\n".join(f"- {p}" for p in problems)
+# A refused board comes back with how to write the blocks it got wrong, for at most this many types.
+MAX_GUIDES = 3
+
+
+def _not_drawn(problems: list[str], blocks: list | None = None) -> str:
+    text = "Not drawn. Fix these and call show_blocks again:\n" + "\n".join(f"- {p}" for p in problems)
+    guides = [g for kind in _refused_kinds(problems, blocks or []) if (g := spec(kind))][:MAX_GUIDES]
+    if not guides:
+        return text
+    return text + f"\n\nHow to write {'it' if len(guides) == 1 else 'them'}:\n" + "\n".join(guides)
+
+
+def _refused_kinds(problems: list[str], blocks: list) -> list[str]:
+    """The block types the problems are about, in order, each once: the innermost block with a type on each problem's
+    path, or for a block with no type, the type its fields point to.
+
+    (["1.children.0.rows: ..."], [text, {"type": "row", "children": [{"type": "table", ...}]}]) → ["table"]
+    """
+    kinds: list[str] = []
+    for problem in problems:
+        node: object = blocks
+        kind = None
+        for step in problem.split(":", 1)[0].split("."):
+            if isinstance(node, list) and step.isdigit() and int(step) < len(node):
+                node = node[int(step)]
+            elif isinstance(node, dict) and step in node:
+                node = node[step]
+            else:
+                break
+            if isinstance(node, dict) and isinstance(node.get("type"), str):
+                kind = node["type"]
+        if 'no "type"' in problem and isinstance(node, dict):
+            kind = next(iter(guess_kinds(node)), None)
+        kind = "chart" if kind in CHART_KINDS and spec(kind) is None else kind
+        if kind and kind not in kinds:
+            kinds.append(kind)
+    return kinds
 
 
 def _as_list(raw: object) -> list | None:
@@ -175,8 +211,9 @@ def show_blocks(params: dict, **kwargs) -> str:
     if not blocks:
         return _not_drawn(["blocks: give at least one block"])
     problems = check_blocks(blocks)
-    if not problems:
-        blocks = resolve_includes(blocks, problems)
+    if problems:  # the check's problems come with how to write the blocks they're about
+        return _not_drawn(problems, blocks)
+    blocks = resolve_includes(blocks, problems)
     if not problems:  # an included board can take the whole one past the nesting limit
         problems = [deep] if (deep := too_deep(blocks)) else []
     if problems:

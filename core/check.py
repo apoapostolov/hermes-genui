@@ -5,12 +5,15 @@ Each problem is "<path>: <why>", where the path walks the JSON: "1.groups.0" is 
 of the second block. Each type's own checker is in blocks/<type>.py, listed in blocks.TYPES.
 """
 
+import json
+
 from ..blocks import PAGE_TYPES, TYPES
 from ..blocks.atoms import IMAGE_URL_FIELDS
 from ..blocks.calculator import FORMULA_HELPERS
-from ..blocks.chart import chart_kind
+from ..blocks.chart import CHART_KINDS, chart_kind
 from ..blocks.include import ID_PATTERN
 from ..blocks.layout import CONTAINERS, LAYOUT_TYPES
+from .catalog_text import CATALOG_PATH
 
 __all__ = ["CHECKERS", "CONTAINERS", "FORMULA_HELPERS", "ID_PATTERN", "IMAGE_URL_FIELDS", "MAX_BLOCKS", "MAX_NESTING",
            "check_blocks", "chart_kind", "child_lists", "too_deep"]
@@ -62,10 +65,63 @@ def _check_one(block: object, path: str, inside_section: bool, top: bool = False
         def child(b: object, p: str, inside_section: bool, top: bool = False) -> list[str]:
             return _check_one(b, p, inside_section, top, page)
         return check(block, path, inside_section, child)
+    if kind is None:
+        return [f"{path}: {_no_type(block)}"]
     checker = (PAGE_CHECKERS if page else CHECKERS).get(kind)
+    if checker is None and kind in CHART_KINDS:  # "bar" is also a block of its own, so only types with no checker
+        return [f'{path}: "{kind}" is a chart kind: write {{"type": "chart", "kind": "{kind}", ...}}']
     if checker is None:
         return [f'{path}: unknown type "{kind}"']
     return [f"{where}: {why}" for where, why in checker(block, path)]
+
+
+def _shape(block: dict) -> set[str]:
+    """A block's field names, and the field names of the first item in each of its lists, for telling blocks apart.
+
+    {"type": "kpis", "items": [{"label": "Revenue", "value": 4.2}]} → {"items", "items.label", "items.value"}
+    """
+    names = set()
+    for key, value in block.items():
+        if key == "type":
+            continue
+        names.add(key)
+        if isinstance(value, list) and value and isinstance(value[0], dict):
+            names |= {f"{key}.{sub}" for sub in value[0] if sub != "type"}
+    return names
+
+
+_SHAPES: list[tuple[str, set[str]]] = []
+
+
+def guess_kinds(block: dict) -> list[str]:
+    """The block types whose catalog example has the fields most like this block's, best first; [] when none share
+    any. Ties are all returned, in catalog order.
+
+    {"groups": [{"label": "Day 1", "items": [...]}]} → ["timeline"]
+    {"text": "Heads up", "tone": "warn"} → ["callout", "badge"]
+    """
+    if not _SHAPES:
+        catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+        _SHAPES.extend((entry["kind"], _shape(entry["example"])) for entry in catalog["blocks"])
+    mine = _shape(block)
+    scores = [(len(mine & theirs) / len(mine | theirs), kind) for kind, theirs in _SHAPES if mine & theirs]
+    if not scores:
+        return []
+    best = max(score for score, _ in scores)
+    return [kind for score, kind in scores if score == best]
+
+
+def _no_type(block: dict) -> str:
+    """The problem for a block with no "type", naming the block its fields point to.
+
+    {"groups": [...]} → 'no "type"; every block needs one, written first, e.g. {"type": "timeline", ...}'
+    """
+    kinds = guess_kinds(block)
+    problem = 'no "type"; every block needs one, written first'
+    if not kinds:
+        return problem
+    others = f" (or {', '.join(kinds[1:3])})" if len(kinds) > 1 else ""
+    return f'{problem}, e.g. {{"type": "{kinds[0]}", ...}}{others}'
 
 
 def child_lists(block: dict) -> list[tuple[str, list]]:

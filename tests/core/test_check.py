@@ -692,3 +692,39 @@ def test_checklist_items_may_carry_unique_short_ids():
     assert check_blocks(dup) == ["0.items.1: item id is used twice"]
     long = [{"type": "checklist", "items": [{"text": "A", "id": "x" * 41}]}]
     assert check_blocks(long) == ["0.items.0: item id is plain text up to 40 characters"]
+
+
+# A block with no "type" (small models sometimes write the fields in alphabetical order and leave it out): the problem
+# says so and names the block its fields point to, so the model can fix it in one go.
+def test_a_block_without_a_type_is_told_which_one_its_fields_point_to():
+    timeline = {"groups": [{"label": "Day 1", "items": [{"time": "09:00", "title": "Amber Fort"}]}]}
+    assert check_blocks([timeline]) == [
+        '0: no "type"; every block needs one, written first, e.g. {"type": "timeline", ...}']
+    kpis = {"items": [{"label": "Revenue", "value": 4.2}]}
+    assert check_blocks([kpis]) == ['0: no "type"; every block needs one, written first, e.g. {"type": "kpis", ...}']
+
+
+def test_a_close_call_names_both_blocks_and_no_match_names_none():
+    assert check_blocks([{"text": "Heads up", "tone": "warn"}]) == [
+        '0: no "type"; every block needs one, written first, e.g. {"type": "callout", ...} (or badge)']
+    assert check_blocks([{"sundial": 3}]) == ['0: no "type"; every block needs one, written first']
+
+
+def test_a_block_inside_a_container_without_a_type_gets_the_same_help():
+    row = {"type": "row", "children": [{"items": [{"label": "Revenue", "value": 4.2}]}]}
+    assert check_blocks([row]) == [
+        '0.children.0: no "type"; every block needs one, written first, e.g. {"type": "kpis", ...}']
+
+
+@pytest.mark.parametrize("entry", CATALOG["blocks"], ids=lambda e: e["kind"])
+def test_no_catalog_example_without_its_type_is_taken_for_another_block(entry):
+    fields = {k: v for k, v in entry["example"].items() if k != "type"}
+    problem = check_blocks([fields])[0]
+    named = re.findall(r'"type": "(\w+)"|\(or (\w+)\)', problem)
+    kinds = {k for pair in named for k in pair if k}
+    assert not kinds or entry["kind"] in kinds, problem
+
+
+def test_a_chart_kind_used_as_a_type_points_to_the_chart():
+    pie = {"type": "pie", "x": ["Rent", "Food"], "series": [{"name": "Spend", "data": [1800, 650]}]}
+    assert check_blocks([pie]) == ['0: "pie" is a chart kind: write {"type": "chart", "kind": "pie", ...}']

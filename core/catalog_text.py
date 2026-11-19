@@ -10,6 +10,19 @@ def _example(entry: dict) -> str:
     return json.dumps(entry["example"], ensure_ascii=False, separators=(",", ":"))
 
 
+def spec(kind: str) -> str | None:
+    """How to write one block type: its fields and example, as show_blocks returns them beside a refused block.
+    None for a type the catalog doesn't have.
+
+    spec("badge") → 'badge: Fields: text. tone: good | warn (optional).\nExample: {"type":"badge",...}'
+    """
+    catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    entry = next((e for e in catalog["blocks"] if e["kind"] == kind), None)
+    if entry is None:
+        return None
+    return f"{kind}: Fields: {entry['fields']}\nExample: {_example(entry)}"
+
+
 def describe() -> str:
     """One short paragraph per block type plus its example; the atoms (small pieces) one line each after them, e.g.
 

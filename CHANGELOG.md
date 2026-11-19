@@ -13,6 +13,9 @@ All notable changes to this plugin. Versions follow [Semantic Versioning](https:
 - **One broken block no longer blanks the whole board.** Each block draws inside its own error boundary: a block that
   throws becomes a one-line note ("This part couldn't be drawn."), the rest of the board still draws, and the block
   and error are logged to the console so the case can be turned into a test.
+- **A refused board says how to fix it.** A block with no `"type"` is told so, with the block its fields point to
+  (`e.g. {"type": "timeline", ...}`); a chart kind used as a type (`"pie"`) points to the chart; and every refusal
+  comes with the refused blocks' fields and example, so a model can fix them in the same turn.
 
 ## 0.3.0 — Today, and dashboards you keep
 

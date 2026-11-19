@@ -213,3 +213,46 @@ def test_step_photos_must_come_from_find_photos(store_dir):
                    "- 0.items.1.image: use only photo URLs that find_photos returned")
     plugin_store.remember_photo_urls(["https://a.example/s.jpg"])
     assert "::blocks{" in tools.show_blocks({"blocks": [steps]})
+
+
+def _spec(kind: str) -> str:
+    return importlib.import_module("hermes_genui.core.catalog_text").spec(kind)
+
+
+def test_a_refused_block_comes_back_with_how_to_write_it(store_dir):
+    chart = {"type": "chart", "kind": "line", "x": ["Jan", "Feb"], "series": [{"name": "Bill", "data": [2100]}]}
+    result = tools.show_blocks({"blocks": [chart]})
+    problems, _, guide = result.partition("\n\nHow to write it:\n")
+    assert problems.startswith("Not drawn. Fix these and call show_blocks again:\n- 0.series.0")
+    assert guide == _spec("chart")
+    assert guide.startswith("chart: Fields: ") and '\nExample: {"type":"chart"' in guide
+    assert list(store_dir.glob("*.json")) == []
+
+
+def test_a_block_without_a_type_comes_back_with_the_guessed_blocks_guide(store_dir):
+    timeline = {"groups": [{"label": "Day 1", "items": [{"time": "09:00", "title": "Amber Fort"}]}]}
+    result = tools.show_blocks({"blocks": [timeline]})
+    assert result.endswith("\n\nHow to write it:\n" + _spec("timeline"))
+
+
+def test_the_guide_covers_each_refused_kind_once(store_dir):
+    bad_chart = {"type": "chart", "kind": "line", "x": ["a"], "series": [{"name": "s", "data": []}]}
+    bad_table = {"type": "table", "columns": ["A"]}
+    inside = {"type": "row", "children": [bad_table, dict(bad_chart)]}
+    result = tools.show_blocks({"blocks": [bad_chart, inside]})
+    guide = result.partition("\n\nHow to write them:\n")[2]
+    assert guide == _spec("chart") + "\n" + _spec("table")
+
+
+def test_an_unknown_type_has_no_guide_to_attach(store_dir):
+    assert tools.show_blocks({"blocks": [{"type": "sundial"}]}) == (
+        'Not drawn. Fix these and call show_blocks again:\n- 0: unknown type "sundial"')
+
+
+def test_the_guide_stops_at_three_kinds(store_dir):
+    bad = [{"type": "chart", "kind": "line", "x": ["a"], "series": [{"name": "s", "data": []}]},
+           {"type": "table", "columns": ["A"]},
+           {"type": "timeline", "groups": []},
+           {"type": "kpis", "items": []}]
+    guide = tools.show_blocks({"blocks": bad}).partition("\n\nHow to write them:\n")[2]
+    assert guide == "\n".join(_spec(k) for k in ("chart", "table", "timeline"))
