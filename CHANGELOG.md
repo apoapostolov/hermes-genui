@@ -10,6 +10,9 @@ All notable changes to this plugin. Versions follow [Semantic Versioning](https:
   shape (`::blocks{id="…"}`), and Gemma 4 copied it into its reply without calling `show_blocks`, so nothing was
   drawn. The rule now only says to call the tool and paste the tag it returns. On the eval prompts, Gemma 4 12B went
   from 11 to 20 of 34 passed, and from 20 made-up tags to none.
+- **One broken block no longer blanks the whole board.** Each block draws inside its own error boundary: a block that
+  throws becomes a one-line note ("This part couldn't be drawn."), the rest of the board still draws, and the block
+  and error are logged to the console so the case can be turned into a test.
 
 ## 0.3.0 — Today, and dashboards you keep
 

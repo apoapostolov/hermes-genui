@@ -161,6 +161,9 @@ function composerActions(composer) {
 // src/host/BlockTag.tsx
 import { useContext as useContext11, useEffect as useEffect10, useState as useState26 } from "react";
 
+// src/core/Blocks.tsx
+import { Component as ReactComponent } from "react";
+
 // src/blocks/flow/highlight.tsx
 import { createContext as createContext2, useCallback, useContext, useMemo, useState } from "react";
 import { jsx } from "react/jsx-runtime";
@@ -5565,8 +5568,21 @@ function BlockView({ block }) {
   const entry = REGISTRY[block.type];
   if (!entry) return null;
   const { Component } = entry;
-  return /* @__PURE__ */ jsx45(Component, { block, draw: drawAll });
+  return /* @__PURE__ */ jsx45(Contained, { block, children: /* @__PURE__ */ jsx45(Component, { block, draw: drawAll }) });
 }
+var Contained = class extends ReactComponent {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(error, _info) {
+    console.error(`hermes-genui: a "${this.props.block.type}" block failed to draw`, this.props.block, error);
+  }
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return /* @__PURE__ */ jsx45("p", { className: "hb-block-failed", role: "note", children: "This part couldn't be drawn." });
+  }
+};
 function drawAll(blocks) {
   return blocks.map((b, i) => /* @__PURE__ */ jsx45(BlockView, { block: b }, i));
 }
@@ -5977,7 +5993,7 @@ var tokens_default = `/* Hermes GenUI: every class starts with hb- so nothing le
 `;
 
 // src/styles/shared.css
-var shared_default = "/* Pieces several blocks share: cards, chips, pill buttons and the motion they use. */\n/* Cards */\n.hb-card {\n  background: var(--hb-card);\n  border: 1px solid var(--hb-line);\n  border-radius: 16px;\n  padding: 14px 16px;\n}\n.hb-card-title {\n  font-size: 16px;\n  line-height: 22px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n}\n/* Chips */\n.hb-chip {\n  display: inline-flex;\n  align-items: center;\n  align-self: flex-start;\n  gap: 4px;\n  padding: 2px 9px;\n  border-radius: 999px;\n  font-size: 12px;\n  font-weight: 600;\n  line-height: 18px;\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-chip-soft { background: var(--hb-accent-soft); color: var(--hb-accent-ink); }\n.hb-chip-good { background: color-mix(in srgb, var(--hb-good) 14%, transparent); color: var(--hb-good); }\n.hb-chip-warn { background: color-mix(in srgb, var(--hb-warn) 13%, transparent); color: var(--hb-warn); }\n.hb-chip-plain { background: var(--hb-well); color: var(--hb-ink-2); }\n/* Pill buttons that act (actions, button, a form's Send): soft for buttons in a reply, solid for a form's Send. */\n.hb-pill {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  min-height: 36px;\n  max-width: 100%;\n  padding: 7px 14px;\n  border: 0;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n  font: inherit;\n  font-size: 13.5px;\n  font-weight: 600;\n  line-height: 18px;\n  text-align: left;\n  text-decoration: none;\n  cursor: pointer;\n  transition: background 0.15s, transform 0.1s;\n}\n.hb-pill svg { flex: none; }\n.hb-pill:hover { background: color-mix(in srgb, var(--hb-accent) 22%, transparent); }\n.hb-pill:active { transform: scale(0.97); }\n.hb-pill:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-pill-solid { background: var(--hb-accent); color: #fff; }\n.hb-pill-solid:hover { background: color-mix(in srgb, var(--hb-accent) 86%, #000); }\n.hb-pill:disabled { opacity: 0.45; cursor: default; transform: none; }\n.hb-pill-solid:disabled:hover { background: var(--hb-accent); }\n/* Motion: a panel appearing (section, tabs, photo overlay) and a bar growing (bar, progress). */\n.hb-appear { animation: hb-appear 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); }\n@keyframes hb-appear { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }\n@keyframes hb-grow { from { transform: scaleX(0); } }\n@media (prefers-reduced-motion: reduce) {\n  .hb-pill { transition: none; }\n  .hb-appear { animation: none; }\n}\n";
+var shared_default = "/* Pieces several blocks share: cards, chips, pill buttons and the motion they use. */\n/* A block that threw while drawing: a quiet one-line note in its place (core/Blocks.tsx). */\n.hb-block-failed {\n  margin: 0;\n  font-size: 12px;\n  line-height: 18px;\n  color: var(--hb-muted);\n}\n/* Cards */\n.hb-card {\n  background: var(--hb-card);\n  border: 1px solid var(--hb-line);\n  border-radius: 16px;\n  padding: 14px 16px;\n}\n.hb-card-title {\n  font-size: 16px;\n  line-height: 22px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n}\n/* Chips */\n.hb-chip {\n  display: inline-flex;\n  align-items: center;\n  align-self: flex-start;\n  gap: 4px;\n  padding: 2px 9px;\n  border-radius: 999px;\n  font-size: 12px;\n  font-weight: 600;\n  line-height: 18px;\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-chip-soft { background: var(--hb-accent-soft); color: var(--hb-accent-ink); }\n.hb-chip-good { background: color-mix(in srgb, var(--hb-good) 14%, transparent); color: var(--hb-good); }\n.hb-chip-warn { background: color-mix(in srgb, var(--hb-warn) 13%, transparent); color: var(--hb-warn); }\n.hb-chip-plain { background: var(--hb-well); color: var(--hb-ink-2); }\n/* Pill buttons that act (actions, button, a form's Send): soft for buttons in a reply, solid for a form's Send. */\n.hb-pill {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  min-height: 36px;\n  max-width: 100%;\n  padding: 7px 14px;\n  border: 0;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n  font: inherit;\n  font-size: 13.5px;\n  font-weight: 600;\n  line-height: 18px;\n  text-align: left;\n  text-decoration: none;\n  cursor: pointer;\n  transition: background 0.15s, transform 0.1s;\n}\n.hb-pill svg { flex: none; }\n.hb-pill:hover { background: color-mix(in srgb, var(--hb-accent) 22%, transparent); }\n.hb-pill:active { transform: scale(0.97); }\n.hb-pill:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-pill-solid { background: var(--hb-accent); color: #fff; }\n.hb-pill-solid:hover { background: color-mix(in srgb, var(--hb-accent) 86%, #000); }\n.hb-pill:disabled { opacity: 0.45; cursor: default; transform: none; }\n.hb-pill-solid:disabled:hover { background: var(--hb-accent); }\n/* Motion: a panel appearing (section, tabs, photo overlay) and a bar growing (bar, progress). */\n.hb-appear { animation: hb-appear 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); }\n@keyframes hb-appear { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }\n@keyframes hb-grow { from { transform: scaleX(0); } }\n@media (prefers-reduced-motion: reduce) {\n  .hb-pill { transition: none; }\n  .hb-appear { animation: none; }\n}\n";
 
 // src/host/blockTag.css
 var blockTag_default = "/* The block tag's own states */\n.hb-state {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  margin: 8px 0;\n  padding: 10px 14px;\n  max-width: 100%;\n  border-radius: 14px;\n  background: color-mix(in srgb, var(--foreground, #1f2328) 5%, transparent);\n  color: var(--ui-text-tertiary, #6b7280);\n  font-size: 13px;\n}\n.hb-pulse { animation: hb-pulse 1.2s ease-in-out infinite; }\n@keyframes hb-pulse { 50% { opacity: 0.45; } }\n@media (prefers-reduced-motion: reduce) {\n  .hb-pulse { animation: none; }\n}\n";

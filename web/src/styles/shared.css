@@ -1,4 +1,11 @@
 /* Pieces several blocks share: cards, chips, pill buttons and the motion they use. */
+/* A block that threw while drawing: a quiet one-line note in its place (core/Blocks.tsx). */
+.hb-block-failed {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--hb-muted);
+}
 /* Cards */
 .hb-card {
   background: var(--hb-card);
