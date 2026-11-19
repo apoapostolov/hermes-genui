@@ -62,6 +62,7 @@ export function HBarChart({ spec }: { spec: ChartSpec }) {
       {!single && <ChartLegend series={spec.series} />}
       <div ref={box} className="hb-hbar-box">
         <div className={`hb-hbar-grid${single ? "" : " hb-hbar-many"}`} role="img" aria-label={chartLabel(spec)}
+          style={spec.height ? { minHeight: spec.height } : undefined}
           {...pickKeys(spec.x.length, picked, pick, true)} onPointerLeave={() => pick(null)}>
           {spec.x.map((label, i) => (
             <Fragment key={i}>

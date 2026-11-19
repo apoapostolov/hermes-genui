@@ -146,6 +146,12 @@ def test_pie_shows_top_slices_with_shares():
     assert render(pie) == "**Mix**: A 50%, B 20%, C 15%, D 10%, +1 more"
 
 
+def test_chart_sort_desc_orders_the_text_by_the_first_series():
+    chart = {"type": "chart", "kind": "bar", "sortDesc": True, "title": "Spend",
+             "x": ["a", "b", "c"], "series": [{"name": "S", "data": [2, 9, 5]}]}
+    assert render(chart) == "**Spend**: S 9 → 2 (▼ 77.8%)"
+
+
 # --- tables ---------------------------------------------------------------------------------------
 
 def test_table_is_markdown():

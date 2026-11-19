@@ -22,6 +22,10 @@ export type ChartSpec = {
   figure?: boolean;
   /** "change": a one-series line is green above its first value and orange below it, with the start marked. */
   tone?: "change";
+  /** stepped: line and combo lines hold each value until the next x label, then jump (no diagonal). */
+  stepped?: boolean;
+  /** height in px, 120-480, for the drawing area. */
+  height?: number;
 };
 
 // Other names models use for the same kinds, written without spaces, dashes or underscores.
