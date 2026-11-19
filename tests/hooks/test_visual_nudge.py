@@ -40,7 +40,7 @@ def test_things_to_keep_on_screen_get_the_keep_reminder():
 
 def test_one_off_dashboards_and_prices_still_get_the_block_reminder():
     for ask in ["an NVDA dashboard", "how's the market?"]:
-        assert nudge.visual_nudge(ask, "local") == nudge.REMINDER, ask
+        assert nudge.visual_nudge(ask, "local") == nudge.MENU_REMINDER, ask
     assert nudge.visual_nudge("live NVDA price", "local") != nudge.KEEP_REMINDER  # "live" alone isn't a place
 
 
@@ -52,7 +52,7 @@ def test_ordinary_uses_of_ticker_sidebar_and_pin_are_not_asks_to_keep_something(
     for ask in ["Compare AAPL and MSFT, ticker symbols included", "what's the ticker for Reliance",
                 "add a sidebar to this layout", "my SIM pin isn't working"]:
         assert nudge.visual_nudge(ask, "local") != nudge.KEEP_REMINDER, ask
-    assert nudge.visual_nudge("Compare AAPL and MSFT, ticker symbols included", "local") == nudge.REMINDER
+    assert nudge.visual_nudge("Compare AAPL and MSFT, ticker symbols included", "local") == nudge.MENU_REMINDER
 
 
 def test_personal_dashboard_asks_get_the_assistant_reminder():

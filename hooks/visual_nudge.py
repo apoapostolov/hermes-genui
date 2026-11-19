@@ -6,7 +6,8 @@ request, this reminder outweighs that general advice and keeps the answer in blo
 
 import re
 
-from ..core import surface
+from ..core import drawn, surface
+from ..core.guide import GUIDE
 
 # Surfaces that draw blocks: the Desktop app's local chat. Telegram, the CLI and the rest show tags as text.
 DRAWING_PLATFORMS = frozenset({"local", "desktop"})
@@ -50,6 +51,9 @@ REMINDER = (
     "use ::preview widgets.]"
 )
 
+# With the menu guide (#42), the reminder also asks for the blocks' fields first.
+MENU_REMINDER = REMINDER[:-1] + " Get each block's fields with block_guide first, then call show_blocks once.]"
+
 
 def _text_of(message: object) -> str:
     """The words of a user message: a plain string, or the text parts of a multimodal one.
@@ -70,6 +74,7 @@ def visual_nudge(user_message: object = "", platform: str = "", **kwargs) -> str
     ("make me a dashboard", "telegram") → None;  ("put NVDA on my Today page", "local") → KEEP_REMINDER
     """
     surface.note_platform(str(kwargs.get("session_id") or ""), platform)  # so tools know this session's surface
+    drawn.forget(str(kwargs.get("session_id") or ""))  # a new message: last turn's boards are settled
     if platform not in DRAWING_PLATFORMS:
         return None
     text = _text_of(user_message)
@@ -79,4 +84,4 @@ def visual_nudge(user_message: object = "", platform: str = "", **kwargs) -> str
         return KEEP_REMINDER
     if not VISUAL.search(text):
         return None
-    return REMINDER
+    return MENU_REMINDER if GUIDE == "menu" else REMINDER

@@ -6,16 +6,17 @@ The plugin's name is read once from plugin.yaml (core/manifest.py).
 """
 
 from .core import recipes
+from .core.guide import GUIDE
 from .core.manifest import NAME
 from .hooks.prompt_section import MAX_CHARS, drawing_rule
 from .hooks.text_fallback import text_only
 from .hooks.visual_nudge import visual_nudge
-from .tools import TOOLS, assistant, board_page, photos
+from .tools import assistant, board_page, photos, tools_for
 from .tools.save_recipe import CATEGORY, set_skill_writer
 
 
 def register(ctx):
-    for tool in TOOLS:
+    for tool in tools_for(GUIDE):
         ctx.register_tool(name=tool.name, toolset=tool.toolset, schema=tool.schema, handler=tool.handler)
     # Recipes are saved through Hermes's own skill_manage, so its write approval and guards apply.
     set_skill_writer(lambda name, content: ctx.dispatch_tool(

@@ -4,23 +4,36 @@ import json
 from pathlib import Path
 
 CATALOG_PATH = Path(__file__).resolve().parent / "catalog.json"
+# The short menu for the menu guide (#42): one line per block on what it is for. Every catalog block is named in it.
+MENU_PATH = Path(__file__).resolve().parent / "menu.txt"
 
 
 def _example(entry: dict) -> str:
     return json.dumps(entry["example"], ensure_ascii=False, separators=(",", ":"))
 
 
+def menu() -> str:
+    """The show_blocks description in the menu guide: how to draw, then one line per block (core/menu.txt)."""
+    return MENU_PATH.read_text(encoding="utf-8").strip()
+
+
 def spec(kind: str) -> str | None:
     """How to write one block type: its fields and example, as show_blocks returns them beside a refused block.
     None for a type the catalog doesn't have.
 
-    spec("badge") → 'badge: Fields: text. tone: good | warn (optional).\nExample: {"type":"badge",...}'
+    spec("badge") → 'badge: write {"type": "badge", ...}. Fields: text. tone: good | warn (optional).\nExample: {...}'
     """
     catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
     entry = next((e for e in catalog["blocks"] if e["kind"] == kind), None)
     if entry is None:
         return None
-    return f"{kind}: Fields: {entry['fields']}\nExample: {_example(entry)}"
+    return f'{kind}: write {{"type": "{kind}", ...}}. Fields: {entry['fields']}\nExample: {_example(entry)}'
+
+
+def icons_line() -> str:
+    """The icons a block may use, as block_guide and a refusal list them for blocks with an icon field."""
+    catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    return "Icons (only these): " + ", ".join(catalog["icons"]) + "."
 
 
 def describe() -> str:

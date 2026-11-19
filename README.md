@@ -331,8 +331,8 @@ flowchart LR
   C -. "Telegram, CLI" .-> F["Readable Markdown<br/>instead"]
 ```
 
-- **The model** learns the blocks from the `show_blocks` tool's description, and gets a short drawing rule in its
-  system prompt.
+- **The model** picks blocks from a short menu in the `show_blocks` tool's description, gets the fields of the ones
+  it picked from `block_guide`, and gets a short drawing rule in its system prompt.
 - **Tools fetch real data:** `market_history` for prices, `find_photos` for photos. So numbers and pictures come from
   sources, not memory.
 - **Every block is validated** before it's stored, and the model gets exact errors to fix. The readers in Desktop
@@ -397,7 +397,9 @@ you ask for in chat still work.
 
 **What the plugin adds to the model's context:**
 - a short drawing rule in the system prompt (under 1,500 characters);
-- the `show_blocks` tool description (the block catalog), and the descriptions of the plugin's other tools;
+- the `show_blocks` tool description (a short menu of the blocks, about 2,500 characters), and the descriptions of
+  the plugin's other tools;
+- a block's fields and example, from `block_guide`, only when the model is about to draw that block;
 - a one-line reminder next to messages that ask for something visual. This is added only where boards draw;
 - a recipe, only when your request matches one.
 

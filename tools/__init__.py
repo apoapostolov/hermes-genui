@@ -5,7 +5,17 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from ..core.manifest import NAME
-from . import assistant, assistant_ideas, board_page, dashboard, market_history, photos, save_recipe, show_blocks
+from . import (
+    assistant,
+    assistant_ideas,
+    block_guide,
+    board_page,
+    dashboard,
+    market_history,
+    photos,
+    save_recipe,
+    show_blocks,
+)
 
 # The toolset the tools are listed under: the plugin's name in snake case, "hermes-genui" → "hermes_genui".
 TOOLSET = NAME.replace("-", "_")
@@ -41,3 +51,10 @@ TOOLS: tuple[ToolSpec, ...] = (
              assistant.CHECK_TOOLSET),
     ToolSpec("assistant_ideas", assistant_ideas.SCHEMA, assistant_ideas.handler, assistant_ideas.IDEAS_TOOLSET),
 )
+
+
+def tools_for(guide: str) -> tuple[ToolSpec, ...]:
+    """The tools to register: TOOLS, plus block_guide after show_blocks with the menu guide (#42)."""
+    if guide != "menu":
+        return TOOLS
+    return TOOLS[:1] + (ToolSpec("block_guide", block_guide.BLOCK_GUIDE_SCHEMA, block_guide.block_guide),) + TOOLS[1:]

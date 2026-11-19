@@ -49,7 +49,8 @@ def test_nifty_alias_draws_a_points_board(store_dir):
 
     result = markets.history("NIFTY", "1mo", client=client_for(handler))
     assert seen == ["/v8/finance/chart/^NSEI"]
-    assert result.splitlines()[-2] == "Put this on its own line in your reply, exactly as it is:"
+    assert result.splitlines()[-2] == (
+        "Drawn. Now write your reply, with this line on its own, exactly as it is (don't draw it again):")
     kpis, chart, source, actions = stored_board(result, store_dir)
     assert chart["type"] == "chart" and chart["kind"] == "line" and chart["unit"] == "pts"
     assert chart["tone"] == "change"

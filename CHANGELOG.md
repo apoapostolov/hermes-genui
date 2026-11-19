@@ -4,6 +4,18 @@ All notable changes to this plugin. Versions follow [Semantic Versioning](https:
 
 ## Unreleased
 
+### The block guide stops growing (#42)
+
+- **The model reads a short menu instead of every block's fields.** The `show_blocks` description is now one line per
+  block on what it's for (about 2,500 characters, from about 14,000). A new tool, `block_guide`, returns the fields
+  and example of the blocks the model is about to draw. A new block adds one menu line; a new field costs only its
+  own block, when that block is drawn.
+- **Measured on the eval prompts** (boards that reached the reply, of 34): Gemma 4 31B 17 → 28, Qwen3.6 35B 32 →
+  30–31 (within run-to-run noise), DeepSeek V4.1 Flash 34 → 34, with about half the prompt tokens on every model.
+- **Helps smaller models finish:** a drawn board's answer says not to draw it again, `block_guide` ends with the next
+  step and lists the allowed icons, and a reply that lost its board's tag gets it back.
+- `HERMES_GENUI_GUIDE=full` brings back the full guide in the description, as a fallback.
+
 ### Fixes
 
 - **Gemma and other small models draw instead of writing a made-up tag.** The drawing rule used to show the tag's

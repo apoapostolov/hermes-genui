@@ -10,7 +10,10 @@ place on each side.
 plugin.yaml, __init__.py   the Hermes entry: register(ctx) registers tools.TOOLS, the hooks and the prompt section
 core/                 shared by every tool and hook
   catalog.json        every block type: what it is for, its fields and an example (the model reads this)
-  catalog_text.py     turns the catalog into the show_blocks tool description
+  catalog_text.py     turns the catalog into what the model reads: the menu (show_blocks), each block's spec
+                      (block_guide, and beside a refused block) and the full guide (HERMES_GENUI_GUIDE=full)
+  menu.txt            the menu in the show_blocks description: one line per block on what it's for
+  guide.py            which guide the model gets: the menu (default) or the full one
   check.py            checks a board before it is stored; looks each type up in blocks.TYPES
   store.py            one JSON file per board (also loaded on its own by dashboard/plugin_api.py: no package imports)
   surface.py          whether this turn's chat surface can draw blocks
@@ -106,7 +109,9 @@ a redirect) goes through `tools/photos/safety.py`, which refuses private address
 Say the new type is `gauge`.
 
 1. **Catalog.** Add an entry to `core/catalog.json`: `kind`, `for`, `use_when`, `fields` and a small `example`. The
-   tool description changes with it, so refresh the pin from the plugin folder:
+   fields and example are the block's spec, which `block_guide` returns only when the block is used. Add one line for
+   it to `core/menu.txt`, under the right heading: what it's for and when to choose it. That line is all every
+   message pays for. Refresh the full guide's pin from the plugin folder:
    `(cd core && python3 -c "import catalog_text; print(catalog_text.describe(), end='')") > tests/fixtures/describe.txt`
 2. **Python.** Create `blocks/gauge.py` with `check_gauge(block, path)` (returns `[(path, why), ...]`, empty when the
    block can be drawn) and `text_gauge(block)` (Markdown, or `""`). Use the helpers in `blocks/common.py`. Add one line
@@ -146,8 +151,9 @@ Every pull request runs the same checks on GitHub (`.github/workflows/checks.yml
 
 - **Start with an issue** for anything bigger than a fix: a new recipe idea, a data tool, or a new block type.
   - A new block type is agreed in a **"New block type"** issue first.
-  - Each block adds text to the `show_blocks` description, which every user pays for on every message. Its size is
-    capped by a test.
+  - Each block adds a line to the menu in the `show_blocks` description, which every user pays for on every message.
+    The menu is capped at 3,000 characters by a test. A block's fields cost only that block, when it's drawn, and
+    each block's spec is capped at 1,500.
   - So a proposal shows why the existing blocks can't do the job, and the JSON the model would write.
 - **Changing what the model reads? Run the evals.** That covers a new block, a new or changed field, the catalog
   wording in `core/catalog.json`, the prompt section, the visual reminder and the tool descriptions. Run the prompts
@@ -159,7 +165,8 @@ Every pull request runs the same checks on GitHub (`.github/workflows/checks.yml
 - **What reviewers check:**
   - **Security:** no model or web content becomes markup; fetches go through `tools/photos/safety.py`; Python checks
     are strict and web readers lenient.
-  - **The model's side:** clear, short catalog wording, the description stays under budget, and the eval results.
+  - **The model's side:** clear, short catalog wording, a menu line that says when to choose the block, and the
+    eval results.
   - **Accessibility:** keyboard, screen reader labels, reduced motion, light and dark, phone width.
   - **A text fallback** for every block.
 - **Keys** are read only through Hermes (`agent.secret_scope.get_secret`), never from files or the environment.

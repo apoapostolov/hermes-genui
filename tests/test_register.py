@@ -34,7 +34,7 @@ class FakeContext:
 def test_registers_the_tools_and_every_shipped_recipe_as_a_skill():
     ctx = FakeContext()
     plugin.register(ctx)
-    assert ctx.tools == ["show_blocks", "market_history", "find_photos", "save_recipe",
+    assert ctx.tools == ["show_blocks", "block_guide", "market_history", "find_photos", "save_recipe",
                          "dashboard", "board_page", "assistant_setup", "assistant_items", "assistant_open",
                          "assistant_inbox", "assistant_calendar", "assistant_report", "assistant_ideas"]
     # Each recipes/<name>/SKILL.md becomes the read-only skill "<plugin>:<name>", with its own description.
@@ -94,7 +94,7 @@ def test_register_registers_exactly_the_tool_registry_in_order(monkeypatch):
         "assistant_report", "assistant_ideas"]
     registered = [call[1] for call in ctx.calls if call[0] == "tool"]
     assert registered == [{"name": t.name, "toolset": t.toolset, "schema": t.schema, "handler": t.handler}
-                          for t in tools.TOOLS]
+                          for t in tools.tools_for("menu")]  # the menu guide adds block_guide after show_blocks
     assert all(t.schema["name"] == t.name for t in tools.TOOLS)
 
     hooks = [(call[1], call[2]) for call in ctx.calls if call[0] == "hook"]

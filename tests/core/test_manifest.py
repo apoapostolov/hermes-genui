@@ -54,7 +54,8 @@ def test_manifest_is_v2_with_the_catalog_fields():
 
 
 def test_manifest_declares_exactly_what_register_registers():
-    assert flow_list("provides_tools") == [t.name for t in tools.TOOLS]
+    # The default guide is the menu, which adds block_guide (HERMES_GENUI_GUIDE=full leaves it out).
+    assert flow_list("provides_tools") == [t.name for t in tools.tools_for("menu")]
 
     class Ctx:
         hooks: list[str] = []

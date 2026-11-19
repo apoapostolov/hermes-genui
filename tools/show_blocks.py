@@ -4,8 +4,10 @@ import json
 import math
 
 from ..blocks.chart import CHART_KINDS
-from ..core import store, surface
-from ..core.catalog_text import describe, spec
+from ..core import drawn, store, surface
+from ..core.catalog_text import describe, icons_line, spec
+from ..core.catalog_text import menu as core_menu
+from ..core.guide import GUIDE
 from ..core.check import IMAGE_URL_FIELDS, MAX_NESTING, check_blocks, child_lists, guess_kinds, too_deep
 
 __all__ = ["SHOW_BLOCKS_SCHEMA", "child_lists", "paste_instruction", "resolve_includes", "show_blocks",
@@ -24,7 +26,9 @@ def tag_for(block_id: str) -> str:
 def paste_instruction(block_id: str, includable: bool = False) -> str:
     """The line telling the model to paste the tag. A tool-made board also says how to place it inside a bigger
     layout (a dashboard), via an include block."""
-    paste = f"Put this on its own line in your reply, exactly as it is:\n{tag_for(block_id)}"
+    # "Drawn" and "don't draw it again": some models kept redrawing a board that had already been drawn.
+    paste = ("Drawn. Now write your reply, with this line on its own, exactly as it is (don't draw it again):\n"
+             + tag_for(block_id))
     if not includable:
         return paste
     include = f'{{"type": "include", "id": "{block_id}"}}'
@@ -38,9 +42,11 @@ MAX_GUIDES = 3
 def _not_drawn(problems: list[str], blocks: list | None = None) -> str:
     text = "Not drawn. Fix these and call show_blocks again:\n" + "\n".join(f"- {p}" for p in problems)
     guides = [g for kind in _refused_kinds(problems, blocks or []) if (g := spec(kind))][:MAX_GUIDES]
-    if not guides:
-        return text
-    return text + f"\n\nHow to write {'it' if len(guides) == 1 else 'them'}:\n" + "\n".join(guides)
+    if guides:
+        text += f"\n\nHow to write {'it' if len(guides) == 1 else 'them'}:\n" + "\n".join(guides)
+    if any("catalog icons" in p for p in problems):  # a made-up icon: say which ones there are
+        text += "\n" + icons_line()
+    return text
 
 
 def _refused_kinds(problems: list[str], blocks: list) -> list[str]:
@@ -224,26 +230,38 @@ def show_blocks(params: dict, **kwargs) -> str:
     problems = unknown_photos(blocks, store.known_photo_urls())
     if problems:
         return _not_drawn(problems)
-    return paste_instruction(store.save(blocks))
+    block_id = store.save(blocks)
+    drawn.note(str(kwargs.get("session_id") or ""), block_id)  # so a reply that loses the tag gets it back
+    return paste_instruction(block_id)
 
 
-SHOW_BLOCKS_SCHEMA = {
-    "name": "show_blocks",
-    "description": (
-        "Draw visual blocks in the reply (Hermes Desktop): itineraries, trends, comparisons, headline numbers, "
-        "photos. Use it when the answer reads better drawn than written. "
-        "Paste the returned tag on its own line exactly as returned. "
-        "Use only numbers and image URLs a tool returned.\n\n" + describe()
-    ),
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "blocks": {
-                "type": "array",
-                "items": {"type": "object"},
-                "description": "The blocks to draw, in order. Each has a `type`.",
-            }
+def schema(guide: str = "full") -> dict:
+    """show_blocks's schema. "full" carries every block's fields and example; "menu" (#42) carries the short menu,
+    and the model gets fields from block_guide."""
+    if guide == "menu":
+        description = core_menu()
+    else:
+        description = (
+            "Draw visual blocks in the reply (Hermes Desktop): itineraries, trends, comparisons, headline numbers, "
+            "photos. Use it when the answer reads better drawn than written. "
+            "Paste the returned tag on its own line exactly as returned. "
+            "Use only numbers and image URLs a tool returned.\n\n" + describe()
+        )
+    return {
+        "name": "show_blocks",
+        "description": description,
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "blocks": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                    "description": "The blocks to draw, in order. Each has a `type`.",
+                }
+            },
+            "required": ["blocks"],
         },
-        "required": ["blocks"],
-    },
-}
+    }
+
+
+SHOW_BLOCKS_SCHEMA = schema(GUIDE)

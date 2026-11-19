@@ -1,0 +1,35 @@
+Draw visual blocks in the reply (Hermes Desktop) when the answer reads better drawn than written.
+How: pick blocks from the menu below, call block_guide with their names to get fields and examples, then call show_blocks once with all blocks in order. Paste the returned tag on its own line exactly as returned. Use only numbers and image URLs a tool returned; null means no data, never 0.
+
+Data
+- chart: a trend, comparison or parts of a whole (line, bar, hbar, area, stacked, combo, pie, donut). 2-3 items on several metrics: a table instead.
+- kpis: 2-4 headline numbers with change and trend; the top of a report.
+- table: options compared on the same attributes (phones, plans, hotels).
+- heatmap: a grid shaded by value (sectors by quarter, habits by weekday).
+- list: ranked or plain rows with title, subtitle, value (top picks, results).
+- progress: a value on a track to a goal (savings, training).
+- streak: a daily habit: a count and the week ticked.
+Plans and time
+- timeline: a day-by-day plan of timed stops (itineraries, schedules).
+- calendar: one day at a glance with its events and week.
+- upnext: upcoming events, bills, deliveries as cards.
+- weather: weather now, for the top of a day or trip.
+- checklist: items to tick, saved (packing, to-dos, steps).
+Explain
+- flow: 4-8 stages joined by arrows (a chain; branching: a mermaid block in the reply).
+- steps: Back/Next walkthrough that lights a flow's nodes. Always after a flow.
+- layers: a stack of levels in 3D (network, model, atmosphere).
+- flip: flash cards for quizzes and revision.
+- images: real photos with captions (what a place or thing looks like).
+Interactive
+- calculator: sliders with live results and chart (EMI, SIP, what-ifs). Never do this maths in text.
+- simulate: a formula played over time as dots or a line.
+- form: ask 2+ key unknowns in ONE prefilled form before a big answer.
+- actions: up to 3 buttons that send a message; tiles: 2-8 cover cards to explore.
+Text
+- callout: a warning, tip or verdict; one per reply. source: the data's source, last block.
+Layout
+- section: a titled card of blocks, can fold. columns: 2-3 big blocks side by side (dashboards).
+- row: 2-3 small blocks side by side. grid: 2-6 small blocks in two columns. tabs: 2-6 tabs, top level only.
+- include: a tool's board (market_history, find_photos) by its id.
+- Small pieces for row and grid: heading, text, stat, divider, badge, link, button, bar, image.

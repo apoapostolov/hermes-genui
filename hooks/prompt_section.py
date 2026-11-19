@@ -6,6 +6,7 @@ every other surface (Telegram, the CLI, …) is told to answer in text.
 """
 
 from ..core.manifest import NAME
+from ..core.guide import GUIDE
 from ..core.recipes import Recipe, shipped
 
 MAX_CHARS = 1_500
@@ -14,7 +15,7 @@ MAX_CHARS = 1_500
 DRAWING_PLATFORMS = frozenset({"local", "desktop"})
 
 
-def draw_rule(recipes: list[Recipe]) -> str:
+def draw_rule(recipes: list[Recipe], guide: str = GUIDE) -> str:
     """The Desktop rule, naming each recipe the way the model loads it: a plugin skill is asked for by its namespaced
     name, skill_view("<plugin>:<recipe>").
 
@@ -22,10 +23,11 @@ def draw_rule(recipes: list[Recipe]) -> str:
     skill_view("hermes-genui:<recipe>"), recipes: compare, explain. Call the tool; …'
     """
     names = ", ".join(recipe.name for recipe in recipes)
+    fields = " (get its blocks' fields from block_guide first)" if guide == "menu" else ""
     return f"""You answer inside Hermes Desktop, which draws visual blocks. When a reply reads better drawn than \
 written (a plan or itinerary, a trend, a comparison, headline numbers, photos, a dashboard), use the block tools: \
-market_history for markets, find_photos for photos, show_blocks for anything you lay out yourself, and a recipe \
-when one fits: load it with skill_view("{NAME}:<recipe>"), recipes: {names}. \
+market_history for markets, find_photos for photos, show_blocks for anything you lay out yourself{fields}, \
+and a recipe when one fits: load it with skill_view("{NAME}:<recipe>"), recipes: {names}. \
 Call the tool; it returns a tag. Put that returned tag on its own line in your reply, exactly as returned, never \
 inside a sentence, list or code block. Keep the words around it short; the blocks carry the detail. Use only numbers \
 and image URLs a tool returned.
