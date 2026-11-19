@@ -17,8 +17,21 @@ from ..core import store
 
 # A short, named allowlist. Adding a tool here is a deliberate decision, not a pattern match over every tool result.
 PHOTO_TOOLS: frozenset[str] = frozenset({"image_generate"})
+# The plugin's own stand-in is observed only while its setting is on, so a testing tool can walk the whole path from
+# tool to hook to board without ever widening the shipped allowlist.
+_standin_on = False
 MAX_URLS = 12  # the images block takes at most 12 photos
 MAX_DEPTH = 4
+
+
+def record_standin(on: bool) -> None:
+    """Called when the plugin registers: the stand-in is observed only when photo_test_tool is on."""
+    global _standin_on
+    _standin_on = bool(on)
+
+
+def _observed(tool_name: str) -> bool:
+    return tool_name in PHOTO_TOOLS or (tool_name == "standin_photos" and _standin_on)
 def _urls(value: Any, depth: int = 0) -> list[str]:
     """https strings anywhere in a tool result, in order, without repeats."""
     found: list[str] = []
@@ -54,7 +67,7 @@ def _urls(value: Any, depth: int = 0) -> list[str]:
 
 def note_tool_photos(*, tool_name: str, result: Any = None, **kwargs: Any) -> None:
     """Hermes hook: note https image URLs from an allowed tool. Never raises into the caller."""
-    if tool_name not in PHOTO_TOOLS:
+    if not _observed(tool_name):
         return
     try:
         urls = _urls(result)

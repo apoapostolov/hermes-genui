@@ -79,13 +79,15 @@
 @media (hover: none) { .hb-photo-download { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .hb-photo-download { transition: none; } }
 /* Four or more pictures read better as a grid: same cards and tokens, no sideways scroll. No model-written field. */
-.hb-photos-grid .hb-photo-strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; }
+.hb-photos-grid .hb-photo-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); overflow: visible; }
 .hb-photos-grid .hb-photo { flex: initial; width: auto; }
 /* In the full gallery the control sits on the right of the caption row, centred with it; the strip keeps it on the image. */
 .hb-photos-grid .hb-photo-text { flex-direction: row; align-items: center; gap: 8px; }
 .hb-photos-grid .hb-photo-download { position: static; flex: 0 0 28px; opacity: 1; }
 @media (max-width: 520px) { .hb-photos-grid .hb-photo-strip { grid-template-columns: 1fr; } }
 .hb-photo img { display: block; width: 100%; height: 150px; object-fit: cover; background: var(--hb-well); }
+/* In the gallery each photo keeps the shape of a photo: the width sets the height, so a wide window adds columns. */
+.hb-photos-grid .hb-photo img { height: auto; aspect-ratio: 4 / 3; }
 .hb-photo-text { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px 10px; }
 .hb-photo-caption {
   display: -webkit-box;

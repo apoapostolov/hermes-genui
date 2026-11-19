@@ -24,7 +24,7 @@ config_schema:
     type: bool
     default: false
     label: Turn on the stand-in photo tool
-    description: Registers standin_photos, which returns an https link, a local path or a broken link. Off by default so it costs nothing in the model's guide.
+    description: Registers standin_photos, which returns an https link, a local path or a broken link. Off by default so it costs nothing in the model's guide. Hermes reads this when the plugin loads, so restart Hermes after changing it.
   unsplash_access_key:
     type: secret
     env: UNSPLASH_ACCESS_KEY

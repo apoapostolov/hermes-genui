@@ -7,6 +7,7 @@ The three cases mirror what a real image tool returns: an https URL, a local pat
 from __future__ import annotations
 
 import json
+from typing import Any
 
 # A real image URL already shipped in the plugin's own catalogue, so the stand-in needs no network lookup.
 EXAMPLE_URL = "https://upload.wikimedia.org/wikipedia/commons/1/16/KyotoFushimiInariLarge.jpg"
@@ -16,8 +17,13 @@ BROKEN_URL = "https://example.invalid/missing-image.png"
 CASES = ("https", "local", "broken", "failed")
 
 
-def standin_photos(case: str = "https") -> str:
-    case = (case or "https").strip().lower()
+def standin_photos(params: dict | None = None, **kwargs: Any) -> str:
+    """Hermes tool handler. `params` is the model's arguments, as Hermes calls every tool: `{"case": "https"}`.
+
+    A bare string is still accepted so the handler can be called by hand, but the tool itself is always given a dict.
+    """
+    raw = params.get("case") if isinstance(params, dict) else params
+    case = (raw or "https").strip().lower() if isinstance(raw, str) else "https"
     if case not in CASES:
         return json.dumps({"success": False, "error": f"case must be one of {', '.join(CASES)}"})
     if case == "failed":

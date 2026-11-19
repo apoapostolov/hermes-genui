@@ -38,6 +38,24 @@ def test_local_paths_and_malformed_results_are_ignored(tmp_path, monkeypatch):
     assert tool_photos.store.known_photo_urls(root=tmp_path) == set()
 
 
+def test_the_standin_is_recorded_only_while_its_setting_is_on(tmp_path, monkeypatch):
+    """The plugin's own testing tool walks tool, hook and board, but only while photo_test_tool is on."""
+    monkeypatch.setattr(tool_photos.store, "default_root", lambda: tmp_path)
+    tool_photos.note_tool_photos(tool_name="standin_photos", result={"image": HTTPS})
+    assert tool_photos.store.known_photo_urls(root=tmp_path) == set(), "off by default"
+
+    tool_photos.record_standin(True)
+    try:
+        tool_photos.note_tool_photos(tool_name="standin_photos", result={"image": HTTPS})
+        assert tool_photos.store.known_photo_urls(root=tmp_path) == {HTTPS}
+        # Turning the setting off again closes the door, and image_generate is unaffected either way.
+        tool_photos.record_standin(False)
+        tool_photos.note_tool_photos(tool_name="standin_photos", result={"image": BROKEN})
+        assert tool_photos.store.known_photo_urls(root=tmp_path) == {HTTPS}
+    finally:
+        tool_photos.record_standin(False)
+
+
 def test_a_broken_link_is_recorded_but_left_to_the_renderer(tmp_path, monkeypatch):
     monkeypatch.setattr(tool_photos.store, "default_root", lambda: tmp_path)
     tool_photos.note_tool_photos(tool_name="image_generate", result={"success": True, "image": BROKEN})

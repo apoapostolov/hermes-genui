@@ -108,11 +108,11 @@ def test_register_registers_exactly_the_tool_registry_in_order(monkeypatch):
         "show_blocks", "market_history", "find_photos", "standin_photos", "save_recipe", "dashboard", "board_page",
         "assistant_setup", "assistant_items", "assistant_open", "assistant_inbox", "assistant_calendar",
         "assistant_report", "assistant_ideas"]
-    # The stand-in stays out of the model's guide until its setting is on.
-    expected = [t for t in tools.TOOLS if t.name != "standin_photos"]
+    # The menu guide adds block_guide after show_blocks; the stand-in stays out until its setting is on.
+    expected = [t for t in tools.tools_for("menu") if t.name != "standin_photos"]
     registered = [call[1] for call in ctx.calls if call[0] == "tool"]
     assert registered == [{"name": t.name, "toolset": t.toolset, "schema": t.schema, "handler": t.handler}
-                          for t in expected]  # the menu guide adds block_guide; the stand-in needs its setting]
+                          for t in expected]
     assert all(t.schema["name"] == t.name for t in tools.TOOLS)
 
     hooks = [(call[1], call[2]) for call in ctx.calls if call[0] == "hook"]

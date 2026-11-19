@@ -11,6 +11,7 @@ from .core.manifest import NAME
 from .hooks.prompt_section import MAX_CHARS, drawing_rule
 from .hooks.text_fallback import text_only
 from .hooks.tool_photos import note_tool_photos
+from .hooks import tool_photos
 from .hooks.visual_nudge import visual_nudge
 from .tools import assistant, board_page, photos, tools_for
 from .tools.save_recipe import CATEGORY, set_skill_writer
@@ -19,6 +20,8 @@ from .tools.save_recipe import CATEGORY, set_skill_writer
 def register(ctx):
     get_config = getattr(ctx, "get_config", None)
     standin_on = bool(get_config("photo_test_tool", False)) if callable(get_config) else False
+    # The stand-in walks the whole path (tool, hook, board) only while its setting is on.
+    tool_photos.record_standin(standin_on)
     for tool in tools_for(GUIDE):
         if tool.name == "standin_photos" and not standin_on:
             continue
