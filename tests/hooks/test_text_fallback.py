@@ -150,6 +150,7 @@ def test_chart_sort_desc_orders_the_text_by_the_first_series():
     chart = {"type": "chart", "kind": "bar", "sortDesc": True, "title": "Spend",
              "x": ["a", "b", "c"], "series": [{"name": "S", "data": [2, 9, 5]}]}
     assert render(chart) == "**Spend**: S 9 → 2 (▼ 77.8%)"
+    assert render({**chart, "kind": "hbar"}) == "**Spend**: S 9 → 2 (▼ 77.8%)"
 
 
 # --- tables ---------------------------------------------------------------------------------------

@@ -35,6 +35,7 @@ describe("chart reading", () => {
     const long = (readBlocks([{ ...raw, caveat: "x".repeat(200), xLabel: "y".repeat(60) }])[0] as any).spec;
     expect(long.caveat.length).toBe(120);
     expect(long.xLabel.length).toBe(40);
+    expect(long.xLabel.endsWith("…")).toBe(true);
     const pie = (readBlocks([{ ...raw, kind: "pie", series: [{ data: [1, 2, 3] }] }])[0] as any).spec;
     expect(pie.caveat).toBe("Q3 onward is a projection.");
     expect(pie.xLabel).toBeUndefined();
@@ -61,6 +62,10 @@ describe("chart reading", () => {
     expect(bars.spec.x).toEqual(["b", "c", "a"]);
     expect(bars.spec.series[0].data).toEqual([9, 5, 2]);
     expect(bars.spec.series[1].data).toEqual([90, 50, 20]);
+
+    const ranked = readBlocks([{ type: "chart", kind: "hbar", sortDesc: true, x: ["Pune", "Mumbai", "Bengaluru"],
+      series: [{ data: [38, 52, 61] }] }])[0] as any;
+    expect(ranked.spec.x).toEqual(["Bengaluru", "Mumbai", "Pune"]);
   });
 });
 

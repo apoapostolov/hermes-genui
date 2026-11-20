@@ -2442,8 +2442,9 @@ function readChart(raw, here) {
 }
 function caption(value, max) {
   if (typeof value !== "string") return void 0;
-  const text = value.trim().slice(0, max);
-  return text || void 0;
+  const text = value.trim();
+  if (!text) return void 0;
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}\u2026` : text;
 }
 function readSpec(d) {
   if (!Array.isArray(d.x) || !Array.isArray(d.series) || !d.series.length) return null;
@@ -2483,7 +2484,7 @@ function readSpec(d) {
   }
   if (d.stepped === true) spec.stepped = true;
   if (typeof d.height === "number" && isFinite(d.height)) spec.height = Math.round(Math.min(480, Math.max(120, d.height)));
-  if (d.sortDesc === true && type === "bar") sortByFirstSeries(spec);
+  if (d.sortDesc === true && (type === "bar" || type === "hbar")) sortByFirstSeries(spec);
   return spec;
 }
 function sortByFirstSeries(spec) {

@@ -59,20 +59,15 @@ def check_chart(block: dict, path: str) -> list[tuple[str, str]]:
 
 
 def _check_controls(block: dict, kind: str, path: str) -> list[tuple[str, str]]:
-    """The optional drawing controls: stepped for line and combo, sortDesc for bar, height 120-480."""
+    """The optional drawing controls, checked only when switched on: stepped (true) is for line and combo, sortDesc
+    (true) for bar and hbar. Anything else (false, null, a string) means the control is off, as the reader treats it.
+    height isn't checked: the reader clamps it to 120-480 and ignores a non-number."""
     problems = []
-    if "stepped" in block and block["stepped"] is not True:
-        problems.append((path, 'stepped can only be true'))
-    elif block.get("stepped") is True and kind not in ("line", "combo"):
-        problems.append((path, 'stepped is for a line or combo chart'))
-    if "sortDesc" in block and block["sortDesc"] is not True:
-        problems.append((path, 'sortDesc can only be true'))
-    elif block.get("sortDesc") is True and kind != "bar":
-        problems.append((path, "sortDesc is for a bar chart"))
-    if "height" in block and not (is_number(block["height"]) and 120 <= block["height"] <= 480):
-        problems.append((path, "height must be 120 to 480"))
+    if block.get("stepped") is True and kind not in ("line", "combo"):
+        problems.append((path, "stepped is for a line or combo chart"))
+    if block.get("sortDesc") is True and kind not in ("bar", "hbar"):
+        problems.append((path, "sortDesc is for a bar or hbar chart"))
     return problems
-
 
 def _check_tone(block: dict, kind: str, series_count: int, path: str) -> list[tuple[str, str]]:
     """The optional tone: only "change" (one line, green above its first value and orange below), only on a line
@@ -123,7 +118,7 @@ def text_chart(block: dict) -> str:
     """
     series = [s for s in block.get("series", []) if isinstance(s, dict)]
     x = list(block.get("x") or [])
-    if block.get("sortDesc") is True and chart_kind(block.get("kind")) == "bar" and series:
+    if block.get("sortDesc") is True and chart_kind(block.get("kind")) in ("bar", "hbar") and series:
         values = [v if is_number(v) else None for v in series[0].get("data", [])]
         order = sorted(range(len(x)), key=lambda i: (values[i] is None, -(values[i] or 0), i))
         x = [x[i] for i in order if i < len(x)]

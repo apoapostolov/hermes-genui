@@ -27,11 +27,13 @@ export function readChart(raw: any, here: Trail): ChartBlock | null {
   return { type: "chart", spec };
 }
 
-/** A written caption as one line, trimmed and capped before it reaches the card; empty and whitespace-only are absent. */
+/** A written caption as one line, trimmed and capped before it reaches the card (a cut one ends with "…");
+ *  empty and whitespace-only are absent. */
 function caption(value: unknown, max: number): string | undefined {
   if (typeof value !== "string") return undefined;
-  const text = value.trim().slice(0, max);
-  return text || undefined;
+  const text = value.trim();
+  if (!text) return undefined;
+  return text.length > max ? `${text.slice(0, max - 1).trimEnd()}…` : text;
 }
 
 function readSpec(d: any): ChartSpec | null {
@@ -69,7 +71,7 @@ function readSpec(d: any): ChartSpec | null {
   }
   if (d.stepped === true) spec.stepped = true;
   if (typeof d.height === "number" && isFinite(d.height)) spec.height = Math.round(Math.min(480, Math.max(120, d.height)));
-  if (d.sortDesc === true && type === "bar") sortByFirstSeries(spec);
+  if (d.sortDesc === true && (type === "bar" || type === "hbar")) sortByFirstSeries(spec);
   return spec;
 }
 
