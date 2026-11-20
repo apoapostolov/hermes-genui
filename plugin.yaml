@@ -17,8 +17,8 @@ license: MIT
 homepage: https://github.com/sagarmainkar/hermes-genui
 tags: [desktop, generative-ui, charts, dashboards, visualization, photos, markets, recipes, assistant]
 requires_hermes: ">=0.22.5"
-provides_tools: [show_blocks, block_guide, market_history, find_photos, save_recipe, dashboard, board_page, assistant_setup, assistant_items, assistant_open, assistant_inbox, assistant_calendar, assistant_report, assistant_ideas]
-provides_hooks: [pre_llm_call, transform_llm_output]
+provides_tools: [show_blocks, block_guide, market_history, find_photos, standin_photos, save_recipe, dashboard, board_page, assistant_setup, assistant_items, assistant_open, assistant_inbox, assistant_calendar, assistant_report, assistant_ideas]
+provides_hooks: [pre_llm_call, post_tool_call, transform_llm_output]
 config_schema:
   local_only:
     type: bool
@@ -28,6 +28,11 @@ config_schema:
       Turns off the mail assistant, prepared ideas and kept dashboards in this profile, since each sends this
       profile's data to its model on a schedule. Jobs made before you switch it on stop reading data. Chat and boards
       still work, and still go to the profile's model. The demo mailbox still works.
+  photo_test_tool:
+    type: bool
+    default: false
+    label: Turn on the stand-in photo tool
+    description: Registers standin_photos, which returns an https link, a local path or a broken link. Off by default so it costs nothing in the model's guide. Hermes reads this when the plugin loads, so restart Hermes after changing it.
   unsplash_access_key:
     type: secret
     env: UNSPLASH_ACCESS_KEY

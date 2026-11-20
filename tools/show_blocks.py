@@ -139,8 +139,9 @@ def unknown_photos(blocks: list, known: set[str], path: str = "") -> list[str]:
     """Photos whose URL no tool returned, as problems. Walks into containers and tabs.
 
     [{"type": "images", "images": [{"url": "https://made.up/x.jpg"}]}] with nothing known
-    → ["0.images.0: use only photo URLs that find_photos returned"]
-    [{"type": "image", "url": "https://made.up/y.jpg"}] → ["0.url: use only photo URLs that find_photos returned"]
+    → ["0.images.0: use only image URLs that find_photos or image_generate returned"]
+    [{"type": "image", "url": "https://made.up/y.jpg"}]
+    → ["0.url: use only image URLs that find_photos or image_generate returned"]
     """
     problems = []
     for i, block in enumerate(blocks):
@@ -149,7 +150,7 @@ def unknown_photos(blocks: list, known: set[str], path: str = "") -> list[str]:
             continue
         for where, url in photos_in(block):
             if url not in known:
-                problems.append(f"{here}.{where}: use only photo URLs that find_photos returned")
+                problems.append(f"{here}.{where}: use only image URLs that find_photos or image_generate returned")
         for where, children in child_lists(block):
             problems += unknown_photos(children, known, f"{here}.{where}.")
     return problems

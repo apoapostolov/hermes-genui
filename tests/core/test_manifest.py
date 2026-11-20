@@ -83,8 +83,10 @@ def test_the_photo_keys_are_optional_secrets_in_the_settings_form():
     entries = re.findall(r"^  (\w+):\n((?:    .*\n?)+)", schema, re.M)
     declared = {}
     for key, body in entries:
-        if key == "local_only":
-            continue  # a behaviour setting, not a key: checked below
+        if "    type: bool\n" in body:
+            assert key in ("local_only", "photo_test_tool"), key  # behaviour settings, not keys
+            assert "    default: false\n" in body
+            continue
         assert "    type: secret\n" in body, key
         assert re.search(r"^    label: .+optional", body, re.M | re.I), f"{key}: the label says it is optional"
         assert re.search(r"^    description: .{20,}", body, re.M), key
