@@ -238,9 +238,9 @@ website the bill came from. Mail is treated as untrusted text: nothing written i
 > [!NOTE]
 > **Each check is a run of your profile's model.** With real mail, new messages are sent to that model every 30
 > minutes, the same way a chat would send them. If the model is a cloud model, your mail goes to that provider. To
-> keep a profile's data on your machine, use a local model there, or turn on the plugin's **Keep this profile's data
-> local** setting (`local_only`) in that profile: the plugin then refuses the real-mail assistant, prepared ideas and
-> kept dashboards there. The sample mailbox costs nothing while it's idle: a small script skips the check when no new mail arrived.
+> keep a profile's data on your machine, use a local model there, or turn on the plugin's **No scheduled jobs that
+> send data to the model** setting (`local_only`) in that profile: the plugin then turns off the real-mail assistant,
+> prepared ideas and kept dashboards there. The sample mailbox costs nothing while it's idle: a small script skips the check when no new mail arrived.
 
 ## 📊 Dashboards from your own data
 
@@ -391,10 +391,12 @@ flowchart LR
   profiles' folders on the same machine. Any profile can then load another profile's board by its id.
 - There's no telemetry and no account.
 
-**Keeping a profile local.** The plugin's **Keep this profile's data local** setting turns off the three things that
-send that profile's data to its model on a schedule: the real-mail assistant, prepared ideas and kept dashboards.
-Boards you ask for in chat still work. Switch it on in the plugin's settings in Hermes Desktop, or in that profile's
-`config.yaml`:
+**No scheduled jobs that send data to the model.** This plugin setting (`local_only`) turns off the three things
+that send a profile's data to its model on a schedule: the real-mail assistant, prepared ideas and kept dashboards.
+Jobs made before you switch it on stop reading data: the mail check reads no mail, and a kept page keeps its last
+snapshot instead of refreshing. Chat and the boards you ask for still work, and still go to the profile's model, so
+for a profile whose data must stay on your machine, use a local model too. Switch it on in the plugin's settings in
+Hermes Desktop, or in that profile's `config.yaml`:
 
 ```yaml
 plugins:
@@ -406,8 +408,8 @@ plugins:
 
 It takes effect on the next tool call, with no restart.
 
-**Your scheduled jobs stay yours.** If you delete the assistant's mail check, or change a kept dashboard's refresh
-schedule, the model asks you before putting either back.
+**Your scheduled jobs stay yours.** If you delete the assistant's mail check or ideas job, or change a kept
+dashboard's refresh schedule, the model asks you before putting any of them back.
 
 **What the plugin adds to the model's context:**
 - a short drawing rule in the system prompt (under 1,500 characters);

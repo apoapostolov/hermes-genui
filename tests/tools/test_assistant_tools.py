@@ -327,3 +327,69 @@ def test_the_env_file_no_longer_switches_local_only(tmp_path):
     home = setup_home(tmp_path)
     (home / ".env").write_text("HERMES_GENUI_LOCAL_ONLY=1\n", encoding="utf-8")
     assert assistant.local_only() is False
+
+
+def _jobs(home, *names):
+    (home / "cron").mkdir(exist_ok=True)
+    (home / "cron" / "jobs.json").write_text(json.dumps({"jobs": [{"id": f"j{i}", "name": n}
+                                                                  for i, n in enumerate(names)]}), encoding="utf-8")
+
+
+def test_both_jobs_missing_are_offered_back_together_after_asking(tmp_path):
+    home = setup_home(tmp_path)
+    call("assistant_setup", {"action": "set", "source": "gmail-mcp", "ideas": True}, home)
+    note = assistant.restore_note(home)
+    assert "mail check and its ideas job aren't scheduled" in note and "until they say yes" in note
+    assert '"name": "Personal assistant check"' in note and '"name": "Assistant ideas"' in note
+    assert "don't run it" in note and '"clear"' in note
+
+
+def test_a_missing_ideas_job_alone_asks_and_on_no_turns_ideas_off(tmp_path):
+    home = setup_home(tmp_path)
+    call("assistant_setup", {"action": "set", "source": "gmail-mcp", "ideas": True}, home)
+    _jobs(home, "Personal assistant check")
+    note = assistant.restore_note(home)
+    assert "ideas job isn't scheduled" in note and "until they say yes" in note
+    assert '"name": "Assistant ideas"' in note and '"name": "Personal assistant check"' not in note
+    assert 'action "ideas" and on false' in note and '"clear"' not in note
+    _jobs(home, "Personal assistant check", "Assistant ideas")
+    assert assistant.restore_note(home) == ""
+
+
+def test_an_ideas_job_isnt_missed_when_ideas_are_off(tmp_path):
+    home = setup_home(tmp_path)
+    call("assistant_setup", {"action": "set", "source": "gmail-mcp"}, home)
+    _jobs(home, "Personal assistant check")
+    assert assistant.restore_note(home) == ""
+
+
+def test_a_local_only_profile_isnt_offered_its_real_mail_check_back(tmp_path, monkeypatch):
+    home = setup_home(tmp_path)
+    call("assistant_setup", {"action": "set", "source": "gmail-mcp", "ideas": True}, home)
+    monkeypatch.setattr(assistant, "_CONFIG", [{"local_only": True}.get])
+    note = assistant.restore_note(home)
+    assert "stays off" in note and "cronjob_manage" not in note
+
+
+def test_switching_local_only_on_stops_a_real_mail_check_that_already_exists(tmp_path, monkeypatch):
+    home = setup_home(tmp_path)
+    call("assistant_setup", {"action": "set", "source": "gmail-mcp"}, home)
+    assert not call("assistant_open", {}, home).startswith("Stopped")
+    monkeypatch.setattr(assistant, "_CONFIG", [{"local_only": True}.get])
+    for tool in ("assistant_open", "assistant_inbox", "assistant_calendar", "assistant_report"):
+        reply = call(tool, {}, home)
+        assert reply.startswith("Stopped") and "Skipped: local-only" in reply, tool
+
+
+def test_local_only_leaves_the_demo_mailbox_alone(tmp_path, monkeypatch):
+    home = setup_home(tmp_path)
+    call("assistant_setup", {"action": "set", "source": "demo"}, home)
+    monkeypatch.setattr(assistant, "_CONFIG", [{"local_only": True}.get])
+    assert not call("assistant_inbox", {}, home).startswith("Stopped")
+
+
+def test_a_local_only_refusal_tells_the_model_to_leave_the_setting_alone(tmp_path, monkeypatch):
+    home = setup_home(tmp_path)
+    monkeypatch.setattr(assistant, "_CONFIG", [{"local_only": True}.get])
+    reply = call("assistant_setup", {"action": "set", "source": "gmail-mcp"}, home)
+    assert "only the user changes that setting" in reply and "don't change it or offer to" in reply

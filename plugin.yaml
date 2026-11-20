@@ -23,10 +23,11 @@ config_schema:
   local_only:
     type: bool
     default: false
-    label: Keep this profile's data local
+    label: No scheduled jobs that send data to the model
     description: >-
-      Turns off the three things that send this profile's data to its model on a schedule: the real-mail assistant,
-      prepared ideas and kept dashboards. Drawing blocks in a reply still works, and so does the demo mailbox.
+      Turns off the mail assistant, prepared ideas and kept dashboards in this profile, since each sends this
+      profile's data to its model on a schedule. Jobs made before you switch it on stop reading data. Chat and boards
+      still work, and still go to the profile's model. The demo mailbox still works.
   unsplash_access_key:
     type: secret
     env: UNSPLASH_ACCESS_KEY

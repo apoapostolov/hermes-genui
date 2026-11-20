@@ -33,14 +33,18 @@ All notable changes to this plugin. Versions follow [Semantic Versioning](https:
 
 From the Hermes plugin-catalog review of 0.3.0.
 
-- **A deleted mail check stays deleted** unless you say otherwise. When the assistant's 30-minute check is gone, the
-  model now asks whether to turn it back on, and on no it stops the assistant, instead of re-creating the job.
+- **A deleted assistant job stays deleted** unless you say otherwise. When the 30-minute mail check or the ideas job
+  is gone, the model now asks whether to turn it back on, instead of re-creating it. On yes it brings back every
+  missing job (the ideas job too, when ideas are on); on no it stops the assistant, or just turns ideas off. A
+  local-only profile isn't offered its real-mail check back.
 - **A refresh schedule you changed is kept** until you answer: the model asks whether to keep it or make the dashboard
   Refresh-only, instead of resetting it.
-- **Keeping a profile local is now a plugin setting**, `local_only` (Hermes Desktop's plugin settings, or
-  `plugins.entries.hermes-genui.settings.local_only` in `config.yaml`), since `.env` is for secrets. The plugin no
-  longer reads `HERMES_GENUI_LOCAL_ONLY` from `.env`: if you set it there, set the plugin setting instead. A setting
-  that can't be read counts as on.
+- **"No scheduled jobs that send data to the model" is now a plugin setting**, `local_only` (Hermes Desktop's
+  plugin settings, or `plugins.entries.hermes-genui.settings.local_only` in `config.yaml`), since `.env` is for
+  secrets. The plugin no longer reads `HERMES_GENUI_LOCAL_ONLY` from `.env`: if you set it there, set the plugin
+  setting instead. A setting that can't be read counts as on.
+- **The setting now also stops jobs made before it was switched on.** A real-mail check reads nothing and ends, and
+  a kept page keeps its last snapshot instead of refreshing. Before, it only refused new setups.
 
 ## 0.3.0 — Today, and dashboards you keep
 

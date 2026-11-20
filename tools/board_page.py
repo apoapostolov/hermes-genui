@@ -324,6 +324,9 @@ def apply(params: dict, home: Path | None = None, now: datetime | None = None, d
         return "\n".join(listed) or "No pages yet."
     if action == "keep":
         return _keep(params, home, root, now)
+    if action in ("save", "fetch") and assistant.local_only():
+        return (f"Not refreshed: {assistant.LOCAL_ONLY_NOTE} on every refresh. Call no other tools for this page's "
+                "data: call board_page fail with the reason \"local-only\", so the page keeps its last snapshot.")
     if action == "save":
         return _save(params, root, now)
     page = pages.load(slug, root)

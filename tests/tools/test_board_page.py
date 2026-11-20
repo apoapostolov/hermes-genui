@@ -382,3 +382,13 @@ def test_the_refresh_only_schedule_needs_nothing(tmp_path):
 
 def test_keep_says_not_to_change_the_schedule(tmp_path):
     assert "don't change the schedule" in keep(home_at(tmp_path))
+
+
+def test_switching_local_only_on_stops_a_kept_pages_refresh(tmp_path, monkeypatch):
+    home = home_at(tmp_path)
+    keep(home)
+    monkeypatch.setattr(assistant, "_CONFIG", [{"local_only": True}.get])
+    for action in ("fetch", "save"):
+        out = call({"action": action, "slug": "security", "blocks": [NUMS]}, home)
+        assert out.startswith("Not refreshed") and "board_page fail" in out, action
+    assert call({"action": "fail", "slug": "security", "reason": "local-only"}, home).startswith("Recorded")

@@ -56,9 +56,8 @@ Business dashboards are separate pages: draw one with the `dashboard` recipe and
      {"from": "page.today"} if there are work sections, and when tabs are ticked {"tabs": [one per pile:
      {"label": "Bills", "sections": [{"from": "assistant.bills"}]}, …, Done as {"from": "assistant.done"}]}]}`.
      With one pile ticked, put it as a plain section instead of tabs.
-4. **If a reply says the assistant's mail check isn't scheduled**, the user may have removed it on purpose: ask them
-   whether to turn it back on, and create it again (with the arguments given, then run it once) only if they say yes.
-   On no, call `assistant_setup` with `{"action": "clear"}`.
+4. **If a reply says one of the assistant's jobs isn't scheduled**, the user may have removed it on purpose: ask them
+   whether to turn it back on, and create it again only if they say yes, following that reply's steps for yes and no.
 5. **Reply in one sentence** that Today is updated. Don't draw blocks.
 
 ## Rules
