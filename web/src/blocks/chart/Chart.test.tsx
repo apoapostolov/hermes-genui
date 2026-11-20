@@ -303,10 +303,10 @@ describe("a null in the data", () => {
     const gapped = specOf({ kind: "line", title: "Orders per day", x: ["Mon", "Tue", "Wed"],
       series: [{ data: [3, null, 5] }, { data: [1, null, 2] }] });
     expect(missingLabels(gapped)).toEqual(["Tue"]);
-    expect(chartLabel(gapped)).toBe("Orders per day, Mon to Wed, Tue no data");
+    expect(chartLabel(gapped)).toBe("Orders per day. line chart. 3 to 5, up 66.7%. Tue no data");
     const whole = specOf({ title: "Orders", kind: "line", x: ["Mon", "Tue"], series: [{ data: [3, 4] }] });
     expect(missingLabels(whole)).toEqual([]);
-    expect(chartLabel(whole)).toBe("Orders, Mon to Tue");
+    expect(chartLabel(whole)).toBe("Orders. line chart. 3 to 4, up 33.3%");
   });
 
   it("breaks a line at the gap and puts a dot on a lone observation", () => {
@@ -315,7 +315,7 @@ describe("a null in the data", () => {
     expect(container.querySelectorAll("path.hb-chart-line").length).toBe(1);  // Wed to Fri only
     // the end label's dot and the lone Monday observation
     expect(container.querySelectorAll("circle.hb-chart-dot").length).toBe(2);
-    expect(container.querySelector("svg.hb-chart-svg")!.getAttribute("aria-label")).toBe("Orders, Mon to Fri, Tue no data");
+    expect(container.querySelector("svg.hb-chart-svg")!.getAttribute("aria-label")).toBe("Orders. line chart. 12 to 14, up 16.7%. Tue no data");
   });
 
   it("breaks a change line, which is one series too", () => {
@@ -352,5 +352,16 @@ describe("a null in the data", () => {
     expect(tip.querySelector(".hb-tip-title")!.textContent).toBe("Q2");
     expect(tip.querySelectorAll(".hb-tip-row").length).toBe(0);
     expect(tip.querySelector(".hb-tip-note")!.textContent).toBe("no data");
+  });
+
+  it("leaves a gap out of a stacked column and a stacked area, never a zero-height part", () => {
+    const series = () => [{ name: "Rent", data: [3, 4, null] }, { name: "Food", data: [2, 5, null] }];
+    const stacked = render(<Blocks blocks={chart({ kind: "stacked", x: ["Q1", "Q2", "Q3"], series: series() })} />);
+    // two parts on Q1 and on Q2, and nothing at all on Q3, where neither part holds a value
+    expect(stacked.container.querySelectorAll("rect[rx]").length).toBe(4);
+    cleanup();
+    const area = render(<Blocks blocks={chart({ kind: "area", x: ["Q1", "Q2", "Q3"], series: series() })} />);
+    // each part fills Q1 to Q2 and stops, instead of being carried on to Q3 as a zero
+    expect(area.container.querySelectorAll('path[fill-opacity=".3"]').length).toBe(2);
   });
 });

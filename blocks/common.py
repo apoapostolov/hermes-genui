@@ -203,15 +203,19 @@ def change_chip(change: object, unit: object = "%") -> str:
 
 
 def out_of(label: str, value: object, goal: object, unit: object) -> str:
-    """The value against its goal. An unknown figure (None) keeps its place and reads "no data"; the other still shows.
+    """The value against its goal. An unknown figure (None) keeps its place and reads "no data"; the other still shows,
+    with the unit it would have got from the goal, since it is now the only number there.
 
     ("Level 4", 95, 120, "XP") → "Level 4: 95 / 120 XP";  ("Level 5", None, 120, "XP") → "Level 5: no data / 120 XP";
-    ("Level 5", 95, None, "XP") → "Level 5: 95 / no data"
+    ("Level 5", 95, None, "XP") → "Level 5: 95 XP / no data";  ("Level 5", 95, None, "₹") → "Level 5: 95 ₹ / no data"
     """
     if not label or not (is_number(value) or value is None) or not (is_number(goal) or goal is None):
         return ""
+    unit_text = safe_text(unit, 20)
     shown = "no data" if value is None else fmt_num(value)
-    target = "no data" if goal is None else with_unit(fmt_num(goal), safe_text(unit, 20))
+    if value is not None and goal is None:
+        shown = with_unit(shown, unit_text)   # the goal wrote the unit; with no goal the value keeps it
+    target = "no data" if goal is None else with_unit(fmt_num(goal), unit_text)
     return f"{label}: {shown} / {target}"
 
 

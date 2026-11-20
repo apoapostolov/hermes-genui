@@ -54,9 +54,10 @@ export function Table({ columns, rows, highlight, caption }: TableBlock) {
                 {rows[r].map((cell, c) => {
                   const big = bigNumber(cell);
                   const direction = change[c] ? changeOf(cell) : null;
+                  const bar = change[c] && withBars ? cellNumber(cell) : null;  // no bar where the value is unknown
                   return (
                     <td key={c} className={cellClass(c, cell, direction ? `hb-${direction}` : "")} title={big?.full}>
-                      {change[c] && withBars && <MiniBar value={cellNumber(cell) ?? 0} largest={largest[c]} />}
+                      {bar !== null && <MiniBar value={bar} largest={largest[c]} />}
                       {big ? big.short : <InlineText text={cell} />}
                       {c === 0 && r === bestRow && <span className="hb-chip hb-chip-soft">Best</span>}
                     </td>

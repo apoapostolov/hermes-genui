@@ -142,7 +142,10 @@ def test_no_data_over_the_goal_when_the_value_is_unknown():
 def test_no_data_in_the_goal_s_place_when_the_goal_is_unknown():
     unknown = {"type": "progress", "title": "Level 5", "value": 95, "goal": None, "unit": "XP"}
     assert check.check_blocks([unknown]) == []
-    assert text_of("progress", unknown) == "Level 5: 95 / no data"
+    # the goal wrote the unit, so with no goal the value keeps it: "95" alone would be a bare number
+    assert text_of("progress", unknown) == "Level 5: 95 XP / no data"
+    money = {"type": "progress", "title": "Level 5", "value": 95, "goal": None, "unit": "₹"}
+    assert text_of("progress", money) == "Level 5: 95 ₹ / no data"
 
 
 def test_a_written_zero_stays_a_zero():

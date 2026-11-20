@@ -28,14 +28,14 @@ export function trackShare(value: number | null, goal: number | null, steps: Ste
 /**
  * "value / goal" the way charts write amounts (fmt), big numbers short: a unit fmt joins to the number (₹, $, %) goes
  * on both, any other unit once at the end. An unknown value or goal reads "no data" in its place, so the other keeps
- * showing.
+ * showing — and keeps its unit, since it is the only number left.
  *   (0, 1000000, "₹") → "₹0 / ₹10L";  (40, 100, "%") → "40% / 100%";  (95, 120, "XP") → "95 / 120 XP";
  *   (300, 500, "pts") → "300 / 500 pts";  (3, 10) → "3 / 10";  (null, 120, "XP") → "no data / 120 XP";
- *   (95, null, "XP") → "95 / no data"
+ *   (95, null, "₹") → "₹95 / no data";  (95, null, "XP") → "95 XP / no data"
  */
 export function amountOf(value: number | null, goal: number | null, unit?: string): string {
   const left = value === null ? "no data" : fmt(value, unit);
-  if (goal === null) return `${value === null ? left : fmt(value)} / no data`;
+  if (goal === null) return value === null ? "no data / no data" : `${left} / no data`;
   const plain = fmt(goal);
   const joined = fmt(goal, unit);
   if (!unit || (joined !== plain && joined !== `${plain} ${unit}`)) return `${left} / ${joined}`;
@@ -75,7 +75,8 @@ export function zoneTone(value: number | null, thresholds: Threshold[], fallback
 }
 
 /** Where a value sits on the track, from 0 to 1: the mark at 85 of a goal of 100 → 0.85. Held between 0 and 1. */
-const place = (at: number, goal: number | null): number => goal === null ? 0 : Math.max(0, Math.min(1, at / goal));
+const place = (at: number | null, goal: number | null): number =>
+  at === null || goal === null ? 0 : Math.max(0, Math.min(1, at / goal));
 
 /** A share as a CSS percentage, rounded: 0.2 of a goal of 100 is "20%", never "20.000000000000007%". */
 const pctOf = (share: number): string => `${Math.round(share * 10000) / 100}%`;

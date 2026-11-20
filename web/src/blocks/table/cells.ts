@@ -1,15 +1,16 @@
 // How a table cell reads beyond its text: a rise or a fall in a change column (with a mini bar), and a big amount
 // shortened the way the reader says it. Cells stay text in the block; this only decides how they are drawn.
 import { fmt, SHORT_FROM } from "../chart/chartData";
-import { cellNumber, isNumberColumn } from "./sort";
+import { cellNumber, isBlank, isNumberColumn } from "./sort";
 
 /** A change column holds numbers, at least one written with a sign, and is all percentages or all signed:
- *  ["+5%", "-3%"] → true;  ["4.1%", "−2.0%"] → true;  ["₹300", "₹50"] → false;  ["-26.8%", "13.3", "+4.7%"] → false */
+ *  ["+5%", "-3%"] → true;  ["4.1%", "−2.0%"] → true;  ["₹300", "₹50"] → false;  ["-26.8%", "13.3", "+4.7%"] → false
+ *  A cell written as unknown ("–") is skipped, the way a blank one is: ["+5%", "–", "-3%"] → true. */
 export function isChangeColumn(rows: string[][], column: number): boolean {
   if (!isNumberColumn(rows, column) || !rows.some((r) => /^[-+−]/.test(r[column] ?? ""))) return false;
   // A column of mixed metrics ("13.3", "1.83x", "+4.7%") isn't a change column: every cell is a percentage, or every
   // non-zero cell carries its sign.
-  const filled = rows.map((r) => (r[column] ?? "").trim()).filter(Boolean);
+  const filled = rows.map((r) => (r[column] ?? "").trim()).filter((cell) => !isBlank(cell));
   const allPercent = filled.every((cell) => cell.endsWith("%"));
   const allSigned = filled.every((cell) => /^[-+−]/.test(cell) || cellNumber(cell) === 0);
   return allPercent || allSigned;

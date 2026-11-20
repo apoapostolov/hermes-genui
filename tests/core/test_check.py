@@ -261,6 +261,8 @@ def test_small_atoms():
     assert check_blocks([{"type": "badge", "text": "New"}, {"type": "link", "url": "https://www.irctc.co.in"},
                          {"type": "image", "url": "https://x.example/a.jpg"},
                          {"type": "bar", "label": "Packed", "value": 6, "max": 9}]) == []
+    # A null value is a figure nobody knows: the bar keeps its place and reads "no data", so it isn't a refusal.
+    assert check_blocks([{"type": "bar", "label": "Spent", "value": None, "max": 500}]) == []
     assert check_blocks([{"type": "badge"}, {"type": "link", "url": "javascript:alert(1)"},
                          {"type": "image", "url": "http://x.example/a.jpg"}, {"type": "bar", "label": "x"}]) == [
         "0: badge needs text", "1: link needs an https url", "2: image needs an https url",

@@ -151,4 +151,12 @@ describe("kpis with an unknown value", () => {
     expect(container.querySelector("svg.hb-kpi-spark path")!.getAttribute("d")).toBe(sparkPath([100, null, 80]));
     expect(container.querySelector("svg.hb-kpi-spark path")!.getAttribute("d")).toBe("M0 2M120 26");
   });
+  it("read a value the card can't use as no data, not as 0", () => {
+    // the checker lets these through, so the card must draw them the way it draws a null
+    for (const value of [true, false, [1, 2], Number.NaN, "   "]) {
+      const { container, unmount } = render(<Blocks blocks={readBlocks([{ type: "stat", label: "Saved", value, unit: "₹" }])} />);
+      expect([...container.querySelectorAll(".hb-kpi-value")].map((v) => v.textContent)).toEqual(["no data"]);
+      unmount();
+    }
+  });
 });

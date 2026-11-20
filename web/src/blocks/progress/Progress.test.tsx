@@ -19,7 +19,9 @@ describe("Progress", () => {
     expect(trackShare(95, null, [])).toBe(0);  // no goal to be a share of
     expect(amountOf(null, 120, "XP")).toBe("no data / 120 XP");
     expect(amountOf(null, 1000000, "₹")).toBe("no data / ₹10L");
-    expect(amountOf(95, null, "XP")).toBe("95 / no data");
+    // a goal nobody knows keeps the value's unit: the one number left still says what it counts
+    expect(amountOf(95, null, "₹")).toBe("₹95 / no data");
+    expect(amountOf(95, null, "XP")).toBe("95 XP / no data");
     expect(amountOf(null, null)).toBe("no data / no data");
   });
   it("fills a checkpoint track between the evenly spaced checkpoints", () => {

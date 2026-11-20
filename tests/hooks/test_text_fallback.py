@@ -212,6 +212,11 @@ def test_progress_and_bar():
     )
     assert render({"type": "bar", "label": "Budget used", "value": 62}) == "Budget used: 62 / 100"
     assert render({"type": "bar", "label": "Food", "value": 7200, "max": 8000, "unit": "₹"}) == "Food: 7,200 / 8,000 ₹"
+    # A null value is a figure nobody knows: "no data" in its place, never a 0.
+    assert render({"type": "bar", "label": "Spent", "value": None, "max": 500, "unit": "₹"}) == "Spent: no data / 500 ₹"
+    # A null goal keeps the value's unit, so ₹95 still says what it counts.
+    assert render({"type": "progress", "title": "Level 5", "value": 95, "goal": None, "unit": "₹"}) == \
+        "Level 5: 95 ₹ / no data"
 
 
 def test_streak():

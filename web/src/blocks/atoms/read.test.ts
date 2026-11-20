@@ -51,6 +51,14 @@ describe("atoms", () => {
       { type: "bar", label: "Spent", value: 3, max: 100 },
     ]);
   });
+  it("keeps a bar whose value is a written null, and drops one with no value at all", () => {
+    const r = readBlocksNoted([
+      { type: "bar", label: "Spent", value: null, max: 500, unit: "₹" },
+      { type: "bar", label: "Nowhere" },
+    ]);
+    expect(r.blocks).toEqual([{ type: "bar", label: "Spent", value: null, max: 500, unit: "₹" }]);
+    expect(r.dropped.map((d) => d.why)).toEqual(["bar needs a numeric value"]);
+  });
   it("drops broken atoms, each with a note", () => {
     const r = readBlocksNoted([
       { type: "badge" }, { type: "link", url: "javascript:alert(1)" }, { type: "image", url: "data:x" },

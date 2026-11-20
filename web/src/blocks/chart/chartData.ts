@@ -99,8 +99,9 @@ export function kindToDraw(spec: ChartSpec): ChartKind {
 }
 
 /** The accessible name of a chart, built from what the drawing shows: title, kind, axes when named, the first and last
- *  values of the first series, and the caveat. The <text> nodes inside the svg are part of the image and unread on
- *  their own, so the axis captions and the limit of the data are carried here instead. */
+ *  values of the first series, the labels nothing was measured for, and the caveat. The <text> nodes inside the svg are
+ *  part of the image and unread on their own, so the axis captions, the gaps and the limit of the data are carried here
+ *  instead — a gap is read out, never mistaken for a zero. */
 export function chartLabel(spec: ChartSpec): string {
   const drawn = kindToDraw(spec);
   const parts = [spec.title?.trim() || spec.series[0].name || "Chart", `${drawn} chart`];
@@ -114,6 +115,8 @@ export function chartLabel(spec: ChartSpec): string {
     const direction = pct === null ? "" : `, ${pct >= 0 ? "up" : "down"} ${Math.abs(pct).toFixed(1)}%`;
     parts.push(`${fmt(values[0], unit)} to ${fmt(values[values.length - 1], unit)}${direction}`);
   }
+  const gaps = missingLabels(spec);
+  if (gaps.length) parts.push(gaps.length <= 4 ? `${gaps.join(", ")} no data` : `${gaps.length} of ${spec.x.length} labels with no data`);
   if (spec.caveat) parts.push(spec.caveat);
   return parts.join(". ");
 }
@@ -231,17 +234,6 @@ export function seriesName(series: { name?: string }[], k: number): string {
  *  x ["Mon", "Tue"], data [3, null] → ["Tue"];  data [3, 4] → [] */
 export function missingLabels(spec: ChartSpec): string[] {
   return spec.x.filter((_, i) => spec.series.every((s) => s.data[i] === null || s.data[i] === undefined)).map(String);
-}
-
-/** A chart's name for screen readers: the title (or the only series' name), the span of its labels, and which labels
- *  nothing was measured for, so a gap is read out and not mistaken for a zero.
- *  {title: "Orders", x: ["Mon", "Tue"], series: [{data: [3, null]}]} → "Orders, Mon to Tue, Tue no data" */
-export function chartLabel(spec: ChartSpec): string {
-  const title = spec.title ?? (spec.series.length === 1 ? spec.series[0].name : undefined) ?? "Chart";
-  const span = spec.x.length > 1 ? [`${spec.x[0]} to ${spec.x[spec.x.length - 1]}`] : [];
-  const gaps = missingLabels(spec);
-  const note = !gaps.length ? [] : gaps.length <= 4 ? [`${gaps.join(", ")} no data`] : [`${gaps.length} of ${spec.x.length} labels with no data`];
-  return [title, ...span, ...note].join(", ");
 }
 
 type Scale = { min: number; max: number };

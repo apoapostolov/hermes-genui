@@ -39,6 +39,7 @@ describe("badge, link, image and bar", () => {
     expect(barAmount(6, 9, "items")).toBe("6 / 9 items");
     expect(barAmount(7200, 8000, "₹")).toBe("₹7,200 / ₹8,000");
     expect(barAmount(3, 4)).toBe("3 / 4");
+    expect(barAmount(null, 500, "₹")).toBe("no data");  // a value nobody measured, not a 0
   });
 
   it("draws a bar filled to its share, never past full", () => {
@@ -47,6 +48,13 @@ describe("badge, link, image and bar", () => {
     expect(fills[0].style.width).toMatch(/^66\.6+\d*%$/);
     expect(fills[1].style.width).toBe("100%");
     expect(screen.getByText("6 / 9 items")).toBeTruthy();
+  });
+
+  it("leaves the track empty and says no data when the value is unknown", () => {
+    const c = draw([{ type: "bar", label: "Spent", value: null, max: 500, unit: "₹" }]);
+    const fill = c.querySelector(".hb-bar-fill") as HTMLElement;
+    expect(fill.style.width).toBe("0%");
+    expect(screen.getByText("no data")).toBeTruthy();
   });
 });
 

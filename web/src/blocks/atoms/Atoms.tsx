@@ -43,11 +43,12 @@ export function Picture({ url, caption }: ImageBlock) {
 
 /**
  * A bar's amount as it reads on the right: a share when it is out of 100 with no unit, money through formatAmount,
- * else "value / max" in the user's locale with the unit after.
+ * else "value / max" in the user's locale with the unit after. An unknown value reads "no data", never 0.
  *   (62, 100) → "62%";  (6, 9, "items") → "6 / 9 items";  (7200, 8000, "₹") → "₹7,200 / ₹8,000";  (3, 4) → "3 / 4";
- *   in de-DE (1234.5, 2000, "steps") → "1.234,5 / 2.000 steps"
+ *   in de-DE (1234.5, 2000, "steps") → "1.234,5 / 2.000 steps";  (null, 500, "₹") → "no data"
  */
-export function barAmount(value: number, max: number, unit?: string): string {
+export function barAmount(value: number | null, max: number, unit?: string): string {
+  if (value === null) return "no data";
   if (max === 100 && !unit) return `${value}%`;
   const money = formatAmount(value, unit);
   if (money !== null) return `${money} / ${formatAmount(max, unit)}`;
@@ -55,9 +56,10 @@ export function barAmount(value: number, max: number, unit?: string): string {
   return unit ? `${amount} ${unit}` : amount;
 }
 
-/** One progress bar in a small card: label on the left, the amount on the right, the fill never past full. */
+/** One progress bar in a small card: label on the left, the amount on the right, the fill never past full (and empty
+ *  when the value is unknown, so a gap is not drawn as a zero). */
 export function Bar({ label, value, max, unit }: BarBlock) {
-  const share = Math.max(0, Math.min(1, value / max));
+  const share = value === null ? 0 : Math.max(0, Math.min(1, value / max));
   return (
     <div className="hb-card hb-bar">
       <div className="hb-bar-head">

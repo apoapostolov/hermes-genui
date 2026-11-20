@@ -37,3 +37,11 @@ def test_stat_reads_an_unknown_value_as_no_data():
     assert check.check_blocks([{"type": "stat", "label": "Saved", "value": None}]) == []
     assert text_of("stat", {"type": "stat", "label": "Saved", "value": None}) == "Saved: no data"
     assert text_of("stat", {"type": "stat", "label": "Saved", "value": 0, "unit": "₹"}) == "Saved: 0 ₹"
+
+
+def test_a_value_the_text_side_cannot_write_is_no_data_not_a_refusal():
+    """The card draws these as "no data", so the checker must not refuse the board for them."""
+    for value in (True, [1, 2], float("nan"), "   ", False):
+        block = {"type": "stat", "label": "Saved", "value": value, "unit": "₹"}
+        assert check.check_blocks([block]) == [], value
+        assert text_of("stat", block) == "Saved: no data", value

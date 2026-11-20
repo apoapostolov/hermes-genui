@@ -45,7 +45,15 @@ def check_image(block: dict, path: str) -> list[tuple[str, str]]:
 
 
 def check_bar(block: dict, path: str) -> list[tuple[str, str]]:
-    if has_any_text(block, "label", "title") and is_number(block.get("value")):
+    """A label and a value out of a max. A written null value is a figure nobody knows: kept, so the bar draws empty
+    and reads "no data"; a bar with no value field at all is still refused.
+
+    {"label": "Packed", "value": 6, "max": 9} → []
+    {"label": "Spent", "value": None, "max": 500} → []
+    {"label": "Spent", "max": 500} → [(path, "bar needs a label and a numeric value")]
+    """
+    value = block.get("value")
+    if has_any_text(block, "label", "title") and (is_number(value) or ("value" in block and value is None)):
         return []
     return [(path, "bar needs a label and a numeric value")]
 

@@ -150,6 +150,8 @@ def bands(block: dict) -> list[tuple[float, float, str]]:
     bad on a goal of 100 → [(0, 60, "good"), (60, 85, "warn"), (85, 100, "bad")]; a mark past the goal ends its band
     there and colours nothing beyond it."""
     goal = block["goal"]
+    if goal is None:
+        return []  # no goal to hold a band against
     found, start = [], 0.0
     for mark in marks(block):
         tone = tone_of(mark.get("tone"))
@@ -169,6 +171,8 @@ def zone_tone(block: dict) -> str:
     marks 60 good / 100 warn / 150 bad on a goal of 100: a value of 120 → "warn" (the 150 mark colours nothing)
     """
     fallback = tone_of(block.get("tone")) or "good"
+    if block.get("value") is None:
+        return fallback  # an unknown reading colours no band
     found = bands(block)
     if not found:
         return fallback
@@ -203,7 +207,7 @@ def text_progress(block: dict) -> str:
     if not base:
         return ""
     unit = block.get("unit")
-    if block.get("show_percent") is True and safe_text(unit, 20) != "%":
+    if block.get("show_percent") is True and block.get("value") is not None and safe_text(unit, 20) != "%":
         base += f" ({percent_of(block['value'], block['goal'])}%)"
     tone = zone_tone(block)
     if tone != "good":
