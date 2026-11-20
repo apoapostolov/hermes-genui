@@ -39,23 +39,32 @@ def _default_home() -> Path:
     return store.default_root().parents[2]  # <home>/plugin-data/hermes-genui/blocks
 
 
-LOCAL_ONLY = "HERMES_GENUI_LOCAL_ONLY"
-LOCAL_ONLY_NOTE = (f"this profile keeps its data local ({LOCAL_ONLY} is on in its .env), and this sends tool results "
-                   "to the model")
+LOCAL_ONLY = "local_only"
+LOCAL_ONLY_NOTE = (f"this profile's \"No scheduled jobs that send data to the model\" setting ({LOCAL_ONLY}) is "
+                   "on, and this sends the profile's data to its model (only the user changes that setting, in the "
+                   "plugin's settings: don't change it or offer to)")
+LOCAL_ONLY_STOP = (f"Stopped: {LOCAL_ONLY_NOTE}. Read no mail or calendar and call no other tools. In a scheduled "
+                   "check, end the run now, replying only \"Skipped: local-only.\" In a chat, tell the user the "
+                   f"assistant is off here, and offer to remove the \"{JOB_NAME}\" job with cronjob_manage.")
+_CONFIG = [lambda key: None]  # register() puts Hermes's ctx.get_config here; outside Hermes nothing is set
 
 
-def local_only(home: Path) -> bool:
-    """Whether the profile's .env sets HERMES_GENUI_LOCAL_ONLY (1, true, yes): no mail check and no kept pages there,
-    since both send the profile's data to its model on a schedule."""
+def set_config_reader(read) -> None:
+    """Read plugin settings with this (Hermes's ctx.get_config: plugins.entries.hermes-genui.settings.<key>)."""
+    _CONFIG[0] = read
+
+
+def local_only() -> bool:
+    """Whether this profile's local_only plugin setting is on: no mail check, no prepared ideas and no kept pages there,
+    since each sends the profile's data to its model on a schedule. Read on every call, so a change needs no restart.
+    A setting that can't be read counts as on: this switch fails closed."""
     try:
-        lines = (home / ".env").read_text(encoding="utf-8").splitlines()
-    except OSError:
-        return False
-    for line in lines:
-        key, _, value = line.strip().partition("=")
-        if key.strip().removeprefix("export ").strip() == LOCAL_ONLY:
-            return value.strip().strip("'\"").lower() in ("1", "true", "yes", "on")
-    return False
+        value = _CONFIG[0](LOCAL_ONLY)
+    except Exception:  # noqa: BLE001 - an unreadable config must not turn the switch off
+        return True
+    if isinstance(value, str):
+        return value.strip().lower() in ("1", "true", "yes", "on")
+    return value is True
 
 
 def mcp_servers(home: Path) -> list[str]:
@@ -158,28 +167,56 @@ LAUNCH = _cron_run
 IDEAS_RETRY_HOURS = 6
 
 
-def check_scheduled(home: Path) -> bool:
-    """Whether the profile's Hermes jobs include the assistant's check (by its name)."""
+def _scheduled(home: Path, name: str) -> bool:
+    """Whether the profile's Hermes jobs include one with this name."""
     try:
         data = json.loads((home / "cron" / "jobs.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return False
     jobs = data.get("jobs") if isinstance(data, dict) else data
-    return any(isinstance(j, dict) and j.get("name") == JOB_NAME for j in jobs or [])
+    return any(isinstance(j, dict) and j.get("name") == name for j in jobs or [])
+
+
+def check_scheduled(home: Path) -> bool:
+    """Whether the profile's Hermes jobs include the assistant's check (by its name)."""
+    return _scheduled(home, JOB_NAME)
 
 
 def restore_note(home: Path) -> str:
-    """When the assistant is set up but its check job is gone (deleted in Scheduled jobs), what to do about it: the
-    exact arguments to create it again, to run without asking. "" when nothing is missing."""
+    """When the assistant is set up but its check job, or its ideas job while ideas are on, is gone (deleted in
+    Scheduled jobs), what to do about it. Never "without asking": the user may have removed it on purpose, so the model
+    asks; on yes it gets the exact arguments to create the missing jobs, on no how to stop what they ran. A local-only
+    profile gets no offer to bring back a real-mail check. "" when nothing is missing."""
     config = memory.load_config(_blocks(home))
-    if not config or check_scheduled(home):
+    if not config:
         return ""
     source = config.get("source") or "demo"
+    local = local_only()
+    check_missing = not check_scheduled(home)
+    ideas_missing = bool(config.get("ideas")) and not local and not _scheduled(home, IDEAS_JOB_NAME)
+    if check_missing and local and source != "demo":
+        return (f"The assistant's mail check isn't scheduled, and it stays off: {LOCAL_ONLY_NOTE}. Tell the user; the "
+                "demo source still works.")
+    if not (check_missing or ideas_missing):
+        return ""
+    ideas_args = json.dumps(ideas_job_arguments(), ensure_ascii=False)
+    if not check_missing:
+        return ("The assistant's ideas job isn't scheduled (it was removed), so prepared ideas have stopped. The user "
+                "may have removed it on purpose: ask them whether to keep prepared ideas, and don't create it until "
+                "they say yes. On yes: cronjob_manage with exactly these arguments (don't run it):\n" + ideas_args
+                + "\nOn no: call assistant_setup with action \"ideas\" and on false.")
     if source == "demo":
         _write_monitor(home)
-    return ("The assistant's mail check isn't scheduled (its job was removed), so mail and calendar have stopped "
-            "updating. Create it again now, without asking: cronjob_manage with exactly these arguments, then run it "
-            "once with action \"run\" and the new job's id:\n" + json.dumps(job_arguments(source), ensure_ascii=False))
+    jobs = "mail check and its ideas job aren't" if ideas_missing else "mail check isn't"
+    them = "them" if ideas_missing else "it"
+    reply = (f"The assistant's {jobs} scheduled (removed in Scheduled jobs), so mail and calendar have stopped "
+             f"updating. The user may have removed {them} on purpose: ask them whether to turn the assistant back on, "
+             "and don't create anything until they say yes. On yes: cronjob_manage with exactly these arguments, then "
+             "run it once with action \"run\" and the new job's id:\n" + json.dumps(job_arguments(source),
+                                                                                     ensure_ascii=False))
+    if ideas_missing:
+        reply += "\nThen create the ideas job with exactly these arguments (don't run it):\n" + ideas_args
+    return reply + "\nOn no: call assistant_setup with action \"clear\" to stop the assistant."
 
 
 def _write_monitor(home: Path) -> None:
@@ -219,14 +256,14 @@ def _setup(params: dict, home: Path, now: datetime) -> str:
                 f"out). Google: {google}.")
     if action == "set":
         source = str(params.get("source") or "")
-        if source != "demo" and local_only(home):
+        if source != "demo" and local_only():
             return f"Not set up: {LOCAL_ONLY_NOTE}. The demo source still works."
         if source != "demo" and source not in mcp_servers(home):
             return (f"Not set up: the source is an enabled MCP server with mail and calendar tools (enabled: "
                     f"{', '.join(mcp_servers(home)) or 'none'}), or \"demo\" for sample data.")
         if memory.load_config(blocks).get("source") not in (None, source):
             memory.clear(blocks)  # another source's items never mix with this one's
-        ideas = bool(params.get("ideas")) and not local_only(home)
+        ideas = bool(params.get("ideas")) and not local_only()
         config = {"source": source, "setup_at": now.isoformat(), "last_check": None, "ideas": ideas}
         if source == "demo":
             config.update(demo_anchor=now.date().isoformat(), demo_act=1)
@@ -244,7 +281,7 @@ def _setup(params: dict, home: Path, now: datetime) -> str:
         config = memory.load_config(blocks)
         if not config:
             return NOT_SET_UP
-        if params.get("on") and local_only(home):
+        if params.get("on") and local_only():
             memory.save_config({**config, "ideas": False}, blocks)
             return f"Ideas stay off: {LOCAL_ONLY_NOTE}."
         memory.save_config({**config, "ideas": bool(params.get("on"))}, blocks)
@@ -301,7 +338,7 @@ def _maybe_prepare(home: Path, now: datetime, fresh: bool) -> None:
     start was over IDEAS_RETRY_HOURS ago (a launch that failed, or ideas turned on later)."""
     blocks = _blocks(home)
     config = memory.load_config(blocks)
-    if not config.get("ideas") or local_only(home):
+    if not config.get("ideas") or local_only():
         return
     waiting = memory.pending_prep(memory.load_items(blocks))
     last = config.get("ideas_started_at")
@@ -323,6 +360,9 @@ def run(name: str, params: dict, home: Path | None = None, now: datetime | None 
     config = memory.load_config(_blocks(home))
     if not config:
         return NOT_SET_UP
+    if (name in ("assistant_open", "assistant_inbox", "assistant_calendar", "assistant_report")
+            and config.get("source") != "demo" and local_only()):
+        return LOCAL_ONLY_STOP  # the check starts with assistant_open: a job made before the switch reads nothing
     if name == "assistant_items":
         return _items(params, home, now)
     if name == "assistant_open":

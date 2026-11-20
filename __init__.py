@@ -29,6 +29,9 @@ def register(ctx):
     photos.set_web_search(lambda query: ctx.dispatch_tool("web_search", {"query": query}))
     # A kept page's refresh replays its recorded MCP calls by name.
     board_page.set_dispatch(lambda tool, args: ctx.dispatch_tool(tool, args))
+    # local_only is a plugin setting (config.yaml), read on each use so switching it needs no restart.
+    if callable(getattr(ctx, "get_config", None)):
+        assistant.set_config_reader(ctx.get_config)
     ctx.register_hook("pre_llm_call", visual_nudge)
     # Generated images come through Hermes's own image tool, not find_photos; note their https URLs in the same store.
     ctx.register_hook("post_tool_call", note_tool_photos)

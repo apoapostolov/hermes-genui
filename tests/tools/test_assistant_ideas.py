@@ -103,14 +103,14 @@ def test_ideas_job_has_no_mail_tools():
     assert job["skills"] == ["hermes-genui:assistant-ideas"]
 
 
-def test_setup_with_ideas_gives_both_jobs_and_local_only_refuses(tmp_path):
+def test_setup_with_ideas_gives_both_jobs_and_local_only_refuses(tmp_path, monkeypatch):
     home = tmp_path / "home"
     (home / "plugin-data" / "hermes-genui" / "blocks").mkdir(parents=True)
     (home / "config.yaml").write_text("x: 1\n", encoding="utf-8")
     reply = assistant.run("assistant_setup", {"action": "set", "source": "demo", "ideas": True}, home=home, now=NOW)
     assert "Assistant ideas" in reply
     assert memory.load_config(home / "plugin-data" / "hermes-genui" / "blocks")["ideas"] is True
-    (home / ".env").write_text("HERMES_GENUI_LOCAL_ONLY=1\n", encoding="utf-8")
+    monkeypatch.setattr(assistant, "_CONFIG", [{"local_only": "1"}.get])
     off = assistant.run("assistant_setup", {"action": "ideas", "on": True}, home=home, now=NOW)
     assert "local" in off and memory.load_config(home / "plugin-data" / "hermes-genui" / "blocks")["ideas"] is False
 
