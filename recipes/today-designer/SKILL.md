@@ -41,7 +41,7 @@ Business dashboards are separate pages: draw one with the `dashboard` recipe and
 
 3. **Build from the answer** (a message starting `Form: Design your Today page`).
    - **Mail assistant first**, if `assistant_setup` `show` said it isn't set up: set it up
-     without asking. Pick the MCP server whose tools read mail and a calendar (gmail: `gmail_search`,
+     (the submitted form is the user's request for it, so don't ask again). Pick the MCP server whose tools read mail and a calendar (gmail: `gmail_search`,
      `calendar_list_events`), call `{"action": "set", "source": "<that server>", "ideas": <ideas ticked>}`, create
      the check (and the ideas job, when it returns one) with
      `cronjob_manage` using exactly the arguments it returns, and run it once (`cronjob_manage` `run` with the new id).
@@ -56,8 +56,9 @@ Business dashboards are separate pages: draw one with the `dashboard` recipe and
      {"from": "page.today"} if there are work sections, and when tabs are ticked {"tabs": [one per pile:
      {"label": "Bills", "sections": [{"from": "assistant.bills"}]}, …, Done as {"from": "assistant.done"}]}]}`.
      With one pile ticked, put it as a plain section instead of tabs.
-4. **If a reply says the assistant's mail check isn't scheduled**, create it again with the arguments given and run it
-   once, without asking; mention it in your reply.
+4. **If a reply says the assistant's mail check isn't scheduled**, the user may have removed it on purpose: ask them
+   whether to turn it back on, and create it again (with the arguments given, then run it once) only if they say yes.
+   On no, call `assistant_setup` with `{"action": "clear"}`.
 5. **Reply in one sentence** that Today is updated. Don't draw blocks.
 
 ## Rules

@@ -186,7 +186,7 @@ def test_a_missing_check_job_comes_with_its_arguments(tmp_path):
     call("assistant_setup", {"action": "set", "source": "gmail-mcp"}, home)
     shown = call("assistant_setup", {"action": "show"}, home)
     assert "check isn't scheduled" in shown and '"action": "create"' in shown and "gmail-mcp" in shown
-    assert "without asking" in shown
+    assert "ask them" in shown and "until they say yes" in shown and "without asking" not in shown
     (home / "cron").mkdir()
     (home / "cron" / "jobs.json").write_text(json.dumps({"jobs": [{"name": "Personal assistant check"}]}),
                                              encoding="utf-8")
@@ -198,9 +198,9 @@ def test_no_note_before_the_assistant_is_set_up(tmp_path):
 
 
 
-def test_a_local_only_profile_gets_no_mail_check(tmp_path):
+def test_a_local_only_profile_gets_no_mail_check(tmp_path, monkeypatch):
     home = setup_home(tmp_path)
-    (home / ".env").write_text("HERMES_GENUI_LOCAL_ONLY=true\n", encoding="utf-8")
+    monkeypatch.setattr(assistant, "_CONFIG", [{"local_only": True}.get])
     reply = call("assistant_setup", {"action": "set", "source": "gmail-mcp"}, home)
     assert reply.startswith("Not set up") and "local" in reply
     assert memory.load_config(home / "plugin-data" / "hermes-genui" / "blocks") == {}
@@ -310,3 +310,20 @@ def test_a_reset_wakes_the_change_detector(tmp_path):
     before = out()
     call("assistant_setup", {"action": "reset"}, home, NOW.replace(minute=45))
     assert out() != before
+
+
+def test_local_only_reads_the_plugin_setting_and_fails_closed(monkeypatch):
+    for value, on in ((True, True), ("yes", True), ("1", True), (False, False), ("0", False), (None, False)):
+        monkeypatch.setattr(assistant, "_CONFIG", [{"local_only": value}.get])
+        assert assistant.local_only() is on, value
+
+    def broken(key):
+        raise OSError("config.yaml unreadable")
+    monkeypatch.setattr(assistant, "_CONFIG", [broken])
+    assert assistant.local_only() is True
+
+
+def test_the_env_file_no_longer_switches_local_only(tmp_path):
+    home = setup_home(tmp_path)
+    (home / ".env").write_text("HERMES_GENUI_LOCAL_ONLY=1\n", encoding="utf-8")
+    assert assistant.local_only() is False

@@ -287,7 +287,8 @@ def test_a_refresh_fetches_before_it_builds():
 def test_designing_today_sets_up_the_assistant_when_it_isnt():
     text = (ROOT / "recipes" / "today-designer" / "SKILL.md").read_text(encoding="utf-8")
     assert "Create my personal dashboard" not in text, "no sending the user off to another step"
-    assert '"action": "set"' in text and "cronjob_manage" in text and "without asking" in text
+    assert '"action": "set"' in text and "cronjob_manage" in text and "request for it" in text
+    assert "without asking" not in text, "a removed mail check comes back only when the user says yes"
 
 
 def test_assistant_check_starts_from_whats_open_and_suggests_only_help():

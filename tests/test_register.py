@@ -110,3 +110,19 @@ def test_register_registers_exactly_the_tool_registry_in_order(monkeypatch):
     assert ctx.dispatched == [
         ("skill_manage", {"action": "create", "name": "monthly-review", "content": "x", "category": "my-recipes"}),
         ("web_search", {"query": "Pena Palace"})]
+
+
+def test_register_reads_local_only_through_the_hosts_plugin_settings(monkeypatch):
+    monkeypatch.setattr(save_recipe, "_skill_writer", None)
+    monkeypatch.setattr(photos, "_web_search", None)
+    assistant = importlib.import_module("hermes_genui.tools.assistant")
+    monkeypatch.setattr(assistant, "_CONFIG", list(assistant._CONFIG))
+    asked = []
+
+    class SettingsContext(RecordingContext):
+        def get_config(self, key, default=None):
+            asked.append(key)
+            return {"local_only": True}.get(key, default)
+
+    plugin.register(SettingsContext())
+    assert assistant.local_only() is True and asked == ["local_only"]

@@ -25,6 +25,9 @@ def register(ctx):
     photos.set_web_search(lambda query: ctx.dispatch_tool("web_search", {"query": query}))
     # A kept page's refresh replays its recorded MCP calls by name.
     board_page.set_dispatch(lambda tool, args: ctx.dispatch_tool(tool, args))
+    # local_only is a plugin setting (config.yaml), read on each use so switching it needs no restart.
+    if callable(getattr(ctx, "get_config", None)):
+        assistant.set_config_reader(ctx.get_config)
     ctx.register_hook("pre_llm_call", visual_nudge)
     # The assistant's change detector holds this plugin's folder: rewrite it in case the plugin moved.
     try:

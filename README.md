@@ -238,9 +238,9 @@ website the bill came from. Mail is treated as untrusted text: nothing written i
 > [!NOTE]
 > **Each check is a run of your profile's model.** With real mail, new messages are sent to that model every 30
 > minutes, the same way a chat would send them. If the model is a cloud model, your mail goes to that provider. To
-> keep a profile's data on your machine, use a local model there, or add `HERMES_GENUI_LOCAL_ONLY=1` to that
-> profile's `.env`: the plugin then refuses the real-mail assistant, prepared ideas and kept dashboards in that
-> profile. The sample mailbox costs nothing while it's idle: a small script skips the check when no new mail arrived.
+> keep a profile's data on your machine, use a local model there, or turn on the plugin's **Keep this profile's data
+> local** setting (`local_only`) in that profile: the plugin then refuses the real-mail assistant, prepared ideas and
+> kept dashboards there. The sample mailbox costs nothing while it's idle: a small script skips the check when no new mail arrived.
 
 ## 📊 Dashboards from your own data
 
@@ -391,9 +391,23 @@ flowchart LR
   profiles' folders on the same machine. Any profile can then load another profile's board by its id.
 - There's no telemetry and no account.
 
-**Keeping a profile local.** `HERMES_GENUI_LOCAL_ONLY=1` in a profile's `.env` turns off the three things that send
-that profile's data to its model on a schedule: the real-mail assistant, prepared ideas and kept dashboards. Boards
-you ask for in chat still work.
+**Keeping a profile local.** The plugin's **Keep this profile's data local** setting turns off the three things that
+send that profile's data to its model on a schedule: the real-mail assistant, prepared ideas and kept dashboards.
+Boards you ask for in chat still work. Switch it on in the plugin's settings in Hermes Desktop, or in that profile's
+`config.yaml`:
+
+```yaml
+plugins:
+  entries:
+    hermes-genui:
+      settings:
+        local_only: true
+```
+
+It takes effect on the next tool call, with no restart.
+
+**Your scheduled jobs stay yours.** If you delete the assistant's mail check, or change a kept dashboard's refresh
+schedule, the model asks you before putting either back.
 
 **What the plugin adds to the model's context:**
 - a short drawing rule in the system prompt (under 1,500 characters);

@@ -29,6 +29,19 @@ All notable changes to this plugin. Versions follow [Semantic Versioning](https:
   (`e.g. {"type": "timeline", ...}`); a chart kind used as a type (`"pie"`) points to the chart; and every refusal
   comes with the refused blocks' fields and example, so a model can fix them in the same turn.
 
+## 0.3.1 — asks before touching your scheduled jobs
+
+From the Hermes plugin-catalog review of 0.3.0.
+
+- **A deleted mail check stays deleted** unless you say otherwise. When the assistant's 30-minute check is gone, the
+  model now asks whether to turn it back on, and on no it stops the assistant, instead of re-creating the job.
+- **A refresh schedule you changed is kept** until you answer: the model asks whether to keep it or make the dashboard
+  Refresh-only, instead of resetting it.
+- **Keeping a profile local is now a plugin setting**, `local_only` (Hermes Desktop's plugin settings, or
+  `plugins.entries.hermes-genui.settings.local_only` in `config.yaml`), since `.env` is for secrets. The plugin no
+  longer reads `HERMES_GENUI_LOCAL_ONLY` from `.env`: if you set it there, set the plugin setting instead. A setting
+  that can't be read counts as on.
+
 ## 0.3.0 — Today, and dashboards you keep
 
 ### Today, kept by a personal assistant

@@ -1,6 +1,6 @@
 manifest_version: 2
 name: hermes-genui
-version: "0.3.0"
+version: "0.3.1"
 description: >-
   Visual, interactive blocks drawn right inside Hermes Desktop and Webapp replies: charts, tables, timelines, photo
   strips, calculators with live sliders, forms, checklists that remember their ticks, flash cards and step-by-step
@@ -20,6 +20,13 @@ requires_hermes: ">=0.22.5"
 provides_tools: [show_blocks, block_guide, market_history, find_photos, save_recipe, dashboard, board_page, assistant_setup, assistant_items, assistant_open, assistant_inbox, assistant_calendar, assistant_report, assistant_ideas]
 provides_hooks: [pre_llm_call, transform_llm_output]
 config_schema:
+  local_only:
+    type: bool
+    default: false
+    label: Keep this profile's data local
+    description: >-
+      Turns off the three things that send this profile's data to its model on a schedule: the real-mail assistant,
+      prepared ideas and kept dashboards. Drawing blocks in a reply still works, and so does the demo mailbox.
   unsplash_access_key:
     type: secret
     env: UNSPLASH_ACCESS_KEY

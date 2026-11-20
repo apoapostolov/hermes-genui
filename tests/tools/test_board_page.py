@@ -12,6 +12,7 @@ board_page = importlib.import_module("hermes_genui.tools.board_page")
 pages = importlib.import_module("hermes_genui.core.pages.store")
 blocks_store = importlib.import_module("hermes_genui.core.store")
 tools = importlib.import_module("hermes_genui.tools")
+assistant = importlib.import_module("hermes_genui.tools.assistant")
 
 NOW = datetime(2026, 11, 15, 9, 12, tzinfo=ZoneInfo("Asia/Kolkata"))
 CONFIG = "mcp_servers:\n  mockcrm:\n    command: x\n  mocksecops:\n    command: x\n  off:\n    enabled: false\n"
@@ -85,11 +86,12 @@ def test_keep_refuses_an_unknown_board(tmp_path):
     assert pages.list_pages(root(home)) == []
 
 
-def test_keep_refuses_unknown_servers_and_a_local_only_profile(tmp_path):
+def test_keep_refuses_unknown_servers_and_a_local_only_profile(tmp_path, monkeypatch):
     assert keep(home_at(tmp_path), servers=["nope"]).startswith("Not saved")
     private = home_at(tmp_path, "client-work")
-    (private / ".env").write_text("OTHER=1\nHERMES_GENUI_LOCAL_ONLY=1\n", encoding="utf-8")
+    monkeypatch.setattr(assistant, "_CONFIG", [{"local_only": True}.get])
     assert keep(private).startswith("Not saved") and pages.list_pages(root(private)) == []
+    monkeypatch.setattr(assistant, "_CONFIG", [{}.get])
     named = home_at(tmp_path, "private-accounts")  # a profile's name alone never decides
     assert keep(named).startswith("Kept")
 
@@ -350,12 +352,14 @@ def _jobs(home, schedule):
                                                                    "schedule": schedule}]}), encoding="utf-8")
 
 
-def test_an_invented_schedule_is_put_back(tmp_path):
+def test_an_unasked_schedule_is_put_back_only_if_the_user_agrees(tmp_path):
     home = home_at(tmp_path)
     keep(home)
     _jobs(home, {"kind": "cron", "expr": "0 8 * * *", "display": "every day at 8am"})
     out = call({"action": "attach_job", "slug": "security", "job_id": "abc123"}, home)
     assert "every day at 8am" in out and '"action": "update"' in out and '"schedule": "365d"' in out
+    assert "Ask them" in out and "change nothing until they answer" in out and "user_schedule true" in out
+    assert "without asking" not in out
     assert pages.load("security", root(home)).get("schedule") is None
 
 
