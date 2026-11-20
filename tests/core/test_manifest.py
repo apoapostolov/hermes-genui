@@ -35,9 +35,9 @@ def test_read_fields_takes_top_level_lines_only():
 
 def test_name_version_and_homepage_come_from_plugin_yaml():
     assert manifest.NAME == top_level("name") == "hermes-genui"
-    assert manifest.VERSION == top_level("version").strip('"') == "0.3.0"
+    assert manifest.VERSION == top_level("version").strip('"') == "0.3.1"
     assert manifest.HOMEPAGE == top_level("homepage") == "https://github.com/sagarmainkar/hermes-genui"
-    assert manifest.USER_AGENT == "hermes-genui/0.3.0 (+https://github.com/sagarmainkar/hermes-genui)"
+    assert manifest.USER_AGENT == "hermes-genui/0.3.1 (+https://github.com/sagarmainkar/hermes-genui)"
 
 
 def test_the_toolset_follows_the_name():
@@ -84,7 +84,7 @@ def test_the_photo_keys_are_optional_secrets_in_the_settings_form():
     declared = {}
     for key, body in entries:
         if "    type: bool\n" in body:
-            assert key == "photo_test_tool"
+            assert key in ("local_only", "photo_test_tool"), key  # behaviour settings, not keys
             assert "    default: false\n" in body
             continue
         assert "    type: secret\n" in body, key
@@ -94,3 +94,10 @@ def test_the_photo_keys_are_optional_secrets_in_the_settings_form():
     assert declared == {"unsplash_access_key": "UNSPLASH_ACCESS_KEY", "pexels_api_key": "PEXELS_API_KEY",
                         "tavily_api_key": "TAVILY_API_KEY"}
     assert set(declared.values()) == set(photos.KEYS)
+
+
+def test_local_only_is_a_plugin_setting_not_an_env_variable():
+    """.env is for secrets; a behaviour switch lives in plugins.entries.hermes-genui.settings (config.yaml)."""
+    schema = TEXT.split("\nconfig_schema:\n", 1)[1]
+    body = dict(re.findall(r"^  (\w+):\n((?:    .*\n?)+)", schema, re.M))["local_only"]
+    assert "    type: bool\n" in body and "    default: false\n" in body and "env:" not in body

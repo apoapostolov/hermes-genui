@@ -1,7 +1,7 @@
 // Pie and donut: shares of a whole, with a legend beside the drawing (below it when the chart is narrower than 440px)
 // listing each slice's name, value and share, so no label is squeezed onto a slice.
 import { useRef, useState } from "react";
-import { fmt, partColour, seriesName, shareNote, sharePct, type ChartSpec } from "./chartData";
+import { chartLabel, fmt, partColour, seriesName, shareNote, sharePct, type ChartSpec } from "./chartData";
 import { ChartTip, type Tip } from "./ChartTip";
 import { pickKeys } from "./pick";
 
@@ -50,6 +50,8 @@ export function PieChart({ spec }: { spec: ChartSpec }) {
   const [picked, setPicked] = useState<number | null>(null);
   const [tip, setTip] = useState<Tip | null>(null);
   const svg = useRef<SVGSVGElement>(null);
+  const box = spec.height ?? BOX;
+  const scale = box / BOX;
   const values = spec.series[0].data as number[];
   const total = values.reduce((sum, v) => sum + v, 0);
   const unit = spec.series[0].unit ?? spec.unit;
@@ -79,7 +81,7 @@ export function PieChart({ spec }: { spec: ChartSpec }) {
     const drawing = el.getBoundingClientRect();
     const around = body.getBoundingClientRect();
     const label = String(spec.x[i]);
-    setTip({ x: drawing.left - around.left + x, y: drawing.top - around.top + y, title: label,
+    setTip({ x: drawing.left - around.left + x * scale, y: drawing.top - around.top + y * scale, title: label,
       rows: [{ colour: sliceColour(label, i), name: seriesName(spec.series, 0), value: fmt(values[i], unit, { full: true }) }],
       note: valuesAreShares ? undefined : shareNote(values, values[i]) });
   }
@@ -97,8 +99,8 @@ export function PieChart({ spec }: { spec: ChartSpec }) {
         </div>
       )}
       <div className="hb-pie-body">
-        <svg ref={svg} width={BOX} height={BOX} viewBox={`0 0 ${BOX} ${BOX}`} className="hb-pie-svg" role="img"
-          aria-label={spec.title ?? "chart"} {...pickKeys(values.length, picked, pick)}>
+        <svg ref={svg} width={box} height={box} viewBox={`0 0 ${BOX} ${BOX}`} className="hb-pie-svg" role="img"
+          aria-label={chartLabel(spec)} {...pickKeys(values.length, picked, pick)}>
           {slices.map((s, i) => (
             <path key={i} d={slicePath(s.start, s.end, hole)} fill={sliceColour(String(spec.x[i]), i)} opacity={faded(i)}
               className="hb-slice" onClick={() => toggle(i)} onPointerEnter={mouse(i)} onPointerLeave={mouse(null)} />
@@ -124,6 +126,7 @@ export function PieChart({ spec }: { spec: ChartSpec }) {
         </table>
         <ChartTip tip={tip} />
       </div>
+      {spec.caveat && <div className="hb-chart-caveat">{spec.caveat}</div>}
       {spec.source && <div className="hb-chart-source">{spec.source}</div>}
     </figure>
   );

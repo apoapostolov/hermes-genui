@@ -55,8 +55,19 @@ def check_chart(block: dict, path: str) -> list[tuple[str, str]]:
         return [(path, "chart needs at least one number")]
     if kind in ("pie", "donut") and not any(v > 0 for v in numbers):
         return [(path, f"a {kind} needs at least one positive value")]
-    return _check_tone(block, kind, len(series), path)
+    return _check_tone(block, kind, len(series), path) + _check_controls(block, kind, path)
 
+
+def _check_controls(block: dict, kind: str, path: str) -> list[tuple[str, str]]:
+    """The optional drawing controls, checked only when switched on: stepped (true) is for line and combo, sortDesc
+    (true) for bar and hbar. Anything else (false, null, a string) means the control is off, as the reader treats it.
+    height isn't checked: the reader clamps it to 120-480 and ignores a non-number."""
+    problems = []
+    if block.get("stepped") is True and kind not in ("line", "combo"):
+        problems.append((path, "stepped is for a line or combo chart"))
+    if block.get("sortDesc") is True and kind not in ("bar", "hbar"):
+        problems.append((path, "sortDesc is for a bar or hbar chart"))
+    return problems
 
 def _check_tone(block: dict, kind: str, series_count: int, path: str) -> list[tuple[str, str]]:
     """The optional tone: only "change" (one line, green above its first value and orange below), only on a line
@@ -102,19 +113,29 @@ def _slices(x: list, series: dict, top: int = 4) -> str:
 
 
 def text_chart(block: dict) -> str:
-    """One line: the title (and unit), then each series first → last, or a pie's top slices.
-
-    → "**Revenue vs profit** (₹Cr): Revenue 67,087 → 72,275 (▲ 7.7%); Net profit 10,720 → 13,420 (▲ 25.2%)"
+    """The title (and unit), then each series first → last, or a pie's top slices. A written caveat becomes a second
+    italic line: "**Revenue** (₹Cr): Revenue 67,087 → 74,010 (▲ 10.3%)\n_Q3 onward is a projection._"
     """
     series = [s for s in block.get("series", []) if isinstance(s, dict)]
+    x = list(block.get("x") or [])
+    if block.get("sortDesc") is True and chart_kind(block.get("kind")) in ("bar", "hbar") and series:
+        values = [v if is_number(v) else None for v in series[0].get("data", [])]
+        order = sorted(range(len(x)), key=lambda i: (values[i] is None, -(values[i] or 0), i))
+        x = [x[i] for i in order if i < len(x)]
+        series = [
+            {**s, "data": [s.get("data", [])[i] if i < len(s.get("data", [])) else None for i in order]}
+            for s in series
+        ]
     if not series:
         return ""
     if str(block.get("kind", "")).lower() in ("pie", "donut", "doughnut"):
-        body = _slices(block.get("x") or [], series[0])
+        body = _slices(x, series[0])
     else:
         body = "; ".join(line for line in (_series_line(s) for s in series[:6]) if line)
     if not body:
         return ""
     unit = safe_text(block.get("unit"), 20)
     title = f"**{safe_text(block.get('title')) or 'Chart'}**" + (f" ({unit})" if unit else "")
-    return f"{title}: {body}"
+    line = f"{title}: {body}"
+    caveat = safe_text(block.get("caveat"), 120)
+    return f"{line}\n_{caveat}_" if caveat else line

@@ -153,7 +153,7 @@ def _briefs(home: Path) -> str:
 
 
 def _keep(params: dict, home: Path, root: Path, now: datetime) -> str:
-    if assistant.local_only(home):
+    if assistant.local_only():
         return _not_saved(assistant.LOCAL_ONLY_NOTE + " on every refresh, so pages aren't kept here")
     title = str(params.get("title") or "").strip()
     kind = params.get("kind") or "dashboard"
@@ -324,6 +324,9 @@ def apply(params: dict, home: Path | None = None, now: datetime | None = None, d
         return "\n".join(listed) or "No pages yet."
     if action == "keep":
         return _keep(params, home, root, now)
+    if action in ("save", "fetch") and assistant.local_only():
+        return (f"Not refreshed: {assistant.LOCAL_ONLY_NOTE} on every refresh. Call no other tools for this page's "
+                "data: call board_page fail with the reason \"local-only\", so the page keeps its last snapshot.")
     if action == "save":
         return _save(params, root, now)
     page = pages.load(slug, root)
@@ -346,9 +349,10 @@ def apply(params: dict, home: Path | None = None, now: datetime | None = None, d
             page.pop("schedule", None)
             if schedule and not refresh_only:
                 update = {"action": "update", "job_id": page["job_id"], "schedule": "365d"}
-                note = (f" Its schedule is \"{schedule.get('display')}\", but the user didn't ask for one: put it "
-                        "back to Refresh-only now, without asking, with cronjob_manage using exactly these arguments:\n"
-                        + json.dumps(update))
+                note = (f" Its schedule is \"{schedule.get('display')}\", and the user may have set it themselves. "
+                        "Ask them whether to keep it or make the page Refresh-only, and change nothing until they "
+                        "answer. To keep it: attach_job again with user_schedule true. For Refresh-only: "
+                        "cronjob_manage with exactly these arguments:\n" + json.dumps(update))
         pages.save(page, root)
         return f'Attached job {page["job_id"]} to "{page["title"]}". Its Refresh button now runs it.' + note
     if action == "fail":

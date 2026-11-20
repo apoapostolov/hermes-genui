@@ -1,6 +1,6 @@
 manifest_version: 2
 name: hermes-genui
-version: "0.3.0"
+version: "0.3.1"
 description: >-
   Visual, interactive blocks drawn right inside Hermes Desktop and Webapp replies: charts, tables, timelines, photo
   strips, calculators with live sliders, forms, checklists that remember their ticks, flash cards and step-by-step
@@ -20,6 +20,14 @@ requires_hermes: ">=0.22.5"
 provides_tools: [show_blocks, block_guide, market_history, find_photos, standin_photos, save_recipe, dashboard, board_page, assistant_setup, assistant_items, assistant_open, assistant_inbox, assistant_calendar, assistant_report, assistant_ideas]
 provides_hooks: [pre_llm_call, post_tool_call, transform_llm_output]
 config_schema:
+  local_only:
+    type: bool
+    default: false
+    label: No scheduled jobs that send data to the model
+    description: >-
+      Turns off the mail assistant, prepared ideas and kept dashboards in this profile, since each sends this
+      profile's data to its model on a schedule. Jobs made before you switch it on stop reading data. Chat and boards
+      still work, and still go to the profile's model. The demo mailbox still works.
   photo_test_tool:
     type: bool
     default: false
