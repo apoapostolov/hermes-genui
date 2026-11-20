@@ -1,6 +1,6 @@
 {
   "name": "hermes-genui",
   "label": "Hermes GenUI",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "api": "plugin_api.py"
 }
