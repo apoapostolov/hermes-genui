@@ -38,7 +38,7 @@
    "kind": "chart",
    "for": "A trend, a comparison, or parts of a whole.",
    "use_when": "line: trends. bar: periods or items; bars turn sideways for long labels or rankings; time stays upright. hbar: rankings, 2-5 named items. donut, pie: parts of a whole, 3-7 parts. stacked: parts of a total over time. area: growth that builds up. combo: two measures. 2-3 items on several metrics: a table, not a chart each.",
-   "fields": "kind (as above). title. x: labels. series: [{name, data: numbers, null for a gap}], 1-3 (stacked, area: up to 6; pie, donut: 1). combo: first series bars, the rest lines (another unit gets its own axis). unit: \"%\", \"₹Cr\", \"$M\" or a word. tone: \"change\" colours one line by gain or loss. source: site name.",
+   "fields": "kind. title. x: labels. series: [{name, data: numbers, null=gap}], 1-3 (stacked/area 6; pie/donut 1). combo: first bars, rest lines; another unit gets a right axis. stepped holds the line at each value. sortDesc ranks bars by the first series. height 120-480. unit: \"%\", \"₹Cr\", \"$M\" or word. tone: \"change\" colours a line. caveat ≤120: a data limit. xLabel/yLabel ≤40: name axes. source: site.",
    "example": {
     "type": "chart",
     "kind": "bar",

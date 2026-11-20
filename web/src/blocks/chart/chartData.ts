@@ -14,10 +14,18 @@ export type ChartSeries = { name?: string; data: (number | null)[]; unit?: strin
 export type ChartSpec = {
   type: ChartKind; title?: string; x: (string | number)[];
   series: ChartSeries[]; unit?: string; source?: string;
+  /** A limit of the data, set apart from the title and the source; never repeated in the axis labels. */
+  caveat?: string;
+  /** Optional axis captions. On hbar the single horizontal caption names the value axis. */
+  xLabel?: string; yLabel?: string;
   /** false: no headline number or change chip (a what-if chart, where the last point isn't news); values show on hover. */
   figure?: boolean;
   /** "change": a one-series line is green above its first value and orange below it, with the start marked. */
   tone?: "change";
+  /** stepped: line and combo lines hold each value until the next x label, then jump (no diagonal). */
+  stepped?: boolean;
+  /** height in px, 120-480, for the drawing area. */
+  height?: number;
 };
 
 // Other names models use for the same kinds, written without spaces, dashes or underscores.
@@ -88,6 +96,26 @@ export function kindToDraw(spec: ChartSpec): ChartKind {
     || (x.length >= 2 && x.length <= 3)
     || (spec.series.length === 1 && x.length >= 9);
   return lieDown ? "hbar" : "bar";
+}
+
+/** The accessible name of a chart, built from what the drawing shows: title, kind, axes when named, the first and last
+ *  values of the first series, and the caveat. The <text> nodes inside the svg are part of the image and unread on
+ *  their own, so the axis captions and the limit of the data are carried here instead. */
+export function chartLabel(spec: ChartSpec): string {
+  const drawn = kindToDraw(spec);
+  const parts = [spec.title?.trim() || spec.series[0].name || "Chart", `${drawn} chart`];
+  const axis = drawn !== "pie" && drawn !== "donut" && drawn !== "hbar";
+  if (spec.xLabel && (axis || drawn === "hbar")) parts.push(`${spec.xLabel}${axis ? " along the bottom" : " along the bars"}`);
+  if (spec.yLabel && axis) parts.push(`${spec.yLabel} up the side`);
+  const unit = spec.series[0].unit ?? spec.unit;
+  const values = spec.series[0].data.filter((v): v is number => v !== null);
+  if (values.length && drawn !== "pie" && drawn !== "donut") {
+    const pct = changePct(spec.series[0].data);
+    const direction = pct === null ? "" : `, ${pct >= 0 ? "up" : "down"} ${Math.abs(pct).toFixed(1)}%`;
+    parts.push(`${fmt(values[0], unit)} to ${fmt(values[values.length - 1], unit)}${direction}`);
+  }
+  if (spec.caveat) parts.push(spec.caveat);
+  return parts.join(". ");
 }
 
 /** First to last value as a percentage (gaps skipped); null when there's nothing to compare. [100, null, 110] → 10 */

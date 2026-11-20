@@ -24,7 +24,7 @@ export function LineMarks({ spec, layout, gid, hover }: Props) {
         const pts = pointsOf(s.data, layout);
         if (!pts.length) return null;
         return (
-          <path key={k} d={linePath(pts)} fill="none" stroke={start !== null ? `url(#change-${gid})` : partColour(k)}
+          <path key={k} d={linePath(pts, spec.stepped)} fill="none" stroke={start !== null ? `url(#change-${gid})` : partColour(k)}
             strokeWidth={one ? 2.25 : 1.75} strokeLinejoin="round" strokeLinecap="round"
             pathLength={1} strokeDasharray="1" strokeDashoffset="1" className="hb-chart-line hb-chart-draw" />
         );

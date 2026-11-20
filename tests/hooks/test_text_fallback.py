@@ -134,10 +134,23 @@ def test_chart_skips_gaps_and_zero_start():
     assert render(chart) == "**T**: S 0 → 5"
 
 
+def test_chart_caveat_is_a_second_italic_line():
+    chart = {"type": "chart", "title": "T", "x": ["a", "b"], "series": [{"name": "S", "data": [1, 2]}],
+             "caveat": "  Q3 onward is a projection.  "}
+    assert render(chart) == "**T**: S 1 → 2 (▲ 100%)\n_Q3 onward is a projection._"
+
+
 def test_pie_shows_top_slices_with_shares():
     pie = {"type": "chart", "kind": "donut", "title": "Mix", "x": ["A", "B", "C", "D", "E"],
            "series": [{"name": "Share", "data": [50, 20, 15, 10, 5]}]}
     assert render(pie) == "**Mix**: A 50%, B 20%, C 15%, D 10%, +1 more"
+
+
+def test_chart_sort_desc_orders_the_text_by_the_first_series():
+    chart = {"type": "chart", "kind": "bar", "sortDesc": True, "title": "Spend",
+             "x": ["a", "b", "c"], "series": [{"name": "S", "data": [2, 9, 5]}]}
+    assert render(chart) == "**Spend**: S 9 → 2 (▼ 77.8%)"
+    assert render({**chart, "kind": "hbar"}) == "**Spend**: S 9 → 2 (▼ 77.8%)"
 
 
 # --- tables ---------------------------------------------------------------------------------------
