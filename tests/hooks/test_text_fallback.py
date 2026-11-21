@@ -251,7 +251,32 @@ def test_flip_cards():
 
 
 def test_checklist():
-    assert render(EXAMPLES["checklist"]) == "**Packing**\n- [ ] Jacket\n- [ ] ID card"
+    assert render(EXAMPLES["checklist"]) == "**Packing**\n- [ ] Jacket\n- [ ] ID card (in progress)"
+
+
+def test_checklist_states_read_as_words_beside_the_item():
+    board = {"type": "checklist", "title": "Archive move", "items": [
+        {"text": "Freeze writes", "done": True, "state": "blocked"},
+        {"text": "Copy the 2019 shard", "state": "active", "owner": "Priya"},
+        {"text": "Verify checksums", "state": "blocked", "note": "Waiting on the storage team"},
+        {"text": "Announce the cutover", "state": "pending"},
+        {"text": "Backfill the 2020 shard", "state": "skipped", "note": "Moved to March"},
+        {"text": "Drop the old index", "state": "done"},
+        {"text": "Checked in the UI", "checked": True},
+    ]}
+    assert render(board) == (
+        "**Archive move**\n"
+        "- [x] Freeze writes\n"
+        "- [ ] Copy the 2019 shard (in progress, Priya)\n"
+        "- [ ] Verify checksums (blocked: Waiting on the storage team)\n"
+        "- [ ] Announce the cutover (not started)\n"
+        "- [ ] Backfill the 2020 shard (skipped: Moved to March)\n"
+        "- [x] Drop the old index\n"
+        "- [x] Checked in the UI")
+
+
+def test_checklist_note_alone_needs_no_word():
+    assert render({"type": "checklist", "items": [{"text": "Ship", "note": "Friday"}]}) == "- [ ] Ship (Friday)"
 
 
 def test_tiles():
