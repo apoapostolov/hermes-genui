@@ -746,3 +746,23 @@ def test_no_catalog_example_without_its_type_is_taken_for_another_block(entry):
 def test_a_chart_kind_used_as_a_type_points_to_the_chart():
     pie = {"type": "pie", "x": ["Rent", "Food"], "series": [{"name": "Spend", "data": [1800, 650]}]}
     assert check_blocks([pie]) == ['0: "pie" is a chart kind: write {"type": "chart", "kind": "pie", ...}']
+def test_checklist_items_may_carry_a_state_an_owner_and_a_note():
+    ok = [{"type": "checklist", "items": [
+        {"text": "Copy", "state": "active", "owner": "Priya", "note": "Half done"},
+        {"text": "Verify", "state": "blocked"}, {"text": "Ship", "state": "done"},
+        {"text": "Backfill", "state": "skipped"}, {"text": "Announce", "state": "pending"},
+        {"text": "Normalise", "state": "Done", "owner": "  Dev  ", "note": " [JIRA-12] <3 days \n"},
+        {"text": "In progress", "state": "in progress"}, {"text": "Todo", "state": "todo"},
+        {"text": "Long", "owner": "x" * 41, "note": "y" * 121},
+        {"text": "Blank", "owner": "", "note": "   "}]}]
+    assert check_blocks(ok) == []
+    bad = [{"type": "checklist", "items": [
+        {"text": "A", "state": "waiting"}, {"text": "B", "state": 5},
+        {"text": "C", "owner": 7}, {"text": "D", "note": []}]}]
+    assert check_blocks(bad) == [
+        "0.items.0: item state is pending, active, done, blocked or skipped",
+        "0.items.1: item state is pending, active, done, blocked or skipped",
+        "0.items.2: item owner is text up to 40 characters",
+        "0.items.3: item note is text up to 120 characters",
+    ]
+

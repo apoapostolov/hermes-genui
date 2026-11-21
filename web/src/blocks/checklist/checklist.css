@@ -13,7 +13,7 @@
 .hb-checklist-count-done { color: var(--hb-good); }
 .hb-checklist-track { display: block; height: 6px; margin: 8px 0 4px; overflow: hidden; border-radius: 999px; background: var(--hb-well); }
 .hb-checklist-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-good); transition: width 0.3s ease; }
-.hb-checklist-group { padding: 10px 0 2px; font-size: 12px; font-weight: 700; color: var(--hb-muted); }
+.hb-checklist-group-label { padding: 10px 0 2px; font-size: 12px; font-weight: 700; color: var(--hb-muted); }
 .hb-check {
   display: flex;
   align-items: flex-start;
@@ -44,9 +44,25 @@
   font-variant-numeric: tabular-nums;
   transition: background 0.15s, border-color 0.15s;
 }
-.hb-check-on .hb-check-mark { border-color: var(--hb-good); background: var(--hb-good); color: #fff; }
+/* The state is a shape on the same 22px mark, so no icon has to carry it: a dot for the item being worked on, a bar
+   for one that cannot move, a dashed ring for one dropped on purpose. */
+.hb-check-mark::after { content: ""; display: block; border-radius: 999px; }
+.hb-check-active .hb-check-mark { border-color: var(--hb-accent); }
+.hb-check-active .hb-check-mark::after { width: 8px; height: 8px; background: var(--hb-accent); }
+.hb-check-blocked .hb-check-mark { border-color: var(--hb-warn); }
+.hb-check-blocked .hb-check-mark::after { width: 10px; height: 2px; background: var(--hb-warn); }
+.hb-check-skipped .hb-check-mark { border-style: dashed; border-color: var(--hb-muted); }
+.hb-check-pointer .hb-check-mark { border-color: var(--hb-accent); }
+.hb-check-on .hb-check-mark { border-color: var(--hb-good); background: var(--hb-good); color: var(--hb-surface); }
 .hb-check-text { flex: 1; min-width: 0; font-size: 14.5px; line-height: 21px; transition: color 0.15s; }
-.hb-check-on .hb-check-text { color: var(--hb-muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+.hb-check-line { display: flex; align-items: baseline; gap: 8px; }
+.hb-check-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.hb-check-state { flex: none; font-size: 11.5px; font-weight: 600; color: var(--hb-muted); white-space: nowrap; }
+.hb-check-blocked .hb-check-state { color: var(--hb-warn); }
+.hb-check-owner { flex: none; font-size: 11.5px; color: var(--hb-muted); white-space: nowrap; }
+.hb-check-note { display: block; margin-top: 2px; font-size: 12px; line-height: 18px; color: var(--hb-muted); overflow-wrap: anywhere; }
+.hb-check-on .hb-check-text { color: var(--hb-muted); }
+.hb-check-on .hb-check-label { text-decoration: line-through; text-decoration-thickness: 1px; }
 @media (prefers-reduced-motion: reduce) {
   .hb-checklist-fill, .hb-check-mark, .hb-check-text { transition: none; }
 }

@@ -440,15 +440,17 @@
    "kind": "checklist",
    "for": "Items to tick; ticks are saved.",
    "use_when": "Packing lists, to-dos, steps.",
-   "fields": "title. items: [text | {text, group}], ≤40. numbered: true for steps.",
+   "fields": "title. items ≤40: text | {text, group, state: pending|active|done|blocked|skipped, owner ≤40, note ≤120}. numbered: true for steps.",
    "example": {
     "type": "checklist",
     "title": "Packing",
+    "numbered": true,
     "items": [
      "Jacket",
      {
       "text": "ID card",
-      "group": "Papers"
+      "group": "Papers",
+      "state": "active"
      }
     ]
    }
