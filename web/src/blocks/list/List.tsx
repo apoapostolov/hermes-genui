@@ -8,19 +8,25 @@ import { InlineText } from "../../lib/InlineText";
 import { Icon } from "../../lib/Icon";
 import { avatarColour, initialOf, rowLead } from "./rowAvatar";
 
-export function List({ title, ranked, items }: ListBlock) {
+export function List({ title, ranked, items, max }: ListBlock) {
+  // A track is drawn for every row that wrote a bar, even when every bar is 0 and there is no max: no ceiling means
+  // the largest bar, and 0 is a real one. `hasBars` gives the rows a shared, fixed-width value column so the tracks
+  // line up whatever the values are; a list without bars keeps its plain value column.
+  const hasBars = items.some((item) => item.bar !== undefined);
+  const ceiling = max ?? Math.max(0, ...items.map((item) => item.bar ?? 0));
   return (
-    <div className="hb-card hb-list">
+    <div className={hasBars ? "hb-card hb-list hb-list-bars" : "hb-card hb-list"}>
       {title && <div className="hb-list-heading"><InlineText text={title} /></div>}
-      {items.map((item, i) => <ListRow key={i} item={item} rank={ranked ? i + 1 : null} />)}
+      {items.map((item, i) => <ListRow key={i} item={item} rank={ranked ? i + 1 : null} ceiling={ceiling} />)}
     </div>
   );
 }
 
-function ListRow({ item, rank }: { item: ListItem; rank: number | null }) {
+function ListRow({ item, rank, ceiling }: { item: ListItem; rank: number | null; ceiling: number }) {
   const { send } = useContext(BlockActions);
   const [photoFailed, setPhotoFailed] = useState(false);
   const lead = rowLead(item, rank !== null, photoFailed);
+  const width = ceiling > 0 ? Math.max(0, Math.min(1, (item.bar ?? 0) / ceiling)) * 100 : 0;
   const body = (
     <>
       {rank !== null && <span className="hb-list-rank">{rank}</span>}
@@ -35,7 +41,16 @@ function ListRow({ item, rank }: { item: ListItem; rank: number | null }) {
         <span className="hb-list-title"><InlineText text={item.title} /></span>
         {item.subtitle && <span className="hb-list-subtitle"><InlineText text={item.subtitle} /></span>}
       </span>
-      {item.value && <span className="hb-list-value"><InlineText text={item.value} /></span>}
+      {(item.bar !== undefined || item.value) && (
+        <span className="hb-list-tail">
+          {item.bar !== undefined && (
+            <span className="hb-list-bar" aria-hidden="true">
+              <span className="hb-list-bar-fill" style={{ width: `${width}%` }} />
+            </span>
+          )}
+          {item.value && <span className="hb-list-value"><InlineText text={item.value} /></span>}
+        </span>
+      )}
       {(item.run || item.url) && <Chevron />}
     </>
   );

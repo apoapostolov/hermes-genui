@@ -61,6 +61,12 @@
   color: var(--hb-muted);
 }
 .hb-list-value { flex: none; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* The bar and the value share one right-hand block, so every track starts at the same x. In a list with bars the value
+   column has a fixed width; a list without bars keeps the value at its natural width, as before. */
+.hb-list-tail { flex: none; display: flex; align-items: center; gap: 8px; }
+.hb-list-bars .hb-list-value { width: 6.5rem; text-align: right; overflow: hidden; text-overflow: ellipsis; }
+.hb-list-bar { flex: none; width: 64px; height: 6px; border-radius: 999px; background: var(--hb-accent-soft); overflow: hidden; }
+.hb-list-bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-accent); }
 .hb-list-chevron { flex: none; color: var(--hb-muted); }
 .hb-section .hb-list { padding: 0; }
 

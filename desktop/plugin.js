@@ -4106,16 +4106,19 @@ function avatarColour(title) {
 
 // src/blocks/list/List.tsx
 import { Fragment as Fragment8, jsx as jsx29, jsxs as jsxs26 } from "react/jsx-runtime";
-function List({ title, ranked, items }) {
-  return /* @__PURE__ */ jsxs26("div", { className: "hb-card hb-list", children: [
+function List({ title, ranked, items, max }) {
+  const hasBars = items.some((item) => item.bar !== void 0);
+  const ceiling = max ?? Math.max(0, ...items.map((item) => item.bar ?? 0));
+  return /* @__PURE__ */ jsxs26("div", { className: hasBars ? "hb-card hb-list hb-list-bars" : "hb-card hb-list", children: [
     title && /* @__PURE__ */ jsx29("div", { className: "hb-list-heading", children: /* @__PURE__ */ jsx29(InlineText, { text: title }) }),
-    items.map((item, i) => /* @__PURE__ */ jsx29(ListRow, { item, rank: ranked ? i + 1 : null }, i))
+    items.map((item, i) => /* @__PURE__ */ jsx29(ListRow, { item, rank: ranked ? i + 1 : null, ceiling }, i))
   ] });
 }
-function ListRow({ item, rank }) {
+function ListRow({ item, rank, ceiling }) {
   const { send } = useContext7(BlockActions);
   const [photoFailed, setPhotoFailed] = useState17(false);
   const lead = rowLead(item, rank !== null, photoFailed);
+  const width = ceiling > 0 ? Math.max(0, Math.min(1, (item.bar ?? 0) / ceiling)) * 100 : 0;
   const body = /* @__PURE__ */ jsxs26(Fragment8, { children: [
     rank !== null && /* @__PURE__ */ jsx29("span", { className: "hb-list-rank", children: rank }),
     lead === "image" && /* @__PURE__ */ jsx29("img", { className: "hb-list-photo", src: item.image, alt: "", loading: "lazy", referrerPolicy: "no-referrer", onError: () => setPhotoFailed(true) }),
@@ -4125,7 +4128,10 @@ function ListRow({ item, rank }) {
       /* @__PURE__ */ jsx29("span", { className: "hb-list-title", children: /* @__PURE__ */ jsx29(InlineText, { text: item.title }) }),
       item.subtitle && /* @__PURE__ */ jsx29("span", { className: "hb-list-subtitle", children: /* @__PURE__ */ jsx29(InlineText, { text: item.subtitle }) })
     ] }),
-    item.value && /* @__PURE__ */ jsx29("span", { className: "hb-list-value", children: /* @__PURE__ */ jsx29(InlineText, { text: item.value }) }),
+    (item.bar !== void 0 || item.value) && /* @__PURE__ */ jsxs26("span", { className: "hb-list-tail", children: [
+      item.bar !== void 0 && /* @__PURE__ */ jsx29("span", { className: "hb-list-bar", "aria-hidden": "true", children: /* @__PURE__ */ jsx29("span", { className: "hb-list-bar-fill", style: { width: `${width}%` } }) }),
+      item.value && /* @__PURE__ */ jsx29("span", { className: "hb-list-value", children: /* @__PURE__ */ jsx29(InlineText, { text: item.value }) })
+    ] }),
     (item.run || item.url) && /* @__PURE__ */ jsx29(Chevron, {})
   ] });
   if (item.run) {
@@ -4452,7 +4458,14 @@ function readList(raw, here) {
   });
   if (!items.length) return here.drop("list has no row with a title");
   const ranked = raw.ranked === true || raw.numbered === true;
-  return clean({ type: "list", title: firstText([raw.title], 60), ranked, items: keepFirst(items, MAX_ITEMS2, here, "rows") });
+  const max = typeof raw.max === "number" && isFinite(raw.max) && raw.max > 0 ? raw.max : void 0;
+  return clean({
+    type: "list",
+    title: firstText([raw.title], 60),
+    ranked,
+    max,
+    items: keepFirst(items, MAX_ITEMS2, here, "rows")
+  });
 }
 function readListItem(item) {
   if (typeof item === "string") {
@@ -4464,10 +4477,12 @@ function readListItem(item) {
   const title = named ?? firstText([item.text], 160);
   if (!title) return null;
   const textUnder = named ? item.text : void 0;
+  const bar = typeof item.bar === "number" && isFinite(item.bar) && item.bar >= 0 ? item.bar : void 0;
   return clean({
     title,
     subtitle: firstWords([item.subtitle, item.description, item.detail, item.note, textUnder], 160),
-    value: firstTextOrNumber([item.value, item.price, item.rating, item.score, item.meta, item.badge], 30),
+    value: firstTextOrNumber([item.value, item.price, item.rating, item.score, item.meta, item.badge, bar], 30),
+    bar,
     icon: icon(item.icon),
     image: https(item.image),
     run: firstText([item.run], 300),
@@ -6268,7 +6283,7 @@ var images_default = "/* Photos */\n.hb-photos { margin: 0; display: flex; flex-
 var table_default = "/* Tables */\n/* A table keeps its natural width (columns close together); the card hugs it. It scrolls inside the card: sideways\n   when wider than the chat, down past 520px with the header kept in view. */\n.hb-table-card { width: fit-content; max-width: 100%; padding: 4px 0 0; overflow: hidden; }\n.hb-table-caption { padding: 10px 16px 2px; }\n.hb-table-scroll { max-height: 520px; overflow: auto; }\n.hb-table {\n  border-collapse: separate;\n  border-spacing: 0;\n  font-size: 13.5px;\n  line-height: 20px;\n  font-variant-numeric: tabular-nums;\n}\n/* With 3 or more columns, a narrow chat scrolls the table rather than squeezing every column. */\n.hb-table-wide { min-width: 420px; }\n.hb-table th, .hb-table td {\n  height: 36px;\n  padding: 8px 12px;\n  border: 0;\n  border-bottom: 1px solid var(--hb-line);\n  background: none;\n  text-align: left;\n  vertical-align: middle;\n  white-space: nowrap;\n}\n/* The header stays in view as the rows scroll; it is painted like the card so rows don't show through. */\n.hb-table th {\n  position: sticky;\n  top: 0;\n  z-index: 1;\n  height: 34px;\n  padding: 0;\n  border-bottom-color: var(--hb-line-strong);\n  background: linear-gradient(var(--hb-card), var(--hb-card)), var(--hb-surface);\n}\n.hb-table th button {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  width: 100%;\n  height: 34px;\n  padding: 0 12px;\n  border: 0;\n  background: none;\n  color: var(--hb-muted);\n  font: inherit;\n  font-size: 11.5px;\n  font-weight: 600;\n  letter-spacing: 0.04em;\n  text-transform: uppercase;\n  white-space: nowrap;\n  cursor: pointer;\n}\n.hb-table th.hb-num button { justify-content: flex-end; }\n.hb-table .hb-first, .hb-table th.hb-first button { padding-left: 16px; }\n.hb-table td:last-child, .hb-table th:last-child button { padding-right: 16px; }\n.hb-table tbody tr:last-child td { border-bottom: 0; }\n.hb-table td.hb-first { font-weight: 600; }\n.hb-table td.hb-num { text-align: right; }\n.hb-table td.hb-wrap { min-width: 180px; white-space: normal; }\n/* Sorting: a faint \u2195 on the header under the pointer, \u2191 or \u2193 on the sorted one. */\n.hb-sort { opacity: 0; font-weight: 400; letter-spacing: 0; transition: opacity 0.12s; }\n.hb-table th:hover .hb-sort, .hb-table th button:focus-visible .hb-sort { opacity: 0.6; }\n.hb-table th.hb-sorted .hb-sort { opacity: 1; color: var(--hb-ink-2); }\n/* The best row: an accent edge on its first cell and a chip; the best column: an accent line under its header. */\n.hb-table tr.hb-best td.hb-first { box-shadow: inset 3px 0 0 var(--hb-accent); }\n.hb-table th.hb-best-col { box-shadow: inset 0 -2px 0 var(--hb-accent); }\n.hb-table .hb-chip { margin-left: 8px; vertical-align: 1px; padding: 0 7px; font-size: 11px; line-height: 16px; letter-spacing: 0; text-transform: none; }\n.hb-table th .hb-chip { margin-left: 4px; }\n/* Changes: green for a rise, orange for a fall, with a small bar growing from the middle. */\n.hb-table td.hb-up { color: var(--hb-good); }\n.hb-table td.hb-down { color: var(--hb-warn); }\n.hb-mini { display: inline-block; position: relative; width: 56px; height: 8px; margin-right: 8px; vertical-align: 0; }\n.hb-mini-zero { position: absolute; top: -3px; bottom: -3px; left: 50%; width: 1px; background: var(--hb-line-strong); }\n.hb-mini-bar { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: currentColor; }\n.hb-table td.hb-table-empty { color: var(--hb-muted); font-weight: 400; text-align: center; }\n@media (prefers-reduced-motion: reduce) { .hb-sort { transition: none; } }\n.hb-section .hb-table-card { background: none; border: 0; }\n";
 
 // src/blocks/list/list.css
-var list_default = "/* List */\n.hb-list { padding: 4px 0; overflow: hidden; }\n.hb-list-heading { padding: 8px 16px 2px; font-size: 13px; font-weight: 700; color: var(--hb-muted); }\n.hb-list-row {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  padding: 10px 16px;\n  border-top: 1px solid var(--hb-line);\n  color: inherit;\n  text-decoration: none;\n}\n.hb-list > .hb-list-row:first-child, .hb-list-heading + .hb-list-row { border-top: 0; }\n.hb-list-link { cursor: pointer; transition: background 0.15s; }\n.hb-list-link:hover { background: var(--hb-well); }\n.hb-list-rank {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 28px;\n  height: 28px;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n  font-size: 13px;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n}\n.hb-list-photo { flex: none; width: 44px; height: 44px; border-radius: 12px; object-fit: cover; background: var(--hb-well); }\n.hb-list-icon {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border-radius: 12px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n}\n.hb-list-initial {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border-radius: 999px;\n  color: #fff;\n  font-size: 15px;\n  font-weight: 700;\n}\n.hb-list-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }\n.hb-list-title { font-size: 14.5px; line-height: 20px; font-weight: 600; overflow-wrap: anywhere; }\n.hb-list-subtitle {\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  margin-top: 1px;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--hb-muted);\n}\n.hb-list-value { flex: none; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }\n.hb-list-chevron { flex: none; color: var(--hb-muted); }\n.hb-section .hb-list { padding: 0; }\n\n/* List rows that send a message when tapped */\n.hb-list-button {\n  width: 100%;\n  margin: 0;\n  border: 0;\n  border-top: 1px solid var(--hb-line);\n  background: none;\n  font: inherit;\n  text-align: left;\n}\n.hb-list-button:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; }\n";
+var list_default = "/* List */\n.hb-list { padding: 4px 0; overflow: hidden; }\n.hb-list-heading { padding: 8px 16px 2px; font-size: 13px; font-weight: 700; color: var(--hb-muted); }\n.hb-list-row {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  padding: 10px 16px;\n  border-top: 1px solid var(--hb-line);\n  color: inherit;\n  text-decoration: none;\n}\n.hb-list > .hb-list-row:first-child, .hb-list-heading + .hb-list-row { border-top: 0; }\n.hb-list-link { cursor: pointer; transition: background 0.15s; }\n.hb-list-link:hover { background: var(--hb-well); }\n.hb-list-rank {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 28px;\n  height: 28px;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n  font-size: 13px;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n}\n.hb-list-photo { flex: none; width: 44px; height: 44px; border-radius: 12px; object-fit: cover; background: var(--hb-well); }\n.hb-list-icon {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border-radius: 12px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n}\n.hb-list-initial {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border-radius: 999px;\n  color: #fff;\n  font-size: 15px;\n  font-weight: 700;\n}\n.hb-list-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }\n.hb-list-title { font-size: 14.5px; line-height: 20px; font-weight: 600; overflow-wrap: anywhere; }\n.hb-list-subtitle {\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  margin-top: 1px;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--hb-muted);\n}\n.hb-list-value { flex: none; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }\n/* The bar and the value share one right-hand block, so every track starts at the same x. In a list with bars the value\n   column has a fixed width; a list without bars keeps the value at its natural width, as before. */\n.hb-list-tail { flex: none; display: flex; align-items: center; gap: 8px; }\n.hb-list-bars .hb-list-value { width: 6.5rem; text-align: right; overflow: hidden; text-overflow: ellipsis; }\n.hb-list-bar { flex: none; width: 64px; height: 6px; border-radius: 999px; background: var(--hb-accent-soft); overflow: hidden; }\n.hb-list-bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-accent); }\n.hb-list-chevron { flex: none; color: var(--hb-muted); }\n.hb-section .hb-list { padding: 0; }\n\n/* List rows that send a message when tapped */\n.hb-list-button {\n  width: 100%;\n  margin: 0;\n  border: 0;\n  border-top: 1px solid var(--hb-line);\n  background: none;\n  font: inherit;\n  text-align: left;\n}\n.hb-list-button:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; }\n";
 
 // src/blocks/heatmap/heatmap.css
 var heatmap_default = "/* Heatmap */\n.hb-heatmap { display: flex; flex-direction: column; gap: 8px; }\n.hb-heat-grid { display: grid; gap: 4px; align-items: center; }\n.hb-heat-col {\n  overflow: hidden;\n  text-align: center;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 11px;\n  font-weight: 600;\n  color: var(--hb-muted);\n}\n.hb-heat-row {\n  max-width: 96px;\n  padding-right: 6px;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 12px;\n  font-weight: 600;\n}\n.hb-heat-cell {\n  display: grid;\n  place-items: center;\n  min-width: 0;\n  height: 32px;\n  margin: 0;\n  padding: 0 2px;\n  overflow: hidden;\n  border: 0;\n  border-radius: 8px;\n  color: var(--hb-ink);\n  font: inherit;\n  font-size: 11.5px;\n  font-weight: 600;\n  line-height: 1;\n  font-variant-numeric: tabular-nums;\n  cursor: pointer;\n}\n.hb-heat-cell:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 1px; }\n.hb-heat-picked { font-size: 12.5px; color: var(--hb-muted); font-variant-numeric: tabular-nums; }\n.hb-heat-picked b { font-weight: 600; color: var(--hb-ink); }\n";
