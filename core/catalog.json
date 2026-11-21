@@ -73,7 +73,7 @@
    "kind": "kpis",
    "for": "2-4 headline numbers, change and trend.",
    "use_when": "The top of a report.",
-   "fields": "items: [{label, value: number or short text, unit, change, change_unit: \"%\" | \"pt\", trend: 2-60 numbers}], ≤4.",
+   "fields": "items: [{label, value: number or short text, unit, previous: last period's number; the chip is computed, change, change_unit: \"%\" | \"pt\", invert_tone: true when a fall is good (churn, cost), trend: 2-60 numbers}], ≤4.",
    "example": {
     "type": "kpis",
     "items": [
@@ -81,14 +81,14 @@
       "label": "Revenue",
       "value": 72275,
       "unit": "₹Cr",
-      "change": 2.2
+      "previous": 70223
      },
      {
-      "label": "Net margin",
-      "value": 18.6,
+      "label": "Churn",
+      "value": 2.4,
       "unit": "%",
-      "change": -0.9,
-      "change_unit": "pt"
+      "previous": 3.1,
+      "invert_tone": true
      }
     ]
    }
@@ -824,8 +824,8 @@
    "kind": "stat",
    "group": "atom",
    "for": "One big number with a change chip.",
-   "use_when": "A single figure, or two in a row.",
-   "fields": "label, value, unit, change, change_unit (optional).",
+   "use_when": "A figure or two.",
+   "fields": "label, value, unit, previous: last period's number; the chip is computed, change, change_unit: \"%\" | \"pt\", invert_tone: true when a fall is good (churn, cost).",
    "example": {
     "type": "stat",
     "label": "Saved",
