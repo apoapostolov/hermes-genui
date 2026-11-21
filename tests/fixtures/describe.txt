@@ -35,7 +35,7 @@ actions: Up to 3 buttons that send a message. Use for: An obvious next step. Fie
 Example: {"type":"actions","items":[{"label":"Analyze","run":"Analyze TCS: last 4 quarters"}]}
 tiles: 2-8 cover cards. Use for: Choices to explore. Fields: items: [{title, subtitle: a few words, image, icon, ask: fills the composer | run: sends}]. No ask/run: a static card, only for pure facts.
 Example: {"type":"tiles","items":[{"title":"Arashiyama","icon":"leaf","ask":"Add Arashiyama"},{"title":"Gion","icon":"moon","run":"Add a Gion walk"}]}
-checklist: Items to tick; ticks are saved. Use for: Packing lists, to-dos, steps. Fields: title. items ≤40: text | {text, group, state: pending|active|done|blocked|skipped, owner ≤40, note ≤120}. numbered: true for steps.
+checklist: Items to tick; ticks are saved. Use for: Packing lists, to-dos, steps. Fields: title. density: compact|expanded (default expanded). items ≤40: text | {text, group, state: pending|active|done|blocked|skipped, owner ≤40, note ≤120, sourceIds: ≤4 short labels for sources elsewhere in the reply, printed not linked}. numbered: true for steps.
 Example: {"type":"checklist","title":"Packing","numbered":true,"items":["Jacket",{"text":"ID card","group":"Papers","state":"active"}]}
 calendar: A day at a glance: big date, its events, the week. Use for: Today, a day's plan or agenda. Fields: date: YYYY-MM-DD. events ≤12: [{title, start: "09:30", end, place}]. week ≤7: [{date, count}]. ask: fills the composer.
 Example: {"type":"calendar","date":"2026-11-14","events":[{"title":"Standup","start":"09:30","place":"Zoom"}],"week":[{"date":"2026-11-14","count":1}],"ask":"What's on today?"}

@@ -93,3 +93,33 @@ describe("checklist item state, owner and note", () => {
     expect(items[1]).toEqual({ text: "Two" });
   });
 });
+
+describe("checklist phase tracker", () => {
+  it("reads compact density and source ids", () => {
+    const r = one({ type: "checklist", title: "Release", density: "compact", items: [
+      { text: "Copy", state: "active", sourceIds: ["src-1", "src-2"] },
+      { text: "Verify", state: "blocked", sources: ["src-3"] },
+    ] });
+    expect(r.dropped).toEqual([]);
+    expect(r.blocks[0]).toMatchObject({ type: "checklist", title: "Release", density: "compact",
+      items: [
+        { text: "Copy", state: "active", sourceIds: ["src-1", "src-2"] },
+        { text: "Verify", state: "blocked", sourceIds: ["src-3"] },
+      ] });
+  });
+  it("folds a written compact density and keeps the first four source labels", () => {
+    const r = one({ type: "checklist", density: " Compact ", items: [
+      { text: "Copy", sourceIds: ["a", 2, "b", "c", "d", "e"] },
+      { text: "Verify", sourceIds: "src-1" },
+    ] });
+    expect(r.dropped).toEqual([{ path: "0.items.0", why: "item keeps 4 source ids" }]);
+    expect((r.blocks[0] as any).density).toBe("compact");
+    expect((r.blocks[0] as any).items[0].sourceIds).toEqual(["a", "b", "c", "d"]);
+    expect((r.blocks[0] as any).items[1].sourceIds).toBeUndefined();
+  });
+
+  it("ignores an unknown density and a null one", () => {
+    expect(((one({ type: "checklist", density: "tiny", items: ["Copy"] }).blocks[0]) as any).density).toBeUndefined();
+    expect(((one({ type: "checklist", density: null, items: ["Copy"] }).blocks[0]) as any).density).toBeUndefined();
+  });
+});

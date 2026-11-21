@@ -13,6 +13,18 @@
 .hb-checklist-count-done { color: var(--hb-good); }
 .hb-checklist-track { display: block; height: 6px; margin: 8px 0 4px; overflow: hidden; border-radius: 999px; background: var(--hb-well); }
 .hb-checklist-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-good); transition: width 0.3s ease; }
+.hb-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.hb-checklist-compact { display: flex; gap: 4px; margin: 8px 0 4px; }
+.hb-check-seg {
+  flex: 1 1 0; min-width: 8px; height: 18px; padding: 0; border: 1px solid var(--hb-line-strong);
+  border-radius: 5px; background: var(--hb-well); cursor: pointer; transition: background 0.15s, border-color 0.15s;
+}
+.hb-check-seg.hb-check-active { border-color: var(--hb-accent); background: var(--hb-accent-soft); }
+.hb-check-seg.hb-check-blocked { border-color: var(--hb-warn); background: color-mix(in srgb, var(--hb-warn) 22%, transparent); }
+.hb-check-seg.hb-check-skipped { border-style: dashed; border-color: var(--hb-muted); }
+.hb-check-seg.hb-check-on { border-color: var(--hb-good); background: var(--hb-good); }
+.hb-check-seg.hb-check-pointer { outline: 2px solid var(--hb-accent); outline-offset: 2px; }
+.hb-check-seg:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }
 .hb-checklist-group-label { padding: 10px 0 2px; font-size: 12px; font-weight: 700; color: var(--hb-muted); }
 .hb-check {
   display: flex;
@@ -61,8 +73,9 @@
 .hb-check-blocked .hb-check-state { color: var(--hb-warn); }
 .hb-check-owner { flex: none; font-size: 11.5px; color: var(--hb-muted); white-space: nowrap; }
 .hb-check-note { display: block; margin-top: 2px; font-size: 12px; line-height: 18px; color: var(--hb-muted); overflow-wrap: anywhere; }
+.hb-check-source { display: block; margin-top: 1px; font-size: 11px; color: var(--hb-muted); }
 .hb-check-on .hb-check-text { color: var(--hb-muted); }
 .hb-check-on .hb-check-label { text-decoration: line-through; text-decoration-thickness: 1px; }
 @media (prefers-reduced-motion: reduce) {
-  .hb-checklist-fill, .hb-check-mark, .hb-check-text { transition: none; }
+  .hb-checklist-fill, .hb-check-mark, .hb-check-text, .hb-check-seg { transition: none; }
 }
