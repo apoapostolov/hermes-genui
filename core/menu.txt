@@ -27,7 +27,8 @@ Interactive
 - form: ask 2+ key unknowns in ONE prefilled form before a big answer.
 - actions: up to 3 buttons that send a message; tiles: 2-8 cover cards to explore.
 Text
-- callout: a warning, tip or verdict; one per reply. source: the data's source, last block.
+- callout: a warning, tip or verdict; one per reply.
+- source: one source, or a numbered list of them with type and date.
 Layout
 - section: a titled card of blocks, can fold. columns: 2-3 big blocks side by side (dashboards).
 - row: 2-3 small blocks side by side. grid: 2-6 small blocks in two columns. tabs: 2-6 tabs, top level only.
