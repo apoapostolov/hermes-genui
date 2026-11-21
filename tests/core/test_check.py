@@ -130,6 +130,32 @@ def test_stat_trend_is_checked_too():
         "0: trend must be a list of 2-60 numbers"]
 
 
+def test_a_previous_the_reader_cannot_use_costs_the_chip_not_the_board():
+    # The reader draws no chip for a text, null or non-finite previous, so the check leaves it alone: same idea as
+    # the chart controls that are off or out of range.
+    figure = {"type": "stat", "label": "Close", "value": 80}
+    for previous in (100, 80.5, None, "100", "n/a", "high", True, [1], float("nan"), float("inf"), 10**400):
+        assert check_blocks([{**figure, "previous": previous}]) == [], previous
+
+
+def test_invert_tone_is_accepted_on_a_kpi_and_a_stat():
+    # Only `true` inverts the tone; anything else is drawn as no inversion, so it does not cost a retry.
+    for item in ({"type": "kpis", "items": [{"label": "Churn", "value": 2.4, "invert_tone": True}]},
+                 {"type": "stat", "label": "Churn", "value": 2.4, "invert_tone": False},
+                 {"type": "stat", "label": "Churn", "value": 2.4, "invert_tone": "yes"},
+                 {"type": "stat", "label": "Churn", "value": 2.4, "invert_tone": None},
+                 {"type": "stat", "label": "Churn", "value": 2.4, "invert_tone": 0},
+                 {"type": "kpis", "items": [{"label": "Churn", "value": 2.4, "invert_tone": None}]}):
+        assert check_blocks([item]) == [], item
+
+
+def test_a_change_too_large_for_a_chip_is_not_refused():
+    # A chip prints one decimal; 1e308 has none. Both sides drop the chip and still draw the board.
+    figure = {"type": "stat", "label": "Close", "value": 80, "change": 1e308}
+    assert check_blocks([figure]) == []
+    assert check_blocks([{"type": "kpis", "items": [{"label": "Close", "value": 80, "change": 1e308}]}]) == []
+
+
 def test_row_and_grid_child_limits():
     stats = [{"type": "stat", "label": f"s{i}", "value": i} for i in range(7)]
     assert check_blocks([{"type": "row", "children": stats[:4]}]) == ["0: a row holds at most 3 children"]

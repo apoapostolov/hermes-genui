@@ -25,4 +25,55 @@ describe("kpis and stat", () => {
   it("reads a stat's trend too", () => {
     expect((readBlocks([{ type: "stat", label: "Saved", value: 3, trend: [1, 2, 3] }])[0] as any).trend).toEqual([1, 2, 3]);
   });
+  it("reads the change from a previous number, as a share of it", () => {
+    const item = (kpi: any) => (readBlocks([{ type: "kpis", items: [{ label: "Close", ...kpi }] }])[0] as any).items[0];
+    expect(item({ value: 80, previous: 100 })).toMatchObject({ change: -20, change_unit: "%" });
+    expect(item({ value: 120, previous: 100 }).change).toBeCloseTo(20, 10);
+    expect(item({ value: 72275, unit: "₹Cr", previous: 70223 }).change).toBeCloseTo(2.9221, 3);
+  });
+  it("counts points when the card's unit is %", () => {
+    const stat = readBlocks([{ type: "stat", label: "Margin", value: 18.6, unit: "%", previous: 19.5 }])[0] as any;
+    expect(stat.change).toBeCloseTo(-0.9, 10);
+    expect(stat.change_unit).toBe("pt");
+  });
+  it("lets previous win over a written change", () => {
+    const stat = readBlocks([{ type: "stat", label: "Close", value: 80, previous: 100, change: 2 }])[0] as any;
+    expect(stat.change).toBe(-20);
+  });
+  it("has no change when one side is unknown, or a share of zero is asked for", () => {
+    const stat = (kpi: any) => readBlocks([{ type: "stat", label: "Close", ...kpi }])[0] as any;
+    expect("change" in stat({ value: 80, previous: null, change: 2 })).toBe(false);
+    expect("change" in stat({ value: "Leeds (H)", previous: 2 })).toBe(false);
+    expect("change" in stat({ value: 70, previous: 0 })).toBe(false);
+    expect(stat({ value: 70, previous: 0, change_unit: "pt" }).change).toBe(70);
+  });
+  it("keeps an explicit change_unit on a change it computed", () => {
+    expect((readBlocks([{ type: "stat", label: "Close", value: 120, previous: 100, change_unit: "pt" }])[0] as any))
+      .toMatchObject({ change: 20, change_unit: "pt" });
+  });
+  it("keeps a written change in its own unit on a % card", () => {
+    const stat = (kpi: any) => readBlocks([{ type: "stat", label: "Margin", ...kpi }])[0] as any;
+    expect(stat({ value: 18.6, unit: "%", change: -0.9 })).toMatchObject({ change: -0.9, change_unit: "%" });
+    expect(stat({ value: 18.6, unit: "%", change: 5 })).toMatchObject({ change: 5, change_unit: "%" });
+    expect(stat({ value: 18.6, unit: "%", change: 5, change_unit: "pt" })).toMatchObject({ change_unit: "pt" });
+  });
+  it("drops a change no chip can print", () => {
+    const stat = (kpi: any) => readBlocks([{ type: "stat", label: "Close", ...kpi }])[0] as any;
+    expect("change" in stat({ value: 80, change: 1e308 })).toBe(false);
+    expect("change" in stat({ value: 1e308, previous: 1e-300 })).toBe(false);
+  });
+  it("keeps invert_tone only when it is true", () => {
+    const read = (kpi: any) => readBlocks([{ type: "stat", label: "Churn", ...kpi }])[0] as any;
+    expect(read({ value: 2.4, previous: 3.1, invert_tone: true }).invert_tone).toBe(true);
+    expect("invert_tone" in read({ value: 2.4, previous: 3.1 })).toBe(false);
+    expect("invert_tone" in read({ value: 2.4, previous: 3.1, invert_tone: "yes" })).toBe(false);
+    expect("invert_tone" in read({ value: 2.4, previous: 3.1, invert_tone: 0 })).toBe(false);
+    expect("invert_tone" in read({ value: 2.4, previous: 3.1, invert_tone: null })).toBe(false);
+  });
+  it("ignores a previous or change it cannot use", () => {
+    const stat = (kpi: any) => readBlocks([{ type: "stat", label: "Close", ...kpi }])[0] as any;
+    expect("change" in stat({ value: 80, previous: "100" })).toBe(false);
+    expect("change" in stat({ value: 80, previous: "n/a" })).toBe(false);
+    expect("change" in stat({ value: 80, change: "2" })).toBe(false);
+  });
 });
