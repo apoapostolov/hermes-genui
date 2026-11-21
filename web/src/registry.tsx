@@ -83,7 +83,7 @@ type Registry = { [K in Block["type"]]: BlockEntry<Extract<Block, { type: K }>> 
 export const REGISTRY: Registry = {
   chart: { read: readChart, Component: ({ block }) => <Chart spec={block.spec} /> },
   kpis: { read: readKpis, Component: ({ block }) => <Kpis items={block.items} /> },
-  source: { read: readSource, Component: ({ block }) => <Source text={block.text} url={block.url} /> },
+  source: { read: readSource, Component: ({ block }) => <Source {...block} /> },
   timeline: { read: readTimeline, Component: ({ block }) => <Timeline {...block} /> },
   images: { read: readImages, Component: ({ block }) => <Images block={block} /> },
   callout: { read: readCallout, Component: ({ block }) => <Callout {...block} /> },

@@ -187,11 +187,25 @@
    "kind": "source",
    "for": "A small line naming the data's source.",
    "use_when": "Last block, for outside data.",
-   "fields": "text. url (optional).",
+   "fields": "text, url (optional). A list: title, then items ≤32: [{label, url, kind: web|file|tool|derived, accessed: YYYY-MM-DD, note}].",
    "example": {
     "type": "source",
-    "text": "screener.in · TCS · Jun 2026 quarter",
-    "url": "https://www.screener.in/company/TCS/"
+    "title": "Sources",
+    "items": [
+     {
+      "label": "Screener",
+      "url": "https://www.screener.in/company/TCS/",
+      "kind": "web",
+      "accessed": "2026-11-17",
+      "note": "Jun 2026 quarter"
+     },
+     {
+      "label": "Export",
+      "kind": "file",
+      "accessed": "2026-11-18",
+      "note": "Screener CSV"
+     }
+    ]
    }
   },
   {
