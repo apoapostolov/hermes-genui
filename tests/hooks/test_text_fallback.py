@@ -244,6 +244,20 @@ def test_list_ranked_and_bulleted():
     assert render(plain) == "- Plain\n- Named · 3"
 
 
+def test_list_uses_the_bar_when_no_value_was_written():
+    block = {"type": "list", "ranked": True, "items": [
+        {"title": "Rent", "bar": 34500}, {"title": "Travel", "bar": 9800, "value": "9.8k"}]}
+    assert render(block) == "1. Rent · 34,500\n2. Travel · 9.8k"
+
+
+def test_list_prints_the_rows_own_value_where_the_card_shows_one():
+    block = {"type": "list", "items": [
+        {"title": "Rent", "price": "₹62,000", "bar": 62},
+        {"title": "Food", "rating": 4.6, "bar": 90},
+        {"title": "Travel", "bar": 30}]}
+    assert render(block) == "- Rent · ₹62,000\n- Food · 4.6\n- Travel · 30"
+
+
 def test_flip_cards():
     assert render(EXAMPLES["flip"]) == (
         "**Asian Games**\n- Q: Most golds? — A: China · 201\n- Q: Host city? — A: Nagoya"

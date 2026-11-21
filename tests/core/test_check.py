@@ -182,6 +182,16 @@ def test_list_needs_a_row_with_a_title():
     assert check_blocks([{"type": "list"}]) == ["0: list needs at least one item with a title"]
 
 
+def test_list_takes_bars_the_reader_skips():
+    good = {"type": "list", "items": [{"title": "Rent", "bar": 62}, {"title": "Mubi", "bar": None}]}
+    assert check_blocks([good]) == []
+    # The reader draws no bar for these, so the board is still usable and the check must not refuse it.
+    skipped = {"type": "list", "items": [
+        {"title": "A", "bar": "62"}, {"title": "B", "bar": "34,500"}, {"title": "C", "bar": -3},
+        {"title": "D", "bar": True}, {"title": "E", "bar": False}]}
+    assert check_blocks([skipped]) == []
+
+
 def test_progress_needs_title_value_and_a_goal_above_zero():
     assert check_blocks([{"type": "progress", "title": "Trip fund", "value": 5, "goal": 10}]) == []
     assert check_blocks([{"type": "progress", "value": 5, "goal": 10}]) == ["0: progress needs a title"]

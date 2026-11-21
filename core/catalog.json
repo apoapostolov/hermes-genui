@@ -198,7 +198,7 @@
    "kind": "list",
    "for": "Rows: rank, icon or photo, title, subtitle, value.",
    "use_when": "Rankings, top picks, results.",
-   "fields": "title. ranked: true numbers rows. items ≤12: [{title, subtitle, value, icon or image, run: sent on tap, or url}].",
+   "fields": "title. ranked: true numbers rows. max: the number a full bar means (default: the largest bar). items ≤12: [{title, subtitle, value, bar: number, icon or image, run: sent on tap, or url}].",
    "example": {
     "type": "list",
     "title": "Cafés nearby",
@@ -207,12 +207,14 @@
      {
       "title": "Third Wave",
       "subtitle": "80 Feet Road",
-      "value": "4.5★"
+      "value": "4.5★",
+      "bar": 4.5
      },
      {
       "title": "Dyu Art Café",
       "subtitle": "Garden seats",
-      "value": "4.4★"
+      "value": "4.4★",
+      "bar": 4.4
      }
     ]
    }

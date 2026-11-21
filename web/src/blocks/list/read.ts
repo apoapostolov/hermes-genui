@@ -1,8 +1,8 @@
 import { actsBeforeTheModel, clean, firstList, firstText, firstTextOrNumber, firstWords, https, icon, keepFirst, NO_SEND, type Trail } from "../../core/fields";
 import type { IconName } from "../../lib/icons";
 
-export type ListItem = { title: string; subtitle?: string; value?: string; icon?: IconName; image?: string; run?: string; url?: string };
-export type ListBlock = { type: "list"; title?: string; ranked: boolean; items: ListItem[] };
+export type ListItem = { title: string; subtitle?: string; value?: string; bar?: number; icon?: IconName; image?: string; run?: string; url?: string };
+export type ListBlock = { type: "list"; title?: string; ranked: boolean; max?: number; items: ListItem[] };
 
 const MAX_ITEMS = 12;
 
@@ -13,6 +13,11 @@ const MAX_ITEMS = 12;
  *   icon or image (https), run (a tap sends it as the user's message) or url (https, opens in the browser)}. A plain
  *   string is a title-only row. `ask` isn't read: a row sends, it doesn't fill the composer.
  * - ranked: true numbers the rows (also `numbered`). title: optional heading over the list.
+ * - max: a number above 0, what a full bar means; the largest bar is used when absent, zero, negative or not a number.
+ *   items[].bar: a number (null or anything else draws no bar) gives that row a track against max; `value` stays the
+ *   right-hand text, and a row with no value uses the bar number as text.
+ *   {type: "list", max: 100, items: [{title: "Rent", bar: 62, value: "62 of 100"}]}
+ *   → {type: "list", max: 100, items: [{title: "Rent", bar: 62, value: "62 of 100"}]}
  *   {type: "list", numbered: true, items: ["Third Wave", {name: "Dyu Art Café", description: "Garden seats", rating: 4.6}]}
  *   → {type: "list", ranked: true, items: [{title: "Third Wave"}, {title: "Dyu Art Café", subtitle: "Garden seats", value: "4.6"}]}
  * A row whose run is a command or an @-reference ({title: "B", run: "/reset"}) is dropped, noted NO_SEND.
@@ -36,7 +41,9 @@ export function readList(raw: any, here: Trail): ListBlock | null {
   });
   if (!items.length) return here.drop("list has no row with a title");
   const ranked = raw.ranked === true || raw.numbered === true;
-  return clean({ type: "list" as const, title: firstText([raw.title], 60), ranked, items: keepFirst(items, MAX_ITEMS, here, "rows") });
+  const max = typeof raw.max === "number" && isFinite(raw.max) && raw.max > 0 ? raw.max : undefined;
+  return clean({ type: "list" as const, title: firstText([raw.title], 60), ranked, max,
+    items: keepFirst(items, MAX_ITEMS, here, "rows") });
 }
 
 /**
@@ -55,10 +62,12 @@ function readListItem(item: any): ListItem | null {
   const title = named ?? firstText([item.text], 160);
   if (!title) return null;
   const textUnder = named ? item.text : undefined;  // a text already used as the title isn't repeated under it
+  const bar = typeof item.bar === "number" && isFinite(item.bar) && item.bar >= 0 ? item.bar : undefined;
   return clean({
     title,
     subtitle: firstWords([item.subtitle, item.description, item.detail, item.note, textUnder], 160),
-    value: firstTextOrNumber([item.value, item.price, item.rating, item.score, item.meta, item.badge], 30),
+    value: firstTextOrNumber([item.value, item.price, item.rating, item.score, item.meta, item.badge, bar], 30),
+    bar,
     icon: icon(item.icon),
     image: https(item.image),
     run: firstText([item.run], 300),

@@ -15,8 +15,8 @@ callout: A tinted box: a warning, a tip or the takeaway. Use for: Warnings, tips
 Example: {"type":"callout","tone":"tip","text":"Pixel for photos; Nothing for price."}
 source: A small line naming the data's source. Use for: Last block, for outside data. Fields: text. url (optional).
 Example: {"type":"source","text":"screener.in · TCS · Jun 2026 quarter","url":"https://www.screener.in/company/TCS/"}
-list: Rows: rank, icon or photo, title, subtitle, value. Use for: Rankings, top picks, results. Fields: title. ranked: true numbers rows. items ≤12: [{title, subtitle, value, icon or image, run: sent on tap, or url}].
-Example: {"type":"list","title":"Cafés nearby","ranked":true,"items":[{"title":"Third Wave","subtitle":"80 Feet Road","value":"4.5★"},{"title":"Dyu Art Café","subtitle":"Garden seats","value":"4.4★"}]}
+list: Rows: rank, icon or photo, title, subtitle, value. Use for: Rankings, top picks, results. Fields: title. ranked: true numbers rows. max: the number a full bar means (default: the largest bar). items ≤12: [{title, subtitle, value, bar: number, icon or image, run: sent on tap, or url}].
+Example: {"type":"list","title":"Cafés nearby","ranked":true,"items":[{"title":"Third Wave","subtitle":"80 Feet Road","value":"4.5★","bar":4.5},{"title":"Dyu Art Café","subtitle":"Garden seats","value":"4.4★","bar":4.4}]}
 progress: A value on a track to a goal; checkpoints ticked. Use for: Savings, challenges, training. Fields: title. value. goal (> 0). unit. steps ≤6: [{label, at: number}].
 Example: {"type":"progress","title":"Level 4","value":95,"goal":120,"unit":"XP","steps":[{"label":"60 XP","at":60},{"label":"120 XP","at":120}]}
 streak: A big count and the week, days ticked. Use for: Daily habits. Fields: count. label, unit (default "Current streak", "days"). days: up to 7 [{label, date, done, today}].
