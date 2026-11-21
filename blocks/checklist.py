@@ -7,6 +7,7 @@ STATES = ("pending", "active", "done", "blocked", "skipped")
 STATE_RULE = "item state is pending, active, done, blocked or skipped"
 OWNER_RULE = "item owner is text up to 40 characters"
 NOTE_RULE = "item note is text up to 120 characters"
+DENSITY_RULE = "density is compact or expanded"
 
 # The drawing side folds case, surrounding space and the common words for two states. The checker and the text
 # fallback use the same map, so a board that draws is a board that renders.
@@ -24,6 +25,17 @@ def read_state(value: object) -> str | None:
         return None
     return STATE_ALIASES.get(value.strip().lower())
 
+
+def read_density(value: object) -> str | None:
+    """The density a model wrote: "Compact" and null are the same as compact and absent."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        key = value.strip().lower()
+        if key in ("compact", "expanded"):
+            return key
+    return None
+
 # How a state reads in the plain-text version: lower case, a word rather than a colour. done is carried by the tick.
 STATE_WORDS = {"pending": "not started", "active": "in progress", "blocked": "blocked", "skipped": "skipped"}
 
@@ -39,7 +51,10 @@ def check_checklist(block: dict, path: str) -> list[tuple[str, str]]:
     items = block.get("items")
     if not isinstance(items, list) or not 1 <= len(items) <= 40:
         return [(path, "checklist needs 1-40 items")]
-    problems = [
+    problems = []
+    if block.get("density") is not None and read_density(block.get("density")) is None:
+        problems.append((path, DENSITY_RULE))
+    problems += [
         (f"{path}.items.{i}", "item needs text")
         for i, it in enumerate(items)
         if not (has_text(it) or (isinstance(it, dict) and has_text(it.get("text"))))
@@ -78,12 +93,14 @@ def _item_problems(item: dict, path: str) -> list[tuple[str, str]]:
         # values here, including brackets, angle brackets and trailing space that safe_text would escape.
         if not isinstance(value, str):
             problems.append((path, rule))
+    # sourceIds are labels: a non-list is ignored, a short list keeps its first four strings and each is cut at
+    # 40. There is nothing here that can make the board unusable, so the checker accepts what the reader accepts.
     return problems
 
 
 def text_checklist(block: dict) -> str:
-    """The title, then "- [ ] Jacket" per item (a string, or {text, group, state, owner, note}); a done item is
-    "- [x]", and a state, owner or note follows the text in brackets.
+    """The title, then "- [ ] Jacket" per item (a string, or {text, group, state, owner, note, sourceIds}); a done
+    item is "- [x]", and a state, owner, note or source labels follow the text in brackets.
 
     {"title": "Move", "items": [{"text": "Copy", "state": "active", "owner": "P"}]} →
       "**Move**\\n- [ ] Copy (in progress, P)"
@@ -104,12 +121,15 @@ def _item_line(item: object) -> str:
         owner = safe_text(item.get("owner"))[:40]
         note = safe_text(item.get("note"))[:120]
         done = item.get("done") is True or item.get("checked") is True or state == "done"
+        raw_ids = item.get("sourceIds")
+        ids = [safe_text(i)[:40] for i in raw_ids[:4] if isinstance(i, str)] if isinstance(raw_ids, list) else []
+        sources = f"sources {', '.join(ids[:4])}" if ids else ""
     else:
-        text, state, owner, note, done = safe_text(item), "", "", "", False
+        text, state, owner, note, done, sources = safe_text(item), "", "", "", False, ""
     if not text:
         return ""
     # A tick hides the state on the card, so the plain text hides it too.
-    aside = ", ".join(part for part in ("" if done else STATE_WORDS.get(state, ""), owner) if part)
+    aside = ", ".join(part for part in ("" if done else STATE_WORDS.get(state, ""), owner, sources) if part)
     if note:
         aside = f"{aside}: {note}" if aside else note
     return f"- [{'x' if done else ' '}] {text}" + (f" ({aside})" if aside else "")

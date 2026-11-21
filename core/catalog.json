@@ -440,7 +440,7 @@
    "kind": "checklist",
    "for": "Items to tick; ticks are saved.",
    "use_when": "Packing lists, to-dos, steps.",
-   "fields": "title. items ≤40: text | {text, group, state: pending|active|done|blocked|skipped, owner ≤40, note ≤120}. numbered: true for steps.",
+   "fields": "title. density: compact|expanded (default expanded). items ≤40: text | {text, group, state: pending|active|done|blocked|skipped, owner ≤40, note ≤120, sourceIds: ≤4 short labels for sources elsewhere in the reply, printed not linked}. numbered: true for steps.",
    "example": {
     "type": "checklist",
     "title": "Packing",

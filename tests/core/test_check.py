@@ -766,3 +766,18 @@ def test_checklist_items_may_carry_a_state_an_owner_and_a_note():
         "0.items.3: item note is text up to 120 characters",
     ]
 
+
+def test_checklist_phase_tracker_controls_are_checked():
+    ok = [{"type": "checklist", "density": "compact", "items": [
+        {"text": "Copy", "state": "active", "sourceIds": ["src-1", "src-2"]}]}]
+    assert check_blocks(ok) == []
+    # The reader folds "Compact", ignores null and cuts a long source list, so the checker accepts the same.
+    assert check_blocks([{**ok[0], "density": " Compact "}]) == []
+    assert check_blocks([{**ok[0], "density": None}]) == []
+    assert check_blocks([{"type": "checklist", "items": [
+        {"text": "A", "sourceIds": []},
+        {"text": "B", "sourceIds": ["a", 2, "b", "c", "d", "e"]},
+        {"text": "C", "sourceIds": "src-1"},
+        {"text": "D", "sourceIds": ["x" * 60]}]}]) == []
+    assert check_blocks([{**ok[0], "density": "tiny"}]) == ["0: density is compact or expanded"]
+
