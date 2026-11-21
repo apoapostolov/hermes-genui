@@ -221,23 +221,35 @@
   },
   {
    "kind": "progress",
-   "for": "A value on a track to a goal; checkpoints ticked.",
-   "use_when": "Savings, challenges, training.",
-   "fields": "title. value. goal (> 0). unit. steps ≤6: [{label, at: number}].",
+   "for": "A track to a goal.",
+   "use_when": "Training, savings.",
+   "fields": "title, value, goal>0, unit, shape line|circle|dashboard, show_percent, tone good|warn|bad (colours the fill; a threshold's tone colours the band that ends at its mark), steps≤6 {label,at} or thresholds≤6 {at,label,tone} (not both; segments win over steps), segments≤5 {value,label,tone}: parts of the track, adding up to the goal at most.",
    "example": {
     "type": "progress",
-    "title": "Level 4",
-    "value": 95,
-    "goal": 120,
-    "unit": "XP",
+    "title": "Budget used",
+    "value": 32000,
+    "goal": 50000,
+    "unit": "₹",
     "steps": [
      {
-      "label": "60 XP",
-      "at": 60
+      "label": "Half",
+      "at": 25000
      },
      {
-      "label": "120 XP",
-      "at": 120
+      "label": "Limit",
+      "at": 50000
+     }
+    ],
+    "segments": [
+     {
+      "value": 20000,
+      "label": "Rent",
+      "tone": "good"
+     },
+     {
+      "value": 12000,
+      "label": "Food",
+      "tone": "warn"
      }
     ]
    }

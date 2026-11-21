@@ -7,7 +7,7 @@ Data
 - table: options compared on the same attributes (phones, plans, hotels).
 - heatmap: a grid shaded by value (sectors by quarter, habits by weekday).
 - list: ranked or plain rows with title, subtitle, value (top picks, results).
-- progress: a value on a track to a goal (savings, training).
+- progress: a value on a track to a goal (savings, training), or a budget split by category.
 - streak: a daily habit: a count and the week ticked.
 Plans and time
 - timeline: a day-by-day plan of timed stops (itineraries, schedules).

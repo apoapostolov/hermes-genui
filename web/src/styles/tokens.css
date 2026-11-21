@@ -12,6 +12,8 @@
   --hb-accent-ink: color-mix(in srgb, var(--hb-accent) 85%, var(--hb-ink));
   --hb-good: var(--ui-success, #1a7f37);
   --hb-warn: #c2410c;
+  /* The one tone the theme has no variable for: a red for a value in a bad band (a load over its limit). */
+  --hb-bad: var(--ui-danger, #b42318);
   /* The page behind the blocks, for the few marks that must hide what's under them (a progress checkpoint). */
   --hb-surface: var(--background, Canvas);
   /* A raised card (a chart's hover card). */
@@ -42,6 +44,7 @@
    shadow. */
 .dark .hb-blocks {
   --hb-warn: #f0883e;
+  --hb-bad: var(--ui-danger, #f0796c);
   --hb-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 /* A stronger line, for chart axes, checkboxes and inputs. */

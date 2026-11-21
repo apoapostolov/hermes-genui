@@ -180,7 +180,9 @@ def test_invert_tone_changes_no_text():
 
 
 def test_progress_and_bar():
-    assert render(EXAMPLES["progress"]) == "Level 4: 95 / 120 XP"
+    assert render(EXAMPLES["progress"]) == (
+        "Budget used: 32,000 / 50,000 ₹. Rent 20,000 ₹, Food 12,000 ₹."
+    )
     assert render({"type": "bar", "label": "Budget used", "value": 62}) == "Budget used: 62 / 100"
     assert render({"type": "bar", "label": "Food", "value": 7200, "max": 8000, "unit": "₹"}) == "Food: 7,200 / 8,000 ₹"
 
