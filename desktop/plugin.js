@@ -159,7 +159,7 @@ function composerActions(composer) {
 }
 
 // src/host/BlockTag.tsx
-import { useContext as useContext11, useEffect as useEffect10, useState as useState26 } from "react";
+import { useContext as useContext11, useEffect as useEffect10, useState as useState27 } from "react";
 
 // src/core/Blocks.tsx
 import { Component as ReactComponent } from "react";
@@ -402,7 +402,6 @@ function Picture({ url, caption: caption2 }) {
   ] });
 }
 function barAmount(value, max, unit) {
-  if (value === null) return "no data";
   if (max === 100 && !unit) return `${value}%`;
   const money = formatAmount(value, unit);
   if (money !== null) return `${money} / ${formatAmount(max, unit)}`;
@@ -410,7 +409,7 @@ function barAmount(value, max, unit) {
   return unit ? `${amount} ${unit}` : amount;
 }
 function Bar({ label, value, max, unit }) {
-  const share = value === null ? 0 : Math.max(0, Math.min(1, value / max));
+  const share = Math.max(0, Math.min(1, value / max));
   return /* @__PURE__ */ jsxs2("div", { className: "hb-card hb-bar", children: [
     /* @__PURE__ */ jsxs2("div", { className: "hb-bar-head", children: [
       /* @__PURE__ */ jsx5("span", { className: "hb-bar-label", children: label }),
@@ -467,7 +466,7 @@ function readBar(raw, here) {
   const label = firstText([raw.label, raw.title], 40);
   if (!label) return here.drop("bar needs a label");
   const value = num(raw.value);
-  if (value === null && raw.value !== null) return here.drop("bar needs a numeric value");
+  if (value === null) return here.drop("bar needs a numeric value");
   let max = num(raw.max) ?? num(raw.goal) ?? num(raw.total) ?? 100;
   if (max <= 0) max = 100;
   return clean({ type: "bar", label, value, max, unit: str(raw.unit, 12) });
@@ -481,10 +480,10 @@ var CHART_KINDS = ["line", "bar", "area", "stacked", "hbar", "combo", "pie", "do
 var KIND_ALIASES = { doughnut: "donut", stackedbar: "stacked", horizontalbar: "hbar", barh: "hbar" };
 function chartKind(name) {
   if (typeof name !== "string") return "line";
-  const plain = name.toLowerCase().replace(/[\s_-]/g, "");
-  const known = CHART_KINDS.find((k) => k === plain);
+  const plain2 = name.toLowerCase().replace(/[\s_-]/g, "");
+  const known = CHART_KINDS.find((k) => k === plain2);
   if (known) return known;
-  return KIND_ALIASES[plain] ?? "line";
+  return KIND_ALIASES[plain2] ?? "line";
 }
 function maxSeries(kind) {
   if (kind === "stacked" || kind === "area") return 6;
@@ -544,8 +543,6 @@ function chartLabel(spec) {
     const direction = pct === null ? "" : `, ${pct >= 0 ? "up" : "down"} ${Math.abs(pct).toFixed(1)}%`;
     parts2.push(`${fmt(values[0], unit)} to ${fmt(values[values.length - 1], unit)}${direction}`);
   }
-  const gaps = missingLabels(spec);
-  if (gaps.length) parts2.push(gaps.length <= 4 ? `${gaps.join(", ")} no data` : `${gaps.length} of ${spec.x.length} labels with no data`);
   if (spec.caveat) parts2.push(spec.caveat);
   return parts2.join(". ");
 }
@@ -563,10 +560,10 @@ function pieSlices(x, data) {
   if (slices.length <= MAX_SLICES) return { x: slices.map((s) => s.label), data: slices.map((s) => s.value) };
   const biggestFirst = [...slices].sort((a, b) => b.value - a.value);
   const kept = new Set(biggestFirst.slice(0, MAX_SLICES - 1));
-  const shown = slices.filter((s) => kept.has(s));
+  const shown2 = slices.filter((s) => kept.has(s));
   let other = 0;
   for (const s of slices) if (!kept.has(s)) other += s.value;
-  return { x: [...shown.map((s) => s.label), "Other"], data: [...shown.map((s) => s.value), other] };
+  return { x: [...shown2.map((s) => s.label), "Other"], data: [...shown2.map((s) => s.value), other] };
 }
 function stackSeries(series, n) {
   const up = new Array(n).fill(0);
@@ -621,9 +618,6 @@ function shareNote(values, v) {
 }
 function seriesName(series, k) {
   return series[k].name ?? (series.length === 1 ? "Value" : `Series ${k + 1}`);
-}
-function missingLabels(spec) {
-  return spec.x.filter((_, i) => spec.series.every((s) => s.data[i] === null || s.data[i] === void 0)).map(String);
 }
 function chartScales(spec, bands) {
   if (bands) {
@@ -1021,9 +1015,9 @@ function textWidth(text, size = 11) {
 function xLabelsShown(n, step, minGap) {
   if (n <= 1 || step <= 0) return [0];
   const every = Math.max(1, Math.ceil(minGap / step));
-  const shown = [];
-  for (let i = 0; i < n; i += every) shown.push(i);
-  return shown;
+  const shown2 = [];
+  for (let i = 0; i < n; i += every) shown2.push(i);
+  return shown2;
 }
 var MAX_SLOT = 96;
 var MIN_BAR = 14;
@@ -1042,22 +1036,6 @@ function barPath(x, width, base, end, radius = 4) {
   return `M${f(x)},${f(base)}V${f(end + toward * r)}Q${f(x)},${f(end)} ${f(x + r)},${f(end)}H${f(x2 - r)}Q${f(x2)},${f(end)} ${f(x2)},${f(end + toward * r)}V${f(base)}Z`;
 }
 var STRAIGHT_UP_TO = 12;
-function lineRuns(pts) {
-  const runs = [];
-  let run = null;
-  pts.forEach((p, i) => {
-    if (p === null) {
-      run = null;
-      return;
-    }
-    if (!run) {
-      run = { from: i, pts: [] };
-      runs.push(run);
-    }
-    run.pts.push(p);
-  });
-  return runs;
-}
 function linePath(pts, stepped = false) {
   if (stepped) return steppedPath(pts);
   if (pts.length > STRAIGHT_UP_TO) return smoothPath(pts);
@@ -1241,7 +1219,7 @@ function xyTip(spec, i, layout) {
     pile += Math.max(v, 0);
     y = Math.min(y, layout.yOf(s)(spec.type === "stacked" || spec.type === "area" ? pile : v));
   });
-  return { x: layout.xAt(i), y, title: String(spec.x[i]), rows, note: rows.length ? tipNote(spec, i) : "no data" };
+  return { x: layout.xAt(i), y, title: String(spec.x[i]), rows, note: tipNote(spec, i) };
 }
 function tipNote(spec, i) {
   if (spec.series.length !== 1 || spec.type !== "line") return void 0;
@@ -1308,7 +1286,7 @@ function ChartTip({ tip }) {
   const card = useRef(null);
   const [kept, setKept] = useState4(tip);
   if (tip && tip !== kept) setKept(tip);
-  const shown = tip ?? kept;
+  const shown2 = tip ?? kept;
   useLayoutEffect2(() => {
     const el = card.current;
     if (!el || !tip) return;
@@ -1317,14 +1295,14 @@ function ChartTip({ tip }) {
     el.style.left = `${left}px`;
     el.style.top = `${top}px`;
   }, [tip]);
-  return /* @__PURE__ */ jsx6("div", { ref: card, className: `hb-tip${tip ? " hb-tip-on" : ""}`, role: "status", "aria-live": "polite", children: shown && /* @__PURE__ */ jsxs3(Fragment2, { children: [
-    /* @__PURE__ */ jsx6("div", { className: "hb-tip-title", children: shown.title }),
-    shown.rows.map((row, k) => /* @__PURE__ */ jsxs3("div", { className: "hb-tip-row", children: [
+  return /* @__PURE__ */ jsx6("div", { ref: card, className: `hb-tip${tip ? " hb-tip-on" : ""}`, role: "status", "aria-live": "polite", children: shown2 && /* @__PURE__ */ jsxs3(Fragment2, { children: [
+    /* @__PURE__ */ jsx6("div", { className: "hb-tip-title", children: shown2.title }),
+    shown2.rows.map((row, k) => /* @__PURE__ */ jsxs3("div", { className: "hb-tip-row", children: [
       /* @__PURE__ */ jsx6("i", { style: { background: row.colour } }),
       /* @__PURE__ */ jsx6("span", { className: "hb-tip-name", children: row.name }),
       /* @__PURE__ */ jsx6("b", { className: "hb-tip-value", children: row.value })
     ] }, k)),
-    shown.note && /* @__PURE__ */ jsx6("div", { className: "hb-tip-note", children: shown.note })
+    shown2.note && /* @__PURE__ */ jsx6("div", { className: "hb-tip-note", children: shown2.note })
   ] }) });
 }
 
@@ -1355,29 +1333,24 @@ function LineMarks({ spec, layout, gid, hover }) {
     showZero && /* @__PURE__ */ jsx8("line", { x1: left, x2: right, y1: zero, y2: zero, className: "hb-chart-rule-strong", strokeDasharray: "3 3" }),
     start !== null && /* @__PURE__ */ jsx8(StartMark, { spec, layout, gid, start }),
     spec.series.map((s, k) => {
-      const runs = lineRuns(slotsOf(s.data, layout));
-      if (!runs.length) return null;
-      const stroke = start !== null ? `url(#change-${gid})` : partColour(k);
-      const end = seriesEnds(s.data).last;
-      return /* @__PURE__ */ jsxs5("g", { children: [
-        runs.filter((r) => r.pts.length > 1).map((r, j) => /* @__PURE__ */ jsx8(
-          "path",
-          {
-            d: linePath(r.pts, spec.stepped),
-            fill: "none",
-            stroke,
-            strokeWidth: one ? 2.25 : 1.75,
-            strokeLinejoin: "round",
-            strokeLinecap: "round",
-            pathLength: 1,
-            strokeDasharray: "1",
-            strokeDashoffset: "1",
-            className: "hb-chart-line hb-chart-draw"
-          },
-          j
-        )),
-        runs.filter((r) => r.pts.length === 1 && r.from !== end).map((r, j) => /* @__PURE__ */ jsx8("circle", { cx: r.pts[0][0], cy: r.pts[0][1], r: "2.5", fill: stroke, className: "hb-chart-dot" }, j))
-      ] }, k);
+      const pts = pointsOf(s.data, layout);
+      if (!pts.length) return null;
+      return /* @__PURE__ */ jsx8(
+        "path",
+        {
+          d: linePath(pts, spec.stepped),
+          fill: "none",
+          stroke: start !== null ? `url(#change-${gid})` : partColour(k),
+          strokeWidth: one ? 2.25 : 1.75,
+          strokeLinejoin: "round",
+          strokeLinecap: "round",
+          pathLength: 1,
+          strokeDasharray: "1",
+          strokeDashoffset: "1",
+          className: "hb-chart-line hb-chart-draw"
+        },
+        k
+      );
     }),
     layout.ends.map((e) => /* @__PURE__ */ jsxs5("g", { children: [
       /* @__PURE__ */ jsx8("circle", { cx: xAt(e.at), cy: e.dotY, r: "3.5", fill: e.dot, className: "hb-chart-dot" }),
@@ -1401,9 +1374,6 @@ function Gridlines({ spec, layout }) {
 }
 function pointsOf(data, { xAt, yAt }) {
   return data.flatMap((v, i) => v === null ? [] : [[xAt(i), yAt(v)]]);
-}
-function slotsOf(data, { xAt, yAt }) {
-  return data.map((v, i) => v === null ? null : [xAt(i), yAt(v)]);
 }
 function StartMark({ spec, layout, gid, start }) {
   const { left, right, top, base, yAt } = layout;
@@ -1429,10 +1399,6 @@ function Crosshair({ layout, at: at2 }) {
 import { jsx as jsx9, jsxs as jsxs6 } from "react/jsx-runtime";
 var SERIES_GAP = 2;
 var shade = (hover, i) => hover === null || hover === i ? 1 : 0.55;
-function GapTick({ x, width, zero }) {
-  const w = Math.min(4, width);
-  return /* @__PURE__ */ jsx9("rect", { x: x + (width - w) / 2, y: zero - 4, width: w, height: 8, rx: "1", className: "hb-chart-gap" });
-}
 function Baseline({ layout }) {
   const y = layout.yAt(0);
   return /* @__PURE__ */ jsx9("line", { x1: layout.left, x2: layout.right, y1: y, y2: y, className: "hb-chart-rule-strong" });
@@ -1443,11 +1409,9 @@ function BarMarks({ spec, layout, hover }) {
   const zero = yAt(0);
   return /* @__PURE__ */ jsxs6("g", { children: [
     spec.series.map((s, k) => s.data.map((v, i) => {
+      if (v === null) return null;
       const x = xAt(i) - bar * count2 / 2 + k * bar;
       const width = count2 > 1 ? bar - SERIES_GAP : bar;
-      if (v === null) {
-        return /* @__PURE__ */ jsx9("g", { opacity: shade(hover, i), children: /* @__PURE__ */ jsx9(GapTick, { x, width, zero }) }, `${k}-${i}`);
-      }
       const end = yAt(v);
       return /* @__PURE__ */ jsxs6("g", { opacity: shade(hover, i), children: [
         /* @__PURE__ */ jsx9("path", { d: barPath(x, width, zero, end), fill: partColour(k), className: "hb-chart-bar" }),
@@ -1480,17 +1444,16 @@ function ComboMarks({ spec, layout, hover }) {
   const { xAt, yAt, bar } = layout;
   const zero = yAt(0);
   return /* @__PURE__ */ jsxs6("g", { children: [
-    spec.series[0].data.map((v, i) => v === null ? /* @__PURE__ */ jsx9("g", { opacity: shade(hover, i), children: /* @__PURE__ */ jsx9(GapTick, { x: xAt(i) - bar / 2, width: bar, zero }) }, i) : /* @__PURE__ */ jsx9("path", { d: barPath(xAt(i) - bar / 2, bar, zero, yAt(v)), fill: partColour(0), opacity: shade(hover, i), className: "hb-chart-bar" }, i)),
+    spec.series[0].data.map((v, i) => v === null ? null : /* @__PURE__ */ jsx9("path", { d: barPath(xAt(i) - bar / 2, bar, zero, yAt(v)), fill: partColour(0), opacity: shade(hover, i), className: "hb-chart-bar" }, i)),
     /* @__PURE__ */ jsx9(Baseline, { layout }),
     spec.series.slice(1).map((s, j) => {
       const y = layout.yOf(s);
-      const slots = s.data.map((v, i) => v === null ? null : [xAt(i), y(v)]);
-      const runs = lineRuns(slots);
-      if (!runs.length) return null;
+      const pts = s.data.flatMap((v, i) => v === null ? [] : [[xAt(i), y(v)]]);
+      if (!pts.length) return null;
       const colour = partColour(j + 1);
       return /* @__PURE__ */ jsxs6("g", { children: [
-        runs.filter((r) => r.pts.length > 1).map((r, x) => /* @__PURE__ */ jsx9("path", { d: linePath(r.pts, spec.stepped), fill: "none", stroke: colour, strokeWidth: "2.25", strokeLinejoin: "round", strokeLinecap: "round" }, x)),
-        runs.flatMap((r) => r.pts).map(([cx, cy], i) => /* @__PURE__ */ jsx9("circle", { cx, cy, r: "3.5", fill: colour, className: "hb-chart-dot" }, i))
+        /* @__PURE__ */ jsx9("path", { d: linePath(pts, spec.stepped), fill: "none", stroke: colour, strokeWidth: "2.25", strokeLinejoin: "round", strokeLinecap: "round" }),
+        pts.map(([cx, cy], i) => /* @__PURE__ */ jsx9("circle", { cx, cy, r: "3.5", fill: colour, className: "hb-chart-dot" }, i))
       ] }, j);
     })
   ] });
@@ -1505,16 +1468,20 @@ function AreaMarks({ bands, layout }) {
   ] });
 }
 function Area({ bands, layout, colour }) {
-  const tops = bands.map((b, i) => b === null ? null : [layout.xAt(i), layout.yAt(b.to)]);
-  return /* @__PURE__ */ jsx10("g", { children: lineRuns(tops).filter((run) => run.pts.length > 1).map((run, j) => {
-    const bottoms = run.pts.map((_, k) => layout.yAt(bands[run.from + k].from));
-    const backAlongBottom = linePath(run.pts.map(([x], k) => [x, bottoms[k]]).reverse()).replace(/^M/, "L");
-    const topEdge = linePath(run.pts);
-    return /* @__PURE__ */ jsxs7("g", { children: [
-      /* @__PURE__ */ jsx10("path", { d: `${topEdge} ${backAlongBottom} Z`, fill: colour, fillOpacity: ".3" }),
-      /* @__PURE__ */ jsx10("path", { d: topEdge, fill: "none", stroke: colour, strokeWidth: "2", strokeLinejoin: "round", strokeLinecap: "round" })
-    ] }, j);
-  }) });
+  const top = [];
+  const bottom = [];
+  bands.forEach((b, i) => {
+    if (b === null) return;
+    top.push([layout.xAt(i), layout.yAt(b.to)]);
+    bottom.push([layout.xAt(i), layout.yAt(b.from)]);
+  });
+  if (!top.length) return null;
+  const topEdge = linePath(top);
+  const backAlongBottom = linePath(bottom.reverse()).replace(/^M/, "L");
+  return /* @__PURE__ */ jsxs7("g", { children: [
+    /* @__PURE__ */ jsx10("path", { d: `${topEdge} ${backAlongBottom} Z`, fill: colour, fillOpacity: ".3" }),
+    /* @__PURE__ */ jsx10("path", { d: topEdge, fill: "none", stroke: colour, strokeWidth: "2", strokeLinejoin: "round", strokeLinecap: "round" })
+  ] });
 }
 
 // src/blocks/chart/HBarChart.tsx
@@ -1801,8 +1768,8 @@ function lastIndex(spec) {
 function Headline({ spec, hover }) {
   const piled = spec.type === "stacked" || spec.type === "area";
   const pct = spec.type === "line" ? changePct(spec.series[0].data) : null;
-  const shown = hover ?? lastIndex(spec);
-  const big = piled ? totalAt(spec.series, shown) : spec.series[0].data[shown] ?? null;
+  const shown2 = hover ?? lastIndex(spec);
+  const big = piled ? totalAt(spec.series, shown2) : spec.series[0].data[shown2] ?? null;
   const bigUnit = piled ? spec.unit : spec.series[0].unit ?? spec.unit;
   const listed = piled ? [] : spec.series.slice(1);
   const withFigure = spec.figure !== false;
@@ -1819,9 +1786,9 @@ function Headline({ spec, hover }) {
     withFigure && /* @__PURE__ */ jsxs10("div", { className: "hb-chart-figure", children: [
       /* @__PURE__ */ jsx13("span", { className: "hb-chart-big", children: big === null ? "\u2013" : fmt(big, bigUnit) }),
       /* @__PURE__ */ jsxs10("span", { className: "hb-chart-at", children: [
-        hover !== null ? spec.x[shown] : "",
+        hover !== null ? spec.x[shown2] : "",
         listed.map((s, k) => {
-          const v = s.data[shown] ?? null;
+          const v = s.data[shown2] ?? null;
           return v === null ? null : /* @__PURE__ */ jsxs10("span", { className: "hb-chart-other", children: [
             s.name ? `${s.name} ` : "",
             fmt(v, s.unit ?? spec.unit)
@@ -2662,7 +2629,7 @@ function Checklist({ title, numbered, items, ticked, path, density }) {
       title && /* @__PURE__ */ jsx20("span", { className: "hb-card-title", children: /* @__PURE__ */ jsx20(InlineText, { text: title }) }),
       /* @__PURE__ */ jsx20("span", { className: allDone ? "hb-checklist-count hb-checklist-count-done" : "hb-checklist-count", "aria-live": "polite", children: countText(done, items.length, blocked, skipped) })
     ] }),
-    /* @__PURE__ */ jsx20("div", { className: "hb-checklist-track", "aria-hidden": "true", children: /* @__PURE__ */ jsx20("span", { className: "hb-checklist-fill", style: { transform: `scaleX(${done / (items.length || 1)})` } }) }),
+    /* @__PURE__ */ jsx20("div", { className: "hb-checklist-track", "aria-hidden": "true", children: /* @__PURE__ */ jsx20("span", { className: "hb-checklist-fill", style: { width: `${done / items.length * 100}%` } }) }),
     density === "compact" && /* @__PURE__ */ jsx20("div", { className: "hb-checklist-compact", role: "group", "aria-label": title ?? "Phases", children: items.map((item, index) => {
       const on = ticks.includes(index);
       const state = on ? void 0 : item.state;
@@ -2722,14 +2689,14 @@ function segmentsOf(items) {
 function useSavedTicks(path, ticked, count2) {
   const { rest, blockId } = useContext5(BlockActions);
   const [ticks, setTicks] = useState9(ticked);
-  const shown = useRef5(ticked);
+  const shown2 = useRef5(ticked);
   const tapped = useRef5(false);
-  shown.current = ticks;
+  shown2.current = ticks;
   useEffect(() => {
     if (!rest || !blockId) return;
     let live = true;
     loadBoardState(rest, blockId).then((state) => {
-      if (live) setTicks(ticksAfterLoad(readTicks(state[path], count2), shown.current, tapped.current));
+      if (live) setTicks(ticksAfterLoad(readTicks(state[path], count2), shown2.current, tapped.current));
     });
     return () => {
       live = false;
@@ -2737,8 +2704,8 @@ function useSavedTicks(path, ticked, count2) {
   }, [rest, blockId, path, count2]);
   function tap(i) {
     tapped.current = true;
-    const next = toggleTick(shown.current, i);
-    shown.current = next;
+    const next = toggleTick(shown2.current, i);
+    shown2.current = next;
     setTicks(next);
     if (rest && blockId) void saveBoardValue(rest, blockId, path, next);
   }
@@ -3017,7 +2984,7 @@ function Flow({ id, title, direction, nodes, groups = [] }) {
   const holds = state.holds.some((h) => h.length > 0);
   const panelId = useId4();
   const down = direction === "down" || !fitsAcross(nodes.length, groups.length, width, holds);
-  const shown = open === null ? void 0 : nodes[open];
+  const shown2 = open === null ? void 0 : nodes[open];
   const node = (n, i, arrow) => /* @__PURE__ */ jsxs19("li", { className: "hb-flow-step", children: [
     arrow && /* @__PURE__ */ jsx22(Arrow, {}),
     /* @__PURE__ */ jsx22(
@@ -3054,9 +3021,9 @@ function Flow({ id, title, direction, nodes, groups = [] }) {
       ] }, start) : /* @__PURE__ */ jsx22(Fragment5, { children: node(nodes[start], start, start > 0) }, start)) }),
       moving && walk && /* @__PURE__ */ jsx22("div", { ref: packet, className: "hb-flow-packet", "aria-hidden": "true" })
     ] }),
-    shown?.note && /* @__PURE__ */ jsxs19("div", { id: panelId, className: "hb-flow-panel", role: "region", "aria-label": shown.label, children: [
-      /* @__PURE__ */ jsx22("div", { className: "hb-flow-panel-title", children: shown.label }),
-      /* @__PURE__ */ jsx22("p", { className: "hb-flow-note", children: /* @__PURE__ */ jsx22(InlineText, { text: shown.note }) })
+    shown2?.note && /* @__PURE__ */ jsxs19("div", { id: panelId, className: "hb-flow-panel", role: "region", "aria-label": shown2.label, children: [
+      /* @__PURE__ */ jsx22("div", { className: "hb-flow-panel-title", children: shown2.label }),
+      /* @__PURE__ */ jsx22("p", { className: "hb-flow-note", children: /* @__PURE__ */ jsx22(InlineText, { text: shown2.note }) })
     ] })
   ] });
 }
@@ -3338,11 +3305,11 @@ function prefilledList(value) {
 function readOptions(list, here) {
   const options = [];
   for (const o of list) {
-    const isObject2 = !!o && typeof o === "object";
-    const value = isObject2 ? firstTextOrNumber([o.value, o.id, o.label], OPTION) : firstTextOrNumber([o], OPTION);
+    const isObject3 = !!o && typeof o === "object";
+    const value = isObject3 ? firstTextOrNumber([o.value, o.id, o.label], OPTION) : firstTextOrNumber([o], OPTION);
     if (value === void 0 || options.some((x) => x.value === value)) continue;
-    const label = (isObject2 ? firstText([o.label, o.name], OPTION) : void 0) ?? value;
-    const note = isObject2 ? firstText([o.note, o.description], NOTE) : void 0;
+    const label = (isObject3 ? firstText([o.label, o.name], OPTION) : void 0) ?? value;
+    const note = isObject3 ? firstText([o.note, o.description], NOTE) : void 0;
     options.push(clean({ value, label, note }));
   }
   return keepFirst(options, MAX_OPTIONS, here, "options");
@@ -3662,7 +3629,7 @@ function Heatmap({ title, rows, cols, values, unit, scale }) {
                   className: "hb-heat-cell",
                   style: { background: cellColour(v, range, scale) },
                   onClick: () => setPicked({ row: i, col: j }),
-                  "aria-label": `${r}, ${c}: ${v === null ? "no data" : cellText(v, unit)}`,
+                  "aria-label": `${r}, ${c}: ${cellText(v, unit)}`,
                   children: numbersInCells && v !== null ? cellText(v, unit) : ""
                 },
                 j
@@ -3740,10 +3707,10 @@ var GRID_FROM = 4;
 function Images({ block }) {
   const [failed, setFailed] = useState14(/* @__PURE__ */ new Set());
   const [open, setOpen] = useState14(null);
-  const shown = block.images.filter((p) => !failed.has(p.url));
-  if (!shown.length) return null;
+  const shown2 = block.images.filter((p) => !failed.has(p.url));
+  if (!shown2.length) return null;
   const fail = (url) => setFailed((before) => new Set(before).add(url));
-  const grid = shown.length >= GRID_FROM;
+  const grid = shown2.length >= GRID_FROM;
   const download = (p) => /* @__PURE__ */ jsx25(
     "a",
     {
@@ -3757,7 +3724,7 @@ function Images({ block }) {
   );
   return /* @__PURE__ */ jsxs22("figure", { className: grid ? "hb-photos hb-photos-grid" : "hb-photos", children: [
     block.title && /* @__PURE__ */ jsx25("figcaption", { className: "hb-chart-title", children: block.title }),
-    /* @__PURE__ */ jsx25("div", { className: "hb-photo-strip", children: shown.map((p) => grid ? /* @__PURE__ */ jsxs22("div", { className: "hb-photo", children: [
+    /* @__PURE__ */ jsx25("div", { className: "hb-photo-strip", children: shown2.map((p) => grid ? /* @__PURE__ */ jsxs22("div", { className: "hb-photo", children: [
       /* @__PURE__ */ jsx25("button", { type: "button", className: "hb-photo-open", onClick: () => setOpen(p), "aria-label": p.caption ?? "Open photo", children: /* @__PURE__ */ jsx25("img", { src: p.url, alt: p.caption ?? "", loading: "lazy", referrerPolicy: "no-referrer", onError: () => fail(p.url) }) }),
       /* @__PURE__ */ jsxs22("div", { className: "hb-photo-text", children: [
         /* @__PURE__ */ jsxs22("button", { type: "button", className: "hb-photo-label", onClick: () => setOpen(p), children: [
@@ -3820,27 +3787,25 @@ function isYear(k) {
 }
 var CURRENCY = /^[$₹€£¥]$/;
 function kpiValue(k, { full = false } = {}) {
-  if (k.value === null) return "no data";
+  if (k.value === null) return "\u2013";
   if (typeof k.value === "string") return k.value;
   if (isYear(k)) return String(k.value);
   const short2 = !full && Math.abs(k.value) >= SHORT_FROM;
   if (short2 && k.unit && CURRENCY.test(k.unit)) return fmt(k.value, k.unit);
   const money = formatAmount(k.value, k.unit);
   if (money !== null) return money;
-  const plain = short2 ? fmt(k.value) : formatNumber(k.value, { digits: Math.abs(k.value) >= 1e3 ? 0 : 1 });
+  const plain2 = short2 ? fmt(k.value) : formatNumber(k.value, { digits: Math.abs(k.value) >= 1e3 ? 0 : 1 });
   const attached = k.unit === "%" || k.unit?.startsWith("/");
-  return attached ? `${plain}${k.unit}` : k.unit ? `${plain} ${k.unit}` : plain;
+  return attached ? `${plain2}${k.unit}` : k.unit ? `${plain2} ${k.unit}` : plain2;
 }
 function KpiCard({ item, trendColour }) {
-  const shown = kpiValue(item);
+  const shown2 = kpiValue(item);
   const full = kpiValue(item, { full: true });
   const change = formatChange(item.change, item.change_unit);
   const isText = typeof item.value === "string";
-  const empty = item.value === null;
-  const valueClass = ["hb-kpi-value", isText ? "hb-kpi-value-text" : "", empty ? "hb-kpi-value-empty" : ""].filter(Boolean).join(" ");
   return /* @__PURE__ */ jsxs23("div", { className: "hb-card hb-kpi", children: [
     /* @__PURE__ */ jsx26("div", { className: "hb-kpi-label", children: item.label }),
-    /* @__PURE__ */ jsx26("div", { className: valueClass, title: full !== shown ? full : void 0, children: shown }),
+    /* @__PURE__ */ jsx26("div", { className: isText ? "hb-kpi-value hb-kpi-value-text" : "hb-kpi-value", title: full !== shown2 ? full : void 0, children: shown2 }),
     change && /* @__PURE__ */ jsx26("div", { className: changeClass(item), children: change }),
     item.trend && /* @__PURE__ */ jsx26(Sparkline, { values: item.trend, colour: trendColour })
   ] });
@@ -3861,24 +3826,12 @@ function Sparkline({ values, colour }) {
   return /* @__PURE__ */ jsx26("svg", { className: "hb-kpi-spark", viewBox: `0 0 ${SPARK_W} ${SPARK_H}`, preserveAspectRatio: "none", "aria-hidden": "true", children: /* @__PURE__ */ jsx26("path", { d: sparkPath(values), style: colour ? { stroke: colour } : void 0 }) });
 }
 function sparkPath(values) {
-  const known = values.filter((v) => v !== null);
-  if (!known.length) return "";
-  const lo = Math.min(...known);
-  const hi = Math.max(...known);
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
   const span = SPARK_H - 2 * SPARK_PAD;
   const y = (v) => hi === lo ? SPARK_H / 2 : SPARK_PAD + (1 - (v - lo) / (hi - lo)) * span;
   const x = (i) => i / (values.length - 1) * SPARK_W;
-  let d = "";
-  let pen = false;
-  values.forEach((v, i) => {
-    if (v === null) {
-      pen = false;
-      return;
-    }
-    d += `${pen ? "L" : "M"}${round(x(i))} ${round(y(v))}`;
-    pen = true;
-  });
-  return d;
+  return values.map((v, i) => `${i ? "L" : "M"}${round(x(i))} ${round(y(v))}`).join("");
 }
 function round(n) {
   return Math.round(n * 10) / 10;
@@ -3917,9 +3870,8 @@ function changeFrom(previous, value, unit) {
 }
 function readTrend(v) {
   if (!Array.isArray(v)) return void 0;
-  const slots = v.slice(-TREND_MOST).map((x) => num(x));
-  const known = slots.filter((n) => n !== null).length;
-  return known >= TREND_FEWEST ? slots : void 0;
+  const numbers = v.map(num).filter((n) => n !== null);
+  return numbers.length >= TREND_FEWEST ? numbers.slice(-TREND_MOST) : void 0;
 }
 function readKpis(raw, here) {
   if (!Array.isArray(raw.items)) return here.drop("kpis needs items");
@@ -4547,7 +4499,7 @@ function readListItem(item) {
   return clean({
     title,
     subtitle: firstWords([item.subtitle, item.description, item.detail, item.note, textUnder], 160),
-    value: valueOf2(item, bar),
+    value: firstTextOrNumber([item.value, item.price, item.rating, item.score, item.meta, item.badge, bar], 30),
     bar,
     icon: icon(item.icon),
     image: https(item.image),
@@ -4555,20 +4507,10 @@ function readListItem(item) {
     url: https(item.url)
   });
 }
-function valueOf2(item, bar) {
-  for (const field of ["value", "price", "rating", "score", "meta", "badge"]) {
-    if (!(field in item)) continue;
-    if (item[field] === null) return "\u2013";
-    const text = firstTextOrNumber([item[field]], 30);
-    if (text !== void 0) return text;
-  }
-  return bar === void 0 ? void 0 : firstTextOrNumber([bar], 30);
-}
 
 // src/blocks/progress/Progress.tsx
 import { Fragment as Fragment9, jsx as jsx31, jsxs as jsxs28 } from "react/jsx-runtime";
 function trackShare(value, goal, steps) {
-  if (value === null || goal === null) return 0;
   if (!steps.length) return Math.max(0, Math.min(1, value / goal));
   if (value <= steps[0].at) return 0;
   for (let k = 1; k < steps.length; k++) {
@@ -4577,19 +4519,15 @@ function trackShare(value, goal, steps) {
   return 1;
 }
 function amountOf(value, goal, unit) {
-  const left = value === null ? "no data" : fmt(value, unit);
-  if (goal === null) return value === null ? "no data / no data" : `${left} / no data`;
-  const plain = fmt(goal);
+  const plain2 = fmt(goal);
   const joined = fmt(goal, unit);
-  if (!unit || joined !== plain && joined !== `${plain} ${unit}`) return `${left} / ${joined}`;
-  return `${value === null ? left : fmt(value)} / ${plain} ${unit}`;
+  if (!unit || joined !== plain2 && joined !== `${plain2} ${unit}`) return `${fmt(value, unit)} / ${joined}`;
+  return `${fmt(value)} / ${plain2} ${unit}`;
 }
 function percentOf(value, goal) {
-  if (value === null || goal === null) return 0;
   return Math.round(Math.max(0, Math.min(1, value / goal)) * 100);
 }
 function zoneTone(value, thresholds, fallback = "good", goal = Infinity) {
-  if (value === null) return fallback;
   const toned = thresholds.filter((t) => t.tone !== void 0).sort((a, b) => a.at - b.at);
   if (!toned.length) return fallback;
   let from = 0;
@@ -4603,7 +4541,7 @@ function zoneTone(value, thresholds, fallback = "good", goal = Infinity) {
   }
   return last ?? fallback;
 }
-var place = (at2, goal) => at2 === null || goal === null ? 0 : Math.max(0, Math.min(1, at2 / goal));
+var place = (at2, goal) => Math.max(0, Math.min(1, at2 / goal));
 var pctOf = (share) => `${Math.round(share * 1e4) / 100}%`;
 function bandsOf(thresholds, goal) {
   const bands = [];
@@ -4622,7 +4560,7 @@ function Progress({ title, value, goal, unit, steps, shape = "line", show_percen
   const ring = shape === "circle" || shape === "dashboard";
   const share = ring ? place(value, goal) : trackShare(value, goal, checkpoints);
   const percent = percentOf(value, goal);
-  const active = zoneTone(value, marks, tone ?? "good", goal ?? Infinity);
+  const active = zoneTone(value, marks, tone ?? "good", goal);
   return /* @__PURE__ */ jsxs28("div", { className: `hb-card hb-progress hb-progress-tone-${active}`, children: [
     /* @__PURE__ */ jsxs28("div", { className: "hb-progress-head", children: [
       /* @__PURE__ */ jsx31("span", { className: "hb-progress-icon", children: /* @__PURE__ */ jsx31(Icon, { name: "trophy", size: 19, stroke: 2.2 }) }),
@@ -4668,7 +4606,7 @@ function Segments({ segments, goal, unit }) {
   let at2 = 0;
   const parts2 = segments.map((s, k) => {
     const from = at2;
-    at2 = Math.min(1, at2 + (goal === null ? 0 : Math.max(0, s.value / goal)));
+    at2 = Math.min(1, at2 + Math.max(0, s.value / goal));
     return { key: k, left: from, width: at2 - from, label: s.label, value: s.value, tone: s.tone ?? "good" };
   });
   return /* @__PURE__ */ jsxs28(Fragment9, { children: [
@@ -4696,7 +4634,7 @@ function Checkpoints({ steps, value, share, unit }) {
       /* @__PURE__ */ jsx31("span", { className: "hb-progress-track hb-progress-track-steps", style: { left: edge, right: edge } }),
       /* @__PURE__ */ jsx31("span", { className: "hb-progress-fill hb-progress-fill-steps", style: { left: edge, width: `${span * share}%` } }),
       steps.map((s, k) => {
-        const done = value !== null && value >= s.at;
+        const done = value >= s.at;
         return /* @__PURE__ */ jsx31("span", { className: done ? "hb-progress-node hb-progress-node-done" : "hb-progress-node", style: { left: `${(k + 0.5) / n * 100}%` }, children: /* @__PURE__ */ jsx31(Icon, { name: done ? "check" : "lock", size: 12, stroke: 2.6 }) }, k);
       })
     ] }),
@@ -4722,7 +4660,7 @@ function Ring({ shape, share, percent, marks, segments, goal }) {
   let at2 = 0;
   const parts2 = segments.map((s) => {
     const from = at2;
-    at2 = Math.min(1, at2 + (goal === null ? 0 : Math.max(0, s.value / goal)));
+    at2 = Math.min(1, at2 + Math.max(0, s.value / goal));
     return { from, to: at2, tone: s.tone ?? "good" };
   });
   return /* @__PURE__ */ jsxs28("div", { className: `hb-progress-ring${shape === "dashboard" ? " hb-progress-ring-dash" : ""}`, children: [
@@ -4808,10 +4746,9 @@ function readProgress(raw, here) {
   const title = str(raw.title, 40);
   if (!title) return here.drop("progress needs a title");
   const value = num(raw.value);
-  if (value === null && raw.value !== null) return here.drop("progress needs a numeric value");
+  if (value === null) return here.drop("progress needs a numeric value");
   const goal = num(raw.goal);
-  if (goal === null && raw.goal !== null) return here.drop("progress needs a goal above 0");
-  if (goal !== null && goal <= 0) return here.drop("progress needs a goal above 0");
+  if (goal === null || goal <= 0) return here.drop("progress needs a goal above 0");
   const thresholds = [];
   const rawThresholds = Array.isArray(raw.thresholds) ? raw.thresholds : [];
   rawThresholds.forEach((t, i) => {
@@ -5032,7 +4969,7 @@ function Pile({ k, name, amount, counts, startDots, tallest, playing, unit }) {
   const cols = Math.max(20, Math.floor(width / DOT));
   const size = width / cols;
   const height = Math.ceil(tallest / cols) * size;
-  const shown = amount === null ? "\u2013" : fmt(amount, unit, { full: true });
+  const shown2 = amount === null ? "\u2013" : fmt(amount, unit, { full: true });
   useEffect6(() => {
     const el = canvas.current;
     if (!el) return;
@@ -5062,8 +4999,8 @@ function Pile({ k, name, amount, counts, startDots, tallest, playing, unit }) {
   }, [count2, counts.join(), startDots, width, height, theme]);
   return /* @__PURE__ */ jsxs30("div", { className: "hb-sim-pile", children: [
     /* @__PURE__ */ jsx33("div", { className: "hb-sim-pile-name", children: name }),
-    /* @__PURE__ */ jsx33("div", { className: "hb-sim-amount", children: shown }),
-    /* @__PURE__ */ jsx33("canvas", { ref: canvas, className: "hb-sim-canvas", style: { height }, role: "img", "aria-label": `${name}: ${shown}, ${count2} dots` })
+    /* @__PURE__ */ jsx33("div", { className: "hb-sim-amount", children: shown2 }),
+    /* @__PURE__ */ jsx33("canvas", { ref: canvas, className: "hb-sim-canvas", style: { height }, role: "img", "aria-label": `${name}: ${shown2}, ${count2} dots` })
   ] });
 }
 
@@ -5094,10 +5031,10 @@ function SimChart({ piles, lines, times, index, unit }) {
       ] }, v)),
       xTicks.map((t) => /* @__PURE__ */ jsx34("text", { x: x(t), y: HEIGHT - 6, textAnchor: "middle", children: fmt(t) }, t)),
       piles.map((_, k) => {
-        const runs = lineRuns(lines[k].slice(0, index + 1).map((v, i) => v === null ? null : [x(times[i]), y(v)]));
+        const points = lines[k].slice(0, index + 1).flatMap((v, i) => v === null ? [] : [`${x(times[i]).toFixed(1)},${y(v).toFixed(1)}`]);
         const last = lines[k][index];
         return /* @__PURE__ */ jsxs31("g", { style: { color: partColour(k + 1) }, children: [
-          runs.map((run, j) => /* @__PURE__ */ jsx34("polyline", { points: run.pts.map(([cx, cy]) => `${cx.toFixed(1)},${cy.toFixed(1)}`).join(" "), className: "hb-sim-line" }, j)),
+          /* @__PURE__ */ jsx34("polyline", { points: points.join(" "), className: "hb-sim-line" }),
           last !== null && /* @__PURE__ */ jsx34("circle", { cx: x(now), cy: y(last), r: 4.5, className: "hb-sim-point" })
         ] }, k);
       })
@@ -5427,7 +5364,130 @@ function Streak({ count: count2, label, unit, days }) {
 // src/blocks/table/read.ts
 var MAX_COLUMNS2 = 8;
 var MAX_ROWS = 30;
+var KINDS3 = ["text", "number", "currency", "percent", "date", "badge", "link", "bar", "sources"];
+var OPS = ["sum", "avg", "min", "max", "count"];
+var TONES4 = ["accent", "good", "warn", "neutral"];
+function isObject(v) {
+  return v !== null && typeof v === "object" && !Array.isArray(v);
+}
+function plain(v, max) {
+  if (typeof v !== "string") return void 0;
+  const s = v.trim();
+  return s ? s.slice(0, max) : void 0;
+}
+function safeUrl2(v) {
+  const s = plain(v, 500);
+  return s && /^https?:\/\/[^\s<>]+$/i.test(s) ? s : void 0;
+}
+function readSources(raw) {
+  if (!Array.isArray(raw)) return [];
+  const sources = [];
+  for (const item of raw.slice(0, 4)) {
+    const label = isObject(item) ? firstText([item.label, item.name, item.title], 40) : plain(item, 40);
+    if (!label) continue;
+    const source = { label };
+    const url = safeUrl2(isObject(item) ? item.url : void 0);
+    if (url) source.url = url;
+    sources.push(source);
+  }
+  return sources;
+}
+function readStructuredColumns(raw, here) {
+  const list = Array.isArray(raw) ? raw.slice(0, MAX_COLUMNS2) : [];
+  const used = /* @__PURE__ */ new Set();
+  const columns = list.map((item, i) => {
+    if (!isObject(item)) return { id: `c${i}`, label: plain(item, 40) ?? `Column ${i + 1}`, kind: "text" };
+    const label = firstText([item.label, item.title, item.name], 40) ?? `Column ${i + 1}`;
+    let id = plain(item.id ?? item.key, 40)?.replace(/[^A-Za-z0-9_-]+/g, "-").toLowerCase() ?? `c${i}`;
+    if (used.has(id)) id = `${id}-${i}`;
+    used.add(id);
+    const column = { id, label, kind: KINDS3.find((k) => k === item.kind) ?? "text" };
+    const align = ["left", "right", "center"].find((a) => a === item.align);
+    const tone = TONES4.find((t) => t === item.tone);
+    const max = num(item.max);
+    const unit = plain(item.unit, 12);
+    if (align) column.align = align;
+    if (tone) column.tone = tone;
+    if (max !== null && max > 0) column.max = max;
+    if (unit) column.unit = unit;
+    return column;
+  });
+  if (Array.isArray(raw) && raw.length > MAX_COLUMNS2) here.drop("table keeps 8 columns");
+  return columns;
+}
+function readStructuredCell(raw, column) {
+  if (isObject(raw)) {
+    const value = num(raw.value ?? raw.number);
+    const text2 = firstText([raw.text, raw.label, raw.value], 120) ?? "";
+    const cell = { text: text2 };
+    if (value !== null) cell.value = value;
+    const url = safeUrl2(raw.url ?? raw.href);
+    if (url) cell.url = url;
+    const tone = TONES4.find((t) => t === raw.tone);
+    if (tone) cell.tone = tone;
+    return cell.text || cell.value !== void 0 ? cell : null;
+  }
+  if (column.kind === "sources") return null;
+  if (typeof raw === "number") return { text: String(raw), value: raw };
+  const text = plain(raw, 120);
+  if (!text) return null;
+  if (column.kind === "number" || column.kind === "currency" || column.kind === "percent" || column.kind === "bar") {
+    const n = Number(text.replace(/,/g, ""));
+    return isFinite(n) ? { text, value: n } : null;
+  }
+  return { text };
+}
+function readAggregates(raw, columns) {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, 4).map((item, i) => {
+    const id = plain(isObject(item) ? item.column ?? item.id : void 0, 40);
+    const column = columns.find((c) => c.id === id) ?? columns[i];
+    const op = OPS.find((o) => o === (isObject(item) ? item.op : void 0)) ?? "sum";
+    const label = firstText([isObject(item) ? item.label : void 0, column?.label], 20) ?? op;
+    return { column: column.id, op, label };
+  }).filter((a) => columns.some((c) => c.id === a.column));
+}
+function readStructuredTable(raw, here, caption2) {
+  const columns = readStructuredColumns(raw.columns, here.at("columns"));
+  if (!columns.length) return here.drop("table needs columns");
+  const rawRows = Array.isArray(raw.rows) ? raw.rows : [];
+  const rows = [];
+  rawRows.slice(0, MAX_ROWS).forEach((row) => {
+    const cells = {};
+    let hasCell = false;
+    const sources = readSources(isObject(row) ? row.sources ?? row.sourceIds : void 0);
+    columns.forEach((column, ci) => {
+      const value = isObject(row) ? row[column.id] ?? row[column.label] : Array.isArray(row) ? row[ci] : void 0;
+      if (column.kind === "sources") {
+        sources.push(...readSources(Array.isArray(value) ? value : value ? [value] : []));
+        return;
+      }
+      const cell = readStructuredCell(value, column);
+      if (cell) {
+        cells[column.id] = cell;
+        hasCell = true;
+      }
+    });
+    if (hasCell || sources.length) rows.push({ cells, sources });
+  });
+  if (rawRows.length > MAX_ROWS) here.drop("table keeps 30 rows");
+  if (!rows.length) return here.drop("table needs at least one row");
+  const page = num(raw.page);
+  return clean({
+    type: "table",
+    caption: caption2,
+    structured: true,
+    columns,
+    rows,
+    filterable: raw.filterable === true,
+    page: page !== null && page >= 1 && page <= 10 ? Math.floor(page) : 1,
+    aggregates: readAggregates(raw.aggregates, columns)
+  });
+}
 function readTable(raw, here) {
+  const caption2 = firstText([raw.caption, raw.title], 100);
+  const structured = Array.isArray(raw.columns) && raw.columns.some(isObject) || raw.filterable === true || raw.page !== void 0 || Array.isArray(raw.aggregates);
+  if (structured) return readStructuredTable(raw, here, caption2);
   const rawRows = firstList([raw.rows, raw.data]) ?? [];
   let columns = readColumns(firstList([raw.columns, raw.headers, raw.header]));
   let rowsToRead = rawRows;
@@ -5450,7 +5510,6 @@ function readTable(raw, here) {
   if (!rows.length) here.drop("table has no rows");
   const kept = keepFirst(rows, MAX_ROWS, here.at("rows"), "rows");
   const highlight = readHighlight(raw.highlight, columns, kept, here.at("highlight"));
-  const caption2 = firstText([raw.caption, raw.title], 100);
   return clean({ type: "table", columns, rows: kept, highlight, caption: caption2 });
 }
 function readColumns(list) {
@@ -5479,7 +5538,6 @@ function cellsByColumnName(row, columns) {
   return columns.map((c) => byLowerName.get(c.toLowerCase()));
 }
 function cellText2(v) {
-  if (v === null) return "\u2013";
   if (v === true) return "Yes";
   if (v === false) return "No";
   return textOrNumber(v, 120) ?? "";
@@ -5520,16 +5578,110 @@ function isIndex(n, length) {
 }
 
 // src/blocks/table/Table.tsx
-import { useState as useState22 } from "react";
+import { useState as useState23 } from "react";
+
+// src/blocks/table/StructuredTable.tsx
+import { useMemo as useMemo6, useState as useState22 } from "react";
+import { jsx as jsx38, jsxs as jsxs35 } from "react/jsx-runtime";
+var PAGE = 10;
+function shown(cell, column) {
+  if (!cell) return "\u2013";
+  if (cell.value === void 0) return cell.text;
+  if (column.kind === "currency") return formatAmount(cell.value, column.unit) ?? formatNumber(cell.value);
+  if (column.kind === "percent") return formatPercent(cell.value);
+  if (column.kind === "number" || column.kind === "bar") return formatNumber(cell.value);
+  return cell.text;
+}
+function aggregateValue(rows, a) {
+  const values = rows.map((r) => r.cells[a.column]?.value).filter((v) => v !== void 0);
+  if (a.op === "count") return values.length;
+  if (!values.length) return null;
+  if (a.op === "sum") return values.reduce((s, v) => s + v, 0);
+  if (a.op === "avg") return values.reduce((s, v) => s + v, 0) / values.length;
+  if (a.op === "min") return Math.min(...values);
+  return Math.max(...values);
+}
+function aggregateLabel(op) {
+  return { sum: "Total", avg: "Average", min: "Lowest", max: "Highest", count: "Count" }[op];
+}
+function StructuredTable({ caption: caption2, columns, rows, filterable, page, aggregates }) {
+  const [query, setQuery] = useState22("");
+  const [at2, setAt] = useState22(page);
+  const needle = query.trim().toLowerCase();
+  const filtered = useMemo6(() => {
+    if (!needle) return rows;
+    return rows.filter((row) => columns.some((c) => {
+      const cell = row.cells[c.id];
+      return `${cell?.text ?? ""} ${row.sources.map((s) => s.label).join(" ")}`.toLowerCase().includes(needle);
+    }));
+  }, [rows, columns, needle]);
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE));
+  const current = Math.min(at2, pages);
+  const slice = filtered.slice((current - 1) * PAGE, current * PAGE);
+  return /* @__PURE__ */ jsxs35("div", { className: "hb-card hb-table-card hb-table hb-table-structured", children: [
+    /* @__PURE__ */ jsxs35("table", { className: "hb-table-grid", children: [
+      caption2 && /* @__PURE__ */ jsx38("caption", { className: "hb-table-caption", children: caption2 }),
+      /* @__PURE__ */ jsx38("thead", { children: /* @__PURE__ */ jsx38("tr", { children: columns.map((c) => /* @__PURE__ */ jsx38("th", { scope: "col", className: c.align ? `hb-align-${c.align}` : void 0, children: c.label }, c.id)) }) }),
+      /* @__PURE__ */ jsxs35("tbody", { children: [
+        slice.map((row, i) => /* @__PURE__ */ jsx38("tr", { children: columns.map((column, ci) => /* @__PURE__ */ jsxs35("td", { className: column.align ? `hb-align-${column.align}` : void 0, children: [
+          column.kind === "sources" ? /* @__PURE__ */ jsx38("span", { className: "hb-table-sources", children: row.sources.length ? row.sources.map(
+            (s, si) => s.url ? /* @__PURE__ */ jsx38("a", { href: s.url, target: "_blank", rel: "noreferrer", children: s.label }, si) : /* @__PURE__ */ jsx38("span", { children: s.label }, si)
+          ) : /* @__PURE__ */ jsx38("span", { className: "hb-table-empty", children: "\u2013" }) }) : column.kind === "bar" ? /* @__PURE__ */ jsxs35("span", { className: "hb-table-bar", children: [
+            /* @__PURE__ */ jsx38(
+              "span",
+              {
+                className: "hb-table-bar-fill",
+                style: { width: `${Math.min(100, Math.max(0, (row.cells[column.id]?.value ?? 0) / (column.max ?? Math.max(1, ...rows.map((r) => r.cells[column.id]?.value ?? 0))) * 100))}%` }
+              }
+            ),
+            /* @__PURE__ */ jsx38("span", { className: "hb-table-bar-value", children: shown(row.cells[column.id], column) })
+          ] }) : column.kind === "badge" ? /* @__PURE__ */ jsx38("span", { className: `hb-chip hb-chip-${row.cells[column.id]?.tone ?? column.tone ?? "plain"}`, children: shown(row.cells[column.id], column) }) : column.kind === "link" && row.cells[column.id]?.url ? /* @__PURE__ */ jsx38("a", { href: row.cells[column.id].url, target: "_blank", rel: "noreferrer", children: shown(row.cells[column.id], column) }) : /* @__PURE__ */ jsx38("span", { children: shown(row.cells[column.id], column) }),
+          ci === 0 && row.sources.length > 0 && column.kind !== "sources" && /* @__PURE__ */ jsx38("span", { className: "hb-table-source-hint", "aria-label": `Sources: ${row.sources.map((s) => s.label).join(", ")}`, children: "\u2022" })
+        ] }, column.id)) }, `${(current - 1) * PAGE + i}`)),
+        !slice.length && /* @__PURE__ */ jsx38("tr", { children: /* @__PURE__ */ jsx38("td", { colSpan: columns.length, className: "hb-table-empty-cell", children: "No rows match." }) })
+      ] }),
+      aggregates.length > 0 && /* @__PURE__ */ jsx38("tfoot", { children: /* @__PURE__ */ jsx38("tr", { children: columns.map((column, ci) => {
+        const a = aggregates.find((item) => item.column === column.id);
+        if (!a) return /* @__PURE__ */ jsx38("td", {}, column.id);
+        const value = aggregateValue(filtered, a);
+        return /* @__PURE__ */ jsxs35("td", { children: [
+          /* @__PURE__ */ jsx38("span", { className: "hb-table-aggregate-label", children: ci === 0 ? a.label : aggregateLabel(a.op) }),
+          value !== null ? ` ${formatNumber(value)}` : " \u2013"
+        ] }, column.id);
+      }) }) })
+    ] }),
+    (filterable || pages > 1) && /* @__PURE__ */ jsxs35("div", { className: "hb-table-tools", children: [
+      filterable && /* @__PURE__ */ jsx38(
+        "input",
+        {
+          type: "search",
+          value: query,
+          placeholder: "Filter rows",
+          "aria-label": "Filter rows",
+          onChange: (e) => {
+            setQuery(e.target.value);
+            setAt(1);
+          }
+        }
+      ),
+      pages > 1 && /* @__PURE__ */ jsxs35("div", { className: "hb-table-pages", children: [
+        /* @__PURE__ */ jsx38("button", { type: "button", disabled: current === 1, onClick: () => setAt(Math.max(1, current - 1)), "aria-label": "Previous page", children: "\u2039" }),
+        /* @__PURE__ */ jsxs35("span", { children: [
+          "Page ",
+          current,
+          " of ",
+          pages
+        ] }),
+        /* @__PURE__ */ jsx38("button", { type: "button", disabled: current === pages, onClick: () => setAt(Math.min(pages, current + 1)), "aria-label": "Next page", children: "\u203A" })
+      ] })
+    ] })
+  ] });
+}
 
 // src/blocks/table/sort.ts
-var GAP2 = "\u2013";
-function isBlank(cell) {
-  return !cell || cell === GAP2;
-}
 function cellNumber(cell) {
-  const plain = cell.replace(/,/g, "").replace(/^−/, "-");
-  const m = /^([-+]?)[^\d\-+]{0,3}([-+]?\d+(?:\.\d+)?)/.exec(plain);
+  const plain2 = cell.replace(/,/g, "").replace(/^−/, "-");
+  const m = /^([-+]?)[^\d\-+]{0,3}([-+]?\d+(?:\.\d+)?)/.exec(plain2);
   if (!m) return null;
   const n = Number(m[2]);
   return m[1] === "-" ? -n : n;
@@ -5541,14 +5693,13 @@ function sortedOrder(rows, sort) {
   return order.sort((a, b) => {
     const left = rows[a][sort.column] ?? "";
     const right = rows[b][sort.column] ?? "";
-    if (isBlank(left) || isBlank(right)) return blanksLast(left, right);
+    if (!left || !right) return blanksLast(left, right);
     return sign * compareCells(left, right);
   });
 }
 function blanksLast(left, right) {
-  const leftBlank = isBlank(left), rightBlank = isBlank(right);
-  if (leftBlank && rightBlank) return 0;
-  if (leftBlank) return 1;
+  if (!left && !right) return 0;
+  if (!left) return 1;
   return -1;
 }
 function compareCells(left, right) {
@@ -5563,14 +5714,14 @@ function nextSort(sort, column) {
   return null;
 }
 function isNumberColumn(rows, column) {
-  const filled = rows.map((r) => r[column] ?? "").filter((cell) => !isBlank(cell));
+  const filled = rows.map((r) => r[column]).filter((cell) => cell);
   return filled.length > 0 && filled.every((cell) => cellNumber(cell) !== null);
 }
 
 // src/blocks/table/cells.ts
 function isChangeColumn(rows, column) {
   if (!isNumberColumn(rows, column) || !rows.some((r) => /^[-+−]/.test(r[column] ?? ""))) return false;
-  const filled = rows.map((r) => (r[column] ?? "").trim()).filter((cell) => !isBlank(cell));
+  const filled = rows.map((r) => (r[column] ?? "").trim()).filter(Boolean);
   const allPercent = filled.every((cell) => cell.endsWith("%"));
   const allSigned = filled.every((cell) => /^[-+−]/.test(cell) || cellNumber(cell) === 0);
   return allPercent || allSigned;
@@ -5599,10 +5750,12 @@ function bigNumber(cell) {
 }
 
 // src/blocks/table/Table.tsx
-import { jsx as jsx38, jsxs as jsxs35 } from "react/jsx-runtime";
+import { jsx as jsx39, jsxs as jsxs36 } from "react/jsx-runtime";
 var MINI_BARS_FROM = 3;
-function Table({ columns, rows, highlight, caption: caption2 }) {
-  const [sort, setSort] = useState22(null);
+function Table(props) {
+  if ("structured" in props && props.structured) return /* @__PURE__ */ jsx39(StructuredTable, { ...props });
+  const { columns, rows, highlight, caption: caption2 } = props;
+  const [sort, setSort] = useState23(null);
   const order = sortedOrder(rows, sort);
   const bestRow = highlight && "row" in highlight ? highlight.row : -1;
   const bestColumn = highlight && "column" in highlight ? highlight.column : -1;
@@ -5617,24 +5770,23 @@ function Table({ columns, rows, highlight, caption: caption2 }) {
     text.length > 28 ? "hb-wrap" : "",
     extra
   ].filter(Boolean).join(" ");
-  return /* @__PURE__ */ jsxs35("div", { className: "hb-card hb-table-card", children: [
-    caption2 && /* @__PURE__ */ jsx38("div", { className: "hb-chart-title hb-table-caption", children: /* @__PURE__ */ jsx38(InlineText, { text: caption2 }) }),
-    /* @__PURE__ */ jsx38("div", { className: "hb-table-scroll", children: /* @__PURE__ */ jsxs35("table", { className: columns.length >= 3 ? "hb-table hb-table-wide" : "hb-table", children: [
-      /* @__PURE__ */ jsx38("thead", { children: /* @__PURE__ */ jsx38("tr", { children: columns.map((name, c) => /* @__PURE__ */ jsx38("th", { "aria-sort": ariaSort(sort, c), className: cellClass(c, name, sort?.column === c ? "hb-sorted" : ""), children: /* @__PURE__ */ jsxs35("button", { type: "button", onClick: () => setSort(nextSort(sort, c)), children: [
-        /* @__PURE__ */ jsx38("span", { children: name }),
-        /* @__PURE__ */ jsx38("span", { className: "hb-sort", "aria-hidden": "true", children: sortMark(sort, c) }),
-        c === bestColumn && /* @__PURE__ */ jsx38("span", { className: "hb-chip hb-chip-soft", children: "Best" })
+  return /* @__PURE__ */ jsxs36("div", { className: "hb-card hb-table-card", children: [
+    caption2 && /* @__PURE__ */ jsx39("div", { className: "hb-chart-title hb-table-caption", children: /* @__PURE__ */ jsx39(InlineText, { text: caption2 }) }),
+    /* @__PURE__ */ jsx39("div", { className: "hb-table-scroll", children: /* @__PURE__ */ jsxs36("table", { className: columns.length >= 3 ? "hb-table hb-table-wide" : "hb-table", children: [
+      /* @__PURE__ */ jsx39("thead", { children: /* @__PURE__ */ jsx39("tr", { children: columns.map((name, c) => /* @__PURE__ */ jsx39("th", { "aria-sort": ariaSort(sort, c), className: cellClass(c, name, sort?.column === c ? "hb-sorted" : ""), children: /* @__PURE__ */ jsxs36("button", { type: "button", onClick: () => setSort(nextSort(sort, c)), children: [
+        /* @__PURE__ */ jsx39("span", { children: name }),
+        /* @__PURE__ */ jsx39("span", { className: "hb-sort", "aria-hidden": "true", children: sortMark(sort, c) }),
+        c === bestColumn && /* @__PURE__ */ jsx39("span", { className: "hb-chip hb-chip-soft", children: "Best" })
       ] }) }, c)) }) }),
-      /* @__PURE__ */ jsxs35("tbody", { children: [
-        !rows.length && /* @__PURE__ */ jsx38("tr", { children: /* @__PURE__ */ jsx38("td", { className: "hb-table-empty", colSpan: columns.length, children: "No rows to show." }) }),
-        order.map((r) => /* @__PURE__ */ jsx38("tr", { className: r === bestRow ? "hb-best" : void 0, children: rows[r].map((cell, c) => {
+      /* @__PURE__ */ jsxs36("tbody", { children: [
+        !rows.length && /* @__PURE__ */ jsx39("tr", { children: /* @__PURE__ */ jsx39("td", { className: "hb-table-empty", colSpan: columns.length, children: "No rows to show." }) }),
+        order.map((r) => /* @__PURE__ */ jsx39("tr", { className: r === bestRow ? "hb-best" : void 0, children: rows[r].map((cell, c) => {
           const big = bigNumber(cell);
           const direction = change[c] ? changeOf(cell) : null;
-          const bar = change[c] && withBars ? cellNumber(cell) : null;
-          return /* @__PURE__ */ jsxs35("td", { className: cellClass(c, cell, direction ? `hb-${direction}` : ""), title: big?.full, children: [
-            bar !== null && /* @__PURE__ */ jsx38(MiniBar, { value: bar, largest: largest[c] }),
-            big ? big.short : /* @__PURE__ */ jsx38(InlineText, { text: cell }),
-            c === 0 && r === bestRow && /* @__PURE__ */ jsx38("span", { className: "hb-chip hb-chip-soft", children: "Best" })
+          return /* @__PURE__ */ jsxs36("td", { className: cellClass(c, cell, direction ? `hb-${direction}` : ""), title: big?.full, children: [
+            change[c] && withBars && /* @__PURE__ */ jsx39(MiniBar, { value: cellNumber(cell) ?? 0, largest: largest[c] }),
+            big ? big.short : /* @__PURE__ */ jsx39(InlineText, { text: cell }),
+            c === 0 && r === bestRow && /* @__PURE__ */ jsx39("span", { className: "hb-chip hb-chip-soft", children: "Best" })
           ] }, c);
         }) }, r))
       ] })
@@ -5643,9 +5795,9 @@ function Table({ columns, rows, highlight, caption: caption2 }) {
 }
 function MiniBar({ value, largest }) {
   const { left, width } = miniBar(value, largest);
-  return /* @__PURE__ */ jsxs35("span", { className: "hb-mini", "aria-hidden": "true", children: [
-    /* @__PURE__ */ jsx38("span", { className: "hb-mini-zero" }),
-    /* @__PURE__ */ jsx38("span", { className: "hb-mini-bar", style: { left: `${left}%`, width: `${width}%` } })
+  return /* @__PURE__ */ jsxs36("span", { className: "hb-mini", "aria-hidden": "true", children: [
+    /* @__PURE__ */ jsx39("span", { className: "hb-mini-zero" }),
+    /* @__PURE__ */ jsx39("span", { className: "hb-mini-bar", style: { left: `${left}%`, width: `${width}%` } })
   ] });
 }
 function largestChange(rows, column) {
@@ -5714,11 +5866,11 @@ function readTile(item) {
 }
 
 // src/blocks/tiles/Tiles.tsx
-import { useContext as useContext8, useState as useState23 } from "react";
-import { Fragment as Fragment11, jsx as jsx39, jsxs as jsxs36 } from "react/jsx-runtime";
+import { useContext as useContext8, useState as useState24 } from "react";
+import { Fragment as Fragment11, jsx as jsx40, jsxs as jsxs37 } from "react/jsx-runtime";
 var WASHES = [1, 4, 8, 3, 6];
 function Tiles({ items }) {
-  return /* @__PURE__ */ jsx39("div", { className: "hb-tiles", children: items.map((tile, i) => /* @__PURE__ */ jsx39(Tile, { tile, wash: WASHES[i % WASHES.length] }, i)) });
+  return /* @__PURE__ */ jsx40("div", { className: "hb-tiles", children: items.map((tile, i) => /* @__PURE__ */ jsx40(Tile, { tile, wash: WASHES[i % WASHES.length] }, i)) });
 }
 function tapOf(tile, send, fill) {
   if (tile.run) return () => send(tile.run);
@@ -5727,19 +5879,19 @@ function tapOf(tile, send, fill) {
 }
 function Tile({ tile, wash }) {
   const { send, fill } = useContext8(BlockActions);
-  const [photoFailed, setPhotoFailed] = useState23(false);
+  const [photoFailed, setPhotoFailed] = useState24(false);
   const tap = tapOf(tile, send, fill);
   const colour = `var(--hb-chart-${wash})`;
-  const content = /* @__PURE__ */ jsxs36(Fragment11, { children: [
-    tile.image && !photoFailed && /* @__PURE__ */ jsx39("img", { src: tile.image, alt: "", loading: "lazy", referrerPolicy: "no-referrer", onError: () => setPhotoFailed(true) }),
-    tile.icon && /* @__PURE__ */ jsx39("span", { className: "hb-tile-icon", children: /* @__PURE__ */ jsx39(Icon, { name: tile.icon, size: 18, stroke: 2.2 }) }),
-    /* @__PURE__ */ jsxs36("span", { className: "hb-tile-text", children: [
-      /* @__PURE__ */ jsx39("span", { className: "hb-tile-title", children: tile.title }),
-      tile.subtitle && /* @__PURE__ */ jsx39("span", { className: "hb-tile-subtitle", children: tile.subtitle })
+  const content = /* @__PURE__ */ jsxs37(Fragment11, { children: [
+    tile.image && !photoFailed && /* @__PURE__ */ jsx40("img", { src: tile.image, alt: "", loading: "lazy", referrerPolicy: "no-referrer", onError: () => setPhotoFailed(true) }),
+    tile.icon && /* @__PURE__ */ jsx40("span", { className: "hb-tile-icon", children: /* @__PURE__ */ jsx40(Icon, { name: tile.icon, size: 18, stroke: 2.2 }) }),
+    /* @__PURE__ */ jsxs37("span", { className: "hb-tile-text", children: [
+      /* @__PURE__ */ jsx40("span", { className: "hb-tile-title", children: tile.title }),
+      tile.subtitle && /* @__PURE__ */ jsx40("span", { className: "hb-tile-subtitle", children: tile.subtitle })
     ] })
   ] });
   const style = { background: `linear-gradient(140deg, ${colour}, color-mix(in srgb, ${colour} 55%, #140c24))` };
-  return tap ? /* @__PURE__ */ jsx39("button", { type: "button", className: "hb-tile", onClick: tap, title: tile.run, style, children: content }) : /* @__PURE__ */ jsx39("div", { className: "hb-tile hb-tile-static", style, children: content });
+  return tap ? /* @__PURE__ */ jsx40("button", { type: "button", className: "hb-tile", onClick: tap, title: tile.run, style, children: content }) : /* @__PURE__ */ jsx40("div", { className: "hb-tile hb-tile-static", style, children: content });
 }
 
 // src/blocks/timeline/read.ts
@@ -5794,31 +5946,31 @@ function readStop(it) {
 }
 
 // src/blocks/briefing/Briefing.tsx
-import { Fragment as Fragment12, jsx as jsx40, jsxs as jsxs37 } from "react/jsx-runtime";
+import { Fragment as Fragment12, jsx as jsx41, jsxs as jsxs38 } from "react/jsx-runtime";
 var deg2 = (v) => `${Math.round(v)}\xB0`;
 function Line({ counts }) {
   const parts2 = [];
   if (counts.need) {
-    if (counts.overdue) parts2.push(/* @__PURE__ */ jsxs37("span", { className: "hb-brief-bad", children: [
+    if (counts.overdue) parts2.push(/* @__PURE__ */ jsxs38("span", { className: "hb-brief-bad", children: [
       counts.overdue,
       " overdue"
     ] }, "o"));
-    parts2.push(/* @__PURE__ */ jsxs37("span", { children: [
+    parts2.push(/* @__PURE__ */ jsxs38("span", { children: [
       counts.need,
       " need you"
     ] }, "n"));
   } else {
-    parts2.push(/* @__PURE__ */ jsx40("span", { children: "Nothing needs you today" }, "n"));
+    parts2.push(/* @__PURE__ */ jsx41("span", { children: "Nothing needs you today" }, "n"));
   }
-  const handled = counts.handled ? /* @__PURE__ */ jsxs37("span", { className: "hb-brief-good", children: [
+  const handled = counts.handled ? /* @__PURE__ */ jsxs38("span", { className: "hb-brief-good", children: [
     "\u2713 ",
     counts.handled,
     " handled"
   ] }) : null;
   const joined = parts2.flatMap((p, i) => i ? [", ", p] : [p]);
-  return /* @__PURE__ */ jsxs37("p", { className: "hb-brief-line", children: [
+  return /* @__PURE__ */ jsxs38("p", { className: "hb-brief-line", children: [
     joined,
-    handled && /* @__PURE__ */ jsxs37(Fragment12, { children: [
+    handled && /* @__PURE__ */ jsxs38(Fragment12, { children: [
       ", and ",
       handled
     ] }),
@@ -5827,18 +5979,18 @@ function Line({ counts }) {
 }
 function Briefing({ greeting, date, place: place2, temp, condition, high, low, sky, counts }) {
   const range = [high !== void 0 ? `H ${deg2(high)}` : null, low !== void 0 ? `L ${deg2(low)}` : null].filter(Boolean).join(" \xB7 ");
-  return /* @__PURE__ */ jsxs37("section", { className: `hb-brief hb-brief-${sky}`, children: [
-    /* @__PURE__ */ jsxs37("div", { className: "hb-brief-top", children: [
-      /* @__PURE__ */ jsxs37("div", { className: "hb-brief-hello", children: [
-        (date || place2) && /* @__PURE__ */ jsx40("span", { className: "hb-brief-date", children: [date, place2].filter(Boolean).join(" \xB7 ") }),
-        /* @__PURE__ */ jsx40("h2", { children: greeting })
+  return /* @__PURE__ */ jsxs38("section", { className: `hb-brief hb-brief-${sky}`, children: [
+    /* @__PURE__ */ jsxs38("div", { className: "hb-brief-top", children: [
+      /* @__PURE__ */ jsxs38("div", { className: "hb-brief-hello", children: [
+        (date || place2) && /* @__PURE__ */ jsx41("span", { className: "hb-brief-date", children: [date, place2].filter(Boolean).join(" \xB7 ") }),
+        /* @__PURE__ */ jsx41("h2", { children: greeting })
       ] }),
-      temp !== void 0 && /* @__PURE__ */ jsxs37("div", { className: "hb-brief-wx", children: [
-        /* @__PURE__ */ jsx40("span", { className: "hb-brief-temp", children: deg2(temp) }),
-        /* @__PURE__ */ jsx40("span", { className: "hb-brief-sky", children: [condition, range].filter(Boolean).join(" \xB7 ") })
+      temp !== void 0 && /* @__PURE__ */ jsxs38("div", { className: "hb-brief-wx", children: [
+        /* @__PURE__ */ jsx41("span", { className: "hb-brief-temp", children: deg2(temp) }),
+        /* @__PURE__ */ jsx41("span", { className: "hb-brief-sky", children: [condition, range].filter(Boolean).join(" \xB7 ") })
       ] })
     ] }),
-    /* @__PURE__ */ jsx40(Line, { counts })
+    /* @__PURE__ */ jsx41(Line, { counts })
   ] });
 }
 
@@ -5867,34 +6019,34 @@ function readBriefing(raw, here) {
 }
 
 // src/blocks/prepared/Prepared.tsx
-import { useContext as useContext9, useState as useState24 } from "react";
-import { jsx as jsx41, jsxs as jsxs38 } from "react/jsx-runtime";
+import { useContext as useContext9, useState as useState25 } from "react";
+import { jsx as jsx42, jsxs as jsxs39 } from "react/jsx-runtime";
 function IdeaCard({ idea, group }) {
   const { fill } = useContext9(BlockActions);
-  const [broken, setBroken] = useState24(false);
-  return /* @__PURE__ */ jsxs38("button", { type: "button", className: "hb-prep-idea", onClick: () => fill(`Tell me more about ${idea.title} for ${group}`), children: [
-    !broken && /* @__PURE__ */ jsx41("img", { src: idea.photo, alt: "", loading: "lazy", onError: () => setBroken(true) }),
-    /* @__PURE__ */ jsxs38("span", { className: "hb-prep-cap", children: [
+  const [broken, setBroken] = useState25(false);
+  return /* @__PURE__ */ jsxs39("button", { type: "button", className: "hb-prep-idea", onClick: () => fill(`Tell me more about ${idea.title} for ${group}`), children: [
+    !broken && /* @__PURE__ */ jsx42("img", { src: idea.photo, alt: "", loading: "lazy", onError: () => setBroken(true) }),
+    /* @__PURE__ */ jsxs39("span", { className: "hb-prep-cap", children: [
       idea.title,
-      idea.note && /* @__PURE__ */ jsx41("small", { children: idea.note })
+      idea.note && /* @__PURE__ */ jsx42("small", { children: idea.note })
     ] })
   ] });
 }
 function GroupView({ group }) {
   const { fill } = useContext9(BlockActions);
-  return /* @__PURE__ */ jsxs38("article", { className: "hb-prep-group", children: [
-    /* @__PURE__ */ jsxs38("div", { className: "hb-prep-head", children: [
-      /* @__PURE__ */ jsx41("span", { className: "hb-prep-title", children: group.title }),
-      group.date && /* @__PURE__ */ jsx41("span", { className: "hb-prep-date", children: group.date })
+  return /* @__PURE__ */ jsxs39("article", { className: "hb-prep-group", children: [
+    /* @__PURE__ */ jsxs39("div", { className: "hb-prep-head", children: [
+      /* @__PURE__ */ jsx42("span", { className: "hb-prep-title", children: group.title }),
+      group.date && /* @__PURE__ */ jsx42("span", { className: "hb-prep-date", children: group.date })
     ] }),
-    /* @__PURE__ */ jsx41("div", { className: "hb-prep-grid", children: group.ideas.map((idea, i) => /* @__PURE__ */ jsx41(IdeaCard, { idea, group: group.title }, i)) }),
-    group.ask && /* @__PURE__ */ jsx41("button", { type: "button", className: "hb-prep-ask", onClick: () => fill(group.ask.text), children: group.ask.label })
+    /* @__PURE__ */ jsx42("div", { className: "hb-prep-grid", children: group.ideas.map((idea, i) => /* @__PURE__ */ jsx42(IdeaCard, { idea, group: group.title }, i)) }),
+    group.ask && /* @__PURE__ */ jsx42("button", { type: "button", className: "hb-prep-ask", onClick: () => fill(group.ask.text), children: group.ask.label })
   ] });
 }
 function Prepared({ groups }) {
-  return /* @__PURE__ */ jsxs38("div", { className: "hb-prep", children: [
-    /* @__PURE__ */ jsx41("span", { className: "hb-prep-label", children: "Prepared for you" }),
-    groups.map((g, i) => /* @__PURE__ */ jsx41(GroupView, { group: g }, i))
+  return /* @__PURE__ */ jsxs39("div", { className: "hb-prep", children: [
+    /* @__PURE__ */ jsx42("span", { className: "hb-prep-label", children: "Prepared for you" }),
+    groups.map((g, i) => /* @__PURE__ */ jsx42(GroupView, { group: g }, i))
   ] });
 }
 
@@ -5928,7 +6080,7 @@ function readPrepared(raw, here) {
 
 // src/blocks/tracker/read.ts
 var STATES2 = ["overdue", "today", "soon", "open"];
-var KINDS3 = ["closed", "tracking", "protected"];
+var KINDS4 = ["closed", "tracking", "protected"];
 var texts = (v, n, max) => (Array.isArray(v) ? v : []).map((x) => firstText([x], max)).filter((x) => Boolean(x)).slice(0, n);
 function details(raw) {
   if (!raw || typeof raw !== "object") return void 0;
@@ -5967,7 +6119,7 @@ function readTracker(raw, here) {
   (Array.isArray(raw.handled) ? raw.handled : []).slice(0, 6).forEach((r, i) => {
     const id = firstText([r?.id], 40);
     const title = firstText([r?.title], 80);
-    if (!id || !title || !KINDS3.includes(r?.kind)) {
+    if (!id || !title || !KINDS4.includes(r?.kind)) {
       here.at("handled").at(i).drop("row needs an id, a title, a kind");
       return;
     }
@@ -5986,8 +6138,8 @@ function readTracker(raw, here) {
 }
 
 // src/blocks/tracker/Tracker.tsx
-import { useContext as useContext10, useEffect as useEffect9, useState as useState25 } from "react";
-import { Fragment as Fragment13, jsx as jsx42, jsxs as jsxs39 } from "react/jsx-runtime";
+import { useContext as useContext10, useEffect as useEffect9, useState as useState26 } from "react";
+import { Fragment as Fragment13, jsx as jsx43, jsxs as jsxs40 } from "react/jsx-runtime";
 var VIEW_KEY = "hermes-genui.tracker.view";
 var SEEN_KEY = "hermes-genui.tracker.handled";
 function stored(key) {
@@ -6005,65 +6157,65 @@ function store(key, value) {
 }
 function More({ d }) {
   if (!d) return null;
-  return /* @__PURE__ */ jsxs39("details", { className: "hb-tr-details", children: [
-    /* @__PURE__ */ jsx42("summary", { children: "Details" }),
-    /* @__PURE__ */ jsxs39("dl", { children: [
-      d.from && /* @__PURE__ */ jsxs39(Fragment13, { children: [
-        /* @__PURE__ */ jsx42("dt", { children: "From" }),
-        /* @__PURE__ */ jsx42("dd", { children: d.from })
+  return /* @__PURE__ */ jsxs40("details", { className: "hb-tr-details", children: [
+    /* @__PURE__ */ jsx43("summary", { children: "Details" }),
+    /* @__PURE__ */ jsxs40("dl", { children: [
+      d.from && /* @__PURE__ */ jsxs40(Fragment13, { children: [
+        /* @__PURE__ */ jsx43("dt", { children: "From" }),
+        /* @__PURE__ */ jsx43("dd", { children: d.from })
       ] }),
-      d.received && /* @__PURE__ */ jsxs39(Fragment13, { children: [
-        /* @__PURE__ */ jsx42("dt", { children: "Received" }),
-        /* @__PURE__ */ jsx42("dd", { children: d.received })
+      d.received && /* @__PURE__ */ jsxs40(Fragment13, { children: [
+        /* @__PURE__ */ jsx43("dt", { children: "Received" }),
+        /* @__PURE__ */ jsx43("dd", { children: d.received })
       ] }),
-      d.about.length > 0 && /* @__PURE__ */ jsxs39(Fragment13, { children: [
-        /* @__PURE__ */ jsx42("dt", { children: "About" }),
-        /* @__PURE__ */ jsx42("dd", { children: d.about.join(" \xB7 ") })
+      d.about.length > 0 && /* @__PURE__ */ jsxs40(Fragment13, { children: [
+        /* @__PURE__ */ jsx43("dt", { children: "About" }),
+        /* @__PURE__ */ jsx43("dd", { children: d.about.join(" \xB7 ") })
       ] }),
-      d.trail.length > 0 && /* @__PURE__ */ jsxs39(Fragment13, { children: [
-        /* @__PURE__ */ jsx42("dt", { children: "So far" }),
-        /* @__PURE__ */ jsx42("dd", { children: d.trail.join(" \u2192 ") })
+      d.trail.length > 0 && /* @__PURE__ */ jsxs40(Fragment13, { children: [
+        /* @__PURE__ */ jsx43("dt", { children: "So far" }),
+        /* @__PURE__ */ jsx43("dd", { children: d.trail.join(" \u2192 ") })
       ] })
     ] })
   ] });
 }
 function CardView({ card }) {
   const { fill } = useContext10(BlockActions);
-  return /* @__PURE__ */ jsxs39("article", { className: `hb-tr-card hb-tr-${card.state}`, children: [
-    /* @__PURE__ */ jsxs39("div", { className: "hb-tr-top", children: [
-      /* @__PURE__ */ jsx42("span", { className: "hb-tr-title", children: card.title }),
-      card.amount && /* @__PURE__ */ jsx42("span", { className: "hb-tr-amount", children: card.amount })
+  return /* @__PURE__ */ jsxs40("article", { className: `hb-tr-card hb-tr-${card.state}`, children: [
+    /* @__PURE__ */ jsxs40("div", { className: "hb-tr-top", children: [
+      /* @__PURE__ */ jsx43("span", { className: "hb-tr-title", children: card.title }),
+      card.amount && /* @__PURE__ */ jsx43("span", { className: "hb-tr-amount", children: card.amount })
     ] }),
-    card.stateText && /* @__PURE__ */ jsx42("span", { className: `hb-tr-pill hb-tr-pill-${card.state}`, children: card.stateText }),
-    (card.link || card.help) && /* @__PURE__ */ jsxs39("div", { className: "hb-tr-acts", children: [
-      card.link && /* @__PURE__ */ jsxs39("a", { className: "hb-tr-go", href: card.link.url, target: "_blank", rel: "noreferrer", children: [
+    card.stateText && /* @__PURE__ */ jsx43("span", { className: `hb-tr-pill hb-tr-pill-${card.state}`, children: card.stateText }),
+    (card.link || card.help) && /* @__PURE__ */ jsxs40("div", { className: "hb-tr-acts", children: [
+      card.link && /* @__PURE__ */ jsxs40("a", { className: "hb-tr-go", href: card.link.url, target: "_blank", rel: "noreferrer", children: [
         card.link.label,
         " \u2197"
       ] }),
-      card.help && /* @__PURE__ */ jsx42("button", { type: "button", className: "hb-tr-help", onClick: () => fill(card.help), children: card.help })
+      card.help && /* @__PURE__ */ jsx43("button", { type: "button", className: "hb-tr-help", onClick: () => fill(card.help), children: card.help })
     ] }),
-    /* @__PURE__ */ jsx42(More, { d: card.details })
+    /* @__PURE__ */ jsx43(More, { d: card.details })
   ] });
 }
 function RowView({ row, onReopen }) {
-  return /* @__PURE__ */ jsxs39("article", { className: `hb-tr-row hb-tr-${row.kind}`, children: [
-    /* @__PURE__ */ jsxs39("div", { className: "hb-tr-top", children: [
-      /* @__PURE__ */ jsxs39("span", { className: "hb-tr-title", children: [
+  return /* @__PURE__ */ jsxs40("article", { className: `hb-tr-row hb-tr-${row.kind}`, children: [
+    /* @__PURE__ */ jsxs40("div", { className: "hb-tr-top", children: [
+      /* @__PURE__ */ jsxs40("span", { className: "hb-tr-title", children: [
         row.title,
         row.amount ? ` \xB7 ${row.amount}` : ""
       ] }),
-      /* @__PURE__ */ jsx42("span", { className: "hb-tr-verb", children: row.kind === "closed" ? `\u2713 ${row.verb}` : row.verb })
+      /* @__PURE__ */ jsx43("span", { className: "hb-tr-verb", children: row.kind === "closed" ? `\u2713 ${row.verb}` : row.verb })
     ] }),
-    row.why && /* @__PURE__ */ jsx42("span", { className: "hb-tr-why", children: row.why }),
-    row.reopen && /* @__PURE__ */ jsx42("button", { type: "button", className: "hb-tr-link", onClick: () => onReopen(row.id), children: "Reopen" }),
-    /* @__PURE__ */ jsx42(More, { d: row.details })
+    row.why && /* @__PURE__ */ jsx43("span", { className: "hb-tr-why", children: row.why }),
+    row.reopen && /* @__PURE__ */ jsx43("button", { type: "button", className: "hb-tr-link", onClick: () => onReopen(row.id), children: "Reopen" }),
+    /* @__PURE__ */ jsx43(More, { d: row.details })
   ] });
 }
 function Tracker({ need, handled }) {
   const { rest } = useContext10(BlockActions);
-  const [view, setView] = useState25(() => stored(VIEW_KEY) === "done" ? "done" : "need");
-  const [reopened, setReopened] = useState25([]);
-  const [pulse, setPulse] = useState25(false);
+  const [view, setView] = useState26(() => stored(VIEW_KEY) === "done" ? "done" : "need");
+  const [reopened, setReopened] = useState26([]);
+  const [pulse, setPulse] = useState26(false);
   const rows = handled.filter((r) => !reopened.includes(r.id));
   useEffect9(() => {
     const before = Number(stored(SEEN_KEY));
@@ -6079,46 +6231,46 @@ function Tracker({ need, handled }) {
     void rest?.(`/assistant/items/${id}`, { method: "POST", body: { status: "suggested" } });
   };
   const red = need.some((c) => c.state === "overdue");
-  return /* @__PURE__ */ jsxs39("div", { className: "hb-tr", children: [
-    /* @__PURE__ */ jsxs39("div", { className: "hb-tr-switch", role: "tablist", "aria-label": "Needs you or handled", children: [
-      /* @__PURE__ */ jsxs39("button", { type: "button", role: "tab", "aria-selected": view === "need", onClick: () => choose("need"), children: [
+  return /* @__PURE__ */ jsxs40("div", { className: "hb-tr", children: [
+    /* @__PURE__ */ jsxs40("div", { className: "hb-tr-switch", role: "tablist", "aria-label": "Needs you or handled", children: [
+      /* @__PURE__ */ jsxs40("button", { type: "button", role: "tab", "aria-selected": view === "need", onClick: () => choose("need"), children: [
         "Needs you ",
-        /* @__PURE__ */ jsx42("span", { className: `hb-tr-badge${red ? " hb-tr-badge-red" : ""}`, children: need.length })
+        /* @__PURE__ */ jsx43("span", { className: `hb-tr-badge${red ? " hb-tr-badge-red" : ""}`, children: need.length })
       ] }),
-      /* @__PURE__ */ jsxs39("button", { type: "button", role: "tab", "aria-selected": view === "done", onClick: () => choose("done"), children: [
+      /* @__PURE__ */ jsxs40("button", { type: "button", role: "tab", "aria-selected": view === "done", onClick: () => choose("done"), children: [
         "Handled ",
-        /* @__PURE__ */ jsxs39("span", { className: `hb-tr-badge hb-tr-badge-green${pulse ? " hb-tr-pulse" : ""}`, children: [
+        /* @__PURE__ */ jsxs40("span", { className: `hb-tr-badge hb-tr-badge-green${pulse ? " hb-tr-pulse" : ""}`, children: [
           "\u2713 ",
           rows.length
         ] })
       ] })
     ] }),
-    /* @__PURE__ */ jsx42("div", { className: "hb-tr-list", role: "tabpanel", children: view === "need" ? need.length ? need.map((c) => /* @__PURE__ */ jsx42(CardView, { card: c }, c.id)) : /* @__PURE__ */ jsx42("p", { className: "hb-tr-empty", children: "Nothing needs you right now." }) : rows.length ? rows.map((r) => /* @__PURE__ */ jsx42(RowView, { row: r, onReopen: reopen }, r.id)) : /* @__PURE__ */ jsx42("p", { className: "hb-tr-empty", children: "When a payment, renewal or delivery mail arrives, it lands here with the reason." }) })
+    /* @__PURE__ */ jsx43("div", { className: "hb-tr-list", role: "tabpanel", children: view === "need" ? need.length ? need.map((c) => /* @__PURE__ */ jsx43(CardView, { card: c }, c.id)) : /* @__PURE__ */ jsx43("p", { className: "hb-tr-empty", children: "Nothing needs you right now." }) : rows.length ? rows.map((r) => /* @__PURE__ */ jsx43(RowView, { row: r, onReopen: reopen }, r.id)) : /* @__PURE__ */ jsx43("p", { className: "hb-tr-empty", children: "When a payment, renewal or delivery mail arrives, it lands here with the reason." }) })
   ] });
 }
 
 // src/blocks/timeline/Timeline.tsx
-import { jsx as jsx43, jsxs as jsxs40 } from "react/jsx-runtime";
+import { jsx as jsx44, jsxs as jsxs41 } from "react/jsx-runtime";
 function Timeline({ title, groups }) {
-  return /* @__PURE__ */ jsxs40("div", { className: "hb-card hb-timeline", children: [
-    title && /* @__PURE__ */ jsx43("div", { className: "hb-card-title", children: title }),
-    groups.map((g, gi) => /* @__PURE__ */ jsxs40("div", { className: "hb-timeline-group", children: [
-      g.label && /* @__PURE__ */ jsx43("span", { className: "hb-chip hb-chip-soft", children: g.label }),
+  return /* @__PURE__ */ jsxs41("div", { className: "hb-card hb-timeline", children: [
+    title && /* @__PURE__ */ jsx44("div", { className: "hb-card-title", children: title }),
+    groups.map((g, gi) => /* @__PURE__ */ jsxs41("div", { className: "hb-timeline-group", children: [
+      g.label && /* @__PURE__ */ jsx44("span", { className: "hb-chip hb-chip-soft", children: g.label }),
       g.items.map((s, k) => {
         const last = k === g.items.length - 1;
-        return /* @__PURE__ */ jsxs40("div", { className: "hb-stop", children: [
-          /* @__PURE__ */ jsx43("span", { className: "hb-stop-time", children: s.time ?? "" }),
-          /* @__PURE__ */ jsxs40("span", { className: "hb-stop-rail", children: [
-            /* @__PURE__ */ jsx43("span", { className: "hb-stop-dot", children: s.icon ? /* @__PURE__ */ jsx43(Icon, { name: s.icon, size: 12, stroke: 2.4 }) : /* @__PURE__ */ jsx43("span", { className: "hb-stop-pip" }) }),
-            !last && /* @__PURE__ */ jsx43("span", { className: "hb-stop-line" })
+        return /* @__PURE__ */ jsxs41("div", { className: "hb-stop", children: [
+          /* @__PURE__ */ jsx44("span", { className: "hb-stop-time", children: s.time ?? "" }),
+          /* @__PURE__ */ jsxs41("span", { className: "hb-stop-rail", children: [
+            /* @__PURE__ */ jsx44("span", { className: "hb-stop-dot", children: s.icon ? /* @__PURE__ */ jsx44(Icon, { name: s.icon, size: 12, stroke: 2.4 }) : /* @__PURE__ */ jsx44("span", { className: "hb-stop-pip" }) }),
+            !last && /* @__PURE__ */ jsx44("span", { className: "hb-stop-line" })
           ] }),
-          /* @__PURE__ */ jsxs40("div", { className: last ? "hb-stop-body" : "hb-stop-body hb-stop-body-gap", children: [
-            /* @__PURE__ */ jsx43("div", { className: "hb-stop-title", children: s.title }),
-            s.place && /* @__PURE__ */ jsxs40("div", { className: "hb-stop-place", children: [
-              /* @__PURE__ */ jsx43(Icon, { name: "pin", size: 12, stroke: 2.2 }),
+          /* @__PURE__ */ jsxs41("div", { className: last ? "hb-stop-body" : "hb-stop-body hb-stop-body-gap", children: [
+            /* @__PURE__ */ jsx44("div", { className: "hb-stop-title", children: s.title }),
+            s.place && /* @__PURE__ */ jsxs41("div", { className: "hb-stop-place", children: [
+              /* @__PURE__ */ jsx44(Icon, { name: "pin", size: 12, stroke: 2.2 }),
               s.place
             ] }),
-            s.note && /* @__PURE__ */ jsx43("div", { className: "hb-stop-note", children: s.note })
+            s.note && /* @__PURE__ */ jsx44("div", { className: "hb-stop-note", children: s.note })
           ] })
         ] }, k);
       })
@@ -6127,58 +6279,58 @@ function Timeline({ title, groups }) {
 }
 
 // src/registry.tsx
-import { jsx as jsx44 } from "react/jsx-runtime";
+import { jsx as jsx45 } from "react/jsx-runtime";
 var REGISTRY = {
-  chart: { read: readChart, Component: ({ block }) => /* @__PURE__ */ jsx44(Chart, { spec: block.spec }) },
-  kpis: { read: readKpis, Component: ({ block }) => /* @__PURE__ */ jsx44(Kpis, { items: block.items }) },
-  source: { read: readSource, Component: ({ block }) => /* @__PURE__ */ jsx44(Source, { ...block }) },
-  timeline: { read: readTimeline, Component: ({ block }) => /* @__PURE__ */ jsx44(Timeline, { ...block }) },
-  images: { read: readImages, Component: ({ block }) => /* @__PURE__ */ jsx44(Images, { block }) },
-  callout: { read: readCallout, Component: ({ block }) => /* @__PURE__ */ jsx44(Callout, { ...block }) },
-  calendar: { read: readCalendar, Component: ({ block }) => /* @__PURE__ */ jsx44(Calendar, { ...block }) },
-  upnext: { read: readUpNext, Component: ({ block }) => /* @__PURE__ */ jsx44(UpNext, { ...block }) },
-  weather: { read: readWeather, Component: ({ block }) => /* @__PURE__ */ jsx44(Weather, { ...block }) },
-  briefing: { read: readBriefing, Component: ({ block }) => /* @__PURE__ */ jsx44(Briefing, { ...block }) },
-  tracker: { read: readTracker, Component: ({ block }) => /* @__PURE__ */ jsx44(Tracker, { ...block }) },
-  prepared: { read: readPrepared, Component: ({ block }) => /* @__PURE__ */ jsx44(Prepared, { ...block }) },
-  table: { read: readTable, Component: ({ block }) => /* @__PURE__ */ jsx44(Table, { ...block }) },
-  list: { read: readList, Component: ({ block }) => /* @__PURE__ */ jsx44(List, { ...block }) },
-  progress: { read: readProgress, Component: ({ block }) => /* @__PURE__ */ jsx44(Progress, { ...block }) },
-  streak: { read: readStreak, Component: ({ block }) => /* @__PURE__ */ jsx44(Streak, { ...block }) },
-  heatmap: { read: readHeatmap, Component: ({ block }) => /* @__PURE__ */ jsx44(Heatmap, { ...block }) },
-  flip: { read: readFlip, Component: ({ block }) => /* @__PURE__ */ jsx44(Flip, { ...block }) },
-  flow: { read: readFlow, Component: ({ block }) => /* @__PURE__ */ jsx44(Flow, { ...block }) },
-  steps: { read: readSteps, Component: ({ block }) => /* @__PURE__ */ jsx44(Steps, { ...block }) },
-  layers: { read: readLayers, Component: ({ block }) => /* @__PURE__ */ jsx44(Layers, { ...block }) },
-  heading: { read: readHeading, Component: ({ block }) => /* @__PURE__ */ jsx44(Heading, { text: block.text }) },
-  text: { read: readText, Component: ({ block }) => /* @__PURE__ */ jsx44(Text, { text: block.text }) },
-  stat: { read: readStat, Component: ({ block }) => /* @__PURE__ */ jsx44(KpiCard, { item: block }) },
-  divider: { read: readDivider, Component: () => /* @__PURE__ */ jsx44(Divider, {}) },
-  badge: { read: readBadge, Component: ({ block }) => /* @__PURE__ */ jsx44(Badge, { ...block }) },
-  link: { read: readLink, Component: ({ block }) => /* @__PURE__ */ jsx44(LinkLine, { ...block }) },
-  image: { read: readImage, Component: ({ block }) => /* @__PURE__ */ jsx44(Picture, { ...block }) },
-  bar: { read: readBar, Component: ({ block }) => /* @__PURE__ */ jsx44(Bar, { ...block }) },
-  actions: { read: readActions, Component: ({ block }) => /* @__PURE__ */ jsx44(Actions, { items: block.items }) },
-  button: { read: readButton, Component: ({ block }) => /* @__PURE__ */ jsx44(Button, { ...block }) },
-  tiles: { read: readTiles, Component: ({ block }) => /* @__PURE__ */ jsx44(Tiles, { items: block.items }) },
-  checklist: { read: readChecklist, Component: ({ block }) => /* @__PURE__ */ jsx44(Checklist, { ...block }) },
-  calculator: { read: readCalculator, Component: ({ block }) => /* @__PURE__ */ jsx44(Calculator, { ...block }) },
-  simulate: { read: readSimulate, Component: ({ block }) => /* @__PURE__ */ jsx44(Simulate, { ...block }) },
-  form: { read: readForm, Component: ({ block }) => /* @__PURE__ */ jsx44(Form, { ...block }) },
-  row: { read: readContainer, Component: ({ block, draw }) => /* @__PURE__ */ jsx44(Row, { kinds: block.children.map((c) => c.type), children: draw(block.children) }) },
-  section: { read: readContainer, Component: ({ block, draw }) => /* @__PURE__ */ jsx44(Section, { title: block.title, collapsed: block.collapsed, children: draw(block.children) }) },
-  grid: { read: readContainer, Component: ({ block, draw }) => /* @__PURE__ */ jsx44(Grid, { children: draw(block.children) }) },
-  columns: { read: readContainer, Component: ({ block, draw }) => /* @__PURE__ */ jsx44(Columns, { children: draw(block.children) }) },
-  tabs: { read: readTabs, Component: ({ block, draw }) => /* @__PURE__ */ jsx44(Tabs, { labels: block.tabs.map((t) => t.label), badges: block.tabs.map((t) => t.badge), panel: (i) => draw(block.tabs[i].children) }) }
+  chart: { read: readChart, Component: ({ block }) => /* @__PURE__ */ jsx45(Chart, { spec: block.spec }) },
+  kpis: { read: readKpis, Component: ({ block }) => /* @__PURE__ */ jsx45(Kpis, { items: block.items }) },
+  source: { read: readSource, Component: ({ block }) => /* @__PURE__ */ jsx45(Source, { ...block }) },
+  timeline: { read: readTimeline, Component: ({ block }) => /* @__PURE__ */ jsx45(Timeline, { ...block }) },
+  images: { read: readImages, Component: ({ block }) => /* @__PURE__ */ jsx45(Images, { block }) },
+  callout: { read: readCallout, Component: ({ block }) => /* @__PURE__ */ jsx45(Callout, { ...block }) },
+  calendar: { read: readCalendar, Component: ({ block }) => /* @__PURE__ */ jsx45(Calendar, { ...block }) },
+  upnext: { read: readUpNext, Component: ({ block }) => /* @__PURE__ */ jsx45(UpNext, { ...block }) },
+  weather: { read: readWeather, Component: ({ block }) => /* @__PURE__ */ jsx45(Weather, { ...block }) },
+  briefing: { read: readBriefing, Component: ({ block }) => /* @__PURE__ */ jsx45(Briefing, { ...block }) },
+  tracker: { read: readTracker, Component: ({ block }) => /* @__PURE__ */ jsx45(Tracker, { ...block }) },
+  prepared: { read: readPrepared, Component: ({ block }) => /* @__PURE__ */ jsx45(Prepared, { ...block }) },
+  table: { read: readTable, Component: ({ block }) => /* @__PURE__ */ jsx45(Table, { ...block }) },
+  list: { read: readList, Component: ({ block }) => /* @__PURE__ */ jsx45(List, { ...block }) },
+  progress: { read: readProgress, Component: ({ block }) => /* @__PURE__ */ jsx45(Progress, { ...block }) },
+  streak: { read: readStreak, Component: ({ block }) => /* @__PURE__ */ jsx45(Streak, { ...block }) },
+  heatmap: { read: readHeatmap, Component: ({ block }) => /* @__PURE__ */ jsx45(Heatmap, { ...block }) },
+  flip: { read: readFlip, Component: ({ block }) => /* @__PURE__ */ jsx45(Flip, { ...block }) },
+  flow: { read: readFlow, Component: ({ block }) => /* @__PURE__ */ jsx45(Flow, { ...block }) },
+  steps: { read: readSteps, Component: ({ block }) => /* @__PURE__ */ jsx45(Steps, { ...block }) },
+  layers: { read: readLayers, Component: ({ block }) => /* @__PURE__ */ jsx45(Layers, { ...block }) },
+  heading: { read: readHeading, Component: ({ block }) => /* @__PURE__ */ jsx45(Heading, { text: block.text }) },
+  text: { read: readText, Component: ({ block }) => /* @__PURE__ */ jsx45(Text, { text: block.text }) },
+  stat: { read: readStat, Component: ({ block }) => /* @__PURE__ */ jsx45(KpiCard, { item: block }) },
+  divider: { read: readDivider, Component: () => /* @__PURE__ */ jsx45(Divider, {}) },
+  badge: { read: readBadge, Component: ({ block }) => /* @__PURE__ */ jsx45(Badge, { ...block }) },
+  link: { read: readLink, Component: ({ block }) => /* @__PURE__ */ jsx45(LinkLine, { ...block }) },
+  image: { read: readImage, Component: ({ block }) => /* @__PURE__ */ jsx45(Picture, { ...block }) },
+  bar: { read: readBar, Component: ({ block }) => /* @__PURE__ */ jsx45(Bar, { ...block }) },
+  actions: { read: readActions, Component: ({ block }) => /* @__PURE__ */ jsx45(Actions, { items: block.items }) },
+  button: { read: readButton, Component: ({ block }) => /* @__PURE__ */ jsx45(Button, { ...block }) },
+  tiles: { read: readTiles, Component: ({ block }) => /* @__PURE__ */ jsx45(Tiles, { items: block.items }) },
+  checklist: { read: readChecklist, Component: ({ block }) => /* @__PURE__ */ jsx45(Checklist, { ...block }) },
+  calculator: { read: readCalculator, Component: ({ block }) => /* @__PURE__ */ jsx45(Calculator, { ...block }) },
+  simulate: { read: readSimulate, Component: ({ block }) => /* @__PURE__ */ jsx45(Simulate, { ...block }) },
+  form: { read: readForm, Component: ({ block }) => /* @__PURE__ */ jsx45(Form, { ...block }) },
+  row: { read: readContainer, Component: ({ block, draw }) => /* @__PURE__ */ jsx45(Row, { kinds: block.children.map((c) => c.type), children: draw(block.children) }) },
+  section: { read: readContainer, Component: ({ block, draw }) => /* @__PURE__ */ jsx45(Section, { title: block.title, collapsed: block.collapsed, children: draw(block.children) }) },
+  grid: { read: readContainer, Component: ({ block, draw }) => /* @__PURE__ */ jsx45(Grid, { children: draw(block.children) }) },
+  columns: { read: readContainer, Component: ({ block, draw }) => /* @__PURE__ */ jsx45(Columns, { children: draw(block.children) }) },
+  tabs: { read: readTabs, Component: ({ block, draw }) => /* @__PURE__ */ jsx45(Tabs, { labels: block.tabs.map((t) => t.label), badges: block.tabs.map((t) => t.badge), panel: (i) => draw(block.tabs[i].children) }) }
 };
 
 // src/core/Blocks.tsx
-import { jsx as jsx45 } from "react/jsx-runtime";
+import { jsx as jsx46 } from "react/jsx-runtime";
 function BlockView({ block }) {
   const entry = REGISTRY[block.type];
   if (!entry) return null;
   const { Component } = entry;
-  return /* @__PURE__ */ jsx45(Contained, { block, children: /* @__PURE__ */ jsx45(Component, { block, draw: drawAll }) });
+  return /* @__PURE__ */ jsx46(Contained, { block, children: /* @__PURE__ */ jsx46(Component, { block, draw: drawAll }) });
 }
 var Contained = class extends ReactComponent {
   state = { failed: false };
@@ -6190,22 +6342,22 @@ var Contained = class extends ReactComponent {
   }
   render() {
     if (!this.state.failed) return this.props.children;
-    return /* @__PURE__ */ jsx45("p", { className: "hb-block-failed", role: "note", children: "This part couldn't be drawn." });
+    return /* @__PURE__ */ jsx46("p", { className: "hb-block-failed", role: "note", children: "This part couldn't be drawn." });
   }
 };
 function drawAll(blocks) {
-  return blocks.map((b, i) => /* @__PURE__ */ jsx45(BlockView, { block: b }, i));
+  return blocks.map((b, i) => /* @__PURE__ */ jsx46(BlockView, { block: b }, i));
 }
 function Blocks({ blocks }) {
-  return /* @__PURE__ */ jsx45("div", { className: "hb-blocks", children: /* @__PURE__ */ jsx45(FlowLightBoard, { children: drawAll(blocks) }) });
+  return /* @__PURE__ */ jsx46("div", { className: "hb-blocks", children: /* @__PURE__ */ jsx46(FlowLightBoard, { children: drawAll(blocks) }) });
 }
 
 // src/core/readBlocks.ts
 var BLOCK_TYPES = Object.keys(REGISTRY);
 function readBlocksNoted(data) {
   let list = data;
-  if (isObject(list) && Array.isArray(list.blocks)) list = list.blocks;
-  if (isObject(list) && typeof list.type === "string") list = [list];
+  if (isObject2(list) && Array.isArray(list.blocks)) list = list.blocks;
+  if (isObject2(list) && typeof list.type === "string") list = [list];
   const top = new Trail();
   const blocks = [];
   if (Array.isArray(list)) {
@@ -6218,11 +6370,11 @@ function readBlocksNoted(data) {
 function readBlocks(data) {
   return readBlocksNoted(data).blocks;
 }
-function isObject(v) {
+function isObject2(v) {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
 function readOne(raw, here, depth) {
-  if (!isObject(raw)) {
+  if (!isObject2(raw)) {
     here.drop("not a block object");
     return [];
   }
@@ -6238,12 +6390,12 @@ function readOne(raw, here, depth) {
 }
 
 // src/host/BlockTag.tsx
-import { jsx as jsx46 } from "react/jsx-runtime";
+import { jsx as jsx47 } from "react/jsx-runtime";
 var ID_PATTERN = /^[0-9a-f]{8}$/;
 function BlockTag({ id, streaming, load }) {
   const validId = typeof id === "string" && ID_PATTERN.test(id);
   const actions = useContext11(BlockActions);
-  const [state, setState] = useState26({ kind: "loading" });
+  const [state, setState] = useState27({ kind: "loading" });
   useEffect10(() => {
     if (streaming || !validId) return;
     let live = true;
@@ -6258,19 +6410,19 @@ function BlockTag({ id, streaming, load }) {
     };
   }, [id, streaming, validId]);
   if (!validId && !streaming) return null;
-  if (streaming || state.kind === "loading") return /* @__PURE__ */ jsx46(Note, { text: "drawing\u2026", pulse: true });
+  if (streaming || state.kind === "loading") return /* @__PURE__ */ jsx47(Note, { text: "drawing\u2026", pulse: true });
   if (state.kind === "failed") return null;
-  return /* @__PURE__ */ jsx46(BlockActions.Provider, { value: { ...actions, blockId: id }, children: /* @__PURE__ */ jsx46(Blocks, { blocks: state.blocks }) });
+  return /* @__PURE__ */ jsx47(BlockActions.Provider, { value: { ...actions, blockId: id }, children: /* @__PURE__ */ jsx47(Blocks, { blocks: state.blocks }) });
 }
 function Note({ text, pulse = false }) {
-  return /* @__PURE__ */ jsx46("div", { className: pulse ? "hb-state hb-pulse" : "hb-state", children: text });
+  return /* @__PURE__ */ jsx47("div", { className: pulse ? "hb-state hb-pulse" : "hb-state", children: text });
 }
 
 // src/live/DashboardView.tsx
-import { useCallback as useCallback2, useEffect as useEffect11, useRef as useRef14, useState as useState27 } from "react";
+import { useCallback as useCallback2, useEffect as useEffect11, useRef as useRef14, useState as useState28 } from "react";
 
 // src/live/RefreshBar.tsx
-import { jsx as jsx47, jsxs as jsxs41 } from "react/jsx-runtime";
+import { jsx as jsx48, jsxs as jsxs42 } from "react/jsx-runtime";
 function when(iso, now = /* @__PURE__ */ new Date()) {
   const at2 = new Date(iso);
   const time = at2.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
@@ -6278,15 +6430,15 @@ function when(iso, now = /* @__PURE__ */ new Date()) {
   return `${at2.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}, ${time}`;
 }
 function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) {
-  return /* @__PURE__ */ jsxs41("div", { className: "hb-refresh", role: "status", children: [
-    /* @__PURE__ */ jsx47("span", { className: "hb-refresh-label", children: label }),
-    /* @__PURE__ */ jsx47("span", { className: "hb-refresh-when", children: at2 ? `updated ${when(at2)}` : "not filled yet" }),
-    schedule && /* @__PURE__ */ jsxs41("span", { className: "hb-refresh-when", children: [
+  return /* @__PURE__ */ jsxs42("div", { className: "hb-refresh", role: "status", children: [
+    /* @__PURE__ */ jsx48("span", { className: "hb-refresh-label", children: label }),
+    /* @__PURE__ */ jsx48("span", { className: "hb-refresh-when", children: at2 ? `updated ${when(at2)}` : "not filled yet" }),
+    schedule && /* @__PURE__ */ jsxs42("span", { className: "hb-refresh-when", children: [
       "\xB7 refreshes ",
       schedule
     ] }),
-    error && /* @__PURE__ */ jsx47("span", { className: "hb-refresh-error", children: error }),
-    /* @__PURE__ */ jsxs41(
+    error && /* @__PURE__ */ jsx48("span", { className: "hb-refresh-error", children: error }),
+    /* @__PURE__ */ jsxs42(
       "button",
       {
         type: "button",
@@ -6295,7 +6447,7 @@ function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) 
         onClick: onRefresh,
         "aria-label": refreshing ? "Refreshing" : `Refresh ${label}`,
         children: [
-          /* @__PURE__ */ jsx47("span", { "aria-hidden": "true", children: "\u21BB" }),
+          /* @__PURE__ */ jsx48("span", { "aria-hidden": "true", children: "\u21BB" }),
           " ",
           refreshing ? "Refreshing\u2026" : "Refresh"
         ]
@@ -6305,7 +6457,7 @@ function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) 
 }
 
 // src/live/DashboardView.tsx
-import { jsx as jsx48, jsxs as jsxs42 } from "react/jsx-runtime";
+import { jsx as jsx49, jsxs as jsxs43 } from "react/jsx-runtime";
 function snapshotOf(b) {
   if (b.snapshots) return b.snapshots;
   if (b.at !== void 0 || b.refreshing !== void 0) {
@@ -6334,8 +6486,8 @@ function signature(ids) {
   return (h >>> 0).toString(36);
 }
 function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, refreshLabel = "Snapshot" }) {
-  const [board, setBoard] = useState27(null);
-  const [missing, setMissing] = useState27(false);
+  const [board, setBoard] = useState28(null);
+  const [missing, setMissing] = useState28(false);
   const live = useRef14(false);
   const lastTicks = useRef14({});
   const reload = useCallback2(async () => {
@@ -6374,7 +6526,7 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
     };
   }, [reload]);
   if (!board) {
-    return /* @__PURE__ */ jsx48("div", { className: "hb-blocks hb-dash", children: /* @__PURE__ */ jsx48("p", { className: "hb-dash-sub", children: missing ? "This page isn't in this profile. Switch back to the profile it was made in, or ask Hermes to make it here." : "Loading\u2026" }) });
+    return /* @__PURE__ */ jsx49("div", { className: "hb-blocks hb-dash", children: /* @__PURE__ */ jsx49("p", { className: "hb-dash-sub", children: missing ? "This page isn't in this profile. Switch back to the profile it was made in, or ask Hermes to make it here." : "Loading\u2026" }) });
   }
   const ids = checklistsByPath(board.blocks);
   const sig = signature(ids);
@@ -6401,12 +6553,12 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
     if (Object.keys(ticks).length) await saveTicks(ticks);
     return { ok: true };
   };
-  return /* @__PURE__ */ jsxs42("div", { className: "hb-blocks hb-dash", children: [
-    board.blocks[0]?.type !== "briefing" && /* @__PURE__ */ jsxs42("header", { className: "hb-dash-head", children: [
-      /* @__PURE__ */ jsx48("div", { className: "hb-dash-date", children: board.at.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }) }),
-      /* @__PURE__ */ jsx48("h1", { children: board.greeting ?? board.title ?? "Today" })
+  return /* @__PURE__ */ jsxs43("div", { className: "hb-blocks hb-dash", children: [
+    board.blocks[0]?.type !== "briefing" && /* @__PURE__ */ jsxs43("header", { className: "hb-dash-head", children: [
+      /* @__PURE__ */ jsx49("div", { className: "hb-dash-date", children: board.at.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }) }),
+      /* @__PURE__ */ jsx49("h1", { children: board.greeting ?? board.title ?? "Today" })
     ] }),
-    refresh && board.snapshot && /* @__PURE__ */ jsx48(RefreshBar, { label: refreshLabel, ...board.snapshot, onRefresh: async () => {
+    refresh && board.snapshot && /* @__PURE__ */ jsx49(RefreshBar, { label: refreshLabel, ...board.snapshot, onRefresh: async () => {
       setBoard((b) => b ? { ...b, snapshot: { ...b.snapshot, refreshing: true, error: null } } : b);
       try {
         await refresh();
@@ -6414,26 +6566,26 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
         void reload();
       }
     } }),
-    /* @__PURE__ */ jsx48(BlockActions.Provider, { value: { send: fill, fill, rest, blockId: `dashboard-${sig}` }, children: /* @__PURE__ */ jsx48(Blocks, { blocks: board.blocks }, sig) })
+    /* @__PURE__ */ jsx49(BlockActions.Provider, { value: { send: fill, fill, rest, blockId: `dashboard-${sig}` }, children: /* @__PURE__ */ jsx49(Blocks, { blocks: board.blocks }, sig) })
   ] });
 }
 
 // src/live/pages.ts
 var BOARD_PATH = "/genui-board";
 function pageRoutes(register, view) {
-  const shown = /* @__PURE__ */ new Map();
+  const shown2 = /* @__PURE__ */ new Map();
   return (list) => {
     const wanted = new Map(list.filter((p) => p.kind === "dashboard" && /^[a-z0-9-]{1,40}$/.test(p.slug)).map((p) => [p.slug, p.title]));
-    for (const [slug2, entry] of shown) {
+    for (const [slug2, entry] of shown2) {
       if (wanted.get(slug2) !== entry.title) {
         entry.off.forEach((off) => off());
-        shown.delete(slug2);
+        shown2.delete(slug2);
       }
     }
     for (const [slug2, title] of wanted) {
-      if (shown.has(slug2)) continue;
+      if (shown2.has(slug2)) continue;
       const path = `${BOARD_PATH}/${slug2}`;
-      shown.set(slug2, { title, off: [
+      shown2.set(slug2, { title, off: [
         register({ id: `hermes-genui-page-${slug2}`, area: "routes", title, data: { path }, render: () => view(slug2) }),
         register({
           id: `hermes-genui-page-${slug2}-nav`,
@@ -6446,7 +6598,7 @@ function pageRoutes(register, view) {
 }
 
 // src/live/register.tsx
-import { jsx as jsx49 } from "react/jsx-runtime";
+import { jsx as jsx50 } from "react/jsx-runtime";
 var POLL_MS = 5e3;
 var TODAY_PATH = "/genui-today";
 function registerLive(ctx, fill) {
@@ -6457,7 +6609,7 @@ function registerLive(ctx, fill) {
     area: "routes",
     title: "Today",
     data: { path: TODAY_PATH },
-    render: () => /* @__PURE__ */ jsx49(
+    render: () => /* @__PURE__ */ jsx50(
       DashboardView,
       {
         fill,
@@ -6495,7 +6647,7 @@ function registerLive(ctx, fill) {
       sync();
     }
   };
-  const syncPages = pageRoutes(ctx.register, (slug2) => /* @__PURE__ */ jsx49(
+  const syncPages = pageRoutes(ctx.register, (slug2) => /* @__PURE__ */ jsx50(
     DashboardView,
     {
       fill,
@@ -6566,9 +6718,6 @@ var tokens_default = `/* Hermes GenUI: every class starts with hb- so nothing le
   --hb-surface: var(--background, Canvas);
   /* A raised card (a chart's hover card). */
   --hb-shadow: 0 8px 28px rgba(15, 20, 30, 0.14), 0 1px 3px rgba(15, 20, 30, 0.1);
-  /* One curve for everything that moves: transform, opacity and entrance animations. A colour or border
-     fade keeps the browser's own ease, which is right for a tint. */
-  --hb-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   /* Series colours in the order they are handed out, checked so neighbours stay apart for colour-blind readers:
      blue, amber, green, violet, cyan, red, lime, pink. */
   --hb-chart-1: #4f7cff;
@@ -6609,13 +6758,13 @@ var tokens_default = `/* Hermes GenUI: every class starts with hb- so nothing le
 `;
 
 // src/styles/shared.css
-var shared_default = "/* Pieces several blocks share: cards, chips, pill buttons and the motion they use. */\n/* A block that threw while drawing: a quiet one-line note in its place (core/Blocks.tsx). */\n.hb-block-failed {\n  margin: 0;\n  font-size: 12px;\n  line-height: 18px;\n  color: var(--hb-muted);\n}\n/* Cards */\n.hb-card {\n  background: var(--hb-card);\n  border: 1px solid var(--hb-line);\n  border-radius: 16px;\n  padding: 14px 16px;\n}\n.hb-card-title {\n  font-size: 16px;\n  line-height: 22px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n}\n/* Chips */\n.hb-chip {\n  display: inline-flex;\n  align-items: center;\n  align-self: flex-start;\n  gap: 4px;\n  padding: 2px 9px;\n  border-radius: 999px;\n  font-size: 12px;\n  font-weight: 600;\n  line-height: 18px;\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-chip-soft { background: var(--hb-accent-soft); color: var(--hb-accent-ink); }\n.hb-chip-good { background: color-mix(in srgb, var(--hb-good) 14%, transparent); color: var(--hb-good); }\n.hb-chip-warn { background: color-mix(in srgb, var(--hb-warn) 13%, transparent); color: var(--hb-warn); }\n.hb-chip-plain { background: var(--hb-well); color: var(--hb-ink-2); }\n/* Pill buttons that act (actions, button, a form's Send): soft for buttons in a reply, solid for a form's Send. */\n.hb-pill {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  min-height: 36px;\n  max-width: 100%;\n  padding: 7px 14px;\n  border: 0;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n  font: inherit;\n  font-size: 13.5px;\n  font-weight: 600;\n  line-height: 18px;\n  text-align: left;\n  text-decoration: none;\n  cursor: pointer;\n  transition: background 0.15s ease, transform 0.1s var(--hb-ease-out);\n}\n.hb-pill svg { flex: none; }\n.hb-pill:hover { background: color-mix(in srgb, var(--hb-accent) 22%, transparent); }\n.hb-pill:active { transform: scale(0.97); }\n.hb-pill:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-pill-solid { background: var(--hb-accent); color: #fff; }\n.hb-pill-solid:hover { background: color-mix(in srgb, var(--hb-accent) 86%, #000); }\n.hb-pill:disabled { opacity: 0.45; cursor: default; transform: none; }\n.hb-pill-solid:disabled:hover { background: var(--hb-accent); }\n/* Motion: a panel appearing (section, tabs, photo overlay) and a bar growing (bar, progress). */\n.hb-appear { animation: hb-appear 0.22s var(--hb-ease-out); }\n@keyframes hb-appear { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }\n@keyframes hb-grow { from { transform: scaleX(0); } }\n@media (prefers-reduced-motion: reduce) {\n  .hb-pill { transition: none; }\n  .hb-appear { animation: none; }\n}\n";
+var shared_default = "/* Pieces several blocks share: cards, chips, pill buttons and the motion they use. */\n/* A block that threw while drawing: a quiet one-line note in its place (core/Blocks.tsx). */\n.hb-block-failed {\n  margin: 0;\n  font-size: 12px;\n  line-height: 18px;\n  color: var(--hb-muted);\n}\n/* Cards */\n.hb-card {\n  background: var(--hb-card);\n  border: 1px solid var(--hb-line);\n  border-radius: 16px;\n  padding: 14px 16px;\n}\n.hb-card-title {\n  font-size: 16px;\n  line-height: 22px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n}\n/* Chips */\n.hb-chip {\n  display: inline-flex;\n  align-items: center;\n  align-self: flex-start;\n  gap: 4px;\n  padding: 2px 9px;\n  border-radius: 999px;\n  font-size: 12px;\n  font-weight: 600;\n  line-height: 18px;\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-chip-soft { background: var(--hb-accent-soft); color: var(--hb-accent-ink); }\n.hb-chip-good { background: color-mix(in srgb, var(--hb-good) 14%, transparent); color: var(--hb-good); }\n.hb-chip-warn { background: color-mix(in srgb, var(--hb-warn) 13%, transparent); color: var(--hb-warn); }\n.hb-chip-plain { background: var(--hb-well); color: var(--hb-ink-2); }\n/* Pill buttons that act (actions, button, a form's Send): soft for buttons in a reply, solid for a form's Send. */\n.hb-pill {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  min-height: 36px;\n  max-width: 100%;\n  padding: 7px 14px;\n  border: 0;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n  font: inherit;\n  font-size: 13.5px;\n  font-weight: 600;\n  line-height: 18px;\n  text-align: left;\n  text-decoration: none;\n  cursor: pointer;\n  transition: background 0.15s, transform 0.1s;\n}\n.hb-pill svg { flex: none; }\n.hb-pill:hover { background: color-mix(in srgb, var(--hb-accent) 22%, transparent); }\n.hb-pill:active { transform: scale(0.97); }\n.hb-pill:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-pill-solid { background: var(--hb-accent); color: #fff; }\n.hb-pill-solid:hover { background: color-mix(in srgb, var(--hb-accent) 86%, #000); }\n.hb-pill:disabled { opacity: 0.45; cursor: default; transform: none; }\n.hb-pill-solid:disabled:hover { background: var(--hb-accent); }\n/* Motion: a panel appearing (section, tabs, photo overlay) and a bar growing (bar, progress). */\n.hb-appear { animation: hb-appear 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); }\n@keyframes hb-appear { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }\n@keyframes hb-grow { from { transform: scaleX(0); } }\n@media (prefers-reduced-motion: reduce) {\n  .hb-pill { transition: none; }\n  .hb-appear { animation: none; }\n}\n";
 
 // src/host/blockTag.css
 var blockTag_default = "/* The block tag's own states */\n.hb-state {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  margin: 8px 0;\n  padding: 10px 14px;\n  max-width: 100%;\n  border-radius: 14px;\n  background: color-mix(in srgb, var(--foreground, #1f2328) 5%, transparent);\n  color: var(--ui-text-tertiary, #6b7280);\n  font-size: 13px;\n}\n.hb-pulse { animation: hb-pulse 1.2s ease-in-out infinite; }\n@keyframes hb-pulse { 50% { opacity: 0.45; } }\n@media (prefers-reduced-motion: reduce) {\n  .hb-pulse { animation: none; }\n}\n";
 
 // src/blocks/atoms/atoms.css
-var atoms_default = "/* Small pieces: heading, text, divider, badge, link, image, bar */\n.hb-heading { font-size: 16px; line-height: 22px; font-weight: 700; letter-spacing: -0.01em; margin-top: 4px; }\n.hb-text { color: var(--hb-ink-2); }\n.hb-text strong { color: var(--hb-ink); font-weight: 650; }\n.hb-divider { height: 1px; background: var(--hb-line); margin: 2px 0; }\n\n.hb-badge { display: flex; align-items: center; }\n.hb-link a {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--hb-accent-ink);\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.hb-image { margin: 0; display: flex; flex-direction: column; gap: 6px; }\n.hb-image img {\n  display: block;\n  width: 100%;\n  max-height: 300px;\n  object-fit: cover;\n  border: 1px solid var(--hb-line);\n  border-radius: 16px;\n  background: var(--hb-well);\n}\n.hb-image figcaption { padding: 0 4px; font-size: 12px; line-height: 16px; color: var(--hb-muted); }\n.hb-bar { display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 11px 14px; }\n.hb-bar-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: 13px; }\n.hb-bar-label { flex: 1 0 auto; font-weight: 600; color: var(--hb-ink-2); }\n.hb-bar-amount { color: var(--hb-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }\n.hb-bar-track { height: 8px; border-radius: 999px; background: var(--hb-accent-soft); overflow: hidden; }\n.hb-bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-accent); }\n.hb-bar-fill { transform-origin: left; animation: hb-grow 0.9s var(--hb-ease-out); }\n@media (prefers-reduced-motion: reduce) {\n  .hb-bar-fill { animation: none; }\n}\n";
+var atoms_default = "/* Small pieces: heading, text, divider, badge, link, image, bar */\n.hb-heading { font-size: 16px; line-height: 22px; font-weight: 700; letter-spacing: -0.01em; margin-top: 4px; }\n.hb-text { color: var(--hb-ink-2); }\n.hb-text strong { color: var(--hb-ink); font-weight: 650; }\n.hb-divider { height: 1px; background: var(--hb-line); margin: 2px 0; }\n\n.hb-badge { display: flex; align-items: center; }\n.hb-link a {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--hb-accent-ink);\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.hb-image { margin: 0; display: flex; flex-direction: column; gap: 6px; }\n.hb-image img {\n  display: block;\n  width: 100%;\n  max-height: 300px;\n  object-fit: cover;\n  border: 1px solid var(--hb-line);\n  border-radius: 16px;\n  background: var(--hb-well);\n}\n.hb-image figcaption { padding: 0 4px; font-size: 12px; line-height: 16px; color: var(--hb-muted); }\n.hb-bar { display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 11px 14px; }\n.hb-bar-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: 13px; }\n.hb-bar-label { flex: 1 0 auto; font-weight: 600; color: var(--hb-ink-2); }\n.hb-bar-amount { color: var(--hb-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }\n.hb-bar-track { height: 8px; border-radius: 999px; background: var(--hb-accent-soft); overflow: hidden; }\n.hb-bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-accent); }\n.hb-bar-fill { transform-origin: left; animation: hb-grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1); }\n@media (prefers-reduced-motion: reduce) {\n  .hb-bar-fill { animation: none; }\n}\n";
 
 // src/blocks/source/source.css
 var source_default = ".hb-source { font-size: 11.5px; color: var(--hb-muted); }\n.hb-source a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }\n.hb-source-list { display: flex; flex-direction: column; gap: 5px; }\n.hb-source-head { color: var(--hb-ink-2); font-weight: 600; }\n.hb-source-rows { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 0; list-style: none; }\n.hb-source-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 5px; min-width: 0; }\n.hb-source-n { color: var(--hb-muted); font-variant-numeric: tabular-nums; }\n.hb-source-kind {\n  padding: 1px 6px; border-radius: 999px; font-size: 10px; line-height: 15px;\n  background: var(--hb-well); color: var(--hb-ink-2);\n}\n.hb-source-kind-web { background: var(--hb-accent-soft); color: var(--hb-accent-ink); }\n.hb-source-kind-tool { color: var(--hb-good); }\n.hb-source-kind-derived { color: var(--hb-warn); }\n.hb-source-accessed { color: var(--hb-muted); }\n.hb-source-note { flex-basis: 100%; padding-left: 16px; color: var(--hb-ink-2); }\n";
@@ -6624,22 +6773,22 @@ var source_default = ".hb-source { font-size: 11.5px; color: var(--hb-muted); }\
 var callout_default = ".hb-callout strong { color: var(--hb-ink); font-weight: 650; }\n.hb-callout {\n  display: flex;\n  gap: 10px;\n  padding: 11px 14px;\n  border-radius: 14px;\n  font-size: 13.5px;\n  line-height: 19px;\n}\n.hb-callout-icon { flex: none; margin-top: 1px; }\n.hb-callout-body { min-width: 0; color: var(--hb-ink-2); }\n.hb-callout-title { font-weight: 700; color: var(--hb-ink); }\n.hb-callout-info { background: var(--hb-accent-soft); }\n.hb-callout-info .hb-callout-icon { color: var(--hb-accent-ink); }\n.hb-callout-tip { background: color-mix(in srgb, var(--hb-good) 11%, transparent); }\n.hb-callout-tip .hb-callout-icon { color: var(--hb-good); }\n.hb-callout-warn { background: color-mix(in srgb, var(--hb-warn) 10%, transparent); }\n.hb-callout-warn .hb-callout-icon { color: var(--hb-warn); }\n";
 
 // src/blocks/kpis/kpis.css
-var kpis_default = "/* Headline numbers */\n/* Cards keep a readable width (130-200px) instead of stretching across a wide chat. */\n.hb-kpis {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(130px, 200px));\n  gap: 8px;\n}\n.hb-kpi { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 10px 12px; }\n.hb-kpi-label { font-size: 12px; font-weight: 500; color: var(--hb-muted); }\n.hb-kpi-value {\n  font-size: 22px;\n  line-height: 1.2;\n  font-weight: 650;\n  letter-spacing: -0.01em;\n  font-variant-numeric: tabular-nums;\n  overflow-wrap: anywhere;\n}\n.hb-kpi-value-text { font-size: 15px; font-weight: 700; }\n/* A value nobody measured: the words in the quiet text colour, so the card doesn't read as a figure. */\n.hb-kpi-value-empty { font-size: 15px; font-weight: 600; color: var(--hb-muted); }\n.hb-kpi-change { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }\n.hb-kpi-up { color: var(--hb-good); }\n.hb-kpi-down { color: var(--hb-warn); }\n.hb-kpi-flat { color: var(--hb-muted); }\n/* A card where a fall is the good news (invert_tone): the two directions keep their class and swap their tone. */\n.hb-kpi-change.hb-kpi-invert.hb-kpi-up { color: var(--hb-warn); }\n.hb-kpi-change.hb-kpi-invert.hb-kpi-down { color: var(--hb-good); }\n.hb-kpi-spark { display: block; width: 100%; height: 28px; margin-top: 6px; overflow: visible; }\n.hb-kpi-spark path {\n  fill: none;\n  stroke: var(--hb-chart-1);\n  stroke-width: 1.75;\n  stroke-linejoin: round;\n  stroke-linecap: round;\n  vector-effect: non-scaling-stroke;\n}\n";
+var kpis_default = "/* Headline numbers */\n/* Cards keep a readable width (130-200px) instead of stretching across a wide chat. */\n.hb-kpis {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(130px, 200px));\n  gap: 8px;\n}\n.hb-kpi { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 10px 12px; }\n.hb-kpi-label { font-size: 12px; font-weight: 500; color: var(--hb-muted); }\n.hb-kpi-value {\n  font-size: 22px;\n  line-height: 1.2;\n  font-weight: 650;\n  letter-spacing: -0.01em;\n  font-variant-numeric: tabular-nums;\n  overflow-wrap: anywhere;\n}\n.hb-kpi-value-text { font-size: 15px; font-weight: 700; }\n.hb-kpi-change { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }\n.hb-kpi-up { color: var(--hb-good); }\n.hb-kpi-down { color: var(--hb-warn); }\n.hb-kpi-flat { color: var(--hb-muted); }\n/* A card where a fall is the good news (invert_tone): the two directions keep their class and swap their tone. */\n.hb-kpi-change.hb-kpi-invert.hb-kpi-up { color: var(--hb-warn); }\n.hb-kpi-change.hb-kpi-invert.hb-kpi-down { color: var(--hb-good); }\n.hb-kpi-spark { display: block; width: 100%; height: 28px; margin-top: 6px; overflow: visible; }\n.hb-kpi-spark path {\n  fill: none;\n  stroke: var(--hb-chart-1);\n  stroke-width: 1.75;\n  stroke-linejoin: round;\n  stroke-linecap: round;\n  vector-effect: non-scaling-stroke;\n}\n";
 
 // src/blocks/timeline/timeline.css
 var timeline_default = "/* Timeline */\n.hb-timeline { display: flex; flex-direction: column; gap: 14px; }\n.hb-timeline-group { display: flex; flex-direction: column; }\n.hb-timeline-group > .hb-chip { margin-bottom: 10px; }\n.hb-stop { display: grid; grid-template-columns: 46px 22px 1fr; column-gap: 8px; }\n.hb-stop-time {\n  padding-top: 2px;\n  text-align: right;\n  font-size: 12.5px;\n  font-weight: 600;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n}\n.hb-stop-rail { display: flex; flex-direction: column; align-items: center; }\n.hb-stop-dot {\n  display: grid;\n  place-items: center;\n  flex: none;\n  width: 22px;\n  height: 22px;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n}\n.hb-stop-pip { width: 6px; height: 6px; border-radius: 999px; background: var(--hb-accent); }\n.hb-stop-line { flex: 1; width: 1px; margin: 4px 0; background: var(--hb-line); }\n.hb-stop-body { min-width: 0; }\n.hb-stop-body-gap { padding-bottom: 14px; }\n.hb-stop-title { font-size: 14.5px; line-height: 21px; font-weight: 600; }\n.hb-stop-place {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  margin-top: 1px;\n  font-size: 12.5px;\n  color: var(--hb-muted);\n}\n.hb-stop-note { margin-top: 3px; font-size: 13px; line-height: 18px; color: var(--hb-ink-2); }\n";
 
 // src/blocks/layout/layout.css
-var layout_default = "/* Containers. A row's small cards (stats, badges) end at the same height; a tall block never sits in a row\n   (layout/read.ts draws that row as a stack). */\n.hb-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }\n.hb-row-cell { flex: 1 1 140px; min-width: 0; display: flex; flex-direction: column; }\n.hb-row-cell > * { flex: 1; }\n/* Grid: each cell keeps its block's own height, top-aligned in its row. */\n.hb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; align-items: start; }\n.hb-grid-cell { min-width: 0; display: flex; flex-direction: column; }\n.hb-row-cell-own { flex: none; align-self: center; }\n.hb-section { display: flex; flex-direction: column; gap: 8px; }\n.hb-section-body { display: flex; flex-direction: column; gap: 10px; }\n.hb-section .hb-card { background: var(--hb-well); border-color: transparent; }\n.hb-section-toggle {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  width: 100%;\n  padding: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n}\n.hb-section-toggle .hb-card-title { flex: 1; min-width: 0; }\n.hb-chevron { flex: none; color: var(--hb-muted); transition: transform 0.2s var(--hb-ease-out); }\n.hb-chevron-open { transform: rotate(90deg); }\n/* Tabs: underlined tab buttons in a bar that scrolls sideways when they don't fit, above one panel of blocks. */\n.hb-tabs { display: flex; flex-direction: column; gap: 10px; min-width: 0; }\n.hb-tab-bar {\n  display: flex;\n  gap: 2px;\n  overflow-x: auto;\n  scrollbar-width: none;\n  border-bottom: 1px solid var(--hb-line);\n}\n.hb-tab-bar::-webkit-scrollbar { display: none; }\n.hb-tab {\n  flex: none;\n  margin-bottom: -1px;\n  padding: 7px 12px 8px;\n  border: 0;\n  border-bottom: 2px solid transparent;\n  border-radius: 8px 8px 0 0;\n  background: none;\n  color: var(--hb-muted);\n  font: inherit;\n  font-size: 13.5px;\n  font-weight: 600;\n  white-space: nowrap;\n  cursor: pointer;\n  transition: color 0.15s, border-color 0.15s, background 0.15s;\n}\n.hb-tab:hover { color: var(--hb-ink-2); background: var(--hb-well); }\n.hb-tab-on, .hb-tab-on:hover { color: var(--hb-accent-ink); border-bottom-color: var(--hb-accent); background: none; }\n.hb-tab:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; }\n.hb-tab-badge { display: inline-block; min-width: 18px; margin-left: 6px; padding: 0 5px; border-radius: 99px;\n  background: var(--hb-well); color: var(--hb-ink-2); font-size: 11px; line-height: 18px; text-align: center;\n  font-variant-numeric: tabular-nums; vertical-align: 1px; }\n.hb-tab-on .hb-tab-badge { background: var(--hb-accent); color: #fff; }\n.hb-tab-panel { display: flex; flex-direction: column; gap: 10px; min-width: 0; }\n\n/* Columns: dashboards side by side, each block at its own height (a short card beside a tall one stays short). */\n.hb-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 10px; align-items: start; }\n.hb-column { min-width: 0; display: flex; flex-direction: column; gap: 10px; }\n/* Beside other blocks a table's card fills its column or cell (on its own it hugs its columns). */\n:is(.hb-column, .hb-grid-cell) > .hb-table-card { width: auto; }\n";
+var layout_default = "/* Containers. A row's small cards (stats, badges) end at the same height; a tall block never sits in a row\n   (layout/read.ts draws that row as a stack). */\n.hb-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }\n.hb-row-cell { flex: 1 1 140px; min-width: 0; display: flex; flex-direction: column; }\n.hb-row-cell > * { flex: 1; }\n/* Grid: each cell keeps its block's own height, top-aligned in its row. */\n.hb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; align-items: start; }\n.hb-grid-cell { min-width: 0; display: flex; flex-direction: column; }\n.hb-row-cell-own { flex: none; align-self: center; }\n.hb-section { display: flex; flex-direction: column; gap: 8px; }\n.hb-section-body { display: flex; flex-direction: column; gap: 10px; }\n.hb-section .hb-card { background: var(--hb-well); border-color: transparent; }\n.hb-section-toggle {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  width: 100%;\n  padding: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n}\n.hb-section-toggle .hb-card-title { flex: 1; min-width: 0; }\n.hb-chevron { flex: none; color: var(--hb-muted); transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); }\n.hb-chevron-open { transform: rotate(90deg); }\n/* Tabs: underlined tab buttons in a bar that scrolls sideways when they don't fit, above one panel of blocks. */\n.hb-tabs { display: flex; flex-direction: column; gap: 10px; min-width: 0; }\n.hb-tab-bar {\n  display: flex;\n  gap: 2px;\n  overflow-x: auto;\n  scrollbar-width: none;\n  border-bottom: 1px solid var(--hb-line);\n}\n.hb-tab-bar::-webkit-scrollbar { display: none; }\n.hb-tab {\n  flex: none;\n  margin-bottom: -1px;\n  padding: 7px 12px 8px;\n  border: 0;\n  border-bottom: 2px solid transparent;\n  border-radius: 8px 8px 0 0;\n  background: none;\n  color: var(--hb-muted);\n  font: inherit;\n  font-size: 13.5px;\n  font-weight: 600;\n  white-space: nowrap;\n  cursor: pointer;\n  transition: color 0.15s, border-color 0.15s, background 0.15s;\n}\n.hb-tab:hover { color: var(--hb-ink-2); background: var(--hb-well); }\n.hb-tab-on, .hb-tab-on:hover { color: var(--hb-accent-ink); border-bottom-color: var(--hb-accent); background: none; }\n.hb-tab:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; }\n.hb-tab-badge { display: inline-block; min-width: 18px; margin-left: 6px; padding: 0 5px; border-radius: 99px;\n  background: var(--hb-well); color: var(--hb-ink-2); font-size: 11px; line-height: 18px; text-align: center;\n  font-variant-numeric: tabular-nums; vertical-align: 1px; }\n.hb-tab-on .hb-tab-badge { background: var(--hb-accent); color: #fff; }\n.hb-tab-panel { display: flex; flex-direction: column; gap: 10px; min-width: 0; }\n\n/* Columns: dashboards side by side, each block at its own height (a short card beside a tall one stays short). */\n.hb-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 10px; align-items: start; }\n.hb-column { min-width: 0; display: flex; flex-direction: column; gap: 10px; }\n/* Beside other blocks a table's card fills its column or cell (on its own it hugs its columns). */\n:is(.hb-column, .hb-grid-cell) > .hb-table-card { width: auto; }\n";
 
 // src/blocks/chart/chart.css
-var chart_default = "/* Charts are drawn at their real width and fill their place inside a layout block (a column, a cell, a tab). At the\n   top of a reply they stop at 720px; a long line (60+ points) takes the board's full width. */\n.hb-chart { margin: 0; padding: 14px 16px 10px; }\n.hb-blocks > .hb-chart:not(.hb-chart-wide) { max-width: 720px; }\n.hb-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }\n.hb-chart-title {\n  display: block;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 13px;\n  font-weight: 600;\n  color: var(--hb-muted);\n}\n.hb-chart-figure { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; min-width: 0; }\n.hb-chart-big {\n  font-size: 28px;\n  line-height: 1.15;\n  font-weight: 800;\n  letter-spacing: -0.03em;\n  font-variant-numeric: tabular-nums;\n}\n.hb-chart-at {\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 12px;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n}\n.hb-chart-other { margin-left: 8px; }\n.hb-chart-plot { position: relative; margin-top: 8px; }\n.hb-chart-svg { display: block; width: 100%; overflow: visible; touch-action: none; user-select: none; }\n.hb-chart-svg:focus-visible, .hb-pie-svg:focus-visible, .hb-hbar-grid:focus-visible {\n  outline: 2px solid var(--hb-accent);\n  outline-offset: 4px;\n  border-radius: 4px;\n}\n.hb-chart-source { margin-top: 2px; text-align: right; font-size: 11px; color: var(--hb-muted); }\n.hb-chart-caveat { margin-top: 6px; font-size: 11px; line-height: 1.35; color: var(--hb-muted); overflow-wrap: anywhere; }\n.hb-chart-axis-note { margin-top: 4px; font-size: 11px; color: var(--hb-muted); }\n\n/* Marks and text inside the drawings */\n.hb-chart-axis, .hb-chart-tick { font-size: 11px; fill: var(--hb-muted); font-variant-numeric: tabular-nums; }\n.hb-chart-value { font-size: 11.5px; font-weight: 500; fill: var(--hb-ink-2); font-variant-numeric: tabular-nums; }\n.hb-chart-end { font-size: 11.5px; font-weight: 600; fill: var(--hb-ink); font-variant-numeric: tabular-nums; }\n/* Text drawn over lines (a change line's Start label): a rim of the page's colour behind the letters. */\n.hb-chart-halo { paint-order: stroke; stroke: var(--hb-surface); stroke-width: 3px; stroke-linejoin: round; }\n.hb-chart-rule { stroke: var(--hb-line); }\n.hb-chart-rule-strong { stroke: var(--hb-line-strong); }\n.hb-chart-dot { stroke: var(--hb-surface); stroke-width: 2; }\n/* Where a column has no value: a tick on the baseline in the no-data colour, so an unknown is not read as a zero. */\n.hb-chart-gap { fill: var(--hb-well); }\n.hb-chart-svg g, .hb-hbar-bar { transition: opacity 0.15s var(--hb-ease-out); }\n.hb-chart-draw { animation: hb-chart-draw 1.2s var(--hb-ease-out) forwards; }\n@keyframes hb-chart-draw { to { stroke-dashoffset: 0; } }\n\n/* The hover card (ChartTip) */\n.hb-tip {\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 5;\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  min-width: 120px;\n  padding: 8px 10px;\n  border: 1px solid var(--hb-line);\n  border-radius: 8px;\n  background: var(--hb-surface);\n  box-shadow: var(--hb-shadow);\n  color: var(--hb-ink);\n  font-size: 12.5px;\n  line-height: 1.35;\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n  pointer-events: none;\n  opacity: 0;\n  transition: opacity 120ms var(--hb-ease-out);\n}\n.hb-tip-on { opacity: 1; }\n.hb-tip-title, .hb-tip-note { font-size: 11.5px; color: var(--hb-muted); }\n.hb-tip-row { display: flex; align-items: center; gap: 8px; }\n.hb-tip-row i { flex: none; width: 8px; height: 8px; border-radius: 2px; }\n.hb-tip-name { flex: 1; color: var(--hb-ink-2); }\n.hb-tip-value { margin-left: 12px; font-weight: 600; }\n\n@media (prefers-reduced-motion: reduce) {\n  .hb-chart-draw { animation: none; stroke-dashoffset: 0; }\n  .hb-tip, .hb-chart-svg g, .hb-hbar-bar, .hb-slice, .hb-pie-legend tr { transition: none; }\n}\n\n.hb-legend {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 4px 12px;\n  margin-top: 6px;\n  font-size: 12px;\n  line-height: 16px;\n  color: var(--hb-muted);\n}\n.hb-legend-item { display: inline-flex; align-items: center; gap: 6px; }\n.hb-legend-dot { flex: none; width: 10px; height: 10px; border-radius: 999px; }\n.hb-legend-value { color: var(--hb-ink-2); font-variant-numeric: tabular-nums; }\n\n/* Pie and donut: the legend sits beside the drawing from 440px wide, below it when narrower. It stops at 420px so\n   amounts stay near their names when the donut fills a wide section. */\n.hb-pie { container-type: inline-size; }\n.hb-pie-body { position: relative; display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }\n@container (min-width: 440px) {\n  .hb-pie-body { flex-direction: row; align-items: center; gap: 20px; }\n  .hb-pie-body .hb-pie-svg { margin: 0; }\n}\n.hb-pie-svg { display: block; flex: none; margin: 0 auto; user-select: none; }\n.hb-pie-total { font-size: 17px; font-weight: 650; fill: var(--hb-ink); font-variant-numeric: tabular-nums; }\n.hb-slice { cursor: pointer; stroke: var(--hb-surface); stroke-width: 2; stroke-linejoin: round; transition: opacity 0.15s var(--hb-ease-out); }\n.hb-pie-legend { flex: 1; min-width: 0; max-width: 420px; border-collapse: collapse; font-size: 13px; line-height: 18px; font-variant-numeric: tabular-nums; }\n.hb-pie-legend tr { cursor: pointer; transition: opacity 0.15s var(--hb-ease-out); }\n.hb-pie-legend td { padding: 3px 12px 3px 0; vertical-align: top; }\n.hb-pie-legend td:last-child { padding-right: 0; }\n.hb-pie-swatch { width: 10px; }\n.hb-pie-swatch i { display: block; width: 10px; height: 10px; margin-top: 4px; border-radius: 3px; }\n.hb-pie-name { width: 100%; color: var(--hb-ink-2); overflow-wrap: anywhere; }\n.hb-pie-value { text-align: right; font-weight: 600; white-space: nowrap; }\n.hb-pie-share { text-align: right; color: var(--hb-muted); white-space: nowrap; }\n\n/* Horizontal bars: label | bar | value on each row. */\n.hb-hbar-box { position: relative; margin: 10px 0 4px; }\n.hb-hbar-grid {\n  display: grid;\n  grid-template-columns: fit-content(40%) minmax(0, 1fr) max-content;\n  gap: 8px 12px;\n  align-items: center;\n  font-size: 13px;\n}\n.hb-hbar-label { min-width: 64px; line-height: 17px; color: var(--hb-ink-2); }\n.hb-hbar-tracks, .hb-hbar-values { display: flex; flex-direction: column; gap: 4px; }\n.hb-hbar-track { position: relative; height: 14px; }\n.hb-hbar-zero { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--hb-line-strong); }\n.hb-hbar-bar { position: absolute; top: 0; bottom: 0; border-radius: 3px; }\n.hb-hbar-value { line-height: 14px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }\n.hb-hbar-many .hb-hbar-track { height: 12px; }\n.hb-hbar-many .hb-hbar-value { font-size: 12px; line-height: 12px; }\n.hb-hbar-up { color: var(--hb-good); }\n.hb-hbar-down { color: var(--hb-warn); }\n";
+var chart_default = "/* Charts are drawn at their real width and fill their place inside a layout block (a column, a cell, a tab). At the\n   top of a reply they stop at 720px; a long line (60+ points) takes the board's full width. */\n.hb-chart { margin: 0; padding: 14px 16px 10px; }\n.hb-blocks > .hb-chart:not(.hb-chart-wide) { max-width: 720px; }\n.hb-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }\n.hb-chart-title {\n  display: block;\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 13px;\n  font-weight: 600;\n  color: var(--hb-muted);\n}\n.hb-chart-figure { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; min-width: 0; }\n.hb-chart-big {\n  font-size: 28px;\n  line-height: 1.15;\n  font-weight: 800;\n  letter-spacing: -0.03em;\n  font-variant-numeric: tabular-nums;\n}\n.hb-chart-at {\n  min-width: 0;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 12px;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n}\n.hb-chart-other { margin-left: 8px; }\n.hb-chart-plot { position: relative; margin-top: 8px; }\n.hb-chart-svg { display: block; width: 100%; overflow: visible; touch-action: none; user-select: none; }\n.hb-chart-svg:focus-visible, .hb-pie-svg:focus-visible, .hb-hbar-grid:focus-visible {\n  outline: 2px solid var(--hb-accent);\n  outline-offset: 4px;\n  border-radius: 4px;\n}\n.hb-chart-source { margin-top: 2px; text-align: right; font-size: 11px; color: var(--hb-muted); }\n.hb-chart-caveat { margin-top: 6px; font-size: 11px; line-height: 1.35; color: var(--hb-muted); overflow-wrap: anywhere; }\n.hb-chart-axis-note { margin-top: 4px; font-size: 11px; color: var(--hb-muted); }\n\n/* Marks and text inside the drawings */\n.hb-chart-axis, .hb-chart-tick { font-size: 11px; fill: var(--hb-muted); font-variant-numeric: tabular-nums; }\n.hb-chart-value { font-size: 11.5px; font-weight: 500; fill: var(--hb-ink-2); font-variant-numeric: tabular-nums; }\n.hb-chart-end { font-size: 11.5px; font-weight: 600; fill: var(--hb-ink); font-variant-numeric: tabular-nums; }\n/* Text drawn over lines (a change line's Start label): a rim of the page's colour behind the letters. */\n.hb-chart-halo { paint-order: stroke; stroke: var(--hb-surface); stroke-width: 3px; stroke-linejoin: round; }\n.hb-chart-rule { stroke: var(--hb-line); }\n.hb-chart-rule-strong { stroke: var(--hb-line-strong); }\n.hb-chart-dot { stroke: var(--hb-surface); stroke-width: 2; }\n.hb-chart-svg g, .hb-hbar-bar { transition: opacity 0.15s; }\n.hb-chart-draw { animation: hb-chart-draw 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }\n@keyframes hb-chart-draw { to { stroke-dashoffset: 0; } }\n\n/* The hover card (ChartTip) */\n.hb-tip {\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 5;\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  min-width: 120px;\n  padding: 8px 10px;\n  border: 1px solid var(--hb-line);\n  border-radius: 8px;\n  background: var(--hb-surface);\n  box-shadow: var(--hb-shadow);\n  color: var(--hb-ink);\n  font-size: 12.5px;\n  line-height: 1.35;\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n  pointer-events: none;\n  opacity: 0;\n  transition: opacity 120ms ease;\n}\n.hb-tip-on { opacity: 1; }\n.hb-tip-title, .hb-tip-note { font-size: 11.5px; color: var(--hb-muted); }\n.hb-tip-row { display: flex; align-items: center; gap: 8px; }\n.hb-tip-row i { flex: none; width: 8px; height: 8px; border-radius: 2px; }\n.hb-tip-name { flex: 1; color: var(--hb-ink-2); }\n.hb-tip-value { margin-left: 12px; font-weight: 600; }\n\n@media (prefers-reduced-motion: reduce) {\n  .hb-chart-draw { animation: none; stroke-dashoffset: 0; }\n  .hb-tip, .hb-chart-svg g, .hb-hbar-bar, .hb-slice, .hb-pie-legend tr { transition: none; }\n}\n\n.hb-legend {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 4px 12px;\n  margin-top: 6px;\n  font-size: 12px;\n  line-height: 16px;\n  color: var(--hb-muted);\n}\n.hb-legend-item { display: inline-flex; align-items: center; gap: 6px; }\n.hb-legend-dot { flex: none; width: 10px; height: 10px; border-radius: 999px; }\n.hb-legend-value { color: var(--hb-ink-2); font-variant-numeric: tabular-nums; }\n\n/* Pie and donut: the legend sits beside the drawing from 440px wide, below it when narrower. It stops at 420px so\n   amounts stay near their names when the donut fills a wide section. */\n.hb-pie { container-type: inline-size; }\n.hb-pie-body { position: relative; display: flex; flex-direction: column; gap: 14px; margin-top: 10px; }\n@container (min-width: 440px) {\n  .hb-pie-body { flex-direction: row; align-items: center; gap: 20px; }\n  .hb-pie-body .hb-pie-svg { margin: 0; }\n}\n.hb-pie-svg { display: block; flex: none; margin: 0 auto; user-select: none; }\n.hb-pie-total { font-size: 17px; font-weight: 650; fill: var(--hb-ink); font-variant-numeric: tabular-nums; }\n.hb-slice { cursor: pointer; stroke: var(--hb-surface); stroke-width: 2; stroke-linejoin: round; transition: opacity 0.15s; }\n.hb-pie-legend { flex: 1; min-width: 0; max-width: 420px; border-collapse: collapse; font-size: 13px; line-height: 18px; font-variant-numeric: tabular-nums; }\n.hb-pie-legend tr { cursor: pointer; transition: opacity 0.15s; }\n.hb-pie-legend td { padding: 3px 12px 3px 0; vertical-align: top; }\n.hb-pie-legend td:last-child { padding-right: 0; }\n.hb-pie-swatch { width: 10px; }\n.hb-pie-swatch i { display: block; width: 10px; height: 10px; margin-top: 4px; border-radius: 3px; }\n.hb-pie-name { width: 100%; color: var(--hb-ink-2); overflow-wrap: anywhere; }\n.hb-pie-value { text-align: right; font-weight: 600; white-space: nowrap; }\n.hb-pie-share { text-align: right; color: var(--hb-muted); white-space: nowrap; }\n\n/* Horizontal bars: label | bar | value on each row. */\n.hb-hbar-box { position: relative; margin: 10px 0 4px; }\n.hb-hbar-grid {\n  display: grid;\n  grid-template-columns: fit-content(40%) minmax(0, 1fr) max-content;\n  gap: 8px 12px;\n  align-items: center;\n  font-size: 13px;\n}\n.hb-hbar-label { min-width: 64px; line-height: 17px; color: var(--hb-ink-2); }\n.hb-hbar-tracks, .hb-hbar-values { display: flex; flex-direction: column; gap: 4px; }\n.hb-hbar-track { position: relative; height: 14px; }\n.hb-hbar-zero { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--hb-line-strong); }\n.hb-hbar-bar { position: absolute; top: 0; bottom: 0; border-radius: 3px; }\n.hb-hbar-value { line-height: 14px; text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }\n.hb-hbar-many .hb-hbar-track { height: 12px; }\n.hb-hbar-many .hb-hbar-value { font-size: 12px; line-height: 12px; }\n.hb-hbar-up { color: var(--hb-good); }\n.hb-hbar-down { color: var(--hb-warn); }\n";
 
 // src/blocks/images/images.css
-var images_default = "/* Photos */\n.hb-photos { margin: 0; display: flex; flex-direction: column; gap: 8px; }\n.hb-photo-strip {\n  display: flex;\n  gap: 10px;\n  overflow-x: auto;\n  padding-bottom: 6px;\n  scroll-snap-type: x mandatory;\n  scrollbar-width: thin;\n}\n.hb-photo {\n  position: relative;\n  flex: 0 0 220px;\n  min-width: 0;\n  height: auto;\n  margin: 0;\n  overflow: hidden;\n  border: 1px solid var(--hb-line);\n  border-radius: 14px;\n  background: var(--hb-card);\n  color: inherit;\n  font: inherit;\n  scroll-snap-align: start;\n}\n.hb-photo-open {\n  display: flex;\n  flex-direction: column;\n  justify-content: flex-start;\n  align-items: stretch;\n  width: 100%;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: zoom-in;\n}\n.hb-photo-open:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; }\n.hb-photo-download {\n  position: absolute;\n  right: 8px;\n  bottom: 8px;\n  z-index: 1;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 28px;\n  height: 28px;\n  border-radius: 8px;\n  background: rgba(0, 0, 0, 0.6);\n  color: #fff;\n  font: inherit;\n  font-size: 16px;\n  line-height: 1;\n  text-decoration: none;\n  opacity: 0;\n  transition: opacity 0.12s var(--hb-ease-out);\n}\n.hb-photo:hover .hb-photo-download,\n.hb-photo:focus-within .hb-photo-download { opacity: 1; }\n.hb-photo-label {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  min-width: 0;\n  flex: 1;\n  padding: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: zoom-in;\n}\n.hb-photo-label:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-photo-download:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n@media (hover: none) { .hb-photo-download { opacity: 1; } }\n@media (prefers-reduced-motion: reduce) { .hb-photo-download { transition: none; } }\n/* Four or more pictures read better as a grid: same cards and tokens, no sideways scroll. No model-written field. */\n.hb-photos-grid .hb-photo-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); overflow: visible; }\n.hb-photos-grid .hb-photo { flex: initial; width: auto; }\n/* In the full gallery the control sits on the right of the caption row, centred with it; the strip keeps it on the image. */\n.hb-photos-grid .hb-photo-text { flex-direction: row; align-items: center; gap: 8px; }\n.hb-photos-grid .hb-photo-download { position: static; flex: 0 0 28px; opacity: 1; }\n@media (max-width: 520px) { .hb-photos-grid .hb-photo-strip { grid-template-columns: 1fr; } }\n.hb-photo img { display: block; width: 100%; height: 150px; object-fit: cover; background: var(--hb-well); }\n/* In the gallery each photo keeps the shape of a photo: the width sets the height, so a wide window adds columns. */\n.hb-photos-grid .hb-photo img { height: auto; aspect-ratio: 4 / 3; }\n.hb-photo-text { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px 10px; }\n.hb-photo-caption {\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  font-size: 13px;\n  line-height: 17px;\n  font-weight: 600;\n}\n.hb-photo-source { font-size: 11.5px; color: var(--hb-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.hb-photo-overlay {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483000;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 12px;\n  padding: 32px;\n  background: rgba(0, 0, 0, 0.82);\n  cursor: zoom-out;\n  animation: hb-appear 0.18s var(--hb-ease-out);\n}\n.hb-photo-overlay img { margin: 0; max-width: 100%; max-height: calc(100% - 48px); border-radius: 10px; object-fit: contain; }\n.hb-photo-overlay-text { max-width: 720px; text-align: center; font-size: 14px; color: rgba(255, 255, 255, 0.92); }\n.hb-photo-overlay-text span { color: rgba(255, 255, 255, 0.6); }\n";
+var images_default = "/* Photos */\n.hb-photos { margin: 0; display: flex; flex-direction: column; gap: 8px; }\n.hb-photo-strip {\n  display: flex;\n  gap: 10px;\n  overflow-x: auto;\n  padding-bottom: 6px;\n  scroll-snap-type: x mandatory;\n  scrollbar-width: thin;\n}\n.hb-photo {\n  position: relative;\n  flex: 0 0 220px;\n  min-width: 0;\n  height: auto;\n  margin: 0;\n  overflow: hidden;\n  border: 1px solid var(--hb-line);\n  border-radius: 14px;\n  background: var(--hb-card);\n  color: inherit;\n  font: inherit;\n  scroll-snap-align: start;\n}\n.hb-photo-open {\n  display: flex;\n  flex-direction: column;\n  justify-content: flex-start;\n  align-items: stretch;\n  width: 100%;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: zoom-in;\n}\n.hb-photo-open:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; }\n.hb-photo-download {\n  position: absolute;\n  right: 8px;\n  bottom: 8px;\n  z-index: 1;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 28px;\n  height: 28px;\n  border-radius: 8px;\n  background: rgba(0, 0, 0, 0.6);\n  color: #fff;\n  font: inherit;\n  font-size: 16px;\n  line-height: 1;\n  text-decoration: none;\n  opacity: 0;\n  transition: opacity 0.12s;\n}\n.hb-photo:hover .hb-photo-download,\n.hb-photo:focus-within .hb-photo-download { opacity: 1; }\n.hb-photo-label {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  min-width: 0;\n  flex: 1;\n  padding: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: zoom-in;\n}\n.hb-photo-label:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-photo-download:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n@media (hover: none) { .hb-photo-download { opacity: 1; } }\n@media (prefers-reduced-motion: reduce) { .hb-photo-download { transition: none; } }\n/* Four or more pictures read better as a grid: same cards and tokens, no sideways scroll. No model-written field. */\n.hb-photos-grid .hb-photo-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); overflow: visible; }\n.hb-photos-grid .hb-photo { flex: initial; width: auto; }\n/* In the full gallery the control sits on the right of the caption row, centred with it; the strip keeps it on the image. */\n.hb-photos-grid .hb-photo-text { flex-direction: row; align-items: center; gap: 8px; }\n.hb-photos-grid .hb-photo-download { position: static; flex: 0 0 28px; opacity: 1; }\n@media (max-width: 520px) { .hb-photos-grid .hb-photo-strip { grid-template-columns: 1fr; } }\n.hb-photo img { display: block; width: 100%; height: 150px; object-fit: cover; background: var(--hb-well); }\n/* In the gallery each photo keeps the shape of a photo: the width sets the height, so a wide window adds columns. */\n.hb-photos-grid .hb-photo img { height: auto; aspect-ratio: 4 / 3; }\n.hb-photo-text { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px 10px; }\n.hb-photo-caption {\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  font-size: 13px;\n  line-height: 17px;\n  font-weight: 600;\n}\n.hb-photo-source { font-size: 11.5px; color: var(--hb-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.hb-photo-overlay {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483000;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 12px;\n  padding: 32px;\n  background: rgba(0, 0, 0, 0.82);\n  cursor: zoom-out;\n  animation: hb-appear 0.18s ease-out;\n}\n.hb-photo-overlay img { margin: 0; max-width: 100%; max-height: calc(100% - 48px); border-radius: 10px; object-fit: contain; }\n.hb-photo-overlay-text { max-width: 720px; text-align: center; font-size: 14px; color: rgba(255, 255, 255, 0.92); }\n.hb-photo-overlay-text span { color: rgba(255, 255, 255, 0.6); }\n";
 
 // src/blocks/table/table.css
-var table_default = "/* Tables */\n/* A table keeps its natural width (columns close together); the card hugs it. It scrolls inside the card: sideways\n   when wider than the chat, down past 520px with the header kept in view. */\n.hb-table-card { width: fit-content; max-width: 100%; padding: 4px 0 0; overflow: hidden; }\n.hb-table-caption { padding: 10px 16px 2px; }\n.hb-table-scroll { max-height: 520px; overflow: auto; }\n.hb-table {\n  border-collapse: separate;\n  border-spacing: 0;\n  font-size: 13.5px;\n  line-height: 20px;\n  font-variant-numeric: tabular-nums;\n}\n/* With 3 or more columns, a narrow chat scrolls the table rather than squeezing every column. */\n.hb-table-wide { min-width: 420px; }\n.hb-table th, .hb-table td {\n  height: 36px;\n  padding: 8px 12px;\n  border: 0;\n  border-bottom: 1px solid var(--hb-line);\n  background: none;\n  text-align: left;\n  vertical-align: middle;\n  white-space: nowrap;\n}\n/* The header stays in view as the rows scroll; it is painted like the card so rows don't show through. */\n.hb-table th {\n  position: sticky;\n  top: 0;\n  z-index: 1;\n  height: 34px;\n  padding: 0;\n  border-bottom-color: var(--hb-line-strong);\n  background: linear-gradient(var(--hb-card), var(--hb-card)), var(--hb-surface);\n}\n.hb-table th button {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  width: 100%;\n  height: 34px;\n  padding: 0 12px;\n  border: 0;\n  background: none;\n  color: var(--hb-muted);\n  font: inherit;\n  font-size: 11.5px;\n  font-weight: 600;\n  letter-spacing: 0.04em;\n  text-transform: uppercase;\n  white-space: nowrap;\n  cursor: pointer;\n}\n.hb-table th.hb-num button { justify-content: flex-end; }\n.hb-table .hb-first, .hb-table th.hb-first button { padding-left: 16px; }\n.hb-table td:last-child, .hb-table th:last-child button { padding-right: 16px; }\n.hb-table tbody tr:last-child td { border-bottom: 0; }\n.hb-table td.hb-first { font-weight: 600; }\n.hb-table td.hb-num { text-align: right; }\n.hb-table td.hb-wrap { min-width: 180px; white-space: normal; }\n/* Sorting: a faint \u2195 on the header under the pointer, \u2191 or \u2193 on the sorted one. */\n.hb-sort { opacity: 0; font-weight: 400; letter-spacing: 0; transition: opacity 0.12s var(--hb-ease-out); }\n.hb-table th:hover .hb-sort, .hb-table th button:focus-visible .hb-sort { opacity: 0.6; }\n.hb-table th.hb-sorted .hb-sort { opacity: 1; color: var(--hb-ink-2); }\n/* The best row: an accent edge on its first cell and a chip; the best column: an accent line under its header. */\n.hb-table tr.hb-best td.hb-first { box-shadow: inset 3px 0 0 var(--hb-accent); }\n.hb-table th.hb-best-col { box-shadow: inset 0 -2px 0 var(--hb-accent); }\n.hb-table .hb-chip { margin-left: 8px; vertical-align: 1px; padding: 0 7px; font-size: 11px; line-height: 16px; letter-spacing: 0; text-transform: none; }\n.hb-table th .hb-chip { margin-left: 4px; }\n/* Changes: green for a rise, orange for a fall, with a small bar growing from the middle. */\n.hb-table td.hb-up { color: var(--hb-good); }\n.hb-table td.hb-down { color: var(--hb-warn); }\n.hb-mini { display: inline-block; position: relative; width: 56px; height: 8px; margin-right: 8px; vertical-align: 0; }\n.hb-mini-zero { position: absolute; top: -3px; bottom: -3px; left: 50%; width: 1px; background: var(--hb-line-strong); }\n.hb-mini-bar { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: currentColor; }\n.hb-table td.hb-table-empty { color: var(--hb-muted); font-weight: 400; text-align: center; }\n@media (prefers-reduced-motion: reduce) { .hb-sort { transition: none; } }\n.hb-section .hb-table-card { background: none; border: 0; }\n";
+var table_default = "/* Tables */\n/* A table keeps its natural width (columns close together); the card hugs it. It scrolls inside the card: sideways\n   when wider than the chat, down past 520px with the header kept in view. */\n.hb-table-card { width: fit-content; max-width: 100%; padding: 4px 0 0; overflow: hidden; }\n.hb-table-caption { padding: 10px 16px 2px; }\n.hb-table-scroll { max-height: 520px; overflow: auto; }\n.hb-table {\n  border-collapse: separate;\n  border-spacing: 0;\n  font-size: 13.5px;\n  line-height: 20px;\n  font-variant-numeric: tabular-nums;\n}\n/* With 3 or more columns, a narrow chat scrolls the table rather than squeezing every column. */\n.hb-table-wide { min-width: 420px; }\n.hb-table th, .hb-table td {\n  height: 36px;\n  padding: 8px 12px;\n  border: 0;\n  border-bottom: 1px solid var(--hb-line);\n  background: none;\n  text-align: left;\n  vertical-align: middle;\n  white-space: nowrap;\n}\n/* The header stays in view as the rows scroll; it is painted like the card so rows don't show through. */\n.hb-table th {\n  position: sticky;\n  top: 0;\n  z-index: 1;\n  height: 34px;\n  padding: 0;\n  border-bottom-color: var(--hb-line-strong);\n  background: linear-gradient(var(--hb-card), var(--hb-card)), var(--hb-surface);\n}\n.hb-table th button {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  width: 100%;\n  height: 34px;\n  padding: 0 12px;\n  border: 0;\n  background: none;\n  color: var(--hb-muted);\n  font: inherit;\n  font-size: 11.5px;\n  font-weight: 600;\n  letter-spacing: 0.04em;\n  text-transform: uppercase;\n  white-space: nowrap;\n  cursor: pointer;\n}\n.hb-table th.hb-num button { justify-content: flex-end; }\n.hb-table .hb-first, .hb-table th.hb-first button { padding-left: 16px; }\n.hb-table td:last-child, .hb-table th:last-child button { padding-right: 16px; }\n.hb-table tbody tr:last-child td { border-bottom: 0; }\n.hb-table td.hb-first { font-weight: 600; }\n.hb-table td.hb-num { text-align: right; }\n.hb-table td.hb-wrap { min-width: 180px; white-space: normal; }\n/* Sorting: a faint \u2195 on the header under the pointer, \u2191 or \u2193 on the sorted one. */\n.hb-sort { opacity: 0; font-weight: 400; letter-spacing: 0; transition: opacity 0.12s; }\n.hb-table th:hover .hb-sort, .hb-table th button:focus-visible .hb-sort { opacity: 0.6; }\n.hb-table th.hb-sorted .hb-sort { opacity: 1; color: var(--hb-ink-2); }\n/* The best row: an accent edge on its first cell and a chip; the best column: an accent line under its header. */\n.hb-table tr.hb-best td.hb-first { box-shadow: inset 3px 0 0 var(--hb-accent); }\n.hb-table th.hb-best-col { box-shadow: inset 0 -2px 0 var(--hb-accent); }\n.hb-table .hb-chip { margin-left: 8px; vertical-align: 1px; padding: 0 7px; font-size: 11px; line-height: 16px; letter-spacing: 0; text-transform: none; }\n.hb-table th .hb-chip { margin-left: 4px; }\n/* Changes: green for a rise, orange for a fall, with a small bar growing from the middle. */\n.hb-table td.hb-up { color: var(--hb-good); }\n.hb-table td.hb-down { color: var(--hb-warn); }\n.hb-mini { display: inline-block; position: relative; width: 56px; height: 8px; margin-right: 8px; vertical-align: 0; }\n.hb-mini-zero { position: absolute; top: -3px; bottom: -3px; left: 50%; width: 1px; background: var(--hb-line-strong); }\n.hb-mini-bar { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: currentColor; }\n.hb-table td.hb-table-empty { color: var(--hb-muted); font-weight: 400; text-align: center; }\n@media (prefers-reduced-motion: reduce) { .hb-sort { transition: none; } }\n.hb-section .hb-table-card { background: none; border: 0; }\n/* Structured tables: typed columns, local filter, pages, aggregates and source chips. */\n.hb-table-structured .hb-table-grid { width: 100%; border-collapse: collapse; font-size: 13px; }\n.hb-table-structured th, .hb-table-structured td { padding: 7px 10px; border-bottom: 1px solid var(--hb-line); text-align: left; vertical-align: top; }\n.hb-table-structured th { color: var(--hb-ink-2); font-size: 11.5px; font-weight: 700; }\n.hb-table-structured .hb-align-right { text-align: right; font-variant-numeric: tabular-nums; }\n.hb-table-structured .hb-align-center { text-align: center; }\n.hb-table-structured tfoot td { color: var(--hb-ink-2); font-weight: 600; border-top: 1px solid var(--hb-line-strong); }\n.hb-table-aggregate-label { color: var(--hb-muted); font-size: 11px; font-weight: 400; }\n.hb-table-sources { display: flex; flex-wrap: wrap; gap: 3px 8px; }\n.hb-table-sources a { color: var(--hb-accent-ink); text-decoration: underline; text-underline-offset: 2px; }\n.hb-table-source-hint { margin-left: 4px; color: var(--hb-muted); }\n.hb-table-bar { display: flex; align-items: center; gap: 6px; min-width: 90px; }\n.hb-table-bar-fill { display: block; flex: 1 1 auto; height: 6px; border-radius: 999px; background: var(--hb-accent); }\n.hb-table-bar-value { flex: none; font-variant-numeric: tabular-nums; }\n.hb-table-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; }\n.hb-table-tools input { min-width: 140px; max-width: 240px; padding: 5px 9px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); font: inherit; font-size: 12px; }\n.hb-table-tools input:focus-visible, .hb-table-pages button:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-table-pages { display: flex; align-items: center; gap: 8px; color: var(--hb-muted); font-size: 11.5px; }\n.hb-table-pages button { min-width: 26px; min-height: 26px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); cursor: pointer; }\n.hb-table-pages button:disabled { opacity: 0.4; cursor: default; }\n";
 
 // src/blocks/list/list.css
 var list_default = "/* List */\n.hb-list { padding: 4px 0; overflow: hidden; }\n.hb-list-heading { padding: 8px 16px 2px; font-size: 13px; font-weight: 700; color: var(--hb-muted); }\n.hb-list-row {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  padding: 10px 16px;\n  border-top: 1px solid var(--hb-line);\n  color: inherit;\n  text-decoration: none;\n}\n.hb-list > .hb-list-row:first-child, .hb-list-heading + .hb-list-row { border-top: 0; }\n.hb-list-link { cursor: pointer; transition: background 0.15s; }\n.hb-list-link:hover { background: var(--hb-well); }\n.hb-list-rank {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 28px;\n  height: 28px;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n  font-size: 13px;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n}\n.hb-list-photo { flex: none; width: 44px; height: 44px; border-radius: 12px; object-fit: cover; background: var(--hb-well); }\n.hb-list-icon {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border-radius: 12px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n}\n.hb-list-initial {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border-radius: 999px;\n  color: #fff;\n  font-size: 15px;\n  font-weight: 700;\n}\n.hb-list-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }\n.hb-list-title { font-size: 14.5px; line-height: 20px; font-weight: 600; overflow-wrap: anywhere; }\n.hb-list-subtitle {\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  margin-top: 1px;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--hb-muted);\n}\n.hb-list-value { flex: none; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }\n/* The bar and the value share one right-hand block, so every track starts at the same x. In a list with bars the value\n   column has a fixed width; a list without bars keeps the value at its natural width, as before. */\n.hb-list-tail { flex: none; display: flex; align-items: center; gap: 8px; }\n.hb-list-bars .hb-list-value { width: 6.5rem; text-align: right; overflow: hidden; text-overflow: ellipsis; }\n.hb-list-bar { flex: none; width: 64px; height: 6px; border-radius: 999px; background: var(--hb-accent-soft); overflow: hidden; }\n.hb-list-bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-accent); }\n.hb-list-chevron { flex: none; color: var(--hb-muted); }\n.hb-section .hb-list { padding: 0; }\n\n/* List rows that send a message when tapped */\n.hb-list-button {\n  width: 100%;\n  margin: 0;\n  border: 0;\n  border-top: 1px solid var(--hb-line);\n  background: none;\n  font: inherit;\n  text-align: left;\n}\n.hb-list-button:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; }\n";
@@ -6648,10 +6797,10 @@ var list_default = "/* List */\n.hb-list { padding: 4px 0; overflow: hidden; }\n
 var heatmap_default = "/* Heatmap */\n.hb-heatmap { display: flex; flex-direction: column; gap: 8px; }\n.hb-heat-grid { display: grid; gap: 4px; align-items: center; }\n.hb-heat-col {\n  overflow: hidden;\n  text-align: center;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 11px;\n  font-weight: 600;\n  color: var(--hb-muted);\n}\n.hb-heat-row {\n  max-width: 96px;\n  padding-right: 6px;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n  font-size: 12px;\n  font-weight: 600;\n}\n.hb-heat-cell {\n  display: grid;\n  place-items: center;\n  min-width: 0;\n  height: 32px;\n  margin: 0;\n  padding: 0 2px;\n  overflow: hidden;\n  border: 0;\n  border-radius: 8px;\n  color: var(--hb-ink);\n  font: inherit;\n  font-size: 11.5px;\n  font-weight: 600;\n  line-height: 1;\n  font-variant-numeric: tabular-nums;\n  cursor: pointer;\n}\n.hb-heat-cell:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 1px; }\n.hb-heat-picked { font-size: 12.5px; color: var(--hb-muted); font-variant-numeric: tabular-nums; }\n.hb-heat-picked b { font-weight: 600; color: var(--hb-ink); }\n";
 
 // src/blocks/flip/flip.css
-var flip_default = "/* Flash cards: a grid of cards, each turning over in 3D on a tap to a softly tinted answer. A card grows with its\n   text: both faces sit in one grid cell, so the longer side sets its height, and the cards in a row share the row's. */\n.hb-flip { display: flex; flex-direction: column; gap: 8px; }\n/* At most --hb-flip-cols columns (set from the card count so the last row isn't a lone card), at least 200px each. */\n.hb-flip-grid {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(max(200px, calc((100% - (var(--hb-flip-cols, 4) - 1) * 10px) / var(--hb-flip-cols, 4))), 1fr));\n  gap: 10px;\n}\n.hb-flip-card {\n  display: grid;\n  grid-template-columns: minmax(0, 1fr);\n  min-width: 0;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n  perspective: 1000px;\n}\n.hb-flip-inner {\n  display: grid;\n  grid-template-columns: minmax(0, 1fr);\n  min-height: 150px;\n  transform-style: preserve-3d;\n  transition: transform 0.5s var(--hb-ease-out);\n}\n/* A photo on any card makes every card at least as tall as a photo card needs, so the rows stay even. */\n.hb-flip-tall .hb-flip-inner { min-height: 220px; }\n.hb-flip-turned { transform: rotateY(180deg); }\n.hb-flip-face {\n  grid-area: 1 / 1;\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  overflow: hidden;\n  padding: 12px 14px;\n  border-radius: 12px;\n  border: 1px solid var(--hb-line);\n  backface-visibility: hidden;\n  -webkit-backface-visibility: hidden;\n}\n.hb-flip-front { background: var(--hb-card); }\n.hb-flip-card:hover .hb-flip-front { border-color: var(--hb-line-strong); }\n/* The answer side: a soft wash of the accent over the page colour, text in the normal ink. */\n.hb-flip-back {\n  transform: rotateY(180deg);\n  background: linear-gradient(var(--hb-accent-soft), var(--hb-accent-soft)), var(--hb-surface);\n  border-color: color-mix(in srgb, var(--hb-accent) 30%, transparent);\n}\n.hb-flip-card:focus-visible .hb-flip-face { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-flip-label {\n  font-size: 11px;\n  font-weight: 600;\n  letter-spacing: 0.06em;\n  text-transform: uppercase;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n}\n.hb-flip-back .hb-flip-label { color: var(--hb-accent-ink); }\n.hb-flip-question, .hb-flip-answer { flex: 1; display: flex; align-items: center; min-height: 0; }\n.hb-flip-question { font-size: 14.5px; line-height: 1.35; font-weight: 600; }\n.hb-flip-answer { font-size: 13.5px; line-height: 1.45; }\n.hb-flip-foot { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--hb-muted); }\n.hb-flip-back img { display: block; flex: none; width: calc(100% + 28px); height: 96px; margin: -12px -14px 4px; object-fit: cover; }\n@media (prefers-reduced-motion: reduce) {\n  .hb-flip-inner, .hb-flip-turned { transition: none; transform: none; }\n  .hb-flip-face, .hb-flip-back { transform: none; backface-visibility: visible; -webkit-backface-visibility: visible; transition: opacity 0.2s var(--hb-ease-out); }\n  .hb-flip-inner:not(.hb-flip-turned) .hb-flip-back, .hb-flip-turned .hb-flip-front { opacity: 0; }\n}\n";
+var flip_default = "/* Flash cards: a grid of cards, each turning over in 3D on a tap to a softly tinted answer. A card grows with its\n   text: both faces sit in one grid cell, so the longer side sets its height, and the cards in a row share the row's. */\n.hb-flip { display: flex; flex-direction: column; gap: 8px; }\n/* At most --hb-flip-cols columns (set from the card count so the last row isn't a lone card), at least 200px each. */\n.hb-flip-grid {\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(max(200px, calc((100% - (var(--hb-flip-cols, 4) - 1) * 10px) / var(--hb-flip-cols, 4))), 1fr));\n  gap: 10px;\n}\n.hb-flip-card {\n  display: grid;\n  grid-template-columns: minmax(0, 1fr);\n  min-width: 0;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n  perspective: 1000px;\n}\n.hb-flip-inner {\n  display: grid;\n  grid-template-columns: minmax(0, 1fr);\n  min-height: 150px;\n  transform-style: preserve-3d;\n  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);\n}\n/* A photo on any card makes every card at least as tall as a photo card needs, so the rows stay even. */\n.hb-flip-tall .hb-flip-inner { min-height: 220px; }\n.hb-flip-turned { transform: rotateY(180deg); }\n.hb-flip-face {\n  grid-area: 1 / 1;\n  display: flex;\n  flex-direction: column;\n  gap: 6px;\n  overflow: hidden;\n  padding: 12px 14px;\n  border-radius: 12px;\n  border: 1px solid var(--hb-line);\n  backface-visibility: hidden;\n  -webkit-backface-visibility: hidden;\n}\n.hb-flip-front { background: var(--hb-card); }\n.hb-flip-card:hover .hb-flip-front { border-color: var(--hb-line-strong); }\n/* The answer side: a soft wash of the accent over the page colour, text in the normal ink. */\n.hb-flip-back {\n  transform: rotateY(180deg);\n  background: linear-gradient(var(--hb-accent-soft), var(--hb-accent-soft)), var(--hb-surface);\n  border-color: color-mix(in srgb, var(--hb-accent) 30%, transparent);\n}\n.hb-flip-card:focus-visible .hb-flip-face { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-flip-label {\n  font-size: 11px;\n  font-weight: 600;\n  letter-spacing: 0.06em;\n  text-transform: uppercase;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n}\n.hb-flip-back .hb-flip-label { color: var(--hb-accent-ink); }\n.hb-flip-question, .hb-flip-answer { flex: 1; display: flex; align-items: center; min-height: 0; }\n.hb-flip-question { font-size: 14.5px; line-height: 1.35; font-weight: 600; }\n.hb-flip-answer { font-size: 13.5px; line-height: 1.45; }\n.hb-flip-foot { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--hb-muted); }\n.hb-flip-back img { display: block; flex: none; width: calc(100% + 28px); height: 96px; margin: -12px -14px 4px; object-fit: cover; }\n@media (prefers-reduced-motion: reduce) {\n  .hb-flip-inner, .hb-flip-turned { transition: none; transform: none; }\n  .hb-flip-face, .hb-flip-back { transform: none; backface-visibility: visible; -webkit-backface-visibility: visible; transition: opacity 0.2s; }\n  .hb-flip-inner:not(.hb-flip-turned) .hb-flip-back, .hb-flip-turned .hb-flip-front { opacity: 0; }\n}\n";
 
 // src/blocks/flow/flow.css
-var flow_default = "/* Flow: boxes joined by arrows, left to right (.hb-flow-right) or top to bottom (.hb-flow-down). A group is a dashed\n   frame with its label (and count) on top; the lit box (from a steps block) gets the accent outline; boxes a walk\n   hasn't reached are dimmed; a box's chips fade in when they change; a tapped box's note opens in a panel under the\n   diagram. */\n.hb-flow { display: flex; flex-direction: column; gap: 10px; }\n.hb-flow-box { position: relative; width: 100%; min-width: 0; }\n.hb-flow-chain { display: flex; margin: 0; padding: 0; list-style: none; }\n.hb-flow-step { display: flex; align-items: center; min-width: 0; }\n.hb-flow-right { flex-direction: row; align-items: stretch; }\n.hb-flow-right .hb-flow-chain { flex-direction: row; }\n.hb-flow-right .hb-flow-step { flex: 1 1 0; align-items: stretch; }\n.hb-flow-right .hb-flow-arrow { align-self: center; }\n.hb-flow-down, .hb-flow-down .hb-flow-chain { flex-direction: column; align-items: stretch; }\n.hb-flow-down .hb-flow-step { flex-direction: column; align-items: stretch; }\n.hb-flow-arrow { display: grid; place-items: center; flex: none; width: 24px; color: var(--hb-muted); }\n.hb-flow-down .hb-flow-arrow { width: auto; height: 22px; }\n.hb-flow-down .hb-flow-arrow svg { transform: rotate(90deg); }\n.hb-flow-node {\n  position: relative;\n  display: flex;\n  flex: 1;\n  align-items: center;\n  gap: 6px;\n  min-width: 0;\n  min-height: 44px;\n  margin: 0;\n  padding: 8px 10px;\n  border: 1px solid var(--hb-line-strong);\n  border-radius: 10px;\n  background: var(--hb-surface);\n  color: inherit;\n  font: inherit;\n  font-size: 13px;\n  line-height: 1.3;\n  font-weight: 600;\n  text-align: left;\n  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;\n}\n.hb-flow-right .hb-flow-node { flex-direction: column; justify-content: center; text-align: center; }\nbutton.hb-flow-node { cursor: pointer; }\nbutton.hb-flow-node:hover { border-color: var(--hb-accent); }\nbutton.hb-flow-node:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-flow-open { background: var(--hb-accent-soft); border-color: color-mix(in srgb, var(--hb-accent) 45%, transparent); }\n.hb-flow-lit { border-color: var(--hb-accent); box-shadow: 0 0 0 2px var(--hb-accent); }\n.hb-flow-icon {\n  display: grid;\n  place-items: center;\n  flex: none;\n  width: 24px;\n  height: 24px;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n}\n.hb-flow-label { min-width: 0; }\n.hb-flow-more { margin-left: auto; color: var(--hb-muted); font-weight: 400; }\n.hb-flow-right .hb-flow-more { position: absolute; top: 2px; right: 6px; font-size: 12px; }\n.hb-flow-group {\n  display: flex;\n  flex: 1;\n  flex-direction: column;\n  gap: 6px;\n  min-width: 0;\n  padding: 6px;\n  border: 1px dashed var(--hb-line-strong);\n  border-radius: 12px;\n  background: var(--hb-card);\n}\n.hb-flow-group-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; }\n.hb-flow-down .hb-flow-group-head { justify-content: flex-start; }\n.hb-flow-group-label { font-size: 11.5px; font-weight: 600; color: var(--hb-muted); text-align: center; }\n.hb-flow-down .hb-flow-group-label { text-align: left; }\n.hb-flow-down .hb-flow-node { flex-wrap: wrap; }\n.hb-flow-holds { display: flex; flex-wrap: wrap; gap: 3px; animation: hb-flow-fade 0.2s var(--hb-ease-out); }\n.hb-flow-right .hb-flow-holds { justify-content: center; }\n.hb-flow-down .hb-flow-holds { flex-basis: 100%; }\n@keyframes hb-flow-fade { from { opacity: 0; transform: translateY(-2px); } }\n.hb-flow-chip {\n  padding: 1px 6px;\n  border: 1px solid transparent;\n  border-radius: 6px;\n  background: var(--hb-well);\n  color: var(--hb-ink-2);\n  font: 11.5px/16px ui-monospace, SFMono-Regular, Menlo, monospace;\n  font-weight: 400;\n  white-space: nowrap;\n}\n.hb-flow-chip-accent { background: var(--hb-accent-soft); color: var(--hb-accent-ink); font-weight: 700; }\n/* A box the pass hasn't reached yet: faint, its chips only outlined. */\n.hb-flow-idle { color: var(--hb-muted); }\n.hb-flow-idle .hb-flow-holds { opacity: 0.6; }\n.hb-flow-idle .hb-flow-chip { border-style: dashed; border-color: var(--hb-line-strong); background: none; color: var(--hb-muted); font-family: inherit; }\n.hb-flow-packet {\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 3;\n  width: 12px;\n  height: 12px;\n  margin: -6px 0 0 -6px;\n  border-radius: 999px;\n  background: var(--hb-accent);\n  box-shadow: 0 0 0 4px var(--hb-accent-soft), 0 0 14px var(--hb-accent);\n  opacity: 0;\n  pointer-events: none;\n}\n.hb-flow-right .hb-flow-group > .hb-flow-chain { flex: 1; }\n.hb-flow-panel {\n  padding: 10px 12px;\n  border-radius: 10px;\n  background: linear-gradient(var(--hb-accent-soft), var(--hb-accent-soft)), var(--hb-surface);\n  border: 1px solid color-mix(in srgb, var(--hb-accent) 30%, transparent);\n}\n.hb-flow-panel-title { font-size: 13px; font-weight: 700; color: var(--hb-accent-ink); }\n.hb-flow-note { margin: 2px 0 0; font-size: 13.5px; line-height: 1.5; }\n@media (prefers-reduced-motion: reduce) {\n  .hb-flow-node { transition: none; }\n  .hb-flow-holds { animation: none; }\n}\n";
+var flow_default = "/* Flow: boxes joined by arrows, left to right (.hb-flow-right) or top to bottom (.hb-flow-down). A group is a dashed\n   frame with its label (and count) on top; the lit box (from a steps block) gets the accent outline; boxes a walk\n   hasn't reached are dimmed; a box's chips fade in when they change; a tapped box's note opens in a panel under the\n   diagram. */\n.hb-flow { display: flex; flex-direction: column; gap: 10px; }\n.hb-flow-box { position: relative; width: 100%; min-width: 0; }\n.hb-flow-chain { display: flex; margin: 0; padding: 0; list-style: none; }\n.hb-flow-step { display: flex; align-items: center; min-width: 0; }\n.hb-flow-right { flex-direction: row; align-items: stretch; }\n.hb-flow-right .hb-flow-chain { flex-direction: row; }\n.hb-flow-right .hb-flow-step { flex: 1 1 0; align-items: stretch; }\n.hb-flow-right .hb-flow-arrow { align-self: center; }\n.hb-flow-down, .hb-flow-down .hb-flow-chain { flex-direction: column; align-items: stretch; }\n.hb-flow-down .hb-flow-step { flex-direction: column; align-items: stretch; }\n.hb-flow-arrow { display: grid; place-items: center; flex: none; width: 24px; color: var(--hb-muted); }\n.hb-flow-down .hb-flow-arrow { width: auto; height: 22px; }\n.hb-flow-down .hb-flow-arrow svg { transform: rotate(90deg); }\n.hb-flow-node {\n  position: relative;\n  display: flex;\n  flex: 1;\n  align-items: center;\n  gap: 6px;\n  min-width: 0;\n  min-height: 44px;\n  margin: 0;\n  padding: 8px 10px;\n  border: 1px solid var(--hb-line-strong);\n  border-radius: 10px;\n  background: var(--hb-surface);\n  color: inherit;\n  font: inherit;\n  font-size: 13px;\n  line-height: 1.3;\n  font-weight: 600;\n  text-align: left;\n  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;\n}\n.hb-flow-right .hb-flow-node { flex-direction: column; justify-content: center; text-align: center; }\nbutton.hb-flow-node { cursor: pointer; }\nbutton.hb-flow-node:hover { border-color: var(--hb-accent); }\nbutton.hb-flow-node:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-flow-open { background: var(--hb-accent-soft); border-color: color-mix(in srgb, var(--hb-accent) 45%, transparent); }\n.hb-flow-lit { border-color: var(--hb-accent); box-shadow: 0 0 0 2px var(--hb-accent); }\n.hb-flow-icon {\n  display: grid;\n  place-items: center;\n  flex: none;\n  width: 24px;\n  height: 24px;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n}\n.hb-flow-label { min-width: 0; }\n.hb-flow-more { margin-left: auto; color: var(--hb-muted); font-weight: 400; }\n.hb-flow-right .hb-flow-more { position: absolute; top: 2px; right: 6px; font-size: 12px; }\n.hb-flow-group {\n  display: flex;\n  flex: 1;\n  flex-direction: column;\n  gap: 6px;\n  min-width: 0;\n  padding: 6px;\n  border: 1px dashed var(--hb-line-strong);\n  border-radius: 12px;\n  background: var(--hb-card);\n}\n.hb-flow-group-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; }\n.hb-flow-down .hb-flow-group-head { justify-content: flex-start; }\n.hb-flow-group-label { font-size: 11.5px; font-weight: 600; color: var(--hb-muted); text-align: center; }\n.hb-flow-down .hb-flow-group-label { text-align: left; }\n.hb-flow-down .hb-flow-node { flex-wrap: wrap; }\n.hb-flow-holds { display: flex; flex-wrap: wrap; gap: 3px; animation: hb-flow-fade 0.2s ease-out; }\n.hb-flow-right .hb-flow-holds { justify-content: center; }\n.hb-flow-down .hb-flow-holds { flex-basis: 100%; }\n@keyframes hb-flow-fade { from { opacity: 0; } }\n.hb-flow-chip {\n  padding: 1px 6px;\n  border: 1px solid transparent;\n  border-radius: 6px;\n  background: var(--hb-well);\n  color: var(--hb-ink-2);\n  font: 11.5px/16px ui-monospace, SFMono-Regular, Menlo, monospace;\n  font-weight: 400;\n  white-space: nowrap;\n}\n.hb-flow-chip-accent { background: var(--hb-accent-soft); color: var(--hb-accent-ink); font-weight: 700; }\n/* A box the pass hasn't reached yet: faint, its chips only outlined. */\n.hb-flow-idle { color: var(--hb-muted); }\n.hb-flow-idle .hb-flow-holds { opacity: 0.6; }\n.hb-flow-idle .hb-flow-chip { border-style: dashed; border-color: var(--hb-line-strong); background: none; color: var(--hb-muted); font-family: inherit; }\n.hb-flow-packet {\n  position: absolute;\n  top: 0;\n  left: 0;\n  z-index: 3;\n  width: 12px;\n  height: 12px;\n  margin: -6px 0 0 -6px;\n  border-radius: 999px;\n  background: var(--hb-accent);\n  box-shadow: 0 0 0 4px var(--hb-accent-soft), 0 0 14px var(--hb-accent);\n  opacity: 0;\n  pointer-events: none;\n}\n.hb-flow-right .hb-flow-group > .hb-flow-chain { flex: 1; }\n.hb-flow-panel {\n  padding: 10px 12px;\n  border-radius: 10px;\n  background: linear-gradient(var(--hb-accent-soft), var(--hb-accent-soft)), var(--hb-surface);\n  border: 1px solid color-mix(in srgb, var(--hb-accent) 30%, transparent);\n}\n.hb-flow-panel-title { font-size: 13px; font-weight: 700; color: var(--hb-accent-ink); }\n.hb-flow-note { margin: 2px 0 0; font-size: 13.5px; line-height: 1.5; }\n@media (prefers-reduced-motion: reduce) {\n  .hb-flow-node { transition: none; }\n  .hb-flow-holds { animation: none; }\n}\n";
 
 // src/blocks/steps/steps.css
 var steps_default = `/* Steps: one step at a time; its place top right, the step's title and text, an optional photo, then a row of dots
@@ -6690,7 +6839,7 @@ var steps_default = `/* Steps: one step at a time; its place top right, the step
   height: 8px;
   border-radius: 999px;
   background: var(--hb-line-strong);
-  transition: background 0.15s;
+  transition: background 0.15s, width 0.15s;
 }
 .hb-steps-dot-on::after { width: 18px; background: var(--hb-accent); }
 .hb-steps-dot:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; border-radius: 999px; }
@@ -6742,7 +6891,7 @@ var layers_default = `/* Layers: the stack on a canvas beside the slab's note, B
 `;
 
 // src/blocks/progress/progress.css
-var progress_default = "/* Progress: a track toward a goal, with checkpoints, threshold bands and segments */\n.hb-progress {\n  /* The card, its icon, the fill and the ring take the tone of the value: good by default, warn or bad from a band. */\n  --hb-tone: var(--hb-good);\n  background: color-mix(in srgb, var(--hb-tone) 9%, transparent);\n  border-color: color-mix(in srgb, var(--hb-tone) 22%, transparent);\n}\n.hb-progress-tone-warn { --hb-tone: var(--hb-warn); }\n.hb-progress-tone-bad { --hb-tone: var(--hb-bad); }\n.hb-progress-head { display: flex; align-items: center; gap: 8px; }\n.hb-progress-head .hb-card-title { min-width: 0; }\n.hb-progress-icon { display: flex; color: var(--hb-tone); }\n.hb-progress-amount {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  margin-left: auto;\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--hb-ink-2);\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-progress-amount svg { color: var(--hb-tone); }\n.hb-progress-pct {\n  margin-left: 10px;\n  font-size: 13px;\n  font-weight: 650;\n  color: var(--hb-tone);\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-progress-track {\n  display: block;\n  height: 8px;\n  margin: 16px 0 4px;\n  overflow: hidden;\n  border-radius: 999px;\n  background: color-mix(in srgb, var(--hb-tone) 20%, transparent);\n}\n.hb-progress-fill { transform-origin: left; animation: hb-grow 0.9s var(--hb-ease-out); }\n.hb-progress-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-tone); }\n.hb-progress-nodes { position: relative; height: 24px; margin-top: 16px; }\n.hb-progress-track-steps { position: absolute; top: 8px; margin: 0; }\n.hb-progress-fill-steps { position: absolute; top: 8px; height: 8px; }\n\n/* A marked track: the ticks and their labels are placed over and under the bar, so the wrapper holds the positions. */\n.hb-progress-line { position: relative; margin: 16px 0 4px; }\n.hb-progress-line .hb-progress-track { position: relative; margin: 0; }\n.hb-progress-track-zoned { position: relative; }\n.hb-progress-band { position: absolute; top: 0; bottom: 0; }\n.hb-progress-band-good { background: color-mix(in srgb, var(--hb-good) 34%, transparent); }\n.hb-progress-band-warn { background: color-mix(in srgb, var(--hb-warn) 34%, transparent); }\n.hb-progress-band-bad { background: color-mix(in srgb, var(--hb-bad) 34%, transparent); }\n.hb-progress-mark {\n  position: absolute;\n  top: -3px;\n  width: 2px;\n  height: 14px;\n  margin-left: -1px;\n  border-radius: 1px;\n  background: var(--hb-ink-2);\n  opacity: 0.55;\n  pointer-events: none;\n}\n.hb-progress-mark-labels { position: relative; height: 15px; margin-top: 6px; }\n.hb-progress-mark-labels span {\n  position: absolute;\n  transform: translateX(-50%);\n  max-width: 45%;\n  overflow: hidden;\n  font-size: 11px;\n  line-height: 15px;\n  font-weight: 500;\n  color: var(--hb-muted);\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n\n/* Parts of one track: each starts where the last ended, cut apart by a hairline of the panel behind them. The track\n   under them stays neutral, so the part that is still empty never reads as another green stage. */\n.hb-progress-track-parts { background: var(--hb-well); }\n.hb-progress-seg { position: absolute; top: 0; bottom: 0; }\n.hb-progress-seg + .hb-progress-seg { border-left: 2px solid var(--hb-surface); }\n.hb-progress-seg-good { background: var(--hb-good); }\n.hb-progress-seg-warn { background: var(--hb-warn); }\n.hb-progress-seg-bad { background: var(--hb-bad); }\n.hb-progress-dot-good { background: var(--hb-good); }\n.hb-progress-dot-warn { background: var(--hb-warn); }\n.hb-progress-dot-bad { background: var(--hb-bad); }\n\n/* Ring and gauge: one stroked path, the toned part drawn over the track, the figure in the middle. */\n.hb-progress-ring { position: relative; width: 132px; margin: 10px auto 2px; }\n.hb-progress-ring svg { display: block; width: 100%; height: auto; overflow: visible; }\n.hb-progress-ring-track {\n  fill: none;\n  stroke: color-mix(in srgb, var(--hb-tone) 20%, transparent);\n  stroke-width: 10;\n  stroke-linecap: round;\n}\n.hb-progress-ring-fill { fill: none; stroke: var(--hb-tone); stroke-width: 10; }\n.hb-progress-ring-good { stroke: var(--hb-good); }\n.hb-progress-ring-warn { stroke: var(--hb-warn); }\n.hb-progress-ring-bad { stroke: var(--hb-bad); }\n/* A tick across the ring, in the same ink as the bar's mark, so it reads on a pale and on a dark card. */\n.hb-progress-ring-mark { stroke: var(--hb-ink-2); stroke-width: 3; stroke-linecap: round; opacity: 0.55; }\n.hb-progress-ring-pct {\n  position: absolute;\n  inset: 0;\n  display: grid;\n  place-items: center;\n  font-size: 20px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n  color: var(--hb-ink);\n  font-variant-numeric: tabular-nums;\n}\n.hb-progress-ring-dash .hb-progress-ring-pct { padding-bottom: 12px; }\n\n@media (prefers-reduced-motion: reduce) {\n  .hb-progress-fill { animation: none; }\n}\n";
+var progress_default = "/* Progress: a track toward a goal, with checkpoints, threshold bands and segments */\n.hb-progress {\n  /* The card, its icon, the fill and the ring take the tone of the value: good by default, warn or bad from a band. */\n  --hb-tone: var(--hb-good);\n  background: color-mix(in srgb, var(--hb-tone) 9%, transparent);\n  border-color: color-mix(in srgb, var(--hb-tone) 22%, transparent);\n}\n.hb-progress-tone-warn { --hb-tone: var(--hb-warn); }\n.hb-progress-tone-bad { --hb-tone: var(--hb-bad); }\n.hb-progress-head { display: flex; align-items: center; gap: 8px; }\n.hb-progress-head .hb-card-title { min-width: 0; }\n.hb-progress-icon { display: flex; color: var(--hb-tone); }\n.hb-progress-amount {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  margin-left: auto;\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--hb-ink-2);\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-progress-amount svg { color: var(--hb-tone); }\n.hb-progress-pct {\n  margin-left: 10px;\n  font-size: 13px;\n  font-weight: 650;\n  color: var(--hb-tone);\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-progress-track {\n  display: block;\n  height: 8px;\n  margin: 16px 0 4px;\n  overflow: hidden;\n  border-radius: 999px;\n  background: color-mix(in srgb, var(--hb-tone) 20%, transparent);\n}\n.hb-progress-fill { transform-origin: left; animation: hb-grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1); }\n.hb-progress-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-tone); }\n.hb-progress-nodes { position: relative; height: 24px; margin-top: 16px; }\n.hb-progress-track-steps { position: absolute; top: 8px; margin: 0; }\n.hb-progress-fill-steps { position: absolute; top: 8px; height: 8px; }\n\n/* A marked track: the ticks and their labels are placed over and under the bar, so the wrapper holds the positions. */\n.hb-progress-line { position: relative; margin: 16px 0 4px; }\n.hb-progress-line .hb-progress-track { position: relative; margin: 0; }\n.hb-progress-track-zoned { position: relative; }\n.hb-progress-band { position: absolute; top: 0; bottom: 0; }\n.hb-progress-band-good { background: color-mix(in srgb, var(--hb-good) 34%, transparent); }\n.hb-progress-band-warn { background: color-mix(in srgb, var(--hb-warn) 34%, transparent); }\n.hb-progress-band-bad { background: color-mix(in srgb, var(--hb-bad) 34%, transparent); }\n.hb-progress-mark {\n  position: absolute;\n  top: -3px;\n  width: 2px;\n  height: 14px;\n  margin-left: -1px;\n  border-radius: 1px;\n  background: var(--hb-ink-2);\n  opacity: 0.55;\n  pointer-events: none;\n}\n.hb-progress-mark-labels { position: relative; height: 15px; margin-top: 6px; }\n.hb-progress-mark-labels span {\n  position: absolute;\n  transform: translateX(-50%);\n  max-width: 45%;\n  overflow: hidden;\n  font-size: 11px;\n  line-height: 15px;\n  font-weight: 500;\n  color: var(--hb-muted);\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n\n/* Parts of one track: each starts where the last ended, cut apart by a hairline of the panel behind them. The track\n   under them stays neutral, so the part that is still empty never reads as another green stage. */\n.hb-progress-track-parts { background: var(--hb-well); }\n.hb-progress-seg { position: absolute; top: 0; bottom: 0; }\n.hb-progress-seg + .hb-progress-seg { border-left: 2px solid var(--hb-surface); }\n.hb-progress-seg-good { background: var(--hb-good); }\n.hb-progress-seg-warn { background: var(--hb-warn); }\n.hb-progress-seg-bad { background: var(--hb-bad); }\n.hb-progress-dot-good { background: var(--hb-good); }\n.hb-progress-dot-warn { background: var(--hb-warn); }\n.hb-progress-dot-bad { background: var(--hb-bad); }\n\n/* Ring and gauge: one stroked path, the toned part drawn over the track, the figure in the middle. */\n.hb-progress-ring { position: relative; width: 132px; margin: 10px auto 2px; }\n.hb-progress-ring svg { display: block; width: 100%; height: auto; overflow: visible; }\n.hb-progress-ring-track {\n  fill: none;\n  stroke: color-mix(in srgb, var(--hb-tone) 20%, transparent);\n  stroke-width: 10;\n  stroke-linecap: round;\n}\n.hb-progress-ring-fill { fill: none; stroke: var(--hb-tone); stroke-width: 10; }\n.hb-progress-ring-good { stroke: var(--hb-good); }\n.hb-progress-ring-warn { stroke: var(--hb-warn); }\n.hb-progress-ring-bad { stroke: var(--hb-bad); }\n/* A tick across the ring, in the same ink as the bar's mark, so it reads on a pale and on a dark card. */\n.hb-progress-ring-mark { stroke: var(--hb-ink-2); stroke-width: 3; stroke-linecap: round; opacity: 0.55; }\n.hb-progress-ring-pct {\n  position: absolute;\n  inset: 0;\n  display: grid;\n  place-items: center;\n  font-size: 20px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n  color: var(--hb-ink);\n  font-variant-numeric: tabular-nums;\n}\n.hb-progress-ring-dash .hb-progress-ring-pct { padding-bottom: 12px; }\n\n@media (prefers-reduced-motion: reduce) {\n  .hb-progress-fill { animation: none; }\n}\n";
 
 // src/blocks/streak/streak.css
 var streak_default = "/* Streak */\n.hb-streak { padding: 0; overflow: hidden; }\n.hb-streak-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px 12px; }\n.hb-streak-label {\n  font-size: 12px;\n  font-weight: 600;\n  letter-spacing: 0.06em;\n  text-transform: uppercase;\n  color: var(--hb-accent-ink);\n}\n.hb-streak-count {\n  font-size: 32px;\n  line-height: 38px;\n  font-weight: 800;\n  letter-spacing: -0.03em;\n  font-variant-numeric: tabular-nums;\n}\n.hb-streak-count span { text-transform: capitalize; }\n.hb-streak-medal {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 56px;\n  height: 56px;\n  margin-left: auto;\n  border-radius: 999px;\n  color: #fff;\n  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--hb-chart-2) 45%, #fff), var(--hb-chart-2) 55%,\n    color-mix(in srgb, var(--hb-chart-2) 75%, #000));\n  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--hb-chart-2) 70%, transparent);\n}\n.hb-streak-week { display: grid; padding: 12px 8px; border-top: 1px solid var(--hb-line); }\n.hb-streak-day { display: flex; flex-direction: column; align-items: center; gap: 6px; }\n.hb-streak-day-label { font-size: 12.5px; color: var(--hb-muted); }\n.hb-streak-done {\n  display: grid;\n  place-items: center;\n  width: 32px;\n  height: 32px;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n}\n.hb-streak-date {\n  display: grid;\n  place-items: center;\n  width: 32px;\n  height: 32px;\n  font-size: 16px;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n}\n.hb-streak-dot { width: 4px; height: 4px; border-radius: 999px; }\n.hb-streak-today .hb-streak-day-label, .hb-streak-today .hb-streak-date { font-weight: 700; color: var(--hb-ink); }\n.hb-streak-today .hb-streak-dot { background: var(--hb-ink-2); }\n";
@@ -6751,10 +6900,10 @@ var streak_default = "/* Streak */\n.hb-streak { padding: 0; overflow: hidden; }
 var actions_default = "/* A row of pill buttons (the pills themselves are in styles/shared.css). */\n.hb-actions { display: flex; flex-wrap: wrap; gap: 8px; }\n";
 
 // src/blocks/tiles/tiles.css
-var tiles_default = "/* Tiles: cover cards. Every card keeps the cover shape \u2014 its height comes from its aspect-ratio, never from the\n   text, so rows stay even however long a reason is. The reason reads in up to three lines (the reader cuts it to\n   about 120 characters between words), in full white with a shadow, and the photo stays bright: only the caption\n   block darkens behind the text, there is no overlay over the whole card. */\n.hb-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }\n.hb-tile {\n  position: relative;\n  display: block;\n  aspect-ratio: 1 / 1.05;\n  margin: 0;\n  padding: 0;\n  overflow: hidden;\n  border: 0;\n  border-radius: 20px;\n  color: #fff;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n  transition: transform 0.15s var(--hb-ease-out);\n}\n.hb-tile:hover { transform: translateY(-1px); }\n.hb-tile:active { transform: scale(0.98); }\n.hb-tile:disabled { cursor: default; transform: none; }\n.hb-tile-static { cursor: default; }\n.hb-tile-static:hover,\n.hb-tile-static:active { transform: none; }\n.hb-tile:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }\n.hb-tile-icon {\n  position: absolute;\n  top: 12px;\n  left: 12px;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border: 1px solid rgba(255, 255, 255, 0.35);\n  border-radius: 12px;\n  background: rgba(255, 255, 255, 0.22);\n  backdrop-filter: blur(8px);\n}\n/* The scrim is localized: it is the caption block's own background, so it fades in over the text and nowhere\n   else \u2014 the photo above the caption keeps its full brightness. It is already dark by the title (the top third of\n   the fade does most of the work), so a title over snow or sky reads as well as the lines under it. */\n.hb-tile-text {\n  position: absolute;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  display: flex;\n  flex-direction: column;\n  gap: 3px;\n  padding: 30px 12px 12px 14px;\n  background: linear-gradient(180deg, rgba(12, 8, 24, 0) 0%, rgba(12, 8, 24, 0.46) 34%, rgba(12, 8, 24, 0.72) 100%);\n}\n.hb-tile-title { font-size: 15.5px; line-height: 20px; font-weight: 700; letter-spacing: -0.01em; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3); }\n.hb-tile-subtitle {\n  display: -webkit-box;\n  -webkit-line-clamp: 3;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  font-size: 12.5px;\n  line-height: 16px;\n  color: #fff;\n  text-shadow: 0 1px 2px rgba(12, 8, 24, 0.55);\n}\n@media (prefers-reduced-motion: reduce) {\n  .hb-tile { transition: none; }\n}\n";
+var tiles_default = "/* Tiles: cover cards. Every card keeps the cover shape \u2014 its height comes from its aspect-ratio, never from the\n   text, so rows stay even however long a reason is. The reason reads in up to three lines (the reader cuts it to\n   about 120 characters between words), in full white with a shadow, and the photo stays bright: only the caption\n   block darkens behind the text, there is no overlay over the whole card. */\n.hb-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }\n.hb-tile {\n  position: relative;\n  display: block;\n  aspect-ratio: 1 / 1.05;\n  margin: 0;\n  padding: 0;\n  overflow: hidden;\n  border: 0;\n  border-radius: 20px;\n  color: #fff;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);\n}\n.hb-tile:hover { transform: translateY(-1px); }\n.hb-tile:active { transform: scale(0.98); }\n.hb-tile:disabled { cursor: default; transform: none; }\n.hb-tile-static { cursor: default; }\n.hb-tile-static:hover,\n.hb-tile-static:active { transform: none; }\n.hb-tile:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }\n.hb-tile-icon {\n  position: absolute;\n  top: 12px;\n  left: 12px;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border: 1px solid rgba(255, 255, 255, 0.35);\n  border-radius: 12px;\n  background: rgba(255, 255, 255, 0.22);\n  backdrop-filter: blur(8px);\n}\n/* The scrim is localized: it is the caption block's own background, so it fades in over the text and nowhere\n   else \u2014 the photo above the caption keeps its full brightness. It is already dark by the title (the top third of\n   the fade does most of the work), so a title over snow or sky reads as well as the lines under it. */\n.hb-tile-text {\n  position: absolute;\n  left: 0;\n  right: 0;\n  bottom: 0;\n  display: flex;\n  flex-direction: column;\n  gap: 3px;\n  padding: 30px 12px 12px 14px;\n  background: linear-gradient(180deg, rgba(12, 8, 24, 0) 0%, rgba(12, 8, 24, 0.46) 34%, rgba(12, 8, 24, 0.72) 100%);\n}\n.hb-tile-title { font-size: 15.5px; line-height: 20px; font-weight: 700; letter-spacing: -0.01em; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3); }\n.hb-tile-subtitle {\n  display: -webkit-box;\n  -webkit-line-clamp: 3;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  font-size: 12.5px;\n  line-height: 16px;\n  color: #fff;\n  text-shadow: 0 1px 2px rgba(12, 8, 24, 0.55);\n}\n@media (prefers-reduced-motion: reduce) {\n  .hb-tile { transition: none; }\n}\n";
 
 // src/blocks/checklist/checklist.css
-var checklist_default = '/* Checklist */\n.hb-checklist { display: flex; flex-direction: column; }\n.hb-checklist-head { display: flex; align-items: baseline; gap: 8px; }\n.hb-checklist-head .hb-card-title { flex: 1; min-width: 0; }\n.hb-checklist-count {\n  margin-left: auto;\n  font-size: 12.5px;\n  font-weight: 600;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-checklist-count-done { color: var(--hb-good); }\n.hb-checklist-track { display: block; height: 6px; margin: 8px 0 4px; overflow: hidden; border-radius: 999px; background: var(--hb-well); }\n.hb-checklist-fill { display: block; width: 100%; height: 100%; border-radius: 999px; background: var(--hb-good); transform-origin: left; transition: transform 0.3s var(--hb-ease-out); }\n.hb-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }\n.hb-checklist-compact { display: flex; gap: 4px; margin: 8px 0 4px; }\n.hb-check-seg {\n  flex: 1 1 0; min-width: 8px; height: 18px; padding: 0; border: 1px solid var(--hb-line-strong);\n  border-radius: 5px; background: var(--hb-well); cursor: pointer; transition: background 0.15s, border-color 0.15s;\n}\n.hb-check-seg.hb-check-active { border-color: var(--hb-accent); background: var(--hb-accent-soft); }\n.hb-check-seg.hb-check-blocked { border-color: var(--hb-warn); background: color-mix(in srgb, var(--hb-warn) 22%, transparent); }\n.hb-check-seg.hb-check-skipped { border-style: dashed; border-color: var(--hb-muted); }\n.hb-check-seg.hb-check-on { border-color: var(--hb-good); background: var(--hb-good); }\n.hb-check-seg.hb-check-pointer { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-check-seg:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-checklist-group-label { padding: 10px 0 2px; font-size: 12px; font-weight: 700; color: var(--hb-muted); }\n.hb-check {\n  display: flex;\n  align-items: flex-start;\n  gap: 12px;\n  width: 100%;\n  margin: 0;\n  padding: 7px 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n}\n.hb-check:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; border-radius: 8px; }\n.hb-check-mark {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 22px;\n  height: 22px;\n  margin-top: 0.5px;\n  border: 2px solid var(--hb-line-strong);\n  border-radius: 999px;\n  color: var(--hb-muted);\n  font-size: 11px;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n  transition: background 0.15s, border-color 0.15s;\n}\n/* The state is a shape on the same 22px mark, so no icon has to carry it: a dot for the item being worked on, a bar\n   for one that cannot move, a dashed ring for one dropped on purpose. */\n.hb-check-mark::after { content: ""; display: block; border-radius: 999px; }\n.hb-check-active .hb-check-mark { border-color: var(--hb-accent); }\n.hb-check-active .hb-check-mark::after { width: 8px; height: 8px; background: var(--hb-accent); }\n.hb-check-blocked .hb-check-mark { border-color: var(--hb-warn); }\n.hb-check-blocked .hb-check-mark::after { width: 10px; height: 2px; background: var(--hb-warn); }\n.hb-check-skipped .hb-check-mark { border-style: dashed; border-color: var(--hb-muted); }\n.hb-check-pointer .hb-check-mark { border-color: var(--hb-accent); }\n.hb-check-on .hb-check-mark { border-color: var(--hb-good); background: var(--hb-good); color: var(--hb-surface); }\n.hb-check-text { flex: 1; min-width: 0; font-size: 14.5px; line-height: 21px; transition: color 0.15s; }\n.hb-check-line { display: flex; align-items: baseline; gap: 8px; }\n.hb-check-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }\n.hb-check-state { flex: none; font-size: 11.5px; font-weight: 600; color: var(--hb-muted); white-space: nowrap; }\n.hb-check-blocked .hb-check-state { color: var(--hb-warn); }\n.hb-check-owner { flex: none; font-size: 11.5px; color: var(--hb-muted); white-space: nowrap; }\n.hb-check-note { display: block; margin-top: 2px; font-size: 12px; line-height: 18px; color: var(--hb-muted); overflow-wrap: anywhere; }\n.hb-check-source { display: block; margin-top: 1px; font-size: 11px; color: var(--hb-muted); }\n.hb-check-on .hb-check-text { color: var(--hb-muted); }\n.hb-check-on .hb-check-label { text-decoration: line-through; text-decoration-thickness: 1px; }\n@media (prefers-reduced-motion: reduce) {\n  .hb-checklist-fill, .hb-check-mark, .hb-check-text, .hb-check-seg { transition: none; }\n}\n';
+var checklist_default = '/* Checklist */\n.hb-checklist { display: flex; flex-direction: column; }\n.hb-checklist-head { display: flex; align-items: baseline; gap: 8px; }\n.hb-checklist-head .hb-card-title { flex: 1; min-width: 0; }\n.hb-checklist-count {\n  margin-left: auto;\n  font-size: 12.5px;\n  font-weight: 600;\n  color: var(--hb-muted);\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-checklist-count-done { color: var(--hb-good); }\n.hb-checklist-track { display: block; height: 6px; margin: 8px 0 4px; overflow: hidden; border-radius: 999px; background: var(--hb-well); }\n.hb-checklist-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-good); transition: width 0.3s ease; }\n.hb-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }\n.hb-checklist-compact { display: flex; gap: 4px; margin: 8px 0 4px; }\n.hb-check-seg {\n  flex: 1 1 0; min-width: 8px; height: 18px; padding: 0; border: 1px solid var(--hb-line-strong);\n  border-radius: 5px; background: var(--hb-well); cursor: pointer; transition: background 0.15s, border-color 0.15s;\n}\n.hb-check-seg.hb-check-active { border-color: var(--hb-accent); background: var(--hb-accent-soft); }\n.hb-check-seg.hb-check-blocked { border-color: var(--hb-warn); background: color-mix(in srgb, var(--hb-warn) 22%, transparent); }\n.hb-check-seg.hb-check-skipped { border-style: dashed; border-color: var(--hb-muted); }\n.hb-check-seg.hb-check-on { border-color: var(--hb-good); background: var(--hb-good); }\n.hb-check-seg.hb-check-pointer { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-check-seg:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-checklist-group-label { padding: 10px 0 2px; font-size: 12px; font-weight: 700; color: var(--hb-muted); }\n.hb-check {\n  display: flex;\n  align-items: flex-start;\n  gap: 12px;\n  width: 100%;\n  margin: 0;\n  padding: 7px 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: pointer;\n}\n.hb-check:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; border-radius: 8px; }\n.hb-check-mark {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 22px;\n  height: 22px;\n  margin-top: 0.5px;\n  border: 2px solid var(--hb-line-strong);\n  border-radius: 999px;\n  color: var(--hb-muted);\n  font-size: 11px;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n  transition: background 0.15s, border-color 0.15s;\n}\n/* The state is a shape on the same 22px mark, so no icon has to carry it: a dot for the item being worked on, a bar\n   for one that cannot move, a dashed ring for one dropped on purpose. */\n.hb-check-mark::after { content: ""; display: block; border-radius: 999px; }\n.hb-check-active .hb-check-mark { border-color: var(--hb-accent); }\n.hb-check-active .hb-check-mark::after { width: 8px; height: 8px; background: var(--hb-accent); }\n.hb-check-blocked .hb-check-mark { border-color: var(--hb-warn); }\n.hb-check-blocked .hb-check-mark::after { width: 10px; height: 2px; background: var(--hb-warn); }\n.hb-check-skipped .hb-check-mark { border-style: dashed; border-color: var(--hb-muted); }\n.hb-check-pointer .hb-check-mark { border-color: var(--hb-accent); }\n.hb-check-on .hb-check-mark { border-color: var(--hb-good); background: var(--hb-good); color: var(--hb-surface); }\n.hb-check-text { flex: 1; min-width: 0; font-size: 14.5px; line-height: 21px; transition: color 0.15s; }\n.hb-check-line { display: flex; align-items: baseline; gap: 8px; }\n.hb-check-label { flex: 1; min-width: 0; overflow-wrap: anywhere; }\n.hb-check-state { flex: none; font-size: 11.5px; font-weight: 600; color: var(--hb-muted); white-space: nowrap; }\n.hb-check-blocked .hb-check-state { color: var(--hb-warn); }\n.hb-check-owner { flex: none; font-size: 11.5px; color: var(--hb-muted); white-space: nowrap; }\n.hb-check-note { display: block; margin-top: 2px; font-size: 12px; line-height: 18px; color: var(--hb-muted); overflow-wrap: anywhere; }\n.hb-check-source { display: block; margin-top: 1px; font-size: 11px; color: var(--hb-muted); }\n.hb-check-on .hb-check-text { color: var(--hb-muted); }\n.hb-check-on .hb-check-label { text-decoration: line-through; text-decoration-thickness: 1px; }\n@media (prefers-reduced-motion: reduce) {\n  .hb-checklist-fill, .hb-check-mark, .hb-check-text, .hb-check-seg { transition: none; }\n}\n';
 
 // src/blocks/calculator/calculator.css
 var calculator_default = "/* Calculator; a form's slider uses the same .hb-calc-head, .hb-calc-label, .hb-calc-value and .hb-range. */\n.hb-calc { display: flex; flex-direction: column; }\n/* At the top of a reply sliders stop at 720px rather than stretching across a wide board; in a layout block they fill\n   their place. */\n.hb-blocks > .hb-calc { max-width: 720px; }\n.hb-calc-slider { display: block; padding: 8px 0; }\n.hb-calc-head { display: flex; align-items: baseline; gap: 8px; }\n.hb-calc-label { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--hb-ink-2); }\n.hb-calc-value { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }\n.hb-range { display: block; width: 100%; margin: 8px 0 0; accent-color: var(--hb-accent); cursor: pointer; }\n.hb-calc-ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--hb-muted); font-variant-numeric: tabular-nums; }\n.hb-calc-results { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 8px; }\n/* A calculator's live chart sits in the calculator's card, so it drops its own card look. */\n.hb-calc > .hb-chart { margin-top: 10px; padding: 10px 0 0; border: 0; border-top: 1px solid var(--hb-line); border-radius: 0; background: none; }\n.hb-calc-result { min-width: 0; padding: 10px 14px; border-radius: 14px; background: var(--hb-accent-soft); }\n.hb-calc-result-label { font-size: 12px; font-weight: 600; color: var(--hb-accent-ink); }\n.hb-calc-result-value {\n  margin-top: 2px;\n  font-size: 20px;\n  line-height: 1.2;\n  font-weight: 800;\n  letter-spacing: -0.02em;\n  font-variant-numeric: tabular-nums;\n  overflow-wrap: anywhere;\n}\n";
@@ -6853,7 +7002,7 @@ var upnext_default = `/* upnext: Odie's Up Next cards. Each card takes its kind'
 .hb-up-card { all: unset; box-sizing: border-box; cursor: pointer; scroll-snap-align: start; flex: 0 0 calc((100% - (var(--up-n) - 1) * 12px) / var(--up-n));
   min-width: 0; min-height: 168px; padding: 12px; border-radius: 24px; display: flex; flex-direction: column;
   background: linear-gradient(150deg, var(--ka), var(--kb)); color: #1d1a2c; border: 1px solid rgba(255, 255, 255, .6);
-  box-shadow: 0 14px 30px -22px rgba(40, 30, 70, .45); transition: transform .15s var(--hb-ease-out); }
+  box-shadow: 0 14px 30px -22px rgba(40, 30, 70, .45); transition: transform .15s ease; }
 .dark .hb-up-card { background: linear-gradient(150deg, var(--kda), var(--kdb)); color: #f4f2fb; border-color: rgba(255, 255, 255, .08); }
 .hb-up-card:hover { transform: translateY(-2px); }
 .hb-up-card:active { transform: scale(.98); }
@@ -6936,7 +7085,7 @@ var STYLE_PARTS = [
 var styles_default = STYLE_PARTS.join("\n");
 
 // src/plugin.tsx
-import { jsx as jsx50 } from "react/jsx-runtime";
+import { jsx as jsx51 } from "react/jsx-runtime";
 var ID4 = "hermes-genui";
 var STYLE_ID = "hermes-genui-css";
 function injectStyles() {
@@ -6962,7 +7111,7 @@ var plugin_default = {
       area: TRANSCRIPT_DIRECTIVE_AREA,
       data: {
         name: "blocks",
-        render: ({ attrs, streaming }) => /* @__PURE__ */ jsx50(BlockActions.Provider, { value: { send, fill, rest, blockId: attrs?.id }, children: /* @__PURE__ */ jsx50(BlockTag, { id: attrs?.id, streaming: Boolean(streaming), load }) })
+        render: ({ attrs, streaming }) => /* @__PURE__ */ jsx51(BlockActions.Provider, { value: { send, fill, rest, blockId: attrs?.id }, children: /* @__PURE__ */ jsx51(BlockTag, { id: attrs?.id, streaming: Boolean(streaming), load }) })
       }
     });
     const open = (text) => void openAndFill(text, host ?? {});
