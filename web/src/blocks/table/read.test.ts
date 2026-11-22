@@ -63,6 +63,19 @@ describe("structured table reader", () => {
     expect(block.filterable).toBe(true);
     expect(block.aggregates).toEqual([{ column: "spend", op: "sum", label: "Spend" }]);
   });
+  it("reads cells nested under a row's cells key", () => {
+    const r = readBlocksNoted([{ type: "table", caption: "Spend", columns: [
+      { id: "shop", label: "Shop" },
+      { id: "spend", label: "Spend", kind: "currency", unit: "₹" },
+    ], rows: [
+      { cells: { shop: { text: "A" }, spend: { text: "1,200", value: 1200 } }, sources: [{ label: "POS" }] },
+    ] }]);
+    expect(r.dropped).toEqual([]);
+    const block = r.blocks[0] as any;
+    expect(block.rows[0].cells.shop.text).toBe("A");
+    expect(block.rows[0].cells.spend.value).toBe(1200);
+    expect(block.rows[0].sources).toEqual([{ label: "POS" }]);
+  });
   it("drops non-http source links and keeps an unknown kind as text", () => {
     const r = readBlocksNoted([{ type: "table", columns: [{ id: "a", label: "A", kind: "magic" }],
       rows: [{ a: "x", sources: [{ label: "Bad", url: "javascript:alert(1)" }] }] }]);

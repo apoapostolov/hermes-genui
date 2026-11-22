@@ -122,9 +122,10 @@ function readStructuredTable(raw: any, here: Trail, caption: string | undefined)
     let hasCell = false;
     const sources = readSources(isObject(row) ? row.sources ?? row.sourceIds : undefined);
     columns.forEach((column, ci) => {
-      const value = isObject(row)
-        ? row[column.id] ?? row[column.label]
-        : Array.isArray(row) ? row[ci] : undefined;
+      const values = isObject(row) && isObject(row.cells) ? row.cells : row;
+      const value = isObject(values)
+        ? values[column.id] ?? values[column.label]
+        : Array.isArray(values) ? values[ci] : undefined;
       if (column.kind === "sources") {
         sources.push(...readSources(Array.isArray(value) ? value : value ? [value] : []));
         return;
