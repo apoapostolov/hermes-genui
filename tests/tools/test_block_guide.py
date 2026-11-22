@@ -91,3 +91,13 @@ def test_block_guide_is_registered_only_with_the_menu_guide():
     assert [t.name for t in tools.tools_for("menu")][:2] == ["show_blocks", "block_guide"]
     assert "block_guide" not in [t.name for t in tools.tools_for("full")]
     assert tools.tools_for("full") == tools.TOOLS
+
+
+def test_the_menu_leads_with_three_judgment_lines():
+    """The recipe the model opens can't carry cross-cutting judgment (it may not open it at all), so the strongest
+    tips live at the top of the menu, which show_blocks carries into every draw (PR #53 feedback)."""
+    menu = catalog_text.menu()
+    head, _, blocks = menu.partition("\nData\n")
+    assert blocks, "the menu still lists the blocks after the head"
+    for tip in ("Lead with the answer", "A plain board is a fine answer", "Never decorate just to decorate"):
+        assert tip in head, f"the menu head is missing: {tip}"
