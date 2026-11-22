@@ -74,7 +74,7 @@ button.hb-flow-node:focus-visible { outline: 2px solid var(--hb-accent); outline
 .hb-flow-holds { display: flex; flex-wrap: wrap; gap: 3px; animation: hb-flow-fade 0.2s var(--hb-ease-out); }
 .hb-flow-right .hb-flow-holds { justify-content: center; }
 .hb-flow-down .hb-flow-holds { flex-basis: 100%; }
-@keyframes hb-flow-fade { from { opacity: 0; } }
+@keyframes hb-flow-fade { from { opacity: 0; transform: translateY(-2px); } }
 .hb-flow-chip {
   padding: 1px 6px;
   border: 1px solid transparent;

@@ -12,7 +12,7 @@
 }
 .hb-checklist-count-done { color: var(--hb-good); }
 .hb-checklist-track { display: block; height: 6px; margin: 8px 0 4px; overflow: hidden; border-radius: 999px; background: var(--hb-well); }
-.hb-checklist-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-good); transition: width 0.3s ease; }
+.hb-checklist-fill { display: block; width: 100%; height: 100%; border-radius: 999px; background: var(--hb-good); transform-origin: left; transition: transform 0.3s var(--hb-ease-out); }
 .hb-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .hb-checklist-compact { display: flex; gap: 4px; margin: 8px 0 4px; }
 .hb-check-seg {

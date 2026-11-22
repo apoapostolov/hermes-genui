@@ -34,7 +34,7 @@
   height: 8px;
   border-radius: 999px;
   background: var(--hb-line-strong);
-  transition: background 0.15s, width 0.15s;
+  transition: background 0.15s;
 }
 .hb-steps-dot-on::after { width: 18px; background: var(--hb-accent); }
 .hb-steps-dot:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; border-radius: 999px; }
