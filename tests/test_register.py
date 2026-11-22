@@ -34,9 +34,10 @@ class FakeContext:
 def test_registers_the_tools_and_every_shipped_recipe_as_a_skill():
     ctx = FakeContext()
     plugin.register(ctx)
-    assert ctx.tools == ["show_blocks", "block_guide", "market_history", "find_photos", "save_recipe",
-                         "dashboard", "board_page", "assistant_setup", "assistant_items", "assistant_open",
-                         "assistant_inbox", "assistant_calendar", "assistant_report", "assistant_ideas"]
+    assert ctx.tools == ["show_blocks", "block_guide", "check_render_capability", "market_history", "find_photos",
+                         "save_recipe", "dashboard", "board_page", "assistant_setup", "assistant_items",
+                         "assistant_open", "assistant_inbox", "assistant_calendar", "assistant_report",
+                         "assistant_ideas"]
     # Each recipes/<name>/SKILL.md becomes the read-only skill "<plugin>:<name>", with its own description.
     shipped = sorted((ROOT / "recipes").glob("*/SKILL.md"))
     assert [(name, Path(path)) for name, path, _ in ctx.skills] == [(p.parent.name, p) for p in shipped]
@@ -105,9 +106,9 @@ def test_register_registers_exactly_the_tool_registry_in_order(monkeypatch):
     plugin.register(ctx)
 
     assert [t.name for t in tools.TOOLS] == [
-        "show_blocks", "market_history", "find_photos", "standin_photos", "save_recipe", "dashboard", "board_page",
-        "assistant_setup", "assistant_items", "assistant_open", "assistant_inbox", "assistant_calendar",
-        "assistant_report", "assistant_ideas"]
+        "show_blocks", "check_render_capability", "market_history", "find_photos", "standin_photos", "save_recipe",
+        "dashboard", "board_page", "assistant_setup", "assistant_items", "assistant_open", "assistant_inbox",
+        "assistant_calendar", "assistant_report", "assistant_ideas"]
     # The menu guide adds block_guide after show_blocks; the stand-in stays out until its setting is on.
     expected = [t for t in tools.tools_for("menu") if t.name != "standin_photos"]
     registered = [call[1] for call in ctx.calls if call[0] == "tool"]
@@ -145,3 +146,20 @@ def test_register_reads_local_only_through_the_hosts_plugin_settings(monkeypatch
 
     plugin.register(SettingsContext())
     assert assistant.local_only() is True and "local_only" in asked
+
+
+def test_off_hides_the_widget_line_and_leaves_the_tool_constant_alone(monkeypatch):
+    monkeypatch.setattr(save_recipe, "_skill_writer", None)
+    monkeypatch.setattr(photos, "_web_search", None)
+    advanced = importlib.import_module("hermes_genui.core.advanced")
+    monkeypatch.setattr(advanced, "_CONFIG",
+                        [lambda key, default=None: "off" if key == "advanced_rendering" else default])
+    ctx = RecordingContext()
+    plugin.register(ctx)
+
+    registered = {call[1]["name"]: call[1]["schema"] for call in ctx.calls if call[0] == "tool"}
+    show_blocks = importlib.import_module("hermes_genui.tools.show_blocks")
+    assert "- widget:" not in registered["show_blocks"]["description"]
+    assert "check_render_capability" in registered
+    assert registered["show_blocks"] is not show_blocks.SHOW_BLOCKS_SCHEMA
+    assert "- widget:" in show_blocks.SHOW_BLOCKS_SCHEMA["description"]  # the module's constant is untouched

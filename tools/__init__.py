@@ -10,6 +10,7 @@ from . import (
     assistant_ideas,
     block_guide,
     board_page,
+    check_render_capability,
     dashboard,
     market_history,
     photos,
@@ -35,6 +36,8 @@ class ToolSpec:
 # Registered in this order.
 TOOLS: tuple[ToolSpec, ...] = (
     ToolSpec("show_blocks", show_blocks.SHOW_BLOCKS_SCHEMA, show_blocks.show_blocks),
+    ToolSpec("check_render_capability", check_render_capability.CHECK_RENDER_CAPABILITY_SCHEMA,
+             check_render_capability.check_render_capability),
     ToolSpec("market_history", market_history.MARKET_HISTORY_SCHEMA, market_history.market_history),
     ToolSpec("find_photos", photos.FIND_PHOTOS_SCHEMA, photos.find_photos),
     ToolSpec("standin_photos", standin_photos.STANDIN_PHOTOS_SCHEMA, standin_photos.standin_photos),

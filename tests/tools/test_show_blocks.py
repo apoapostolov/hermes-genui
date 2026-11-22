@@ -8,8 +8,12 @@ from conftest import load_plugin_package
 load_plugin_package()
 tools = importlib.import_module("hermes_genui.tools.show_blocks")
 plugin_store = importlib.import_module("hermes_genui.core.store")
+advanced = importlib.import_module("hermes_genui.core.advanced")
 
 TIMELINE = {"type": "timeline", "groups": [{"label": "Day 1", "items": [{"time": "09:00", "title": "Belém Tower"}]}]}
+WIDGET = {"type": "widget", "version": 1, "id": "demo", "title": "Demo", "data": {}, "state": {}, "computed": {},
+          "view": [{"kind": "text", "id": "heading", "text": "Demo"}]}
+BROKEN_WIDGET = {**WIDGET, "view": [{"kind": "text", "text": "Demo"}]}
 
 
 @pytest.fixture
@@ -266,3 +270,61 @@ def test_a_made_up_icon_comes_back_with_the_icons_to_choose_from(store_dir):
     result = tools.show_blocks({"blocks": [flow]})
     assert "isn't one of the catalog icons" in result
     assert result.endswith(importlib.import_module("hermes_genui.core.catalog_text").icons_line())
+
+
+# --- the Advanced rendering gate (#64) ----------------------------------------------------------------------------
+
+
+@pytest.fixture
+def gate(tmp_path, monkeypatch):
+    """The setting and a gate root of its own, so a board write and a gate write are easy to tell apart."""
+    settings = {"advanced_rendering": "auto"}
+    monkeypatch.setattr(advanced, "_CONFIG", [lambda key, default=None: settings.get(key, default)])
+    monkeypatch.setattr(advanced, "default_root", lambda: tmp_path / "gate")
+    return settings
+
+
+def test_off_refuses_a_widget_and_stores_nothing(store_dir, gate):
+    gate["advanced_rendering"] = "off"
+    result = tools.show_blocks({"blocks": [WIDGET]})
+    assert result == advanced.OFF_REFUSAL
+    assert list(store_dir.glob("*.json")) == []
+    assert not (store_dir / "gate" / advanced.GATE_FILE).exists()
+
+
+def test_auto_refuses_a_malformed_widget_and_records_a_failed_gate(store_dir, gate):
+    result = tools.show_blocks({"blocks": [BROKEN_WIDGET]}, model="small-local")
+    assert result.startswith("Not drawn.")
+    assert '0.view.0: element needs an id like "heading"' in result
+    assert result.endswith(advanced.GATE_FALLBACK_PLAIN)
+    assert advanced.status("small-local") == "failed"
+    assert list(store_dir.glob("*.json")) == []
+
+
+def test_auto_draws_a_valid_widget_and_records_a_pass(store_dir, gate):
+    result = tools.show_blocks({"blocks": [WIDGET]}, model="small-local")
+    assert result.strip().splitlines()[-1].startswith('::blocks{id="')
+    assert advanced.status("small-local") == "passed"
+    assert plugin_store.load(stored_id(result), root=store_dir) == [WIDGET]
+
+
+def test_auto_refuses_the_next_widget_from_a_model_that_failed(store_dir, gate):
+    advanced.record("small-local", False)
+    result = tools.show_blocks({"blocks": [WIDGET]}, model="small-local")
+    assert result == advanced.GATE_FALLBACK_PLAIN
+    assert list(store_dir.glob("*.json")) == []
+
+
+def test_a_non_widget_board_is_unchanged_and_leaves_the_gate_alone(store_dir, gate):
+    result = tools.show_blocks({"blocks": [TIMELINE]}, model="small-local")
+    assert plugin_store.load(stored_id(result), root=store_dir) == [TIMELINE]
+    assert advanced.status("small-local") is None
+    assert not (store_dir / "gate" / advanced.GATE_FILE).exists()
+
+
+def test_on_keeps_the_ordinary_validation_and_records_nothing(store_dir, gate):
+    gate["advanced_rendering"] = "on"
+    result = tools.show_blocks({"blocks": [BROKEN_WIDGET]}, model="small-local")
+    assert result.startswith("Not drawn. Fix these and call show_blocks again:\n- 0.view.0: ")
+    assert advanced.status("small-local") is None
+    assert not (store_dir / "gate" / advanced.GATE_FILE).exists()

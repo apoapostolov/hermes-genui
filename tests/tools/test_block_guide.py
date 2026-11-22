@@ -172,3 +172,20 @@ def test_the_schema_offers_topics_without_making_blocks_required():
 def test_the_guide_tool_still_takes_the_models_argument_object():
     assert block_guide.block_guide({"topics": "widget.layout"}).startswith("widget.layout:\n")
     assert block_guide.block_guide({}) == 'Give the block names from the show_blocks menu, e.g. ["chart", "table"].'
+
+
+def test_off_returns_the_switch_off_text_instead_of_widget_references(monkeypatch):
+    advanced = importlib.import_module("hermes_genui.core.advanced")
+    monkeypatch.setattr(advanced, "_CONFIG",
+                        [lambda key, default=None: "off" if key == "advanced_rendering" else default])
+    out = block_guide.block_guide({"topics": ["widget.state"]})
+    assert out == advanced.SWITCH_OFF_PLAIN
+    assert "computed maps a name" not in out
+    assert block_guide.block_guide({"blocks": ["widget"]}) == advanced.SWITCH_OFF_PLAIN
+
+
+def test_off_leaves_other_blocks_alone(monkeypatch):
+    advanced = importlib.import_module("hermes_genui.core.advanced")
+    monkeypatch.setattr(advanced, "_CONFIG",
+                        [lambda key, default=None: "off" if key == "advanced_rendering" else default])
+    assert block_guide.block_guide({"blocks": ["chart"]}) == catalog_text.spec("chart") + NEXT

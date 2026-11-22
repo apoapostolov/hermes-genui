@@ -7,6 +7,7 @@ block_guide({"topics": ["widget.state"]}) → that reference, then the same clos
 
 from pathlib import Path
 
+from ..core import advanced
 from ..core.catalog_text import icons_line, spec
 
 # The references a block can point the model at, written out under core/widget_guide. Each file is kept short enough to
@@ -72,6 +73,10 @@ def block_guide(params: dict, **kwargs) -> str:
     wanted = [_topic_name(name) for name in _as_names(params.get("topics"))]
     if not names and not wanted:
         return ASK
+    # Off: there is no widget to describe, and the next step (show_blocks) would refuse one; say what the setting is
+    # instead of handing the model a reference it cannot use.
+    if advanced.mode() == "off" and (wanted or "widget" in names):
+        return advanced.SWITCH_OFF_PLAIN
     parts: list[str] = []
     for name in names:
         found = spec(name)

@@ -5,7 +5,7 @@ import math
 
 from ..blocks.chart import CHART_KINDS
 from ..blocks.common import board_address, link_problems, link_words
-from ..core import drawn, store, surface
+from ..core import advanced, drawn, store, surface
 from ..core.catalog_text import describe, icons_line, spec
 from ..core.catalog_text import menu as core_menu
 from ..core.guide import GUIDE
@@ -265,6 +265,31 @@ LIVING_MENU = ("\n\nBoards live: the id in a board's tag is its address, so a bo
                "in place (target) or connected to (links) instead of redrawn. See target and links.")
 
 
+def _gate(blocks: list, **kwargs) -> str | None:
+    """The refusal a widget in this board gets under the Advanced rendering setting, or None to go on drawing.
+
+    Off refuses every widget without storing anything; On leaves the old checks alone; Auto runs the widget checker
+    once per model and remembers the answer (`advanced.status`). A board without a widget never touches the gate.
+    """
+    found = advanced.widgets(blocks)
+    if not found:
+        return None
+    state = advanced.mode()
+    if state == "off":
+        return advanced.OFF_REFUSAL
+    if state != "auto":
+        return None
+    model = advanced.model_id(**kwargs)
+    known = advanced.status(model)
+    if known == "failed":
+        return advanced.GATE_FALLBACK_PLAIN
+    if known == "passed":
+        return None
+    problems = advanced.check_widgets(found)
+    advanced.record(model, not problems)
+    return advanced.gate_failure(problems) if problems else None
+
+
 def show_blocks(params: dict, **kwargs) -> str:
     if not surface.can_draw(session_id=str(kwargs.get("session_id") or "")):
         return surface.CANT_DRAW
@@ -273,6 +298,9 @@ def show_blocks(params: dict, **kwargs) -> str:
         return _not_drawn(["blocks: not valid JSON"])
     if not blocks:
         return _not_drawn(["blocks: give at least one block"])
+    refusal = _gate(blocks, **kwargs)
+    if refusal:  # a widget refused by the setting or the model's gate is never stored
+        return refusal
     problems = check_blocks(blocks)
     if problems:  # the check's problems come with how to write the blocks they're about
         return _not_drawn(problems, blocks)

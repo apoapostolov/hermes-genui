@@ -379,6 +379,9 @@ flowchart LR
 - **Boards** are saved as JSON, with checklist ticks next to them.
 - **Photo URLs** (`photo-urls.txt`): the URLs `find_photos` returned, plus https image URLs returned by Hermes's own
   `image_generate`. Local file paths are never recorded. These are the only images a block may draw.
+- **The advanced rendering gate** (`render-capability.json`): for each model that drew a widget or ran
+  `check_render_capability`, whether its last check passed and how many checks it has had. No board, message or
+  prompt is kept there.
 - **The stand-in photo tool** is off by default. Switching `photo_test_tool` on registers `standin_photos`, which
   returns a fixed https link, a local path or a dead link so the photo path can be tried without an image key.
 - **The assistant's memory** (`assistant/`): its settings, the items it tracks (title, dates, amount, the sender,

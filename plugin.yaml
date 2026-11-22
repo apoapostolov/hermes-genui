@@ -17,9 +17,19 @@ license: MIT
 homepage: https://github.com/sagarmainkar/hermes-genui
 tags: [desktop, generative-ui, charts, dashboards, visualization, photos, markets, recipes, assistant]
 requires_hermes: ">=0.22.5"
-provides_tools: [show_blocks, block_guide, market_history, find_photos, standin_photos, save_recipe, dashboard, board_page, assistant_setup, assistant_items, assistant_open, assistant_inbox, assistant_calendar, assistant_report, assistant_ideas]
+provides_tools: [show_blocks, block_guide, check_render_capability, market_history, find_photos, standin_photos, save_recipe, dashboard, board_page, assistant_setup, assistant_items, assistant_open, assistant_inbox, assistant_calendar, assistant_report, assistant_ideas]
 provides_hooks: [pre_llm_call, post_tool_call, transform_llm_output]
 config_schema:
+  advanced_rendering:
+    type: str
+    default: auto
+    label: Advanced rendering
+    description: >-
+      Off hides the widget block from the model. Auto runs a local shape gate before a widget draws and falls back to
+      text with a switch-off proposal when the gate fails. On always tries to render. Small local models may omit
+      required fields such as "type", so Auto is the default.
+    # Quoted: YAML 1.1 reads bare off/on as booleans, which the settings form cannot save as strings.
+    choices: ["off", "auto", "on"]
   local_only:
     type: bool
     default: false

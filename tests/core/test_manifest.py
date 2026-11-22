@@ -87,6 +87,12 @@ def test_the_photo_keys_are_optional_secrets_in_the_settings_form():
             assert key in ("local_only", "photo_test_tool"), key  # behaviour settings, not keys
             assert "    default: false\n" in body
             continue
+        if "    type: str\n" in body:
+            assert key == "advanced_rendering", key  # a behaviour setting with three choices, not a key
+            assert "    default: auto\n" in body
+            assert '    choices: ["off", "auto", "on"]\n' in body  # quoted: bare off/on are YAML booleans
+            assert "env:" not in body
+            continue
         assert "    type: secret\n" in body, key
         assert re.search(r"^    label: .+optional", body, re.M | re.I), f"{key}: the label says it is optional"
         assert re.search(r"^    description: .{20,}", body, re.M), key
