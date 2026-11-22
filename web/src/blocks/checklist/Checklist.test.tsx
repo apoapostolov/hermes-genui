@@ -22,6 +22,16 @@ describe("checklist", () => {
     expect(screen.getByText("0 of 3 done")).toBeTruthy();
   });
 
+  it("draws the progress bar as a scaled fill, never a resized one", () => {
+    draw([packing]);
+    const fill = () => document.querySelector(".hb-checklist-fill") as HTMLElement;
+    const scale = () => Number(/scaleX\(([\d.]+)\)/.exec(fill().style.transform)?.[1]);
+    expect(scale()).toBe(0);
+    fireEvent.click(box("Jacket"));
+    expect(scale()).toBeCloseTo(1 / 3);
+    expect(fill().style.width).toBe("");
+  });
+
   it("shows the ticks saved for its board, and saves each change", async () => {
     const rest = vi.fn(async (_path: string, init?: { method?: string; body?: unknown }) => (init ? { ok: true } : { state: { "0": [1] } }));
     draw([packing], { rest, blockId: "7f3a09bc" });

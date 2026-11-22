@@ -72,7 +72,7 @@ export function Checklist({ title, numbered, items, ticked, path, density }: Che
         </span>
       </div>
       <div className="hb-checklist-track" aria-hidden="true">
-        <span className="hb-checklist-fill" style={{ width: `${(done / items.length) * 100}%` }} />
+        <span className="hb-checklist-fill" style={{ transform: `scaleX(${done / (items.length || 1)})` }} />
       </div>
       {density === "compact" && (
         <div className="hb-checklist-compact" role="group" aria-label={title ?? "Phases"}>
