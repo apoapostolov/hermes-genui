@@ -93,6 +93,23 @@ def test_block_guide_is_registered_only_with_the_menu_guide():
     assert tools.tools_for("full") == tools.TOOLS
 
 
+def test_the_widget_spec_carries_the_shapes_a_widget_needs():
+    """A widget nests its own elements, so its spec is the only place the model reads the caps, the three actions and
+    the binding shape (#62)."""
+    spec = catalog_text.spec("widget")
+    for words in ('"type": "widget"', "version 1", "state ≤16", "computed ≤32", "view ≤200", "{op: set",
+                  "{op: reset}", "{op: fill", "bindings"):
+        assert words in spec, words
+    assert '"bindings":{"/value":{"get":"computed.planned"}}' in spec  # the example binds an embedded block
+
+
+def test_the_widget_menu_line_says_what_the_reader_can_try():
+    line = next(one for one in catalog_text.menu().splitlines() if one.startswith("- widget: "))
+    for words in ("controls change computed numbers", "reset restores the start", "fill button",
+                  "Not for a static picture"):
+        assert words in line, words
+
+
 def test_the_menu_leads_with_three_judgment_lines():
     """The recipe the model opens can't carry cross-cutting judgment (it may not open it at all), so the strongest
     tips live at the top of the menu, which show_blocks carries into every draw (PR #53 feedback)."""

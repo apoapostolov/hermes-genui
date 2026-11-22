@@ -713,6 +713,84 @@
    }
   },
   {
+   "kind": "widget",
+   "for": "A small interactive card: its controls change the numbers, bar or block beside them.",
+   "use_when": "A what-if the reader should try rather than read: a trip budget, a capacity plan, an issue triage queue. Sliders, numbers, selects and checkboxes update computed values, a bar, chart or table follows them, reset restores the start, and a fill button hands the state back as a prompt.",
+   "fields": "version 1. id, title. data: JSON. state ≤16: {type: number|string|boolean, label, initial, min/max/step; string: maxLength, options}. computed ≤32: name → {get: \"state.x\"|\"data.x\"|\"computed.x\"|\"item.x\"} or {op: add|sub|mul|div|eq|lt|lte|and|or|not|if, args}. view ≤200, ids unique, tone optional: stack|row|grid|surface {children, gap, columns}; text {text|expr}; number {expr, label, unit}; badge {text|expr}; divider; image {url, alt}; link {text, url}; input {control: number|slider|select|checkbox|text, state, label}; button {label, action {op: set, target: \"state.x\", value} | {op: reset} | {op: fill, message, fields: [state names]}}; when {test, then, else}; repeat {items: data array, key, template, empty}; block {spec, bindings}: stat, bar, chart, table, source.",
+   "example": {
+    "type": "widget",
+    "version": 1,
+    "id": "trip",
+    "title": "Trip",
+    "data": {
+     "nightly": 200
+    },
+    "state": {
+     "nights": {
+      "type": "number",
+      "label": "Nights",
+      "initial": 4,
+      "min": 1,
+      "max": 10,
+      "step": 1
+     }
+    },
+    "computed": {
+     "planned": {
+      "op": "mul",
+      "args": [
+       {
+        "get": "state.nights"
+       },
+       {
+        "get": "data.nightly"
+       }
+      ]
+     }
+    },
+    "view": [
+     {
+      "kind": "input",
+      "id": "n",
+      "control": "slider",
+      "state": "nights",
+      "label": "Nights"
+     },
+     {
+      "kind": "number",
+      "id": "p",
+      "label": "Planned",
+      "expr": {
+       "get": "computed.planned"
+      }
+     },
+     {
+      "kind": "block",
+      "id": "b",
+      "spec": {
+       "type": "bar",
+       "label": "Planned",
+       "value": 0,
+       "max": 1200
+      },
+      "bindings": {
+       "/value": {
+        "get": "computed.planned"
+       }
+      }
+     },
+     {
+      "kind": "button",
+      "id": "r",
+      "label": "Reset",
+      "action": {
+       "op": "reset"
+      }
+     }
+    ]
+   }
+  },
+  {
    "kind": "row",
    "group": "container",
    "for": "2-3 small blocks side by side; they stack when narrow.",

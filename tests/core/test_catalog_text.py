@@ -45,6 +45,17 @@ def test_chart_and_number_guidance():
     assert "trend: 2-60 numbers" in by_kind["kpis"]["fields"]
 
 
+def test_widget_carries_its_own_example_line_in_the_full_guide():
+    """A widget holds a whole view, so the full guide prints it as a heading and a parseable example, not an atom line;
+    the example is what a model copies, so it must stay valid JSON with a view (#62)."""
+    lines = describe().splitlines()
+    entry = next(one for one in CATALOG["blocks"] if one["kind"] == "widget")
+    head = next(index for index, line in enumerate(lines) if line.startswith("widget: "))
+    assert entry["for"] in lines[head] and entry["use_when"] in lines[head]
+    example = json.loads(lines[head + 1].removeprefix("Example: "))
+    assert example["type"] == "widget" and example["version"] == 1 and example["view"]
+
+
 def test_flow_says_it_is_a_chain_and_where_branching_graphs_go():
     by_kind = {entry["kind"]: entry for entry in CATALOG["blocks"]}
     flow, steps = by_kind["flow"], by_kind["steps"]

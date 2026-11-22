@@ -419,3 +419,41 @@ id = "table-no-answer"
 text = "Survey responses by team: Eng 12, Sales blank because nobody answered, Support 7, Design 4. Keep the blank visibly blank."
 expect = "table"
 from = "#22"
+
+# Interactive cards (#62): one block, driven by the reader's controls.
+
+[[prompt]]
+id = "widget-trip-budget"
+text = "Plan a trip: 200 a night, 1,200 in total, 4 nights to start. Let me drag the nights between 1 and 10 and watch the planned spend, what is left, a bar, and a warning once I go over, plus a button that puts the numbers back."
+expect = "widget"
+from = "#62"
+
+[[prompt]]
+id = "widget-trip-budget-revise"
+text = "Weekend in Plovdiv: 180 a night, 900 total, 3 nights so far. I want to change the nights and see the money left go down live, and a button that hands my choice back to you as a message asking for a revised plan."
+expect = "widget"
+from = "#62"
+
+[[prompt]]
+id = "widget-capacity-guests"
+text = "A studio sleeps 2 and a suite 6. Let me set the guests from 1 to 8 and pick the room, and show the daily capacity as a number, on the 3-day chart and in the table beside it."
+expect = "widget"
+from = "#62"
+
+[[prompt]]
+id = "widget-capacity-days"
+text = "Workshop seating: 12 chairs a day in the main hall and 8 in the side room, over 3 days. Let me choose the room and set the days between 1 and 5, and show the total seats move in a bar and a table."
+expect = "widget"
+from = "#62"
+
+[[prompt]]
+id = "widget-triage-select"
+text = "Two open issues: GEN-1 Empty state copy, detail 'Add a short empty view'; GEN-2 Slider keyboard focus, detail 'Keep the focus ring on the range input'. Let me click one and read its detail inline, show that the archived list is empty, and prepare a follow-up message from the issue I picked."
+expect = "widget"
+from = "#62"
+
+[[prompt]]
+id = "widget-triage-empty"
+text = "Keep me a triage list I can click through: BUG-11 Row overlaps on mobile, detail 'The second row sits under the first below 360px'; BUG-12 Chart legend clipped, detail 'The legend loses its last item'. When a list has nothing in it say so plainly, and let me send the issue I picked back to you as a message."
+expect = "widget"
+from = "#62"

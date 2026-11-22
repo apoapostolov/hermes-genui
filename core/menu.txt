@@ -29,6 +29,7 @@ Interactive
 - calculator: sliders with live results and chart (EMI, SIP, what-ifs). Never do this maths in text.
 - simulate: a formula played over time as dots or a line.
 - form: ask 2+ key unknowns in ONE prefilled form before a big answer.
+- widget: a card the reader tries: its controls change computed numbers, a bar, chart or table follows, reset restores the start, a fill button hands the state back. Not for a static picture.
 - actions: up to 3 buttons that send a message; tiles: 2-8 cover cards to explore.
 Text
 - callout: a warning, tip or verdict; one per reply.
