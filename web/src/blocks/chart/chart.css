@@ -53,8 +53,8 @@
 .hb-chart-dot { stroke: var(--hb-surface); stroke-width: 2; }
 /* Where a column has no value: a tick on the baseline in the no-data colour, so an unknown is not read as a zero. */
 .hb-chart-gap { fill: var(--hb-well); }
-.hb-chart-svg g, .hb-hbar-bar { transition: opacity 0.15s; }
-.hb-chart-draw { animation: hb-chart-draw 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.hb-chart-svg g, .hb-hbar-bar { transition: opacity 0.15s var(--hb-ease-out); }
+.hb-chart-draw { animation: hb-chart-draw 1.2s var(--hb-ease-out) forwards; }
 @keyframes hb-chart-draw { to { stroke-dashoffset: 0; } }
 
 /* The hover card (ChartTip) */
@@ -79,7 +79,7 @@
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity 120ms var(--hb-ease-out);
 }
 .hb-tip-on { opacity: 1; }
 .hb-tip-title, .hb-tip-note { font-size: 11.5px; color: var(--hb-muted); }
@@ -116,9 +116,9 @@
 }
 .hb-pie-svg { display: block; flex: none; margin: 0 auto; user-select: none; }
 .hb-pie-total { font-size: 17px; font-weight: 650; fill: var(--hb-ink); font-variant-numeric: tabular-nums; }
-.hb-slice { cursor: pointer; stroke: var(--hb-surface); stroke-width: 2; stroke-linejoin: round; transition: opacity 0.15s; }
+.hb-slice { cursor: pointer; stroke: var(--hb-surface); stroke-width: 2; stroke-linejoin: round; transition: opacity 0.15s var(--hb-ease-out); }
 .hb-pie-legend { flex: 1; min-width: 0; max-width: 420px; border-collapse: collapse; font-size: 13px; line-height: 18px; font-variant-numeric: tabular-nums; }
-.hb-pie-legend tr { cursor: pointer; transition: opacity 0.15s; }
+.hb-pie-legend tr { cursor: pointer; transition: opacity 0.15s var(--hb-ease-out); }
 .hb-pie-legend td { padding: 3px 12px 3px 0; vertical-align: top; }
 .hb-pie-legend td:last-child { padding-right: 0; }
 .hb-pie-swatch { width: 10px; }

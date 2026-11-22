@@ -18,6 +18,9 @@
   --hb-surface: var(--background, Canvas);
   /* A raised card (a chart's hover card). */
   --hb-shadow: 0 8px 28px rgba(15, 20, 30, 0.14), 0 1px 3px rgba(15, 20, 30, 0.1);
+  /* One curve for everything that moves: transform, opacity and entrance animations. A colour or border
+     fade keeps the browser's own ease, which is right for a tint. */
+  --hb-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   /* Series colours in the order they are handed out, checked so neighbours stay apart for colour-blind readers:
      blue, amber, green, violet, cyan, red, lime, pink. */
   --hb-chart-1: #4f7cff;

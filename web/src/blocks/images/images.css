@@ -56,7 +56,7 @@
   line-height: 1;
   text-decoration: none;
   opacity: 0;
-  transition: opacity 0.12s;
+  transition: opacity 0.12s var(--hb-ease-out);
 }
 .hb-photo:hover .hb-photo-download,
 .hb-photo:focus-within .hb-photo-download { opacity: 1; }
@@ -111,7 +111,7 @@
   padding: 32px;
   background: rgba(0, 0, 0, 0.82);
   cursor: zoom-out;
-  animation: hb-appear 0.18s ease-out;
+  animation: hb-appear 0.18s var(--hb-ease-out);
 }
 .hb-photo-overlay img { margin: 0; max-width: 100%; max-height: calc(100% - 48px); border-radius: 10px; object-fit: contain; }
 .hb-photo-overlay-text { max-width: 720px; text-align: center; font-size: 14px; color: rgba(255, 255, 255, 0.92); }
