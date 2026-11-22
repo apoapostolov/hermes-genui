@@ -118,3 +118,57 @@ def test_the_menu_leads_with_three_judgment_lines():
     assert blocks, "the menu still lists the blocks after the head"
     for tip in ("Lead with the answer", "A plain board is a fine answer", "Never decorate just to decorate"):
         assert tip in head, f"the menu head is missing: {tip}"
+
+
+# --- topics (#62): the widget's longer references -------------------------------------------------------------
+
+TOPIC_NAMES = ("widget.layout", "widget.state", "widget.collections", "widget.blocks")
+
+
+def test_each_widget_topic_is_a_bounded_reference_file():
+    for name in TOPIC_NAMES:
+        path = ROOT / "core" / "widget_guide" / f"{name}.md"
+        assert path.is_file(), f"missing {path}"
+        body = path.read_text(encoding="utf-8")
+        assert 200 <= len(body) <= block_guide.MAX_TOPIC_CHARS, name
+
+
+def test_topics_alone_return_the_reference_then_the_next_step():
+    body = (ROOT / "core" / "widget_guide" / "widget.state.md").read_text(encoding="utf-8").strip()
+    assert block_guide.block_guide({"topics": ["widget.state"]}) == f"widget.state:\n{body}" + NEXT
+
+
+def test_a_topic_can_be_asked_for_by_its_bare_name():
+    assert block_guide.block_guide({"topics": ["state"]}) == block_guide.block_guide({"topics": ["widget.state"]})
+
+
+def test_topics_follow_the_block_specs_and_come_each_once():
+    out = block_guide.block_guide({"blocks": ["table"], "topics": ["widget.blocks", "widget.blocks"]})
+    assert out.startswith(catalog_text.spec("table") + "\n\nwidget.blocks:\n")
+    assert out.count("widget.blocks:\n") == 1
+    assert out.endswith(NEXT)
+
+
+def test_all_four_topics_can_be_read_at_once():
+    out = block_guide.block_guide({"topics": list(TOPIC_NAMES)})
+    for name in TOPIC_NAMES:
+        assert out.count(f"{name}:\n") == 1
+    assert out.endswith(NEXT)
+
+
+def test_an_unknown_topic_is_named_with_the_ones_there_are():
+    out = block_guide.block_guide({"topics": ["widget.colours"]})
+    assert out.startswith('No topic named "widget.colours". Topics are widget.layout, widget.state, '
+                          'widget.collections, widget.blocks.')
+    assert out.endswith(NEXT)
+
+
+def test_the_schema_offers_topics_without_making_blocks_required():
+    parameters = block_guide.BLOCK_GUIDE_SCHEMA["parameters"]
+    assert parameters["properties"]["topics"]["items"]["type"] == "string"
+    assert "blocks" not in parameters.get("required", [])
+
+
+def test_the_guide_tool_still_takes_the_models_argument_object():
+    assert block_guide.block_guide({"topics": "widget.layout"}).startswith("widget.layout:\n")
+    assert block_guide.block_guide({}) == 'Give the block names from the show_blocks menu, e.g. ["chart", "table"].'

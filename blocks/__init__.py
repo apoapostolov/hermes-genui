@@ -54,6 +54,7 @@ from .table import check_table, text_table
 from .tiles import check_tiles, text_tiles
 from .timeline import check_timeline, text_timeline
 from .tracker import check_tracker, text_tracker
+from .widget import check_widget, text_widget
 
 TYPES = {
     "chart": (check_chart, text_chart),
@@ -95,6 +96,7 @@ TYPES = {
     "button": (check_button, text_button),
     "image": (check_image, text_image),
     "bar": (check_bar, text_bar),
+    "widget": (check_widget, text_widget),
 }
 
 # Blocks the Today page draws from the plugin's own data, never offered to the model (they aren't in the catalog): a
