@@ -1,37 +1,55 @@
 ---
 name: compare
-description: "Compare 2-4 options side by side with blocks: a tab per option, a Compare tab with cards, a table and one trend line, a verdict. Use for compare, X vs Y, which is better, pick between phones, plans, places, cars or stocks."
+description: "Compare 2-4 options side by side. Use for compare, X vs Y, which is better, pick between phones, plans, places, cars or stocks; also best way to and how should I questions. Show tradeoffs before the verdict; use tabs for optional details."
 version: 0.1.0
 platforms: [linux, macos, windows]
 ---
 # Compare
 
-Use this when someone asks to compare 2-4 options: products, plans, places, courses or stocks ("X vs Y", "which
-should I pick"). For one stock in depth, use `stock-dashboard`; for 5 or more options, a ranked `list` or a single
-`table` is clearer.
+Use this for explicit comparisons ("X vs Y") and recommendation questions ("what is the best way to...",
+"how should I...", "which approach fits?") when materially different approaches serve the goal. Respect the
+requested workflow: if proposing an alternative, identify how it differs before recommending it.
+For one stock in depth, use `stock-dashboard`; for 5 or more options, a ranked `list` or a single `table` is clearer.
 
 ## Steps
 
 1. **Get the facts.** Use what the user gave, then web search for prices and specs. For stocks, call
    `market_history` with the symbols comma separated (`"TCS, INFY"`, up to 3) and keep the board id it returns.
    Note where each number came from. Never guess a number; write "not found" instead.
-2. **Pick 3-5 metrics** that decide it (price, battery, rating, fees). Use the same metrics for every option.
-3. **Lay it out** with one `show_blocks` call:
-   - a `heading` naming the options;
-   - `tabs` at the top level: one tab per option, then a last tab "Compare" (2-6 tabs in all):
-     - an option's tab: `kpis` with its 2-4 key numbers, then a `text` with its strengths and weaknesses (and
-       `images` only with URLs `find_photos` returned);
-     - the Compare tab: `kpis` with one card per option (its deciding number, with `trend` when you have its
-       history); a `table` with one row per option and a column per metric, `highlight` the winner's row; and, when
-       the options have a history over the same dates (prices, fees, rents), one `line` chart of % change from the
-       same start (every series starts at 0, `unit` "%", `figure` false). Never one small bar chart per metric: the
-       table already compares them. For stocks, put `{"type": "include", "id": "<market_history id>"}` here instead
-       of all this: its board already has a card per stock and the % change line;
-   - a `callout` (tone `info`, title "Verdict") after the tabs: who should pick which, in one or two sentences;
-   - a `source` line naming the sites.
+2. **Pick 2-5 deciding criteria** that suit the question (e.g. storage ownership, sharing and effort for a workflow;
+   price, battery and updates for phones). Use the same criteria for each option. Do not invent numeric KPIs.
+3. **Make the comparison visible immediately.** With one `show_blocks` call, prefer:
+   - a `heading` naming the decision;
+   - a `table` with options as rows and key criteria as columns (or a `columns` block with concise option
+     text cards when qualitative distinctions need more room);
+   - a concise recommendation after the comparison, with the key assumption or caveat;
+   - a `source` line for outside facts.
+   - For stocks, put `{"type": "include", "id": "<market_history id>"}` on the board using the id from step 1.
+     Its board already contains the price cards and % change line; do not duplicate them.
+   - Use `tabs` only for optional deep dives when each option has substantial unique detail. Never put the
+     essential side-by-side comparison behind a Compare tab.
+   - Add `kpis` only for sourced numeric values that matter; add a chart only when real comparable trends
+     materially change the decision. Do not manufacture metrics or a chart to fill a template.
+   - State the verdict once, close to the tradeoffs. Do not repeat it in the opening reply, a highlighted callout,
+     and closing prose. Save prominent callouts for material risks or exceptions.
+   - For short procedural next steps, use concise reply text or a numbered checklist. Avoid decorative list cards
+     whose avatar initials or icons have no meaning; do not create a second large board for a few routine steps.
+   - Avoid repeating the same points in tabs, tables, callouts and reply prose.
 4. **Reply** with one sentence, then the tag on its own line.
 
-## Layout example (two phones the user is choosing between)
+## Recommended default (two approaches to a workflow)
+
+```json
+[
+  {"type": "heading", "text": "Choose how to organize existing photos"},
+  {"type": "table", "columns": ["Approach", "Keeps original folders", "Album sharing"],
+   "rows": [["Upload copies", "Originals remain; Immich stores copies", "Normal Immich albums"],
+            ["External library", "Immich indexes folders in place", "Albums require additional organization"]]},
+  {"type": "text", "text": "**Recommendation:** Upload copies if the priority is ordinary Immich-managed albums; use an external library if keeping files in place is the priority."}
+]
+```
+
+## Optional deeper-dive layout (two phones the user is choosing between)
 
 ```json
 [
@@ -77,7 +95,7 @@ should I pick"). For one stock in depth, use `stock-dashboard`; for 5 or more op
 
 - Blocks only: never write HTML or use `::preview` for a comparison.
 - Numbers and photo URLs only from tools, search or the user. Stock prices only through `market_history`'s board.
-- Tabs: 2-6, top level only, labels up to 30 characters. 4 options plus Compare is 5 tabs; keep each one short.
+- Tabs, when used for optional detail: 2-6, top level only, labels up to 30 characters. Keep each one short.
   `kpis` take up to 4 items; `columns` 2-3 children.
 - Highlight one winner only when the facts make it clear; otherwise leave `highlight` out and say "it depends".
 - No buy or sell advice for stocks.

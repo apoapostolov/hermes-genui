@@ -1,6 +1,6 @@
 ---
 name: explain
-description: "Explain how something works with blocks that show the mechanism: one concrete case followed through a flow whose boxes fill up step by step, a simulation of a quantity over time, or a 3D stack of layers. Use for explain, how does X work, walk me through, what happens when, how a bill becomes law."
+description: "Explain how something works: explain, how does X work, walk me through, what happens when, a simulation of a quantity over time, or a stack of layers. Use static flows for simple processes and steps for meaningful state changes; use compare for best-way recommendations."
 version: 0.2.0
 platforms: [linux, macos, windows]
 ---
@@ -8,29 +8,50 @@ platforms: [linux, macos, windows]
 
 Use this when someone wants to understand how something works: a mechanism, a process, a system ("how does UPI work",
 "what happens when I type a URL", "explain transformers", "how does compound interest work"). For a one-line fact,
-just answer in text; to revise or be quizzed, use the `learn` recipe.
+just answer in text; to revise or be quizzed, use the `learn` recipe. For advice on which approach to take,
+especially when an alternative changes the user's requested workflow, use `compare` rather than forcing a
+mechanism diagram.
+
+## Static vs interactive decision
+
+Choose one primary presentation for the process.
+
+- **Default to a static `flow`** when the user can understand the complete
+  sequence from the node labels and notes. A process having multiple stages
+  is not, by itself, a reason to add `steps`.
+- **Use `steps` only when advancing changes what the diagram teaches**, such
+  as accumulated contents, repeated computation, evolving values, or state
+  that cannot be understood as clearly in the static diagram.
+- Moving the highlight, sending a decorative packet, or revealing another
+  sentence about an already visible node does not count as meaningful change.
+- Do not add `steps` to a simple static flow as a second explanation of the
+  same information. If a static flow is sufficient, stop there.
+- Preserve interactive walkthroughs when the user requests a genuine
+  state-by-state demonstration or the state changes are central to the lesson.
 
 ## Steps
 
 1. **Don't ask first.** Guess the level from how they asked (a student, a professional, just curious) and say it in
    one line of the reply ("Pitched for a curious beginner; no maths needed."). Offer "Simpler" and "More technical"
    buttons so they can move it.
-2. **Pick ONE concrete case and follow it** all the way through: the sentence "The animal didn't cross the street
+2. **Pick one concrete case and follow it** all the way through: the sentence "The animal didn't cross the street
    because it was", "₹1,00,000 at 10% for 30 years", "a ₹500 UPI payment". Every box, step and number is about it.
 3. **Check the facts.** For anything technical, dated or numeric, use web search. Never invent a number, a date or a
    name; leave out what you can't back up.
 4. **Choose the stage by the mechanism's shape**, one stage block per board (a second only for "More technical"):
-   - something moving through stages → a `flow` whose boxes `holds` chips of what is in them now, walked by `steps`;
+   - simple, self-explanatory chain → a static `flow` with concise `note` text; no `steps`;
+   - complex process with meaningful changing state → a `flow` walked by `steps`;
    - a quantity over time → `simulate` (its formulas are worked out live; never do that maths in text);
    - a stack of layers or levels → `layers`.
-5. **Make every step change the stage.** For a flow, 4-8 steps, each with at most 2 sentences of text and its
+5. **If using interactive steps, make each one earn its click.** Use them only if the flow changes meaningfully,
+   not merely to highlight boxes or reveal text. For a stepped flow, 4-8 steps, each with at most 2 sentences and its
    `node`; give it `holds` (what boxes hold from now on), `send: true` (a packet slides along the arrow from the box
-   lit before) and, inside a repeated `group` with a `count`, `tick` (it runs again that many times). A step that only
-   moves the highlight is allowed, but prefer a real change.
+   lit before) and, inside a repeated `group` with a `count`, `tick` (it runs again that many times).
 6. **Numbers.** Shapes, labels and positions are yours to choose; values, weights and counts come from a source or a
    formula. Label anything made up for the picture: a `badge` "numbers illustrative" (tone warn) near the stage.
 7. **Lay it out** with one `show_blocks` call: a `heading` with the question; a `row` with a `badge` naming the level
-   (and the "numbers illustrative" badge when it applies) and a `button` "More technical"; the stage (and its `steps`);
+   (and the "numbers illustrative" badge when it applies) and a `button` "More technical"; the stage (with `steps`
+   only when progression is useful);
    for a beginner a short `list` of 3-5 key terms (title the term, subtitle its meaning; no flash cards unless asked);
    a `source` line when outside facts were used; then `actions`: "Go deeper on <stage>", "Quiz me", "Simpler".
 8. **Formulas** go in the reply text as KaTeX between `$$ … $$` lines, which Desktop draws; never inside a block. One
@@ -40,7 +61,22 @@ just answer in text; to revise or be quizzed, use the `learn` recipe.
 10. **Next round.** "Simpler" or "More technical": redraw at that level. "Go deeper on <stage>": a new stage for that
     part alone. "Quiz me": hand over to the `learn` recipe.
 
-## Layout example (explain how transformers work, for a curious beginner)
+## Static flow example (simple mechanism)
+
+For a process whose entire meaning fits at a glance, render a single `flow` and no `steps`:
+
+```json
+[
+  {"type": "heading", "text": "How a document reaches a shared folder"},
+  {"type": "flow", "id": "save", "nodes": [
+    {"id": "edit", "label": "Edit", "note": "Change the document."},
+    {"id": "save", "label": "Save", "note": "Write the updated file."},
+    {"id": "sync", "label": "Sync", "note": "Make it available on other devices."}
+  ]}
+]
+```
+
+## Interactive layout example (explain how transformers work, for a curious beginner)
 
 The reply text above the tag can carry the core formula:
 $$\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right)V$$

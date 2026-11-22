@@ -55,10 +55,17 @@ TEXT_BLOCK = re.compile(r"```text\n(.*?)\n[ \t]*```", re.DOTALL)  # a fence in a
 ASKS_FIRST = ("trip-planner", "what-if", "learn", "tracker")
 
 
-# explain shows one layout per kind of stage it teaches (a flow, a simulation); today-page draws no blocks (it shows
-# dashboard calls instead); every other recipe shows one.
-LAYOUT_EXAMPLES = {"explain": 2, "today-page": 0, "personal-assistant": 0, "assistant-check": 0,
-                   "assistant-ideas": 0}
+# Explain has static flow, interactive flow, and simulation examples.
+# Compare has a default visible comparison and an optional detailed layout.
+# Assistant and Today recipes listed below do not draw layout examples.
+LAYOUT_EXAMPLES = {
+    "explain": 3,
+    "compare": 2,
+    "today-page": 0,
+    "personal-assistant": 0,
+    "assistant-check": 0,
+    "assistant-ideas": 0,
+}
 
 
 @pytest.mark.parametrize("recipe", RECIPES, ids=lambda p: p.parent.name)
@@ -103,7 +110,9 @@ def test_dashboard_recipe_says_to_ask_with_one_form_first():
 
 def test_compare_shows_cards_and_one_line_not_a_bar_chart_per_metric():
     text = (ROOT / "recipes" / "compare" / "SKILL.md").read_text(encoding="utf-8")
-    tabs = next(block for block in json.loads(JSON_BLOCK.findall(text)[0]) if block["type"] == "tabs")
+    examples = [json.loads(e) for e in JSON_BLOCK.findall(text)]
+    assert any(block["type"] == "table" for block in examples[0]), "compare visibly by default"
+    tabs = next(block for block in examples[1] if block["type"] == "tabs")
     compare = next(tab for tab in tabs["tabs"] if tab["label"] == "Compare")["children"]
     assert [block["type"] for block in compare] == ["kpis", "table", "chart"]
     assert compare[2]["kind"] == "line" and compare[2]["unit"] == "%"
@@ -128,7 +137,10 @@ def test_explain_follows_one_case_through_a_flow_that_changes_at_every_step():
     for trigger in ("explain", "how does X work", "walk me through", "what happens when"):
         assert trigger in head, trigger
     assert not steps.lstrip().startswith("1. **Ask first.**"), "explain guesses the level instead of asking"
-    blocks = _walk(json.loads(JSON_BLOCK.findall(text)[0]))
+    examples = [json.loads(e) for e in JSON_BLOCK.findall(text)]
+    assert any(block["type"] == "flow" for block in examples[0])
+    assert not any(block["type"] == "steps" for block in examples[0]), "simple flow is static"
+    blocks = _walk(examples[1])
     kinds = [block["type"] for block in blocks]
     assert "flip" not in kinds and "list" in kinds, "a short list of terms, no flash cards by default"
     assert kinds.index("flow") < kinds.index("steps") < kinds.index("layers") < kinds.index("actions")
@@ -153,7 +165,7 @@ def test_explain_follows_one_case_through_a_flow_that_changes_at_every_step():
 def test_explain_shows_a_quantity_over_time_as_a_simulation_and_keeps_formulas_in_the_text():
     text = (ROOT / "recipes" / "explain" / "SKILL.md").read_text(encoding="utf-8")
     examples = JSON_BLOCK.findall(text)
-    kinds = [block["type"] for block in _walk(json.loads(examples[1]))]
+    kinds = [block["type"] for block in _walk(json.loads(examples[2]))]
     assert "simulate" in kinds and "flow" not in kinds
     assert "$$" in text and not any("$" in example for example in examples), "formulas go in the reply text"
 
