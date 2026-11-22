@@ -15,7 +15,8 @@ export type Reader = (raw: any, here: Trail, depth: number, readChild: ReadChild
 /** Draws a list of blocks; containers get it to draw their children. */
 export type DrawChildren = (blocks: Block[]) => ReactNode[];
 
-/** One block type: its reader and its drawing. */
+/** One block type: its reader and its drawing. A block whose children are its own authored data (a widget's view)
+ *  draws them from the block and ignores `draw`. */
 export type BlockEntry<B extends Block> = {
   read: Reader;
   Component: (props: { block: B; draw: DrawChildren }) => ReactNode;

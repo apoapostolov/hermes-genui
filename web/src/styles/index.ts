@@ -33,12 +33,13 @@ import prepared from "../blocks/prepared/prepared.css";
 import calendar from "../blocks/calendar/calendar.css";
 import upnext from "../blocks/upnext/upnext.css";
 import weather from "../blocks/weather/weather.css";
+import widget from "../blocks/widget/widget.css";
 import dashboard from "../live/dashboard.css";
 
 export const STYLE_PARTS = [
   tokens, shared, blockTag, atoms, source, callout, kpis, timeline, layout, chart, images, table, list, heatmap, flip,
   flow, steps, layers, progress, streak, actions, tiles, checklist, calculator, simulate, form, briefing, tracker,
-  prepared, calendar, upnext, weather, dashboard,
+  prepared, calendar, upnext, weather, widget, dashboard,
 ];
 
 export default STYLE_PARTS.join("\n");

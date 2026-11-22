@@ -1,0 +1,63 @@
+/* Widget: one authored tree of layout, content, controls, structure and embedded blocks. Everything is drawn with the
+   plugin's own pieces (cards, chips, pills, the chart and table blocks) and the shared tokens; a widget carries no
+   style of its own, so nothing here is written by the model. */
+.hb-widget {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+/* The gap a layout element asked for; xs through lg keep to the spacing the rest of the blocks use. */
+.hb-widget-gap-xs { gap: 4px; }
+.hb-widget-gap-sm { gap: 6px; }
+.hb-widget-gap-md { gap: 10px; }
+.hb-widget-gap-lg { gap: 14px; }
+.hb-widget-stack, .hb-widget-row, .hb-widget-grid, .hb-widget-surface { display: flex; flex-direction: column; min-width: 0; }
+.hb-widget-row { flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
+/* A row shares its width between the parts, as the block rows do; a pill or a chip keeps its own. */
+.hb-widget-row > * { flex: 1 1 140px; min-width: 0; display: flex; flex-direction: column; }
+.hb-widget-row > .hb-widget-button, .hb-widget-row > .hb-widget-badge { flex: 0 0 auto; }
+.hb-widget-grid { display: grid; align-items: start; }
+.hb-widget-grid-1 { grid-template-columns: minmax(0, 1fr); }
+.hb-widget-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.hb-widget-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hb-widget-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 560px) {
+  .hb-widget-grid-3, .hb-widget-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.hb-widget-surface {
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--hb-line);
+  border-radius: 16px;
+  background: var(--hb-card);
+}
+/* Content */
+.hb-widget-text { min-width: 0; }
+.hb-widget-tone-muted { color: var(--hb-muted); }
+.hb-widget-tone-good { color: var(--hb-good); }
+.hb-widget-tone-warn { color: var(--hb-warn); }
+.hb-widget-tone-bad { color: var(--hb-bad); }
+.hb-widget-tone-info { color: var(--hb-accent-ink); }
+.hb-widget-figure { min-width: 0; padding: 2px 0; }
+.hb-widget-figure-label { font-size: 12px; line-height: 16px; color: var(--hb-muted); }
+.hb-widget-figure-value {
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.hb-widget-badge { display: flex; align-items: center; gap: 6px; }
+.hb-widget-chip-bad { background: color-mix(in srgb, var(--hb-bad) 14%, transparent); color: var(--hb-bad); }
+/* Controls: the shared input and range pieces, with the label and the value now on one line above. */
+.hb-widget-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 6px 0; }
+.hb-widget-field-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.hb-widget-label { font-size: 13.5px; line-height: 18px; font-weight: 600; color: var(--hb-ink-2); }
+.hb-widget-value { font-size: 13px; line-height: 18px; color: var(--hb-muted); font-variant-numeric: tabular-nums; }
+.hb-widget-check { flex-direction: row; align-items: center; gap: 8px; }
+.hb-widget-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--hb-accent); }
+.hb-widget-button { display: flex; align-items: center; }
+/* A figure the expression could not produce, or a binding that could not be evaluated: one quiet line. */
+.hb-widget-note { display: block; margin: 0; font-size: 12px; line-height: 16px; color: var(--hb-warn); }
+.hb-widget-repeat { display: flex; flex-direction: column; gap: 6px; min-width: 0; }

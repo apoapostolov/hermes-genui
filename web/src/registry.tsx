@@ -17,6 +17,8 @@ import { UpNext } from "./blocks/upnext/UpNext";
 import { readUpNext, type UpNextBlock } from "./blocks/upnext/read";
 import { Weather } from "./blocks/weather/Weather";
 import { readWeather, type WeatherBlock } from "./blocks/weather/read";
+import { Widget } from "./blocks/widget/Widget";
+import { readWidget, type WidgetBlock } from "./blocks/widget/read";
 import { readCallout, type CalloutBlock } from "./blocks/callout/read";
 import { Chart } from "./blocks/chart/Chart";
 import { readChart, type ChartBlock } from "./blocks/chart/read";
@@ -72,7 +74,7 @@ export type Block =
   | ListBlock | ProgressBlock | StreakBlock | HeatmapBlock | FlipBlock | FlowBlock | StepsBlock | LayersBlock
   | ActionsBlock | TilesBlock | ChecklistBlock | CalendarBlock | UpNextBlock | WeatherBlock | CalculatorBlock | SimulateBlock | FormBlock
   | HeadingBlock | TextBlock | StatBlock | DividerBlock | BadgeBlock | ButtonBlock | LinkBlock | ImageBlock | BarBlock
-  | ContainerBlock | TabsBlock | BriefingBlock | TrackerBlock | PreparedBlock;
+  | ContainerBlock | TabsBlock | BriefingBlock | TrackerBlock | PreparedBlock | WidgetBlock;
 
 /** The Today page's own blocks: drawn from the plugin's data, never offered to the model (not in the catalog). */
 export const PAGE_KINDS = ["briefing", "tracker", "prepared"] as const;
@@ -90,6 +92,7 @@ export const REGISTRY: Registry = {
   calendar: { read: readCalendar, Component: ({ block }) => <Calendar {...block} /> },
   upnext: { read: readUpNext, Component: ({ block }) => <UpNext {...block} /> },
   weather: { read: readWeather, Component: ({ block }) => <Weather {...block} /> },
+  widget: { read: readWidget, Component: ({ block }) => <Widget block={block} /> },
   briefing: { read: readBriefing, Component: ({ block }) => <Briefing {...block} /> },
   tracker: { read: readTracker, Component: ({ block }) => <Tracker {...block} /> },
   prepared: { read: readPrepared, Component: ({ block }) => <Prepared {...block} /> },
