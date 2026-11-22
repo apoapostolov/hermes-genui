@@ -149,8 +149,11 @@ Every pull request runs the same checks on GitHub (`.github/workflows/checks.yml
 
 ## How we work
 
-- **Start with an issue** for anything bigger than a fix: a new recipe idea, a data tool, or a new block type.
-  - A new block type is agreed in a **"New block type"** issue first.
+- **Start in [Discussions → Ideas](https://github.com/sagarmainkar/hermes-genui/discussions/categories/ideas)** for
+  anything bigger than a fix: a new recipe idea, a data tool, a new block type or a change to how boards work.
+  Everyone can pitch in there, and we run a poll when there's a real choice to make. Issues are for bugs and small,
+  clear tasks.
+  - A new block type is agreed in an Ideas discussion first.
   - Each block adds a line to the menu in the `show_blocks` description, which every user pays for on every message.
     The menu is capped at 3,000 characters by a test. A block's fields cost only that block, when it's drawn, and
     each block's spec is capped at 1,500.

@@ -1,0 +1,31 @@
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Thanks for sharing an idea. Most ideas need only a recipe (no code). A new block or field adds text to the
+        model's guide, which every user pays for on every message, so we agree on the design here before the code.
+        Others can add their use cases, and we'll run a poll when there's a real choice to make.
+  - type: textarea
+    id: ask
+    attributes:
+      label: What would a user ask, and what should they see?
+      placeholder: "'How's my SIP doing?' → my funds' value over time, with a what-if slider"
+    validations:
+      required: true
+  - type: textarea
+    id: today
+    attributes:
+      label: What can't be shown today?
+      description: Which existing blocks or recipes come close, and why they aren't enough.
+    validations:
+      required: true
+  - type: textarea
+    id: json
+    attributes:
+      label: The JSON the model would write (if it needs a new block or field)
+      description: Keep it small and forgiving. The model fills it in, so fewer fields beat more options.
+      render: json
+  - type: textarea
+    id: fallback
+    attributes:
+      label: How it reads as text (Telegram, CLI)

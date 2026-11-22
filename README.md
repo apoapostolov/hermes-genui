@@ -467,8 +467,8 @@ New recipes, fixes and new blocks are all welcome. See [CONTRIBUTING.md](CONTRIB
 - how to add a recipe, a data tool or a block type;
 - the checks every pull request must pass.
 
-New block types start as an issue first. Each one costs space in the model's guide on every message, so we agree on
-the design before the code.
+Bigger ideas, new block types included, start in [Discussions → Ideas](https://github.com/sagarmainkar/hermes-genui/discussions/categories/ideas).
+Each block costs space in the model's guide on every message, so we agree on the design there before the code.
 
 ## 💛 Credits
 
