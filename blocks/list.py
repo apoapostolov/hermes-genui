@@ -9,6 +9,9 @@ from .common import (
 # that shows its own value never repeats the bar number.
 VALUE_KEYS = ("value", "price", "rating", "score", "meta", "badge")
 
+# The right-hand slot's fields, in the order the web reader reads them.
+VALUE_FIELDS = ("value", "price", "rating", "score", "meta", "badge")
+
 
 def check_list(block: dict, path: str) -> list[tuple[str, str]]:
     """At least one row with a title; a plain string is a title-only row. A row's run (sent when tapped) can't be a
@@ -31,10 +34,28 @@ def check_list(block: dict, path: str) -> list[tuple[str, str]]:
     return [(path, "list needs at least one item with a title")]
 
 
+def _value_of(row: dict) -> str:
+    """The right-hand slot's text: the first of `value`, `price`, `rating`, `score`, `meta`, `badge` the row carries; a
+    null in that field is a value written down as unknown, so the slot reads "–" (read.ts does the same).
+
+    {"price": None} → "–";  {"value": "", "badge": "Iconic"} → "Iconic";  {} → ""
+    """
+    for field in VALUE_FIELDS:
+        if field not in row:
+            continue
+        if row[field] is None:
+            return "–"
+        value = safe_text(row[field], 40)
+        if value:
+            return value
+    return ""
+
+
 def text_list(block: dict) -> str:
     """Rows numbered (ranked) or bulleted: "1. Third Wave — 80 Feet Road · 4.5★"; a plain string is a title.
 
     A row's own value is the row's text, and the bar only stands in for it when the row has none, as the card does.
+    A value written as null is unknown, so its slot shows "–" rather than nothing.
     """
     items = next((block[k] for k in ("items", "rows") if isinstance(block.get(k), list)), [])
     lines = []
@@ -44,7 +65,7 @@ def text_list(block: dict) -> str:
         if not name:
             continue
         subtitle = safe_text(row.get("subtitle"))
-        value = next(filter(None, (safe_text(row.get(k), 40) for k in VALUE_KEYS)), "")
+        value = _value_of(row)
         bar = row.get("bar") if isinstance(row, dict) else None
         if not value and is_number(bar) and bar >= 0:
             value = fmt_num(bar)

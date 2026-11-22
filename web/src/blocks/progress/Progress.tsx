@@ -5,14 +5,18 @@ import { fmt } from "../chart/chartData";
 
 /**
  * How much of the track is filled, from 0 to 1. With no checkpoints it is value / goal. With checkpoints they sit
- * evenly along the track, and the fill reaches between two of them in proportion to the value. Worked examples:
+ * evenly along the track, and the fill reaches between two of them in proportion to the value. An unknown value (or
+ * no goal to be a share of) fills nothing. Worked examples:
  *   (30, 120, [])                     → 0.25
  *   (150, 120, [])                    → 1 (never past full)
  *   (45, 120, at 30 / 60 / 120)       → 0.25 (halfway from the first checkpoint to the second, of two gaps)
  *   (90, 120, at 30 / 60 / 120)       → 0.75
  *   (20, 120, at 30 / 60 / 120)       → 0 (not yet at the first)
+ *   (null, 120, [])                   → 0 (unknown, so the track stays empty)
+ *   (95, null, [])                    → 0 (no goal to measure against)
  */
-export function trackShare(value: number, goal: number, steps: Step[]): number {
+export function trackShare(value: number | null, goal: number | null, steps: Step[]): number {
+  if (value === null || goal === null) return 0;
   if (!steps.length) return Math.max(0, Math.min(1, value / goal));
   if (value <= steps[0].at) return 0;
   for (let k = 1; k < steps.length; k++) {
@@ -23,20 +27,26 @@ export function trackShare(value: number, goal: number, steps: Step[]): number {
 
 /**
  * "value / goal" the way charts write amounts (fmt), big numbers short: a unit fmt joins to the number (₹, $, %) goes
- * on both, any other unit once at the end.
+ * on both, any other unit once at the end. An unknown value or goal reads "no data" in its place, so the other keeps
+ * showing — and keeps its unit, since it is the only number left.
  *   (0, 1000000, "₹") → "₹0 / ₹10L";  (40, 100, "%") → "40% / 100%";  (95, 120, "XP") → "95 / 120 XP";
- *   (300, 500, "pts") → "300 / 500 pts";  (3, 10) → "3 / 10"
+ *   (300, 500, "pts") → "300 / 500 pts";  (3, 10) → "3 / 10";  (null, 120, "XP") → "no data / 120 XP";
+ *   (95, null, "₹") → "₹95 / no data";  (95, null, "XP") → "95 XP / no data"
  */
-export function amountOf(value: number, goal: number, unit?: string): string {
+export function amountOf(value: number | null, goal: number | null, unit?: string): string {
+  const left = value === null ? "no data" : fmt(value, unit);
+  if (goal === null) return value === null ? "no data / no data" : `${left} / no data`;
   const plain = fmt(goal);
   const joined = fmt(goal, unit);
-  if (!unit || (joined !== plain && joined !== `${plain} ${unit}`)) return `${fmt(value, unit)} / ${joined}`;
-  return `${fmt(value)} / ${plain} ${unit}`;
+  if (!unit || (joined !== plain && joined !== `${plain} ${unit}`)) return `${left} / ${joined}`;
+  return `${value === null ? left : fmt(value)} / ${plain} ${unit}`;
 }
 
 /** The share of the goal reached as a whole percent, held between 0 and 100 (the amount itself keeps the real value).
- *   (14, 21.1) → 66;  (150, 120) → 100;  (-5, 120) → 0 */
-export function percentOf(value: number, goal: number): number {
+ *  An unknown value or goal has no share, so it reads 0.
+ *   (14, 21.1) → 66;  (150, 120) → 100;  (-5, 120) → 0;  (null, 120) → 0;  (95, null) → 0 */
+export function percentOf(value: number | null, goal: number | null): number {
+  if (value === null || goal === null) return 0;
   return Math.round(Math.max(0, Math.min(1, value / goal)) * 100);
 }
 
@@ -46,7 +56,8 @@ export function percentOf(value: number, goal: number): number {
  * goal, as the bar and the Python text both do, so it colours nothing beyond full: marks at 60 good / 100 warn / 150
  * bad on a goal of 100 leave a value of 120 in the warn band. No toned mark → `fallback`.
  */
-export function zoneTone(value: number, thresholds: Threshold[], fallback: Tone = "good", goal = Infinity): Tone {
+export function zoneTone(value: number | null, thresholds: Threshold[], fallback: Tone = "good", goal = Infinity): Tone {
+  if (value === null) return fallback;  // an unknown reading colours no band
   const toned = thresholds
     .filter((t): t is Threshold & { tone: Tone } => t.tone !== undefined)
     .sort((a, b) => a.at - b.at);
@@ -64,13 +75,14 @@ export function zoneTone(value: number, thresholds: Threshold[], fallback: Tone 
 }
 
 /** Where a value sits on the track, from 0 to 1: the mark at 85 of a goal of 100 → 0.85. Held between 0 and 1. */
-const place = (at: number, goal: number): number => Math.max(0, Math.min(1, at / goal));
+const place = (at: number | null, goal: number | null): number =>
+  at === null || goal === null ? 0 : Math.max(0, Math.min(1, at / goal));
 
 /** A share as a CSS percentage, rounded: 0.2 of a goal of 100 is "20%", never "20.000000000000007%". */
 const pctOf = (share: number): string => `${Math.round(share * 10000) / 100}%`;
 
 /** The bands between toned marks, from 0 to the first toned mark, then on to each next one. */
-export function bandsOf(thresholds: Threshold[], goal: number): { from: number; to: number; tone: Tone }[] {
+export function bandsOf(thresholds: Threshold[], goal: number | null): { from: number; to: number; tone: Tone }[] {
   const bands: { from: number; to: number; tone: Tone }[] = [];
   let from = 0;
   for (const t of [...thresholds].sort((a, b) => a.at - b.at)) {
@@ -90,7 +102,7 @@ export function Progress({ title, value, goal, unit, steps, shape = "line", show
   // A ring has no checkpoint seats, so it always fills by value / goal; a bar with checkpoints fills gap by gap.
   const share = ring ? place(value, goal) : trackShare(value, goal, checkpoints);
   const percent = percentOf(value, goal);
-  const active = zoneTone(value, marks, tone ?? "good", goal);
+  const active = zoneTone(value, marks, tone ?? "good", goal ?? Infinity);
   return (
     <div className={`hb-card hb-progress hb-progress-tone-${active}`}>
       <div className="hb-progress-head">
@@ -113,7 +125,7 @@ export function Progress({ title, value, goal, unit, steps, shape = "line", show
 }
 
 /** The plain bar, with the bands between toned marks behind the fill and a tick at each mark. */
-function Bar({ share, marks, goal, unit }: { share: number; marks: Threshold[]; goal: number; unit?: string }) {
+function Bar({ share, marks, goal, unit }: { share: number; marks: Threshold[]; goal: number | null; unit?: string }) {
   const bands = bandsOf(marks, goal);
   const track = `hb-progress-track${marks.length ? " hb-progress-track-zoned" : ""}`;
   const body = (
@@ -134,7 +146,7 @@ function Bar({ share, marks, goal, unit }: { share: number; marks: Threshold[]; 
 }
 
 /** Each mark's label sits under its tick, held a little inside the card so the first and last stay readable. */
-function MarkLabels({ marks, goal, unit }: { marks: Threshold[]; goal: number; unit?: string }) {
+function MarkLabels({ marks, goal, unit }: { marks: Threshold[]; goal: number | null; unit?: string }) {
   const labelled = marks.filter((m) => m.label !== undefined);
   if (!labelled.length) return null;
   return (
@@ -149,11 +161,11 @@ function MarkLabels({ marks, goal, unit }: { marks: Threshold[]; goal: number; u
 }
 
 /** Parts of one track, end to end: each starts where the last ended, and what is left of the goal stays empty. */
-function Segments({ segments, goal, unit }: { segments: Segment[]; goal: number; unit?: string }) {
+function Segments({ segments, goal, unit }: { segments: Segment[]; goal: number | null; unit?: string }) {
   let at = 0;
   const parts = segments.map((s, k) => {
     const from = at;
-    at = Math.min(1, at + Math.max(0, s.value / goal));
+    at = Math.min(1, at + (goal === null ? 0 : Math.max(0, s.value / goal)));
     return { key: k, left: from, width: at - from, label: s.label, value: s.value, tone: s.tone ?? "good" };
   });
   return (
@@ -182,7 +194,7 @@ function Segments({ segments, goal, unit }: { segments: Segment[]; goal: number;
 /** Each checkpoint gets an equal column: its node sits at the column's centre and its label wraps inside it, so long
  *  names never run into the next one. The track runs from the first node's centre to the last's. A label given as a
  *  number is written like the amount: 250000 with "₹" → "₹2.5L". */
-function Checkpoints({ steps, value, share, unit }: { steps: Step[]; value: number; share: number; unit?: string }) {
+function Checkpoints({ steps, value, share, unit }: { steps: Step[]; value: number | null; share: number; unit?: string }) {
   const n = steps.length;
   const edge = `${50 / n}%`;
   const span = ((n - 1) / n) * 100;
@@ -192,7 +204,7 @@ function Checkpoints({ steps, value, share, unit }: { steps: Step[]; value: numb
         <span className="hb-progress-track hb-progress-track-steps" style={{ left: edge, right: edge }} />
         <span className="hb-progress-fill hb-progress-fill-steps" style={{ left: edge, width: `${span * share}%` }} />
         {steps.map((s, k) => {
-          const done = value >= s.at;
+          const done = value !== null && value >= s.at;  // an unknown value ticks nothing off
           return (
             <span key={k} className={done ? "hb-progress-node hb-progress-node-done" : "hb-progress-node"} style={{ left: `${((k + 0.5) / n) * 100}%` }}>
               <Icon name={done ? "check" : "lock"} size={12} stroke={2.6} />
@@ -230,7 +242,7 @@ function startTurn(shape: Shape): string {
 }
 
 function Ring({ shape, share, percent, marks, segments, goal }: {
-  shape: Shape; share: number; percent: number | null; marks: Threshold[]; segments: Segment[]; goal: number;
+  shape: Shape; share: number; percent: number | null; marks: Threshold[]; segments: Segment[]; goal: number | null;
 }) {
   const length = ringLength(shape);
   const track = shape === "dashboard"
@@ -239,7 +251,7 @@ function Ring({ shape, share, percent, marks, segments, goal }: {
   let at = 0;
   const parts = segments.map((s) => {
     const from = at;
-    at = Math.min(1, at + Math.max(0, s.value / goal));
+    at = Math.min(1, at + (goal === null ? 0 : Math.max(0, s.value / goal)));
     return { from, to: at, tone: s.tone ?? "good" };
   });
   return (

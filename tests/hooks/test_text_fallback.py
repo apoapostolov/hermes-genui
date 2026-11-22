@@ -212,6 +212,11 @@ def test_progress_and_bar():
     )
     assert render({"type": "bar", "label": "Budget used", "value": 62}) == "Budget used: 62 / 100"
     assert render({"type": "bar", "label": "Food", "value": 7200, "max": 8000, "unit": "₹"}) == "Food: 7,200 / 8,000 ₹"
+    # A null value is a figure nobody knows: "no data" in its place, never a 0.
+    assert render({"type": "bar", "label": "Spent", "value": None, "max": 500, "unit": "₹"}) == "Spent: no data / 500 ₹"
+    # A null goal keeps the value's unit, so ₹95 still says what it counts.
+    assert render({"type": "progress", "title": "Level 5", "value": 95, "goal": None, "unit": "₹"}) == \
+        "Level 5: 95 ₹ / no data"
 
 
 def test_streak():
@@ -227,9 +232,10 @@ def test_chart_first_to_last_per_series():
     )
 
 
-def test_chart_skips_gaps_and_zero_start():
+def test_chart_starts_at_its_first_number_and_names_its_gaps():
     chart = {"type": "chart", "title": "T", "x": ["a", "b", "c"], "series": [{"name": "S", "data": [None, 0, 5]}]}
-    assert render(chart) == "**T**: S 0 → 5"
+    # 0 is a measured start, so there is no % chip; the gap is named instead of being silently skipped.
+    assert render(chart) == "**T**: S 0 → 5, 1 gap (a)"
 
 
 def test_chart_caveat_is_a_second_italic_line():

@@ -9,7 +9,7 @@ export type DividerBlock = { type: "divider" };
 export type BadgeBlock = { type: "badge"; text: string; tone?: BadgeTone };
 export type LinkBlock = { type: "link"; text: string; url: string };
 export type ImageBlock = { type: "image"; url: string; caption?: string };
-export type BarBlock = { type: "bar"; label: string; value: number; max: number; unit?: string };
+export type BarBlock = { type: "bar"; label: string; value: number | null; max: number; unit?: string };
 
 /**
  * heading: a short title line between blocks. Text (also `title`), up to 80 characters.
@@ -88,15 +88,16 @@ export function readImage(raw: any, here: Trail): ImageBlock | null {
 
 /**
  * bar: one progress bar, value out of max (also `goal`, `total`; default 100, and a max that isn't above 0 is 100 too).
- * Label also `title`.
+ * Label also `title`. A value written as null is a figure nobody knows: kept, drawn as an empty track reading "no data".
  *   {type: "bar", title: "Packed", value: 6, goal: 9} → {type: "bar", label: "Packed", value: 6, max: 9}
- * Dropped: no label or no numeric value.
+ *   {type: "bar", label: "Spent", value: null, max: 500} → {type: "bar", label: "Spent", value: null, max: 500}
+ * Dropped: no label, or no value at all (a field left out is not the same as a written null).
  */
 export function readBar(raw: any, here: Trail): BarBlock | null {
   const label = firstText([raw.label, raw.title], 40);
   if (!label) return here.drop("bar needs a label");
   const value = num(raw.value);
-  if (value === null) return here.drop("bar needs a numeric value");
+  if (value === null && raw.value !== null) return here.drop("bar needs a numeric value");
   let max = num(raw.max) ?? num(raw.goal) ?? num(raw.total) ?? 100;
   if (max <= 0) max = 100;
   return clean({ type: "bar" as const, label, value, max, unit: str(raw.unit, 12) });

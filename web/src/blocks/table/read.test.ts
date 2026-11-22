@@ -26,6 +26,21 @@ describe("table reader", () => {
     expect(r.blocks[0]).toEqual({ type: "table", columns: ["A", "B"], rows: [] });
     expect(r.dropped.map((d) => d.why)).toContain("table has no rows");
   });
+  it("writes a null cell as a dash and leaves a column an object row doesn't carry blank", () => {
+    const r = readBlocksNoted([{ type: "table", columns: ["Shop", "Price", "Change"],
+      rows: [["Shop A", 12, null], { Shop: "Shop B", Price: 0 }] }]);
+    expect((r.blocks[0] as any).rows).toEqual([["Shop A", "12", "–"], ["Shop B", "0", ""]]);
+  });
+  it("keeps a number column numeric and sortable through a null cell", () => {
+    const r = readBlocksNoted([{ type: "table", columns: ["Shop", "Sales"],
+      rows: [["A", 31000], ["B", null], ["C", 18000]] }]);
+    const { rows } = r.blocks[0] as any;
+    expect(rows).toEqual([["A", "31000"], ["B", "–"], ["C", "18000"]]);
+    // "–" is a value written as unknown, not a filled cell: the column still reads as numbers and sorts with it last.
+    expect(isNumberColumn(rows, 1)).toBe(true);
+    expect(sortedOrder(rows, { column: 1, direction: "up" })).toEqual([2, 0, 1]);
+    expect(sortedOrder(rows, { column: 1, direction: "down" })).toEqual([0, 2, 1]);
+  });
 });
 
 describe("table sorting", () => {

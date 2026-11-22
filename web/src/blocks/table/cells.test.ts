@@ -9,6 +9,9 @@ describe("change columns", () => {
     expect(isChangeColumn([["A", "₹300"], ["B", "₹50"]], 1)).toBe(false);
     expect(isChangeColumn([["A", "+5%"], ["B", "n/a"]], 1)).toBe(false);
     expect(isChangeColumn([["A", ""], ["B", ""]], 1)).toBe(false);
+    // a cell written as unknown ("–") is skipped the way a blank one is, so the column still reads as changes
+    expect(isChangeColumn([["A", "+5%"], ["B", "–"], ["C", "-3%"]], 1)).toBe(true);
+    expect(isChangeColumn([["A", "+5%"], ["B", "–"]], 1)).toBe(true);
   });
   it("read each cell as a rise, a fall or neither", () => {
     expect(changeOf("+1.76%")).toBe("up");

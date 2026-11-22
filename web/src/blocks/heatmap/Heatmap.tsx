@@ -6,7 +6,8 @@ import { cellColour, cellText, rangeOf } from "./heatmapColour";
 const SHOW_NUMBERS_UP_TO = 6;  // columns; past that the cells are too narrow, so a tap shows the number instead
 
 /** With six columns or fewer each cell prints its number; with more, a tap on a cell shows "row · col: value" under
- *  the grid. Every cell carries its full reading as a label for screen readers. */
+ *  the grid. Every cell carries its full reading as a label for screen readers, and a cell with no number is read as
+ *  "no data" rather than as an empty one. */
 export function Heatmap({ title, rows, cols, values, unit, scale }: HeatmapBlock) {
   const [picked, setPicked] = useState<{ row: number; col: number } | null>(null);
   const range = rangeOf(values);
@@ -25,7 +26,7 @@ export function Heatmap({ title, rows, cols, values, unit, scale }: HeatmapBlock
               const v = values[i][j];
               return (
                 <button key={j} type="button" className="hb-heat-cell" style={{ background: cellColour(v, range, scale) }}
-                  onClick={() => setPicked({ row: i, col: j })} aria-label={`${r}, ${c}: ${cellText(v, unit)}`}>
+                  onClick={() => setPicked({ row: i, col: j })} aria-label={`${r}, ${c}: ${v === null ? "no data" : cellText(v, unit)}`}>
                   {numbersInCells && v !== null ? cellText(v, unit) : ""}
                 </button>
               );

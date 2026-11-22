@@ -3,7 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { pinLocale } from "../../lib/locale.testing";
 import { readBlocks } from "../../core/readBlocks";
 import type { ChartBlock } from "./read";
-import { fmt } from "./chartData";
+import { chartLabel, fmt, missingLabels } from "./chartData";
+import { lineRuns } from "./geometry";
 import { Blocks } from "../../core/Blocks";
 
 beforeEach(() => pinLocale("en-US"));
@@ -281,5 +282,86 @@ describe("chart figure from block JSON", () => {
     expect(chart({ ...raw, figure: false })[0].spec.figure).toBe(false);
     expect(chart({ ...raw, figure: true })[0].spec.figure).toBe(true);
     expect(chart({ ...raw, figure: "no" })[0].spec.figure).toBeUndefined();
+  });
+});
+
+
+describe("a null in the data", () => {
+  const specOf = (raw: object) => chart(raw)[0].spec;
+
+  it("splits a line's points at each gap, a lone point in a run of its own", () => {
+    expect(lineRuns([[0, 10], [5, 20]])).toEqual([{ from: 0, pts: [[0, 10], [5, 20]] }]);
+    expect(lineRuns([[0, 10], null, [20, 17], [30, 12]])).toEqual([
+      { from: 0, pts: [[0, 10]] },
+      { from: 2, pts: [[20, 17], [30, 12]] },
+    ]);
+    expect(lineRuns([null, [10, 4], null])).toEqual([{ from: 1, pts: [[10, 4]] }]);
+    expect(lineRuns([null, null])).toEqual([]);
+  });
+
+  it("names the labels no series measured, so a gap isn't read out as a zero", () => {
+    const gapped = specOf({ kind: "line", title: "Orders per day", x: ["Mon", "Tue", "Wed"],
+      series: [{ data: [3, null, 5] }, { data: [1, null, 2] }] });
+    expect(missingLabels(gapped)).toEqual(["Tue"]);
+    expect(chartLabel(gapped)).toBe("Orders per day. line chart. 3 to 5, up 66.7%. Tue no data");
+    const whole = specOf({ title: "Orders", kind: "line", x: ["Mon", "Tue"], series: [{ data: [3, 4] }] });
+    expect(missingLabels(whole)).toEqual([]);
+    expect(chartLabel(whole)).toBe("Orders. line chart. 3 to 4, up 33.3%");
+  });
+
+  it("breaks a line at the gap and puts a dot on a lone observation", () => {
+    const { container } = render(<Blocks blocks={chart({ kind: "line", title: "Orders", x: ["Mon", "Tue", "Wed", "Thu", "Fri"],
+      series: [{ name: "Orders", data: [12, null, 0, 9, 14] }] })} />);
+    expect(container.querySelectorAll("path.hb-chart-line").length).toBe(1);  // Wed to Fri only
+    // the end label's dot and the lone Monday observation
+    expect(container.querySelectorAll("circle.hb-chart-dot").length).toBe(2);
+    expect(container.querySelector("svg.hb-chart-svg")!.getAttribute("aria-label")).toBe("Orders. line chart. 12 to 14, up 16.7%. Tue no data");
+  });
+
+  it("breaks a change line, which is one series too", () => {
+    const { container } = render(<Blocks blocks={chart({ kind: "line", tone: "change", x: ["a", "b", "c", "d"],
+      series: [{ data: [100, null, 120, 130] }] })} />);
+    expect(container.querySelectorAll("path.hb-chart-line").length).toBe(1);
+  });
+
+  it("draws no bar for a gap, a tick on the baseline instead, and no value above it", () => {
+    const { container } = render(<Blocks blocks={chart({ kind: "bar", x: ["Q1", "Q2", "Q3"], series: [{ data: [3, null, 5] }] })} />);
+    expect(container.querySelectorAll("path.hb-chart-bar").length).toBe(2);
+    expect(container.querySelectorAll("rect.hb-chart-gap").length).toBe(1);
+    expect([...container.querySelectorAll("text.hb-chart-value")].map((t) => t.textContent)).toEqual(["3", "5"]);
+  });
+
+  it("keeps a written zero a bar, so it reads apart from an unknown", () => {
+    const { container } = render(<Blocks blocks={chart({ kind: "bar", x: ["Q1", "Q2"], series: [{ data: [0, null] }] })} />);
+    expect(container.querySelectorAll("path.hb-chart-bar").length).toBe(1);
+    expect(container.querySelectorAll("rect.hb-chart-gap").length).toBe(1);
+  });
+
+  it("fills each stretch of an area on its own", () => {
+    const { container } = render(<Blocks blocks={chart({ kind: "area", x: ["a", "b", "c", "d"], series: [{ name: "Rent", data: [1, 2, null, 4] }] })} />);
+    expect(container.querySelectorAll('path[fill-opacity=".3"]').length).toBe(1);
+  });
+
+  it("says no data in the hover card where nothing was measured", () => {
+    const { container } = render(<Blocks blocks={chart({ kind: "bar", title: "Revenue", x: ["Q1", "Q2"], series: [{ name: "Revenue", data: [3, null] }] })} />);
+    const svg = container.querySelector("svg.hb-chart-svg")!;
+    fireEvent.keyDown(svg, { key: "ArrowRight" });  // Q1, which has a value
+    expect(container.querySelector(".hb-tip-on .hb-tip-row")).toBeTruthy();
+    fireEvent.keyDown(svg, { key: "ArrowRight" });  // Q2, where nothing was measured
+    const tip = container.querySelector(".hb-tip-on")!;
+    expect(tip.querySelector(".hb-tip-title")!.textContent).toBe("Q2");
+    expect(tip.querySelectorAll(".hb-tip-row").length).toBe(0);
+    expect(tip.querySelector(".hb-tip-note")!.textContent).toBe("no data");
+  });
+
+  it("leaves a gap out of a stacked column and a stacked area, never a zero-height part", () => {
+    const series = () => [{ name: "Rent", data: [3, 4, null] }, { name: "Food", data: [2, 5, null] }];
+    const stacked = render(<Blocks blocks={chart({ kind: "stacked", x: ["Q1", "Q2", "Q3"], series: series() })} />);
+    // two parts on Q1 and on Q2, and nothing at all on Q3, where neither part holds a value
+    expect(stacked.container.querySelectorAll("rect[rx]").length).toBe(4);
+    cleanup();
+    const area = render(<Blocks blocks={chart({ kind: "area", x: ["Q1", "Q2", "Q3"], series: series() })} />);
+    // each part fills Q1 to Q2 and stops, instead of being carried on to Q3 as a zero
+    expect(area.container.querySelectorAll('path[fill-opacity=".3"]').length).toBe(2);
   });
 });

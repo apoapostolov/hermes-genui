@@ -11,7 +11,8 @@ const MAX_ROWS = 30;
  * - columns: names (also `headers`/`header`; {label} or {name} objects work too), up to 8. Without columns, the keys of
  *   the first object row are used, or the first row itself when rows are lists.
  * - rows: lists of cells (also `data`), up to 30; a row may also be an object keyed by column name. Numbers become text.
- *   A short row is padded with blank cells; a row with more cells than columns is dropped (with a note).
+ *   A null cell reads "–" (a value written down as unknown, not a cell left out); a cell missing from an object row reads
+ *   blank. A short row is padded with blank cells; a row with more cells than columns is dropped (with a note).
  * - highlight: {row: n} or {column: n}, counting from 0; a bare number means a row, and text matching a row's first cell
  *   or a column name picks that one. Out of range: ignored, with a note.
  * - caption: optional (also `title`).
@@ -80,8 +81,10 @@ function cellsByColumnName(row: Record<string, unknown>, columns: string[]): unk
   return columns.map((c) => byLowerName.get(c.toLowerCase()));
 }
 
-/** A cell as text: "₹44,999" stays; 4.6 → "4.6"; true → "Yes"; null or anything else → "". */
+/** A cell as text: "₹44,999" stays; 4.6 → "4.6"; true → "Yes"; a null the model wrote → "–" (written down as
+ *  unknown, which is not the same as an empty cell); anything else → "". */
 function cellText(v: unknown): string {
+  if (v === null) return "–";
   if (v === true) return "Yes";
   if (v === false) return "No";
   return textOrNumber(v, 120) ?? "";

@@ -183,9 +183,11 @@ export function xyTip(spec: ChartSpec, i: number, layout: XYLayout): Tip {
     pile += Math.max(v, 0);
     y = Math.min(y, layout.yOf(s)(spec.type === "stacked" || spec.type === "area" ? pile : v));
   });
-  return { x: layout.xAt(i), y, title: String(spec.x[i]), rows, note: tipNote(spec, i) };
+  return { x: layout.xAt(i), y, title: String(spec.x[i]), rows, note: rows.length ? tipNote(spec, i) : "no data" };
 }
 
+/** The hover card's note: a one-line chart says how far the picked value has moved since its start, and a label no
+ *  series measured says there is no data there (a null is never shown as a zero). */
 function tipNote(spec: ChartSpec, i: number): string | undefined {
   if (spec.series.length !== 1 || spec.type !== "line") return undefined;
   const data = spec.series[0].data;

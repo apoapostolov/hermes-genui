@@ -28,18 +28,26 @@ def tone_of(value: object) -> str | None:
 
 
 def check_progress(block: dict, path: str) -> list[tuple[str, str]]:
-    """A title, a numeric value and a goal above 0 (the track is value / goal); then the optional drawing.
+    """A title, a value and a goal (the track is value / goal). Either may be null: a figure nobody knows, which
+    draws an empty track and reads "no data" instead of a 0; a written zero stays a zero.
 
     {"title": "x", "value": 5, "goal": 0} → [("0", "progress needs a goal above 0")]
+    {"title": "x", "value": null, "goal": 120} → []
+    {"title": "x", "value": 95, "goal": null} → []
+    {"title": "x", "value": "5", "goal": 120} → [("0", "progress needs a numeric value")]
     shape "gauge", tone "warning", parts of 60 and 50 on a goal of 100 → [] (the reader maps the words and clamps)
     shape "pie" → [("0", "shape is line, circle or dashboard")]
     """
     if not has_text(block.get("title")):
         return [(path, "progress needs a title")]
-    if not is_number(block.get("value")):
+    if "value" not in block:
         return [(path, "progress needs a numeric value")]
-    goal = block.get("goal")
-    if not is_number(goal) or goal <= 0:
+    if block["value"] is not None and not is_number(block["value"]):
+        return [(path, "progress needs a numeric value")]
+    if "goal" not in block:
+        return [(path, "progress needs a goal above 0")]
+    goal = block["goal"]
+    if goal is not None and (not is_number(goal) or goal <= 0):
         return [(path, "progress needs a goal above 0")]
     problems = []
     if block.get("shape") is not None and shape_of(block.get("shape")) is None:
@@ -142,6 +150,8 @@ def bands(block: dict) -> list[tuple[float, float, str]]:
     bad on a goal of 100 → [(0, 60, "good"), (60, 85, "warn"), (85, 100, "bad")]; a mark past the goal ends its band
     there and colours nothing beyond it."""
     goal = block["goal"]
+    if goal is None:
+        return []  # no goal to hold a band against
     found, start = [], 0.0
     for mark in marks(block):
         tone = tone_of(mark.get("tone"))
@@ -161,6 +171,8 @@ def zone_tone(block: dict) -> str:
     marks 60 good / 100 warn / 150 bad on a goal of 100: a value of 120 → "warn" (the 150 mark colours nothing)
     """
     fallback = tone_of(block.get("tone")) or "good"
+    if block.get("value") is None:
+        return fallback  # an unknown reading colours no band
     found = bands(block)
     if not found:
         return fallback
@@ -195,7 +207,7 @@ def text_progress(block: dict) -> str:
     if not base:
         return ""
     unit = block.get("unit")
-    if block.get("show_percent") is True and safe_text(unit, 20) != "%":
+    if block.get("show_percent") is True and block.get("value") is not None and safe_text(unit, 20) != "%":
         base += f" ({percent_of(block['value'], block['goal'])}%)"
     tone = zone_tone(block)
     if tone != "good":

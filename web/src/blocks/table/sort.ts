@@ -1,5 +1,14 @@
 export type SortState = { column: number; direction: "up" | "down" } | null;
 
+/** What a null cell reads as: a value written down as unknown. It looks like a filled cell but carries no number, so
+ *  every reading that asks "does this cell hold a value" counts it as blank. */
+export const GAP = "–";
+
+/** A cell with nothing in it: left out (""), or written as unknown (GAP). */
+export function isBlank(cell: string): boolean {
+  return !cell || cell === GAP;
+}
+
 /**
  * The number a cell starts with, for sorting and right-aligning: up to three leading symbols (₹, $, "Rs ") are
  * allowed, commas ignored, and the sign may come before them. A typeset minus (−) counts as one.
@@ -27,14 +36,15 @@ export function sortedOrder(rows: string[][], sort: SortState): number[] {
   return order.sort((a, b) => {
     const left = rows[a][sort.column] ?? "";
     const right = rows[b][sort.column] ?? "";
-    if (!left || !right) return blanksLast(left, right);
+    if (isBlank(left) || isBlank(right)) return blanksLast(left, right);
     return sign * compareCells(left, right);
   });
 }
 
 function blanksLast(left: string, right: string): number {
-  if (!left && !right) return 0;
-  if (!left) return 1;
+  const leftBlank = isBlank(left), rightBlank = isBlank(right);
+  if (leftBlank && rightBlank) return 0;
+  if (leftBlank) return 1;
   return -1;
 }
 
@@ -52,8 +62,9 @@ export function nextSort(sort: SortState, column: number): SortState {
   return null;
 }
 
-/** A column reads as numbers (right-aligned) when every filled cell starts with one. */
+/** A column reads as numbers (right-aligned) when every filled cell starts with one. A cell written as unknown (GAP)
+ *  is not filled: "31000", "–", "18000" is a number column. */
 export function isNumberColumn(rows: string[][], column: number): boolean {
-  const filled = rows.map((r) => r[column]).filter((cell) => cell);
+  const filled = rows.map((r) => r[column] ?? "").filter((cell) => !isBlank(cell));
   return filled.length > 0 && filled.every((cell) => cellNumber(cell) !== null);
 }

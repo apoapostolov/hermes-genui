@@ -13,6 +13,17 @@ describe("Progress", () => {
     expect(trackShare(150, 120, [])).toBe(1);
     expect(trackShare(-5, 120, [])).toBe(0);
   });
+  it("fills nothing when the value is unknown, and writes no data in its place", () => {
+    expect(trackShare(null, 120, [])).toBe(0);
+    expect(trackShare(null, 120, [{ label: "60", at: 60 }])).toBe(0);
+    expect(trackShare(95, null, [])).toBe(0);  // no goal to be a share of
+    expect(amountOf(null, 120, "XP")).toBe("no data / 120 XP");
+    expect(amountOf(null, 1000000, "₹")).toBe("no data / ₹10L");
+    // a goal nobody knows keeps the value's unit: the one number left still says what it counts
+    expect(amountOf(95, null, "₹")).toBe("₹95 / no data");
+    expect(amountOf(95, null, "XP")).toBe("95 XP / no data");
+    expect(amountOf(null, null)).toBe("no data / no data");
+  });
   it("fills a checkpoint track between the evenly spaced checkpoints", () => {
     const steps = [{ label: "30", at: 30 }, { label: "60", at: 60 }, { label: "120", at: 120 }];
     expect(trackShare(20, 120, steps)).toBe(0);
@@ -42,6 +53,14 @@ describe("Progress", () => {
       steps: [{ label: 250000, at: 250000 }, { label: "Halfway", at: 500000 }, { label: 1000000, at: 1000000 }] }])} />);
     expect(container.querySelector(".hb-progress-amount")!.textContent).toBe("₹0 / ₹10L");
     expect(Array.from(container.querySelectorAll(".hb-progress-labels span"), (s) => s.textContent)).toEqual(["₹2.5L", "Halfway", "₹10L"]);
+  });
+  it("reads an unknown value as no data over an empty track, with no checkpoint ticked off", () => {
+    const { container } = render(<Blocks blocks={readBlocks([{ type: "progress", title: "Level 5", value: null, goal: 120, unit: "XP",
+      steps: [{ label: "60 XP", at: 60 }, { label: "120 XP", at: 120 }] }])} />);
+    expect(container.querySelector(".hb-progress-amount")!.textContent).toBe("no data / 120 XP");
+    expect((container.querySelector(".hb-progress-fill") as HTMLElement).style.width).toBe("0%");
+    expect(container.querySelectorAll(".hb-progress-node-done").length).toBe(0);
+    expect(container.querySelectorAll(".hb-progress-node").length).toBe(2);
   });
 });
 

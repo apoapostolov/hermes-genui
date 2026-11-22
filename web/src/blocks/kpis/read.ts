@@ -8,7 +8,7 @@ export type KpiItem = {
   change?: number | null;
   change_unit?: "%" | "pt";
   invert_tone?: true;
-  trend?: number[];
+  trend?: (number | null)[];
 };
 
 // A trend is a small line under the number: it needs 2 points, and more than 60 would not show in it.
@@ -21,7 +21,8 @@ export type KpisBlock = { type: "kpis"; items: KpiItem[] };
 export type StatBlock = { type: "stat" } & KpiItem;
 
 /**
- * One headline number (a kpis item, or a stat). The value may be a number or short text ("Leeds United (H)").
+ * One headline number (a kpis item, or a stat). The value may be a number, short text ("Leeds United (H)"), or null:
+ * a null is a number nobody measured, drawn and written as "no data" (never as 0 or a dash).
  * `change_unit` defaults to points on a "%" card (a margin moving from 18.6% to 17.7% fell 0.9 points) and to "%"
  * elsewhere, for a change worked out from `previous`; a written `change` keeps its own meaning and defaults to "%"
  * on every card. An explicit `change_unit` is kept either way. `previous` makes the change from that number and wins
@@ -30,6 +31,7 @@ export type StatBlock = { type: "stat" } & KpiItem;
  *   {label: "Net margin", value: 18.6, unit: "%", change: 5} → {…, change: 5, change_unit: "%"}
  *   {label: "Revenue", value: 72275, unit: "₹Cr", previous: 70223} → {…, change: 2.92…, change_unit: "%"}
  *   {label: "Net margin", value: 18.6, unit: "%", previous: 19.5} → {…, change: -0.9, change_unit: "pt"}
+ *   {label: "Chargebacks", value: null} → {label: "Chargebacks", value: null, change_unit: "%"}
  */
 export function readKpi(item: any): KpiItem {
   let value: number | string | null = num(item.value);
@@ -71,13 +73,16 @@ function changeFrom(previous: unknown, value: number | string | null, unit: "%" 
 }
 
 /**
- * A trend's finite numbers, the latest 60 at most; undefined with fewer than 2.
- *   [100, "90", null, 85, 80] → [100, 85, 80];  [5, "6"] → undefined;  "1,2,3" → undefined
+ * A trend as drawn: one slot per point, a null kept where the model measured nothing, the latest 60 slots at most;
+ * undefined with fewer than 2 numbers. A slot kept empty is what breaks the sparkline; dropping it would slide the
+ * later points into the wrong places.
+ *   [100, "90", null, 85, 80] → [100, null, null, 85, 80];  [5, "6"] → undefined;  "1,2,3" → undefined
  */
-function readTrend(v: unknown): number[] | undefined {
+function readTrend(v: unknown): (number | null)[] | undefined {
   if (!Array.isArray(v)) return undefined;
-  const numbers = v.map(num).filter((n): n is number => n !== null);
-  return numbers.length >= TREND_FEWEST ? numbers.slice(-TREND_MOST) : undefined;
+  const slots = v.slice(-TREND_MOST).map((x) => num(x));
+  const known = slots.filter((n) => n !== null).length;
+  return known >= TREND_FEWEST ? slots : undefined;
 }
 
 /**

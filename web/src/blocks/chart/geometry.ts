@@ -49,7 +49,37 @@ export function barPath(x: number, width: number, base: number, end: number, rad
     + `H${f(x2 - r)}Q${f(x2)},${f(end)} ${f(x2)},${f(end + toward * r)}V${f(base)}Z`;
 }
 
+/** A point in drawing units. */
+export type Point = [number, number];
+
+/** A stretch of a series with no gap in it: where it starts in the data, and the points to join. */
+export type Run = { from: number; pts: Point[] };
+
 const STRAIGHT_UP_TO = 12;
+
+/**
+ * The points a line may join, split where the data has a gap: a null ends one stretch and the next known point starts
+ * another. A stretch of one point is an observation a line can't reach (the drawings put a dot there), never a line
+ * back across the gap. Gaps are skipped in place, so every point keeps the x of its own label.
+ *   [[0, 10], [5, 20], [10, 15]] → [{from: 0, pts: the three}]
+ *   [[0, 10], null, [20, 17]] → [{from: 0, pts: [[0, 10]]}, {from: 2, pts: [[20, 17]]}]
+ */
+export function lineRuns(pts: (Point | null)[]): Run[] {
+  const runs: Run[] = [];
+  let run: Run | null = null;
+  pts.forEach((p, i) => {
+    if (p === null) {
+      run = null;
+      return;
+    }
+    if (!run) {
+      run = { from: i, pts: [] };
+      runs.push(run);
+    }
+    run.pts.push(p);
+  });
+  return runs;
+}
 
 /** A line through the points: straight segments for 12 points or fewer, so each value sits where it reads, and a
  *  smooth curve for longer series. [[0, 10], [5, 20], [10, 15]] → "M0,10L5,20L10,15" */

@@ -99,8 +99,9 @@ export function kindToDraw(spec: ChartSpec): ChartKind {
 }
 
 /** The accessible name of a chart, built from what the drawing shows: title, kind, axes when named, the first and last
- *  values of the first series, and the caveat. The <text> nodes inside the svg are part of the image and unread on
- *  their own, so the axis captions and the limit of the data are carried here instead. */
+ *  values of the first series, the labels nothing was measured for, and the caveat. The <text> nodes inside the svg are
+ *  part of the image and unread on their own, so the axis captions, the gaps and the limit of the data are carried here
+ *  instead — a gap is read out, never mistaken for a zero. */
 export function chartLabel(spec: ChartSpec): string {
   const drawn = kindToDraw(spec);
   const parts = [spec.title?.trim() || spec.series[0].name || "Chart", `${drawn} chart`];
@@ -114,6 +115,8 @@ export function chartLabel(spec: ChartSpec): string {
     const direction = pct === null ? "" : `, ${pct >= 0 ? "up" : "down"} ${Math.abs(pct).toFixed(1)}%`;
     parts.push(`${fmt(values[0], unit)} to ${fmt(values[values.length - 1], unit)}${direction}`);
   }
+  const gaps = missingLabels(spec);
+  if (gaps.length) parts.push(gaps.length <= 4 ? `${gaps.join(", ")} no data` : `${gaps.length} of ${spec.x.length} labels with no data`);
   if (spec.caveat) parts.push(spec.caveat);
   return parts.join(". ");
 }
@@ -225,6 +228,12 @@ export function shareNote(values: (number | null)[], v: number): string | undefi
  *  [{name: "Close"}] at 0 → "Close";  [{}] at 0 → "Value";  [{}, {}] at 1 → "Series 2" */
 export function seriesName(series: { name?: string }[], k: number): string {
   return series[k].name ?? (series.length === 1 ? "Value" : `Series ${k + 1}`);
+}
+
+/** The x labels no series has a number for, in order: an unknown reading is named, not left to be guessed.
+ *  x ["Mon", "Tue"], data [3, null] → ["Tue"];  data [3, 4] → [] */
+export function missingLabels(spec: ChartSpec): string[] {
+  return spec.x.filter((_, i) => spec.series.every((s) => s.data[i] === null || s.data[i] === undefined)).map(String);
 }
 
 type Scale = { min: number; max: number };
