@@ -1,0 +1,701 @@
+{
+  "widgets": [
+    {
+      "type": "widget",
+      "version": 1,
+      "id": "trip-budget",
+      "title": "Trip budget",
+      "data": {
+        "nightly": 200,
+        "budget": 1200,
+        "note": "Illustrative budget; prices have not been fetched."
+      },
+      "state": {
+        "nights": {
+          "type": "number",
+          "label": "Nights",
+          "initial": 4,
+          "min": 1,
+          "max": 10,
+          "step": 1
+        }
+      },
+      "computed": {
+        "planned": {
+          "op": "mul",
+          "args": [
+            {
+              "get": "state.nights"
+            },
+            {
+              "get": "data.nightly"
+            }
+          ]
+        },
+        "remaining": {
+          "op": "sub",
+          "args": [
+            {
+              "get": "data.budget"
+            },
+            {
+              "get": "computed.planned"
+            }
+          ]
+        },
+        "over": {
+          "op": "lt",
+          "args": [
+            {
+              "get": "computed.remaining"
+            },
+            0
+          ]
+        }
+      },
+      "view": [
+        {
+          "kind": "text",
+          "id": "heading",
+          "text": "Trip budget"
+        },
+        {
+          "kind": "text",
+          "id": "note",
+          "expr": {
+            "get": "data.note"
+          },
+          "tone": "muted"
+        },
+        {
+          "kind": "stack",
+          "id": "controls",
+          "gap": "md",
+          "children": [
+            {
+              "kind": "input",
+              "id": "nights",
+              "control": "slider",
+              "state": "nights",
+              "label": "Nights"
+            }
+          ]
+        },
+        {
+          "kind": "row",
+          "id": "figures",
+          "gap": "md",
+          "children": [
+            {
+              "kind": "number",
+              "id": "remaining",
+              "label": "Remaining",
+              "expr": {
+                "get": "computed.remaining"
+              },
+              "unit": "USD"
+            },
+            {
+              "kind": "number",
+              "id": "planned",
+              "label": "Planned spend",
+              "expr": {
+                "get": "computed.planned"
+              },
+              "unit": "USD"
+            }
+          ]
+        },
+        {
+          "kind": "block",
+          "id": "spend-bar",
+          "spec": {
+            "type": "bar",
+            "label": "Planned spend",
+            "value": 0,
+            "max": 1200
+          },
+          "bindings": {
+            "/value": {
+              "get": "computed.planned"
+            },
+            "/max": {
+              "get": "data.budget"
+            }
+          }
+        },
+        {
+          "kind": "when",
+          "id": "warning",
+          "test": {
+            "get": "computed.over"
+          },
+          "then": [
+            {
+              "kind": "badge",
+              "id": "over",
+              "text": "Over budget",
+              "tone": "bad"
+            }
+          ],
+          "else": [
+            {
+              "kind": "badge",
+              "id": "within",
+              "text": "Within budget",
+              "tone": "good"
+            }
+          ]
+        },
+        {
+          "kind": "button",
+          "id": "revise",
+          "label": "Ask Hermes to revise",
+          "action": {
+            "op": "fill",
+            "message": "Please revise this trip budget.",
+            "fields": [
+              "nights"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "widget",
+      "version": 1,
+      "id": "capacity-planner",
+      "title": "Capacity planner",
+      "data": {
+        "standard": 2,
+        "suite": 4,
+        "days": 3,
+        "note": "Fixture capacity; no live bookings."
+      },
+      "state": {
+        "guests": {
+          "type": "number",
+          "label": "Guests",
+          "initial": 2,
+          "min": 1,
+          "max": 8,
+          "step": 1
+        },
+        "room": {
+          "type": "string",
+          "label": "Room",
+          "initial": "standard",
+          "options": [
+            "standard",
+            "suite"
+          ],
+          "maxLength": 16
+        }
+      },
+      "computed": {
+        "perGuest": {
+          "op": "if",
+          "args": [
+            {
+              "op": "eq",
+              "args": [
+                {
+                  "get": "state.room"
+                },
+                "standard"
+              ]
+            },
+            {
+              "get": "data.standard"
+            },
+            {
+              "get": "data.suite"
+            }
+          ]
+        },
+        "capacity": {
+          "op": "mul",
+          "args": [
+            {
+              "get": "state.guests"
+            },
+            {
+              "get": "computed.perGuest"
+            }
+          ]
+        }
+      },
+      "view": [
+        {
+          "kind": "text",
+          "id": "heading",
+          "text": "Capacity planner"
+        },
+        {
+          "kind": "text",
+          "id": "note",
+          "expr": {
+            "get": "data.note"
+          },
+          "tone": "muted"
+        },
+        {
+          "kind": "row",
+          "id": "controls",
+          "gap": "md",
+          "children": [
+            {
+              "kind": "input",
+              "id": "guests",
+              "control": "number",
+              "state": "guests",
+              "label": "Guests"
+            },
+            {
+              "kind": "input",
+              "id": "room",
+              "control": "select",
+              "state": "room",
+              "label": "Room"
+            }
+          ]
+        },
+        {
+          "kind": "number",
+          "id": "capacity",
+          "label": "Daily capacity",
+          "expr": {
+            "get": "computed.capacity"
+          }
+        },
+        {
+          "kind": "block",
+          "id": "capacity-chart",
+          "spec": {
+            "type": "chart",
+            "kind": "line",
+            "title": "Planned capacity",
+            "x": [
+              "Day 1",
+              "Day 2",
+              "Day 3"
+            ],
+            "series": [
+              {
+                "name": "Capacity",
+                "data": [
+                  4,
+                  6,
+                  8
+                ]
+              }
+            ]
+          },
+          "bindings": {
+            "/series/0/data/2": {
+              "get": "computed.capacity"
+            }
+          }
+        },
+        {
+          "kind": "block",
+          "id": "capacity-table",
+          "spec": {
+            "type": "table",
+            "caption": "Planned capacity",
+            "columns": [
+              "Day",
+              "Seats"
+            ],
+            "rows": [
+              [
+                "Day 1",
+                "4"
+              ],
+              [
+                "Day 2",
+                "6"
+              ],
+              [
+                "Day 3",
+                "8"
+              ]
+            ]
+          },
+          "bindings": {
+            "/rows/2/1": {
+              "get": "computed.capacity"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "widget",
+      "version": 1,
+      "id": "issue-triage",
+      "title": "Issue triage",
+      "data": {
+        "note": "Fixture issues; no network access.",
+        "issues": [
+          {
+            "id": "GEN-1",
+            "title": "Empty state copy",
+            "status": "open",
+            "detail": "Add a short empty view."
+          },
+          {
+            "id": "GEN-2",
+            "title": "Slider keyboard focus",
+            "status": "open",
+            "detail": "Keep the focus ring on the range input."
+          }
+        ],
+        "archived": []
+      },
+      "state": {
+        "selected": {
+          "type": "string",
+          "label": "Selected",
+          "initial": "GEN-1",
+          "options": [
+            "GEN-1",
+            "GEN-2"
+          ],
+          "maxLength": 16
+        }
+      },
+      "computed": {},
+      "view": [
+        {
+          "kind": "text",
+          "id": "heading",
+          "text": "Issue triage"
+        },
+        {
+          "kind": "text",
+          "id": "note",
+          "expr": {
+            "get": "data.note"
+          },
+          "tone": "muted"
+        },
+        {
+          "kind": "repeat",
+          "id": "issues",
+          "items": {
+            "get": "data.issues"
+          },
+          "key": "id",
+          "template": [
+            {
+              "kind": "row",
+              "id": "row",
+              "gap": "sm",
+              "children": [
+                {
+                  "kind": "text",
+                  "id": "title",
+                  "expr": {
+                    "get": "item.title"
+                  }
+                },
+                {
+                  "kind": "badge",
+                  "id": "status",
+                  "expr": {
+                    "get": "item.status"
+                  },
+                  "tone": "info"
+                },
+                {
+                  "kind": "button",
+                  "id": "select",
+                  "label": "Select",
+                  "action": {
+                    "op": "set",
+                    "target": "state.selected",
+                    "value": {
+                      "get": "item.id"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "when",
+              "id": "details",
+              "test": {
+                "op": "eq",
+                "args": [
+                  {
+                    "get": "state.selected"
+                  },
+                  {
+                    "get": "item.id"
+                  }
+                ]
+              },
+              "then": [
+                {
+                  "kind": "text",
+                  "id": "detail",
+                  "expr": {
+                    "get": "item.detail"
+                  },
+                  "tone": "muted"
+                }
+              ],
+              "else": []
+            }
+          ],
+          "empty": [
+            {
+              "kind": "text",
+              "id": "no-issues",
+              "text": "No issues in this list."
+            }
+          ]
+        },
+        {
+          "kind": "repeat",
+          "id": "archived",
+          "items": {
+            "get": "data.archived"
+          },
+          "key": "id",
+          "template": [
+            {
+              "kind": "text",
+              "id": "archived-title",
+              "expr": {
+                "get": "item.title"
+              }
+            }
+          ],
+          "empty": [
+            {
+              "kind": "text",
+              "id": "no-archived",
+              "text": "No archived issues."
+            }
+          ]
+        },
+        {
+          "kind": "button",
+          "id": "followup",
+          "label": "Prepare follow-up",
+          "action": {
+            "op": "fill",
+            "message": "Please triage this issue.",
+            "fields": [
+              "selected"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "expressions": [
+    {
+      "name": "literal",
+      "expr": 7,
+      "scope": {},
+      "value": 7,
+      "error": null
+    },
+    {
+      "name": "state-reference",
+      "expr": {
+        "get": "state.nights"
+      },
+      "scope": {
+        "state": {
+          "nights": 4
+        }
+      },
+      "value": 4,
+      "error": null
+    },
+    {
+      "name": "computed-reference",
+      "expr": {
+        "get": "computed.total"
+      },
+      "scope": {
+        "computed": {
+          "total": 7
+        }
+      },
+      "value": 7,
+      "error": null
+    },
+    {
+      "name": "item-reference",
+      "expr": {
+        "get": "item.id"
+      },
+      "scope": {
+        "item": {
+          "id": "GEN-1"
+        }
+      },
+      "value": "GEN-1",
+      "error": null
+    },
+    {
+      "name": "add",
+      "expr": {
+        "op": "add",
+        "args": [
+          {
+            "get": "state.nights"
+          },
+          2
+        ]
+      },
+      "scope": {
+        "state": {
+          "nights": 4
+        }
+      },
+      "value": 6,
+      "error": null
+    },
+    {
+      "name": "null-propagation",
+      "expr": {
+        "op": "add",
+        "args": [
+          null,
+          2
+        ]
+      },
+      "scope": {},
+      "value": null,
+      "error": null
+    },
+    {
+      "name": "if-short-circuit",
+      "expr": {
+        "op": "if",
+        "args": [
+          false,
+          {
+            "op": "div",
+            "args": [
+              1,
+              0
+            ]
+          },
+          "safe"
+        ]
+      },
+      "scope": {},
+      "value": "safe",
+      "error": null
+    },
+    {
+      "name": "division-by-zero",
+      "expr": {
+        "op": "div",
+        "args": [
+          1,
+          0
+        ]
+      },
+      "scope": {},
+      "value": null,
+      "error": "divided by zero"
+    },
+    {
+      "name": "wrong-operand-type",
+      "expr": {
+        "op": "add",
+        "args": [
+          "a",
+          1
+        ]
+      },
+      "scope": {},
+      "value": null,
+      "error": "wrong operand type"
+    },
+    {
+      "name": "string-equality",
+      "expr": {
+        "op": "eq",
+        "args": [
+          "standard",
+          "standard"
+        ]
+      },
+      "scope": {},
+      "value": true,
+      "error": null
+    },
+    {
+      "name": "numeric-less-than",
+      "expr": {
+        "op": "lt",
+        "args": [
+          1,
+          2
+        ]
+      },
+      "scope": {},
+      "value": true,
+      "error": null
+    },
+    {
+      "name": "and-with-null",
+      "expr": {
+        "op": "and",
+        "args": [
+          true,
+          null
+        ]
+      },
+      "scope": {},
+      "value": null,
+      "error": null
+    },
+    {
+      "name": "unknown-reference",
+      "expr": {
+        "get": "state.missing"
+      },
+      "scope": {
+        "state": {}
+      },
+      "value": null,
+      "error": "unknown reference"
+    },
+    {
+      "name": "unknown-operator",
+      "expr": {
+        "op": "pow",
+        "args": [
+          2,
+          3
+        ]
+      },
+      "scope": {},
+      "value": null,
+      "error": "unknown operator"
+    },
+    {
+      "name": "non-finite-result",
+      "expr": {
+        "op": "mul",
+        "args": [
+          1e+308,
+          10
+        ]
+      },
+      "scope": {},
+      "value": null,
+      "error": "non-finite result"
+    }
+  ]
+}
