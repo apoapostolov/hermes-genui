@@ -349,3 +349,15 @@ def test_no_recipe_or_tool_offers_a_ticker():
         assert "live_board" not in recipe.read_text(encoding="utf-8"), recipe.parent.name
     today = (ROOT / "recipes" / "today-page" / "SKILL.md").read_text(encoding="utf-8")
     assert "There is no ticker" in today and "Today page instead" in today
+
+
+def test_stock_dashboard_leads_with_the_verdict():
+    """The verdict is why the board exists, so the recipe puts it first, under the heading — its steps and its
+    example both — never under the charts (maintainer guidance on PR #53)."""
+    text = (ROOT / "recipes" / "stock-dashboard" / "SKILL.md").read_text(encoding="utf-8")
+    blocks = json.loads(JSON_BLOCK.findall(text)[0])
+    kinds = [b["type"] for b in blocks]
+    assert kinds[0] == "heading" and kinds[1] == "callout", f"the example opens {kinds[:2]}, not heading + verdict"
+    assert "Verdict" in json.dumps(blocks[1])
+    steps = text.split("## Layout example", 1)[0]
+    assert steps.index("a `callout`") < steps.index("the price board"), "the steps put the verdict before the data"

@@ -18,10 +18,11 @@ Use this when someone asks to analyse a company, show a stock "visually", or com
    it out; never estimate one.
 3. **Lay it out** with one `show_blocks` call, in this order:
    - a `heading` naming the company and the quarter;
+   - a `callout` (tone `info`) with the verdict in one or two sentences: the answer leads, right under the title,
+     so the reader lands on it before any chart;
    - the price board via `{"type": "include", "id": "<the id from step 1>"}`;
    - `columns` with a bar chart of the last 4 quarters' revenue (if you found them) beside a `table` of key metrics
      (for a comparison, one column per company and `highlight` the stronger one);
-   - a `callout` (tone `info`) with the verdict in one or two sentences;
    - a `source` line naming the sites.
 4. **Reply** with one short paragraph, then the tag on its own line. The dashboard carries the numbers.
 
@@ -32,6 +33,7 @@ The include id here is a placeholder; use the one market_history returned.
 ```json
 [
   {"type": "heading", "text": "Alphabet · Q3 2026"},
+  {"type": "callout", "tone": "info", "title": "Verdict", "text": "Growth is strong, but free cash flow turned negative as capex doubled."},
   {"type": "include", "id": "7f3a09bc"},
   {"type": "columns", "children": [
     {"type": "chart", "kind": "bar", "title": "Revenue, $B", "unit": "$B", "x": ["Q4 25", "Q1 26", "Q2 26", "Q3 26"],
@@ -39,7 +41,6 @@ The include id here is a placeholder; use the one market_history returned.
     {"type": "table", "caption": "Latest quarter", "columns": ["Metric", "Value"],
      "rows": [["Revenue growth", "+25%"], ["Operating margin", "31.8%"], ["EPS vs estimate", "$2.10 vs $2.25"]]}
   ]},
-  {"type": "callout", "tone": "info", "title": "Verdict", "text": "Growth is strong, but free cash flow turned negative as capex doubled."},
   {"type": "source", "text": "Company Q3 release · Yahoo Finance"}
 ]
 ```
