@@ -32,7 +32,7 @@
 .hb-bar-amount { color: var(--hb-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .hb-bar-track { height: 8px; border-radius: 999px; background: var(--hb-accent-soft); overflow: hidden; }
 .hb-bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-accent); }
-.hb-bar-fill { transform-origin: left; animation: hb-grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.hb-bar-fill { transform-origin: left; animation: hb-grow 0.9s var(--hb-ease-out); }
 @media (prefers-reduced-motion: reduce) {
   .hb-bar-fill { animation: none; }
 }

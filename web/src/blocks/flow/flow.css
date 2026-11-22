@@ -71,7 +71,7 @@ button.hb-flow-node:focus-visible { outline: 2px solid var(--hb-accent); outline
 .hb-flow-group-label { font-size: 11.5px; font-weight: 600; color: var(--hb-muted); text-align: center; }
 .hb-flow-down .hb-flow-group-label { text-align: left; }
 .hb-flow-down .hb-flow-node { flex-wrap: wrap; }
-.hb-flow-holds { display: flex; flex-wrap: wrap; gap: 3px; animation: hb-flow-fade 0.2s ease-out; }
+.hb-flow-holds { display: flex; flex-wrap: wrap; gap: 3px; animation: hb-flow-fade 0.2s var(--hb-ease-out); }
 .hb-flow-right .hb-flow-holds { justify-content: center; }
 .hb-flow-down .hb-flow-holds { flex-basis: 100%; }
 @keyframes hb-flow-fade { from { opacity: 0; } }

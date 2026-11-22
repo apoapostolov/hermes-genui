@@ -38,7 +38,7 @@
   border-radius: 999px;
   background: color-mix(in srgb, var(--hb-tone) 20%, transparent);
 }
-.hb-progress-fill { transform-origin: left; animation: hb-grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.hb-progress-fill { transform-origin: left; animation: hb-grow 0.9s var(--hb-ease-out); }
 .hb-progress-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-tone); }
 .hb-progress-nodes { position: relative; height: 24px; margin-top: 16px; }
 .hb-progress-track-steps { position: absolute; top: 8px; margin: 0; }

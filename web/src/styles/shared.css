@@ -56,7 +56,7 @@
   text-align: left;
   text-decoration: none;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  transition: background 0.15s ease, transform 0.1s var(--hb-ease-out);
 }
 .hb-pill svg { flex: none; }
 .hb-pill:hover { background: color-mix(in srgb, var(--hb-accent) 22%, transparent); }
@@ -67,7 +67,7 @@
 .hb-pill:disabled { opacity: 0.45; cursor: default; transform: none; }
 .hb-pill-solid:disabled:hover { background: var(--hb-accent); }
 /* Motion: a panel appearing (section, tabs, photo overlay) and a bar growing (bar, progress). */
-.hb-appear { animation: hb-appear 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.hb-appear { animation: hb-appear 0.22s var(--hb-ease-out); }
 @keyframes hb-appear { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 @keyframes hb-grow { from { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) {

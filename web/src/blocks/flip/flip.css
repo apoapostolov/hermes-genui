@@ -26,7 +26,7 @@
   grid-template-columns: minmax(0, 1fr);
   min-height: 150px;
   transform-style: preserve-3d;
-  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.5s var(--hb-ease-out);
 }
 /* A photo on any card makes every card at least as tall as a photo card needs, so the rows stay even. */
 .hb-flip-tall .hb-flip-inner { min-height: 220px; }
@@ -68,6 +68,6 @@
 .hb-flip-back img { display: block; flex: none; width: calc(100% + 28px); height: 96px; margin: -12px -14px 4px; object-fit: cover; }
 @media (prefers-reduced-motion: reduce) {
   .hb-flip-inner, .hb-flip-turned { transition: none; transform: none; }
-  .hb-flip-face, .hb-flip-back { transform: none; backface-visibility: visible; -webkit-backface-visibility: visible; transition: opacity 0.2s; }
+  .hb-flip-face, .hb-flip-back { transform: none; backface-visibility: visible; -webkit-backface-visibility: visible; transition: opacity 0.2s var(--hb-ease-out); }
   .hb-flip-inner:not(.hb-flip-turned) .hb-flip-back, .hb-flip-turned .hb-flip-front { opacity: 0; }
 }

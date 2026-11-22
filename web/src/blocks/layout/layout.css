@@ -24,7 +24,7 @@
   cursor: pointer;
 }
 .hb-section-toggle .hb-card-title { flex: 1; min-width: 0; }
-.hb-chevron { flex: none; color: var(--hb-muted); transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.hb-chevron { flex: none; color: var(--hb-muted); transition: transform 0.2s var(--hb-ease-out); }
 .hb-chevron-open { transform: rotate(90deg); }
 /* Tabs: underlined tab buttons in a bar that scrolls sideways when they don't fit, above one panel of blocks. */
 .hb-tabs { display: flex; flex-direction: column; gap: 10px; min-width: 0; }

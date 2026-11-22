@@ -16,7 +16,7 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.15s var(--hb-ease-out);
 }
 .hb-tile:hover { transform: translateY(-1px); }
 .hb-tile:active { transform: scale(0.98); }

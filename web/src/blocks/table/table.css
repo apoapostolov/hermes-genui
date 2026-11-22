@@ -59,7 +59,7 @@
 .hb-table td.hb-num { text-align: right; }
 .hb-table td.hb-wrap { min-width: 180px; white-space: normal; }
 /* Sorting: a faint ↕ on the header under the pointer, ↑ or ↓ on the sorted one. */
-.hb-sort { opacity: 0; font-weight: 400; letter-spacing: 0; transition: opacity 0.12s; }
+.hb-sort { opacity: 0; font-weight: 400; letter-spacing: 0; transition: opacity 0.12s var(--hb-ease-out); }
 .hb-table th:hover .hb-sort, .hb-table th button:focus-visible .hb-sort { opacity: 0.6; }
 .hb-table th.hb-sorted .hb-sort { opacity: 1; color: var(--hb-ink-2); }
 /* The best row: an accent edge on its first cell and a chip; the best column: an accent line under its header. */
