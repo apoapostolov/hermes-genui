@@ -177,6 +177,7 @@ def _keep(params: dict, home: Path, root: Path, now: datetime) -> str:
     else:
         board_id = str(params.get("board_id") or "")
         blocks = store.load(board_id, root)  # None for a malformed or unknown id
+        blocks = None if blocks is None else store.blocks_of(blocks)  # an updated board keeps its envelope
         if blocks is None:
             problems.append("board_id: the id from the dashboard's ::blocks tag in this chat")
     if blocks is not None:

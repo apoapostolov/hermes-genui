@@ -16,3 +16,77 @@
 @media (prefers-reduced-motion: reduce) {
   .hb-pulse { animation: none; }
 }
+
+/* --- Living Boards ---------------------------------------------------------------------------
+   The quiet row a live board says under itself, and the pointer a later tag of the same address
+   draws instead of a second board. Both sit OUTSIDE .hb-blocks (the board's own DOM is untouched)
+   and animate nothing: with no motion of their own there is nothing for prefers-reduced-motion
+   to still. Colors ride the app's own variables with fallbacks, as the chrome row's do. */
+.hb-live {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 10%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--background, #ffffff) 60%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.hb-live-line { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hb-live-mark { color: var(--ui-success, #1a7f37); }
+.hb-live-version { font-weight: 600; color: var(--foreground, #1f2328); }
+.hb-live-addr {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--foreground, #1f2328) 7%, transparent);
+}
+.hb-live-history, .hb-live-back, .hb-link-chip {
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 1px 10px;
+  cursor: pointer;
+}
+.hb-live-history[aria-pressed="true"], .hb-link-chip[aria-expanded="true"] {
+  border-color: var(--theme-primary, #e0a83c);
+  color: var(--foreground, #1f2328);
+}
+.hb-links { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hb-links-label { font-style: italic; }
+.hb-link { display: contents; }
+.hb-linked {
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px dashed color-mix(in srgb, var(--foreground, #1f2328) 22%, transparent);
+  border-radius: 10px;
+}
+.hb-linked-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.hb-linked-gone { color: var(--ui-text-tertiary, #6b7280); font-style: italic; }
+.hb-live-pointer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 6px 0;
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}

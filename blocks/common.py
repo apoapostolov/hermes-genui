@@ -238,3 +238,68 @@ def md_table(header: list[str], rows: list[list[str]]) -> list[str]:
     lines = ["| " + " | ".join(header) + " |", "| " + " | ".join(["---"] * width) + " |"]
     lines += ["| " + " | ".join((row + [""] * width)[:width]) + " |" for row in rows]
     return lines
+
+
+# --- what a board can point at next (living boards: addresses, targets and links) -----------------------------------
+
+# A board's address is its stored id: eight lowercase hex characters, the same bytes that ride its tag. The
+# model may write it as returned, in caps, or with a leading # (people quote handles that way) — all of them
+# mean the same address. Anything else is not an address at all.
+ADDRESS = re.compile(r"#?([0-9a-f]{8})")
+
+
+def board_address(value: object) -> str | None:
+    """The board address a model's words name, or None when they name nothing.
+    "7f3a09bc" → "7f3a09bc";  "#7F3A09BC" → "7f3a09bc";  "sevenbeef" → None."""
+    if not isinstance(value, str):
+        return None
+    match = ADDRESS.fullmatch(value.strip().lower())
+    return match.group(1) if match else None
+
+
+# The most boards one may link to: a comparison is a handful of boards, not a shelf.
+LINK_MAX = 3
+
+
+def link_problems(value: object) -> list[str]:
+    """Problems with the shape of a board's links, as "<path>: <why>"; [] when it says nothing or says it
+    well. Whether an address names a real board is the tool's business (it owns the store); this answers only
+    the shape. A link is a bare address or {"id": address, "note": one line}; the note, when present, must
+    be text — it is the AI-suggested connection the reader sees beside the link."""
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        return ['links: needs a list of boards to connect — each one an address ("7f3a09bc") '
+                'or {"id": "7f3a09bc", "note": "one line"}']
+    if not 1 <= len(value) <= LINK_MAX:
+        return [f"links: needs 1-{LINK_MAX} boards"]
+    problems = []
+    for i, item in enumerate(value):
+        raw = item if isinstance(item, str) else (item.get("id") if isinstance(item, dict) else None)
+        if board_address(raw) is None:
+            problems.append(f'links.{i}: not a board address — the 8 characters of a tag id, as "7f3a09bc"')
+        elif isinstance(item, dict) and "note" in item and not isinstance(item["note"], str):
+            problems.append(f"links.{i}: the note must be one line of text")
+    return problems
+
+
+def link_words(value: object) -> list[dict] | None:
+    """The links as they should be stored: each address normalized (lower-case, no #), notes kept whole with
+    control characters stripped, and duplicate addresses collapsed (the same board linked twice is one link).
+    Call after link_problems has said []. None when the board said nothing."""
+    if not isinstance(value, list) or not value:
+        return None
+    words: list[dict] = []
+    seen: set[str] = set()
+    for item in value:
+        raw = item if isinstance(item, str) else item.get("id")
+        addr = board_address(raw)
+        if addr is None or addr in seen:
+            continue
+        seen.add(addr)
+        note = item.get("note") if isinstance(item, dict) else None
+        entry = {"id": addr}
+        if isinstance(note, str) and note.strip():
+            entry["note"] = CONTROL.sub("", note).strip()
+        words.append(entry)
+    return words

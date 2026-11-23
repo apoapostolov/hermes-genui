@@ -2,6 +2,7 @@
 // inputs, and the piles of dots (Piles.tsx) or the line chart (SimChart.tsx) show the amounts then. It opens finished
 // (the whole picture at rest), pauses when scrolled out of view, and a run takes to ÷ speed seconds (at most 60).
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useStoredValue } from "../../core/blockState";
 import { InlineText } from "../../lib/InlineText";
 import { evaluate, newBudget, parseFormula, type Node } from "../../lib/formula";
 import { Slider } from "../calculator/Calculator";
@@ -17,8 +18,30 @@ export function Simulate(block: SimulateBlock) {
   const { title, t: time, inputs, values: fixed, piles, unit, source } = block;
   const root = useRef<HTMLDivElement>(null);
   const clock = useRef(time.to);
-  const [sliders, setSliders] = useState(() => new Map(inputs.map((x) => [x.id, x.value])));
-  const [view, setView] = useState(block.view);
+  // The sliders and the view kind are the BOARD's answers (core/blockState.ts): a moved line and a picked
+  // view survive updates, moves and reopens. The scrub position and Play are a run, not an answer — a
+  // reopen opens finished, exactly as this block has always opened.
+  const [answers, write] = useStoredValue<Record<string, number>>({
+    door: "identity",
+    initial: () => Object.fromEntries(inputs.map((x) => [x.id, x.value])),
+    revive: (saved) => {
+      if (!saved || typeof saved !== "object" || Array.isArray(saved)) return null;
+      const known = new Set(inputs.map((x) => x.id));
+      const out: Record<string, number> = {};
+      for (const [id, v] of Object.entries(saved as Record<string, unknown>)) {
+        if (known.has(id) && typeof v === "number" && isFinite(v)) out[id] = v;
+      }
+      return out;
+    },
+    stored: (value) => value,
+  });
+  const sliders = useMemo(() => new Map(Object.entries(answers)), [answers]);
+  const [view, setView] = useStoredValue<string>({
+    door: "identity", field: "~view",
+    initial: () => block.view,
+    revive: (saved) => (saved === "dots" || saved === "chart" ? saved : null),
+    stored: (value) => value,
+  });
   const [at, setAt] = useState(time.to);
   const [playing, setPlaying] = useState(false);
   const trees = useMemo(() => piles.map((p) => parseFormula(p.formula)), [piles]);
@@ -79,7 +102,7 @@ export function Simulate(block: SimulateBlock) {
         </label>
         {inputs.map((input) => (
           <Slider key={input.id} input={input} value={sliders.get(input.id) ?? input.value}
-            onMove={(v) => setSliders((all) => new Map(all).set(input.id, v))} />
+            onMove={(v) => write({ ...answers, [input.id]: v })} />
         ))}
       </div>
       {view === "dots"

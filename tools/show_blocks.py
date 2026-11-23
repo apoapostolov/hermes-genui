@@ -4,6 +4,7 @@ import json
 import math
 
 from ..blocks.chart import CHART_KINDS
+from ..blocks.common import board_address, link_problems, link_words
 from ..core import drawn, store, surface
 from ..core.catalog_text import describe, icons_line, spec
 from ..core.catalog_text import menu as core_menu
@@ -183,8 +184,9 @@ def resolve_includes(blocks: list, problems: list[str], path: str = "", level: i
 
 
 def _included(block_id: str, here: str, problems: list[str]) -> list:
-    """The board an include at `here` names, or [] with a problem added: unknown, or over INCLUDE_LIMIT (its file's
-    size is read before the board is, so a huge file is never loaded).
+    """The blocks of the board an include at `here` names, or [] with a problem added: unknown, or over
+    INCLUDE_LIMIT (its file's size is read before the board is, so a huge file is never loaded). A board that
+    has taken updates answers its CURRENT version's blocks — an include names an address, not a snapshot.
 
     "7f3a09bc" (a 2 KB board of [chart, source]) → [chart, source];  "0badc0de" (nothing stored) → [], a problem
     """
@@ -194,11 +196,12 @@ def _included(block_id: str, here: str, problems: list[str]) -> list:
         problems.append(f"{here}: board {block_id} is too big to include (max {INCLUDE_LIMIT // 1024} KB)")
     elif board is None:
         problems.append(f"{here}: no stored board with id {block_id}")
-    return board or []
+    return store.blocks_of(board)
 
 
-def too_big(blocks: list) -> str | None:
-    """The refusal for a board over store.BOARD_LIMIT as JSON, or None when it fits.
+def too_big(blocks: list | dict) -> str | None:
+    """The refusal for a board over store.BOARD_LIMIT as JSON, or None when it fits. The board either shape:
+    the plain list of blocks or the envelope an update leaves at an address.
 
     a 300 KB board → "Not drawn: board too big (300 KB, max 256 KB). Draw less or split it.";  a 2 KB board → None
     """
@@ -207,6 +210,59 @@ def too_big(blocks: list) -> str | None:
         return None
     return (f"Not drawn: board too big ({math.ceil(size / 1024)} KB, max {store.BOARD_LIMIT // 1024} KB). "
             "Draw less or split it.")
+
+
+def _target_address(raw: object, problems: list[str]) -> str | None:
+    """The board address a `target` word names, or None with a problem added. Nothing said is not a problem —
+    it just means a fresh board; a wrong word is a problem the model must see, because silently drawing fresh
+    would be the duplicate board the whole feature exists to prevent."""
+    if raw is None or (isinstance(raw, str) and not raw.strip()):
+        return None
+    addr = board_address(raw)
+    if addr is None:
+        problems.append('target: not a board address — the 8 characters of an earlier tag id, as "7f3a09bc". '
+                        "Leave target out to draw a new board.")
+        return None
+    if store.load(addr, root=store.default_root()) is None:
+        # A write target must be a board of THIS profile (an update never reaches across; reads still do).
+        problems.append(f"target: no stored board with address {addr} — draw a new board (leave target out) "
+                        "instead of naming an address that answers nothing.")
+        return None
+    return addr
+
+
+def _link_addresses(raw: object, target: str | None, problems: list[str]) -> list[dict] | None:
+    """The links to store, after shape and existence are both answered: every linked address must name a
+    real board (a link to nothing is a broken promise the reader would click), and a board never links to
+    itself."""
+    shape = link_problems(raw)
+    if shape:
+        problems += shape
+        return None
+    if not isinstance(raw, list):
+        return None
+    for i, item in enumerate(raw):
+        addr = board_address(item if isinstance(item, str) else item.get("id"))
+        if addr is None:
+            continue  # link_problems has already said why this one is not an address
+        if addr == target:
+            problems.append("links: a board can't link to itself")
+        elif store.find_root(addr) is None:
+            problems.append(f"links.{i}: no stored board with address {addr}")
+    if problems:
+        return None
+    return link_words(raw)
+
+
+# The words the live-board answer says before the paste line: what the tool did, in one breath.
+UPDATED = ("Updated the same live board {addr} to v{version} — the tag below is that same address: paste it "
+           "where the update belongs and the board updates in place; the versions before this one stay "
+           "retrievable within the store's bounded history (the newest archived, oldest dropped past the cap).\n")
+
+# The same sentence in the short-menu schema (#42): the menu names the blocks, the living words ride in the
+# parameters — target and links — where the schema can carry them in full.
+LIVING_MENU = ("\n\nBoards live: the id in a board's tag is its address, so a board you drew earlier can be updated "
+               "in place (target) or connected to (links) instead of redrawn. See target and links.")
 
 
 def show_blocks(params: dict, **kwargs) -> str:
@@ -220,18 +276,28 @@ def show_blocks(params: dict, **kwargs) -> str:
     problems = check_blocks(blocks)
     if problems:  # the check's problems come with how to write the blocks they're about
         return _not_drawn(problems, blocks)
+    target = _target_address(params.get("target"), problems)
+    links = _link_addresses(params.get("links"), target, problems) if params.get("links") is not None else None
+    if problems:
+        return _not_drawn(problems)
     blocks = resolve_includes(blocks, problems)
     if not problems:  # an included board can take the whole one past the nesting limit
         problems = [deep] if (deep := too_deep(blocks)) else []
     if problems:
         return _not_drawn(problems)
-    refusal = too_big(blocks)
+    board: list | dict = {"links": links, "blocks": blocks} if links else blocks
+    refusal = too_big(board)
     if refusal:
         return refusal
     problems = unknown_photos(blocks, store.known_photo_urls())
     if problems:
         return _not_drawn(problems)
-    block_id = store.save(blocks)
+    if target is not None:  # update-in-place: a new version at the SAME address, the old ones archived
+        block_id = store.update(target, board)
+        version = store.version_of(store.load(block_id, store.find_root(block_id)))
+        drawn.note(str(kwargs.get("session_id") or ""), block_id)
+        return UPDATED.format(addr=block_id, version=version) + paste_instruction(block_id)
+    block_id = store.save(board)
     drawn.note(str(kwargs.get("session_id") or ""), block_id)  # so a reply that loses the tag gets it back
     return paste_instruction(block_id)
 
@@ -240,13 +306,15 @@ def schema(guide: str = "full") -> dict:
     """show_blocks's schema. "full" carries every block's fields and example; "menu" (#42) carries the short menu,
     and the model gets fields from block_guide."""
     if guide == "menu":
-        description = core_menu()
+        description = core_menu() + LIVING_MENU
     else:
         description = (
             "Draw visual blocks in the reply (Hermes Desktop): itineraries, trends, comparisons, headline numbers, "
             "photos. Use it when the answer reads better drawn than written. "
             "Paste the returned tag on its own line exactly as returned. "
-            "Use only numbers and image URLs a tool returned.\n\n" + describe()
+            "Use only numbers and image URLs a tool returned. "
+            "Boards live: the id in a board's tag is its address, so a board you drew earlier can be updated in "
+            "place (target) or connected to (links) instead of redrawn. See target and links.\n\n" + describe()
         )
     return {
         "name": "show_blocks",
@@ -258,7 +326,28 @@ def schema(guide: str = "full") -> dict:
                     "type": "array",
                     "items": {"type": "object"},
                     "description": "The blocks to draw, in order. Each has a `type`.",
-                }
+                },
+                "target": {
+                    "type": "string",
+                    "description": "Optional. The address of a board you drew earlier in this conversation — the 8-"
+                    "character id inside its ::blocks tag (e.g. \"7f3a09bc\"). Set it when the user asks to change, "
+                    "extend or tighten THAT board (\"add NVDA\", \"make it compact\", \"update the numbers\"): the "
+                    "board updates in place at the same address, keeps a bounded version history (recent archived "
+                    "versions stay retrievable; past the store's cap the oldest drop), and the reply pastes its "
+                    "same tag — not a new board. Leave it out for anything "
+                    "new; a wrong address is refused, never silently redrawn fresh. Most turns need no target.",
+                },
+                "links": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                    "description": "Optional. 1-3 boards this one connects to, each an address (\"7f3a09bc\") or "
+                    "{\"id\": \"7f3a09bc\", \"note\": \"last quarter\"}. Use it when reaching back genuinely helps — "
+                    "a comparison the user asked for (\"how does this quarter compare to last?\"), or a prior board "
+                    "this one updates — and name the stored board the user's earlier tag carried: the reader can "
+                    "open the linked board from this one without it being redrawn. Every address must be a board "
+                    "that exists; a board never links to itself. The note is the connection as you suggest it, one "
+                    "short line. Most turns need no links.",
+                },
             },
             "required": ["blocks"],
         },

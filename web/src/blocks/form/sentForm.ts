@@ -32,6 +32,20 @@ export function readSent(saved: unknown, form: FormBlock): FormValues | null {
   return values;
 }
 
+/** A saved DRAFT (what the reader was typing before Send), as answers the form can show;
+ *  null when it isn't an answers object. Each fitting answer is kept, the rest start from the model's words. */
+export function draftFits(saved: unknown, form: FormBlock): FormValues | null {
+  if (!saved || typeof saved !== "object" || Array.isArray(saved)) return null;
+  const given = saved as Record<string, unknown>;
+  const values = startingValues(form);
+  for (const field of form.fields) {
+    if (!Object.prototype.hasOwnProperty.call(given, field.id)) continue;
+    const kept = fitting(field, given[field.id]);
+    if (kept !== undefined) values[field.id] = kept;
+  }
+  return values;
+}
+
 /** A saved answer if it fits the field, else undefined.
  *  radio "Packed" with options Easy, Packed → "Packed";  radio "Mars" → undefined;  checkbox ["b", "a", "b"] with
  *  options a, b → ["a", "b"];  slider 99 (5-30) → 30;  text "Asha" → "Asha";  text of 600 characters → undefined */

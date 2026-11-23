@@ -104,8 +104,17 @@ describe("form sent state", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Packed" }));
     await act(async () => { fireEvent.click(send()); });
     expect(sent).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(rest).toHaveBeenCalledWith("/blocks/7f3a09bc/state", { method: "PUT", body: { state: {
-      "1": { sent: true, values: { pace: "Packed", who: "Asha" } } } } }));
+    // The draft typed BEFORE the send now files by identity at the edit itself — the sent record's
+    // POSITIONAL filing ("1") is the accepted truth, unchanged, riding the same snapshot.
+    await waitFor(() => {
+      const puts = rest.mock.calls.filter(([, init]) => (init as { method?: string } | undefined)?.method === "PUT");
+      const last = puts[puts.length - 1]?.[1] as { body?: { state?: Record<string, unknown> } } | undefined;
+      expect(last?.body?.state?.["1"]).toEqual({ sent: true, values: { pace: "Packed", who: "Asha" } });
+    });
+    const puts = rest.mock.calls.filter(([, init]) => (init as { method?: string } | undefined)?.method === "PUT");
+    const lastState = (puts[puts.length - 1]![1] as { body: { state: Record<string, unknown> } }).body.state;
+    expect(Object.keys(lastState).some((k) => k.startsWith("k:") && k.endsWith("~v")))
+      .toBe(true);  // the unsent draft's identity byte filed at edit time (board-held durability)
   });
 
   it("shows a form sent before (after a reload) as sent, with its answers, and never sends it again", async () => {

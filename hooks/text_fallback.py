@@ -128,7 +128,7 @@ def _board_text(block_id: str, load) -> str:
     if not re.fullmatch(store.ID_PATTERN, block_id):
         return NOT_SHOWN
     try:
-        blocks = load(block_id)
+        blocks = store.blocks_of(load(block_id))  # an updated board answers its envelope: the blocks inside
     except Exception:  # an unreadable file must not stop the reply
         return NOT_SHOWN
     return blocks_as_text(blocks) or NOT_SHOWN

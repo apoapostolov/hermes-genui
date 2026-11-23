@@ -7,6 +7,7 @@ and the Desktop half fetches the JSON by that id. Blocks are never deleted, so o
 import json
 import re
 import secrets
+from datetime import UTC, datetime
 from pathlib import Path
 
 # 8 lowercase hex characters, e.g. "7f3a09bc". Anything else is refused before touching the disk.
@@ -68,13 +69,14 @@ class BoardTooBig(ValueError):
     """The board is over BOARD_LIMIT bytes as JSON."""
 
 
-def board_size(blocks: list) -> int:
+def board_size(blocks: list | dict) -> int:
     """How many bytes a board takes stored: board_size([{"type": "divider"}]) → 20"""
     return len(json.dumps(blocks, ensure_ascii=False).encode("utf-8"))
 
 
-def save(blocks: list[dict], root: Path | None = None) -> str:
-    """Store a list of blocks and return its new id. Refused (BoardTooBig, nothing written) over BOARD_LIMIT.
+def save(blocks: list[dict] | dict, root: Path | None = None) -> str:
+    """Store a board (a list of blocks, or the envelope a live board's links ride in) and return its new id.
+    Refused (BoardTooBig, nothing written) over BOARD_LIMIT.
 
     The id is one no store on this machine uses yet (with root given, no board in root), so a new board never
     overwrites an old one and find_root never finds another profile's board under the same id.
@@ -144,6 +146,128 @@ def load(block_id: str, root: Path | None = None) -> list[dict] | None:
     if not re.fullmatch(ID_PATTERN, block_id or ""):
         return None
     return _read_json((root or default_root()) / f"{block_id}.json")
+
+
+# --- living boards: a board's id is its address, and an update writes a new VERSION at that address ----------------
+# A board drawn into a chat is not a dead snapshot: show_blocks can be told to update the board an address
+# names. The new content replaces <id>.json AT THE SAME ADDRESS (the tag the chat already quotes keeps
+# drawing, now the current version), and the version that was current is archived, whole, into a
+# <id>.versions.json sidecar beside it. History is BOUNDED by design: the sidecar keeps the newest
+# HISTORY_MAX archived versions within HISTORY_LIMIT bytes and drops the oldest when either cap is
+# crossed; reach-back past the cap answers like an unknown version, and the CURRENT version is never
+# dropped. A board that was never updated carries no version word at all and answers load() with
+# exactly the bytes it always had.
+
+HISTORY_SUFFIX = ".versions.json"
+HISTORY_MAX = 8                 # the newest archived versions kept; the live one answers load()
+HISTORY_LIMIT = 512 * 1024      # the sidecar's byte cap; oldest archived entries drop to stay under it
+
+
+def blocks_of(board: object) -> list:
+    """The blocks inside a stored board, either shape: the plain list it has always been, or the envelope
+    {"version": ..., "blocks": [...]} that an update-in-place leaves at the address. Anything else gives no blocks.
+
+    blocks_of([chart, source]) → [chart, source]
+    blocks_of({"version": 2, "blocks": [chart]}) → [chart]
+    blocks_of(None) → []
+    """
+    if isinstance(board, list):
+        return board
+    if isinstance(board, dict) and isinstance(board.get("blocks"), list):
+        return board["blocks"]
+    return []
+
+
+def version_of(board: object) -> int | None:
+    """The version number a stored envelope carries (an update stamps it), or None when the board never spoke
+    one — which is every board that was only ever saved. Text is not a number here, and neither is a bool.
+
+    version_of({"version": 2, "blocks": [x]}) → 2;  version_of([x]) → None;  version_of({"version": "2"}) → None
+    """
+    value = board.get("version") if isinstance(board, dict) else None
+    if isinstance(value, bool) or not isinstance(value, int):
+        return None
+    return value if value >= 1 else None
+
+
+def updated_at_of(board: object) -> str | None:
+    """The moment an update wrote this version, as an ISO line, or None. Here only "is it a non-empty
+    string" is checked; who wrote the word decided it was worth storing."""
+    line = board.get("updated_at") if isinstance(board, dict) else None
+    return line if isinstance(line, str) and line else None
+
+
+def links_of(board: object) -> list | None:
+    """The links a stored envelope carries to other boards by address, or None. The shape was checked where
+    it was written (show_blocks refuses a link to no board); here only "is it a list with anything in it".
+
+    links_of({"links": [{"id": "7f3a09bc", "note": "vs Q3"}], "blocks": [x]}) → [that list]
+    links_of([x]) → None;  links_of({"links": "yes", ...}) → None
+    """
+    links = board.get("links") if isinstance(board, dict) else None
+    return links if isinstance(links, list) and links else None
+
+
+def history_path(block_id: str, root: Path) -> Path:
+    """Where a board's archived versions live: <id>.versions.json, beside the board file itself."""
+    return root / f"{block_id}{HISTORY_SUFFIX}"
+
+
+def load_versions(block_id: str, root: Path | None = None) -> list:
+    """The archived versions of a board, oldest first, each {"version", "saved_at", "board"}; [] when the id
+    is malformed, unknown, or was never updated. The archived board is kept exactly as it was saved (a
+    plain list or an envelope), so every version's own words ride with it."""
+    if not re.fullmatch(ID_PATTERN, block_id or ""):
+        return []
+    folder = root or find_root(block_id)
+    if folder is None:
+        return []
+    history = _read_json(history_path(block_id, folder))
+    versions = history.get("versions") if isinstance(history, dict) else None
+    return versions if isinstance(versions, list) else []
+
+
+def update(block_id: str, board: list[dict] | dict, root: Path | None = None) -> str:
+    """Write a NEW version of the board an address names, at that same address, and answer the address back.
+
+    The board that was current is archived whole (version + saved_at + its exact stored content) into the
+    sidecar, capped at HISTORY_MAX versions and HISTORY_LIMIT bytes, oldest first; the new content is
+    written to <id>.json with version bumped and updated_at stamped. The envelope's words belong to the
+    version that said them — the new board carries only what this call gave it.
+
+    Refused, with nothing written, before any disk is touched: a malformed or unknown address
+    (NoSuchBlock — the same honesty rule as save_state), or a board over BOARD_LIMIT (BoardTooBig).
+
+    A write stays in its own profile: with no root given, the address resolves ONLY in the active
+    profile's store. Reaching across profiles is right for reading a board (find_root, issue #6) but
+    an update never writes into another profile's bytes — a board owned elsewhere answers NoSuchBlock here.
+    """
+    if not re.fullmatch(ID_PATTERN, block_id or ""):
+        raise NoSuchBlock(block_id)
+    folder = root or default_root()
+    current = _read_json(folder / f"{block_id}.json")
+    if current is None:
+        raise NoSuchBlock(block_id)
+    envelope: dict = dict(board) if isinstance(board, dict) else {"blocks": board}
+    envelope["version"] = (version_of(current) or 1) + 1
+    envelope["updated_at"] = _now()
+    text = json.dumps(envelope, ensure_ascii=False)
+    if len(text.encode("utf-8")) > BOARD_LIMIT:
+        raise BoardTooBig(f"{len(text.encode('utf-8'))} bytes")
+    archived = load_versions(block_id, folder) + [
+        {"version": version_of(current) or 1, "saved_at": updated_at_of(current), "board": current}
+    ]
+    archived = archived[-HISTORY_MAX:]
+    while len(json.dumps({"versions": archived}, ensure_ascii=False).encode("utf-8")) > HISTORY_LIMIT:
+        archived.pop(0)
+    _write_whole(history_path(block_id, folder), json.dumps({"versions": archived}, ensure_ascii=False))
+    _write_whole(folder / f"{block_id}.json", text)
+    return block_id
+
+
+def _now() -> str:
+    """The moment, as an ISO line with seconds: what an update stamps its version with."""
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 PHOTO_LIST = "photo-urls.txt"

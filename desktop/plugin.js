@@ -75,6 +75,13 @@ function icon(v) {
   if (ICON_NAMES.includes(v)) return v;
   return void 0;
 }
+function boardId(v) {
+  return typeof v === "string" && /^[0-9a-f]{8}$/.test(v) ? v : void 0;
+}
+function version(v) {
+  if (typeof v !== "number" || !Number.isInteger(v) || v < 1 || v > 9999) return void 0;
+  return v;
+}
 function slug(v) {
   if (typeof v === "string" && /^[a-z][a-z0-9_-]{0,23}$/.test(v)) return v;
   return void 0;
@@ -159,10 +166,10 @@ function composerActions(composer) {
 }
 
 // src/host/BlockTag.tsx
-import { useContext as useContext11, useEffect as useEffect10, useState as useState29 } from "react";
+import { useContext as useContext13, useEffect as useEffect10, useLayoutEffect as useLayoutEffect4, useReducer, useRef as useRef15, useState as useState27 } from "react";
 
 // src/core/Blocks.tsx
-import { Component as ReactComponent } from "react";
+import { Component as ReactComponent, useContext as useContext11 } from "react";
 
 // src/blocks/flow/highlight.tsx
 import { createContext as createContext2, useCallback, useContext, useMemo, useState } from "react";
@@ -474,7 +481,573 @@ function readBar(raw, here) {
 }
 
 // src/blocks/calculator/Calculator.tsx
-import { useMemo as useMemo5, useState as useState10 } from "react";
+import { useMemo as useMemo5 } from "react";
+
+// src/core/blockState.ts
+import { createContext as createContext3, useContext as useContext3, useEffect, useRef, useState as useState3 } from "react";
+
+// src/core/living-identity.ts
+var POSITIONAL_PATH = /^\d+(?:\.[A-Za-z_]+(?:\.\d+)*)*$/;
+var DESCENDANTS = "\u25C7";
+function holdsBlocks(v) {
+  if (Array.isArray(v)) return v.some(holdsBlocks);
+  if (v === null || typeof v !== "object") return false;
+  if (typeof v.type === "string") return true;
+  return Object.values(v).some(holdsBlocks);
+}
+function canonicalize(v, root) {
+  if (!root && holdsBlocks(v)) return DESCENDANTS;
+  if (v === null || typeof v !== "object") return JSON.stringify(v) ?? "null";
+  if (Array.isArray(v)) return `[${v.map((e) => canonicalize(e, false)).join(",")}]`;
+  const o = v;
+  const positional = typeof o.type === "string" && typeof o.path === "string" && POSITIONAL_PATH.test(o.path);
+  const keys = Object.keys(o).filter((k) => !(positional && k === "path")).sort();
+  return `{${keys.map((k) => `${JSON.stringify(k)}:${canonicalize(o[k], false)}`).join(",")}}`;
+}
+function identityOf(block) {
+  const json = canonicalize(block, true);
+  let h = 2166136261;
+  for (let i = 0; i < json.length; i++) {
+    h ^= json.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h.toString(16);
+}
+var freshSeq = 0;
+var mintOf = (b) => `${identityOf(b)}:~${freshSeq += 1}`;
+var mounted = /* @__PURE__ */ new WeakMap();
+var carried = /* @__PURE__ */ new WeakMap();
+function noteMounted(block, key) {
+  mounted.set(block, key);
+}
+function carriedKey(block) {
+  return carried.get(block);
+}
+function mintKey(block) {
+  return mintOf(block);
+}
+function existingKey(obj) {
+  return carried.get(obj) ?? mounted.get(obj) ?? mintOf(obj);
+}
+var isBlock = (v) => typeof v === "object" && v !== null && !Array.isArray(v) && typeof v.type === "string";
+function overlap(a, b) {
+  const pool = /* @__PURE__ */ new Map();
+  for (const x of a) pool.set(x, (pool.get(x) ?? 0) + 1);
+  let n = 0;
+  for (const y of b) {
+    const c = pool.get(y) ?? 0;
+    if (c > 0) {
+      pool.set(y, c - 1);
+      n += 1;
+    }
+  }
+  return n;
+}
+function signatures(obj) {
+  const exact = [];
+  const kinds = [];
+  const walkKinds = (v) => {
+    if (Array.isArray(v)) {
+      v.forEach(walkKinds);
+      return;
+    }
+    if (v === null || typeof v !== "object") return;
+    const t = v.type;
+    if (typeof t === "string") {
+      kinds.push(t);
+      return;
+    }
+    Object.values(v).forEach(walkKinds);
+  };
+  for (const value of Object.values(obj)) {
+    if (!holdsBlocks(value)) continue;
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (isBlock(item)) exact.push(identityOf(item));
+      }
+    }
+    walkKinds(value);
+  }
+  return { exact, kinds };
+}
+function carryBlocks(prev, next) {
+  carryList(prev ?? [], next);
+}
+function carryList(prev, next) {
+  const cands = [];
+  const nextSig = next.map((b) => signatures(b));
+  const prevSig = prev.map((b) => signatures(b));
+  for (let n = 0; n < next.length; n++) {
+    if (!holdsOwnIdentity(next[n])) continue;
+    for (let p = 0; p < prev.length; p++) {
+      if (!holdsOwnIdentity(prev[p]) || identityOf(prev[p]) !== identityOf(next[n])) continue;
+      const score = 2 * overlap(nextSig[n].exact, prevSig[p].exact) + overlap(nextSig[n].kinds, prevSig[p].kinds);
+      cands.push({ n, p, score });
+    }
+  }
+  cands.sort((a, b) => b.score - a.score || Math.abs(a.n - a.p) - Math.abs(b.n - b.p) || a.p - b.p || a.n - b.n);
+  const pairOf = /* @__PURE__ */ new Map();
+  const prevTaken = /* @__PURE__ */ new Set();
+  for (const c of cands) {
+    if (pairOf.has(c.n) || prevTaken.has(c.p)) continue;
+    pairOf.set(c.n, c.p);
+    prevTaken.add(c.p);
+  }
+  const assigned = /* @__PURE__ */ new Set();
+  for (let n = 0; n < next.length; n++) {
+    const item = next[n];
+    if (typeof item !== "object" || item === null) continue;
+    const p = pairOf.get(n);
+    let key = p === void 0 ? void 0 : existingKey(prev[p]);
+    if (key !== void 0 && assigned.has(key)) key = void 0;
+    if (key === void 0) key = mintOf(item);
+    else if (p !== void 0) carriedFrom.set(item, prev[p]);
+    assigned.add(key);
+    carried.set(item, key);
+  }
+  for (let n = 0; n < next.length; n++) {
+    const p = pairOf.get(n);
+    carryFields(p === void 0 ? null : prev[p], next[n]);
+  }
+}
+function holdsOwnIdentity(v) {
+  return isBlock(v) || isHolderWithBlocks(v);
+}
+function carryFields(pv, nv) {
+  if (typeof nv !== "object" || nv === null) return;
+  const po = typeof pv === "object" && pv !== null && !Array.isArray(pv) ? pv : {};
+  for (const [k, value] of Object.entries(nv)) {
+    if (!holdsBlocks(value)) continue;
+    const before = po[k];
+    if (Array.isArray(value)) {
+      carryList(Array.isArray(before) ? before : [], value);
+    } else if (isBlock(value)) {
+      carryList(before !== void 0 && holdsBlocks(before) ? [before] : [], [value]);
+    } else {
+      carryFields(isHolderWithBlocks(before) ? before : null, value);
+    }
+  }
+}
+function isHolderWithBlocks(v) {
+  return typeof v === "object" && v !== null && !Array.isArray(v) && holdsBlocks(v);
+}
+function kkey(slot) {
+  return `k:${slot}`;
+}
+function eachSlot(root, visit, prefix = "") {
+  slotList(root, visit, prefix);
+}
+function slotList(list, visit, prefix) {
+  const seen = /* @__PURE__ */ new Map();
+  for (const item of list) {
+    if (typeof item !== "object" || item === null) continue;
+    const id = identityOf(item);
+    const n = seen.get(id) ?? 0;
+    seen.set(id, n + 1);
+    const flat = `${id}:${n}`;
+    const full = prefix === "" ? flat : `${prefix}/${flat}`;
+    const block = isBlock(item);
+    if (block) visit(item, full, flat);
+    slotDescend(item, visit, block ? full : prefix);
+  }
+}
+function slotDescend(block, visit, full) {
+  if (typeof block !== "object" || block === null) return;
+  for (const value of Object.values(block)) slotValue(value, visit, full);
+}
+function slotValue(value, visit, full) {
+  if (!holdsBlocks(value)) return;
+  if (Array.isArray(value)) {
+    slotList(value, visit, full);
+    return;
+  }
+  if (isBlock(value)) {
+    slotList([value], visit, full);
+    return;
+  }
+  slotDescend(value, visit, full);
+}
+var carriedFrom = /* @__PURE__ */ new WeakMap();
+function carrySource(block) {
+  return carriedFrom.get(block);
+}
+
+// src/blocks/checklist/savedState.ts
+var boards = /* @__PURE__ */ new Map();
+var living = /* @__PURE__ */ new Set();
+var migratedWalk = /* @__PURE__ */ new Map();
+var stored = /* @__PURE__ */ new Map();
+var queued = /* @__PURE__ */ new Map();
+var timers = /* @__PURE__ */ new Map();
+var DOOR_DELAY = 150;
+function stateIn(answer) {
+  const state = answer?.state;
+  if (state && typeof state === "object" && !Array.isArray(state)) return { ...state };
+  return {};
+}
+function loadBoardState(rest, blockId) {
+  const known = boards.get(blockId);
+  if (known) return known.loaded;
+  const board = { state: {}, loaded: Promise.resolve({}), saving: Promise.resolve(), ready: false };
+  board.loaded = rest(`/blocks/${blockId}/state`).then(
+    (answer) => {
+      Object.assign(board.state, stateIn(answer));
+      board.ready = true;
+      return board.state;
+    },
+    () => {
+      boards.delete(blockId);
+      return {};
+    }
+  );
+  boards.set(blockId, board);
+  return board.loaded;
+}
+function peekState(blockId) {
+  const board = boards.get(blockId);
+  return board !== void 0 && board.ready ? board.state : null;
+}
+async function saveBoardValue(rest, blockId, key, value) {
+  await loadBoardState(rest, blockId);
+  const board = boards.get(blockId);
+  if (!board) return;
+  board.state[key] = value;
+  const snapshot = { ...board.state };
+  board.saving = board.saving.then(() => rest(`/blocks/${blockId}/state`, { method: "PUT", body: { state: snapshot } })).then(() => {
+  }, () => {
+  });
+  await board.saving;
+}
+function markLiving(blockId) {
+  living.add(blockId);
+}
+function isLiving(blockId) {
+  return living.has(blockId);
+}
+function seedValue(state, key) {
+  return state[key];
+}
+function peekStored(blockId, cacheKey) {
+  const key = `${blockId}\0${cacheKey}`;
+  return stored.has(key) ? { value: stored.get(key) } : void 0;
+}
+function recordValue(rest, blockId, cacheKey, doorKey, value, door) {
+  if (cacheKey !== null) stored.set(`${blockId}\0${cacheKey}`, value);
+  const state = peekState(blockId);
+  if (state !== null && door !== "never") state[doorKey] = value;
+  if (!rest || door === "never") return;
+  if (door === "now") {
+    void saveBoardValue(rest, blockId, doorKey, value);
+    return;
+  }
+  const key = `${blockId}\0${doorKey}`;
+  queued.set(key, { rest, value });
+  if (!timers.has(key)) {
+    timers.set(key, setTimeout(() => {
+      timers.delete(key);
+      const pending = queued.get(key);
+      if (pending !== void 0) {
+        queued.delete(key);
+        const at2 = key.indexOf("\0");
+        void saveBoardValue(pending.rest, key.slice(0, at2), key.slice(at2 + 1), pending.value);
+      }
+    }, DOOR_DELAY));
+  }
+}
+function forgetBlock(blockId) {
+  const prefix = `${blockId}\0`;
+  for (const [key, item] of [...queued]) {
+    if (!key.startsWith(prefix)) continue;
+    queued.delete(key);
+    const timer = timers.get(key);
+    if (timer !== void 0) clearTimeout(timer);
+    timers.delete(key);
+    void saveBoardValue(item.rest, blockId, key.slice(prefix.length), item.value);
+  }
+  living.delete(blockId);
+  migratedWalk.delete(blockId);
+}
+function trailsFrom(prev, next) {
+  const trails = /* @__PURE__ */ new Map();
+  if (prev === null) return trails;
+  const prevFull = /* @__PURE__ */ new Map();
+  const prevFlat = /* @__PURE__ */ new Map();
+  eachSlot(prev, (block, full, flat) => {
+    prevFull.set(block, full);
+    const position = block.path;
+    const seen = prevFlat.get(flat);
+    if (seen === void 0) {
+      prevFlat.set(flat, { from: full, position: typeof position === "string" ? position : void 0, count: 1 });
+    } else {
+      seen.count += 1;
+    }
+  });
+  eachSlot(next, (block, full, flat) => {
+    const src = carrySource(block);
+    if (src !== void 0) {
+      const was = prevFull.get(src);
+      if (was !== void 0) {
+        const position = src.path;
+        trails.set(block, { from: was, position: typeof position === "string" ? position : void 0 });
+      }
+      return;
+    }
+    const cand = prevFlat.get(flat);
+    if (cand !== void 0 && cand.count === 1 && cand.from !== full) {
+      trails.set(block, { from: cand.from, position: cand.position });
+    }
+  });
+  return trails;
+}
+async function promoteOnUpdate(rest, blockId, prev, next) {
+  living.add(blockId);
+  const trails = trailsFrom(prev, next);
+  eachSlot(next, (block, full) => {
+    const came = trails.get(block);
+    if (came === void 0 || came.from === full) return;
+    const from = `${blockId}\0${came.from}`;
+    for (const [key, value] of [...stored]) {
+      if (!key.startsWith(from)) continue;
+      const suffix = key.slice(from.length);
+      if (suffix !== "" && suffix[0] !== "/" && suffix[0] !== "~") continue;
+      const target = `${blockId}\0${full}${suffix}`;
+      if (!stored.has(target)) stored.set(target, value);
+    }
+  });
+  if (rest === void 0) return;
+  const board = boards.get(blockId);
+  if (board !== void 0 && board.ready) {
+    fileDoor(board, blockId, rest, next, trails);
+    return;
+  }
+  await loadBoardState(rest, blockId);
+  const now = boards.get(blockId);
+  if (now !== void 0) fileDoor(now, blockId, rest, next, trails);
+}
+function fileDoor(board, blockId, rest, next, trails) {
+  const state = board.state;
+  const claimed = /* @__PURE__ */ new Set();
+  let dirty = false;
+  const prefix = `${blockId}\0`;
+  for (const [key, value] of stored) {
+    if (!key.startsWith(prefix)) continue;
+    const dk = kkey(key.slice(prefix.length));
+    if (state[dk] === void 0) {
+      state[dk] = value;
+      dirty = true;
+    }
+  }
+  eachSlot(next, (block, full) => {
+    const key = kkey(full);
+    if (state[key] !== void 0) return;
+    const came = trails.get(block);
+    if (came === void 0) return;
+    const moved = came.from === full ? void 0 : state[kkey(came.from)];
+    if (moved !== void 0) {
+      state[key] = moved;
+      dirty = true;
+      return;
+    }
+    if (came.position !== void 0 && state[came.position] !== void 0 && !claimed.has(came.position)) {
+      state[key] = state[came.position];
+      claimed.add(came.position);
+      dirty = true;
+    }
+  });
+  if (!dirty) return;
+  const snapshot = { ...state };
+  board.saving = board.saving.then(() => rest(`/blocks/${blockId}/state`, { method: "PUT", body: { state: snapshot } })).then(() => {
+  }, () => {
+  });
+}
+var POSITION_KEY = /^\d+(?:\.[A-Za-z_]+(?:\.\d+)*)*$/;
+function splitKKey(key) {
+  const slot = key.slice(2);
+  const tilde = slot.indexOf("~");
+  return tilde < 0 ? { chain: slot, field: "" } : { chain: slot.slice(0, tilde), field: slot.slice(tilde) };
+}
+async function migrateArchived(rest, blockId, loadVersion, next, version2) {
+  living.add(blockId);
+  if (rest === void 0 || version2 < 2) return;
+  if ((migratedWalk.get(blockId) ?? 0) >= version2) return;
+  migratedWalk.set(blockId, version2);
+  await loadBoardState(rest, blockId);
+  const board = boards.get(blockId);
+  if (board === void 0 || !board.ready) return;
+  const state = board.state;
+  const here = /* @__PURE__ */ new Set();
+  eachSlot(next, (_block, full) => here.add(full));
+  const orphans = [];
+  for (const key of Object.keys(state)) {
+    if (POSITION_KEY.test(key)) {
+      orphans.push(key);
+    } else if (key.startsWith("k:")) {
+      if (!here.has(splitKKey(key).chain)) orphans.push(key);
+    }
+  }
+  if (orphans.length === 0) return;
+  const specs = /* @__PURE__ */ new Map([[version2, next]]);
+  const specOf2 = async (v) => {
+    if (!specs.has(v)) {
+      let read = null;
+      try {
+        const answer = await loadVersion(v);
+        if (answer !== null && answer.length > 0) read = answer;
+      } catch {
+        read = null;
+      }
+      specs.set(v, read);
+    }
+    return specs.get(v) ?? null;
+  };
+  const chainsAt = async (v) => {
+    const spec = await specOf2(v);
+    if (spec === null) return null;
+    const set = /* @__PURE__ */ new Set();
+    eachSlot(spec, (_block, full) => set.add(full));
+    return set;
+  };
+  const stepMap = async (from, to) => {
+    const prev = await specOf2(from);
+    const nx = await specOf2(to);
+    if (prev === null || nx === null) return null;
+    const trails = trailsFrom(prev, nx);
+    const map = /* @__PURE__ */ new Map();
+    eachSlot(nx, (block, full) => {
+      const came = trails.get(block);
+      if (came !== void 0) map.set(came.from, full);
+    });
+    return map;
+  };
+  let position1;
+  const positionsOfV1 = async () => {
+    if (position1 === void 0) {
+      const spec = await specOf2(1);
+      position1 = spec === null ? null : (() => {
+        const map = /* @__PURE__ */ new Map();
+        eachSlot(spec, (block, full) => {
+          const at2 = block.path;
+          if (typeof at2 === "string") map.set(at2, full);
+        });
+        return map;
+      })();
+    }
+    return position1;
+  };
+  let dirty = false;
+  for (const key of orphans) {
+    const value = state[key];
+    let chain;
+    let field = "";
+    let origin;
+    if (key.startsWith("k:")) {
+      const parts2 = splitKKey(key);
+      chain = parts2.chain;
+      field = parts2.field;
+      origin = -1;
+      for (let v = version2 - 1; v >= 1; v--) {
+        const at2 = await chainsAt(v);
+        if (at2 !== null && at2.has(chain)) {
+          origin = v;
+          break;
+        }
+      }
+      if (origin < 0) continue;
+    } else {
+      const slots = await positionsOfV1();
+      if (slots === null) continue;
+      const from = slots.get(key);
+      if (from === void 0) continue;
+      chain = from;
+      origin = 1;
+    }
+    let cur = chain;
+    let lost = false;
+    for (let v = origin + 1; v <= version2; v++) {
+      const at2 = await chainsAt(v);
+      if (at2 === null) {
+        lost = true;
+        break;
+      }
+      if (at2.has(cur)) continue;
+      const moved = (await stepMap(v - 1, v))?.get(cur);
+      if (moved === void 0) {
+        lost = true;
+        break;
+      }
+      cur = moved;
+    }
+    if (lost || !here.has(cur)) continue;
+    const target = kkey(cur + field);
+    if (state[target] === void 0) {
+      state[target] = value;
+      dirty = true;
+    }
+  }
+  if (!dirty) return;
+  const snapshot = { ...state };
+  board.saving = board.saving.then(() => rest(`/blocks/${blockId}/state`, { method: "PUT", body: { state: snapshot } })).then(() => {
+  }, () => {
+  });
+}
+function toggleTick(ticks, i) {
+  if (ticks.includes(i)) return ticks.filter((t) => t !== i);
+  return [...ticks, i].sort((a, b) => a - b);
+}
+function readTicks(saved, count2) {
+  if (!Array.isArray(saved)) return null;
+  const ticks = /* @__PURE__ */ new Set();
+  for (const t of saved) {
+    if (Number.isInteger(t) && t >= 0 && t < count2) ticks.add(t);
+  }
+  return [...ticks].sort((a, b) => a - b);
+}
+
+// src/core/blockState.ts
+var BlockSlot = createContext3(null);
+function useStoredValue(spec) {
+  const { rest, blockId } = useContext3(BlockActions);
+  const chain = useContext3(BlockSlot);
+  const living2 = blockId !== void 0 && chain !== null && isLiving(blockId);
+  const idKey = chain === null ? null : `${chain}${spec.field ?? ""}`;
+  const legacy = `${spec.path ?? ""}${spec.field ?? ""}`;
+  const transient = spec.door === "identity";
+  const byIdentity = transient ? idKey !== null : living2 && idKey !== null;
+  const doorKey = byIdentity && idKey !== null ? kkey(idKey) : legacy;
+  const touched = useRef(false);
+  const [value, setValue] = useState3(() => {
+    if (blockId === void 0 || idKey === null) return spec.initial();
+    if (!byIdentity) return spec.initial();
+    const held = peekStored(blockId, idKey);
+    if (held === void 0) return spec.initial();
+    return spec.revive(held.value) ?? spec.initial();
+  });
+  useEffect(() => {
+    if (!rest || blockId === void 0) return;
+    if (transient && idKey === null) return;
+    let live = true;
+    void loadBoardState(rest, blockId).then((state) => {
+      if (!live || touched.current || (spec.skip?.() ?? false)) return;
+      const saved = seedValue(state, doorKey);
+      if (saved === void 0) return;
+      const revived = spec.revive(saved);
+      if (revived !== null) setValue(revived);
+    });
+    return () => {
+      live = false;
+    };
+  }, [rest, blockId, doorKey, living2]);
+  const commit = (next, isTouched = true) => {
+    if (isTouched) touched.current = true;
+    setValue(next);
+    if (blockId === void 0) return;
+    if (!isTouched) return;
+    if (transient && idKey === null) return;
+    const door = !rest ? "never" : spec.door === "always" ? "now" : "coalesce";
+    recordValue(rest, blockId, idKey, doorKey, spec.stored(next), door);
+  };
+  return [value, commit];
+}
 
 // src/blocks/chart/chartData.ts
 var CHART_KINDS = ["line", "bar", "area", "stacked", "hbar", "combo", "pie", "donut", "scatter", "waterfall"];
@@ -1066,7 +1639,7 @@ function tryParse(formula) {
 }
 
 // src/blocks/chart/Chart.tsx
-import { useId, useMemo as useMemo4, useRef as useRef6, useState as useState9 } from "react";
+import { useId, useMemo as useMemo4, useRef as useRef7, useState as useState10 } from "react";
 
 // src/blocks/chart/geometry.ts
 function textWidth(text, size = 11) {
@@ -1402,10 +1975,10 @@ function waterfallTip(spec, i, layout) {
 }
 
 // src/blocks/chart/useWidth.ts
-import { useLayoutEffect, useState as useState3 } from "react";
+import { useLayoutEffect, useState as useState4 } from "react";
 var UNMEASURED_WIDTH = 560;
 function useWidth(ref) {
-  const [width, setWidth] = useState3(0);
+  const [width, setWidth] = useState4(0);
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -1442,7 +2015,7 @@ function pickKeys(n, at2, pick, rows = false) {
 }
 
 // src/blocks/chart/ChartTip.tsx
-import { useLayoutEffect as useLayoutEffect2, useRef, useState as useState4 } from "react";
+import { useLayoutEffect as useLayoutEffect2, useRef as useRef2, useState as useState5 } from "react";
 import { Fragment as Fragment2, jsx as jsx6, jsxs as jsxs3 } from "react/jsx-runtime";
 var GAP = 12;
 function tipPlace(x, y, tipWidth, tipHeight, boxWidth) {
@@ -1453,8 +2026,8 @@ function tipPlace(x, y, tipWidth, tipHeight, boxWidth) {
   return { left, top };
 }
 function ChartTip({ tip }) {
-  const card = useRef(null);
-  const [kept, setKept] = useState4(tip);
+  const card = useRef2(null);
+  const [kept, setKept] = useState5(tip);
   if (tip && tip !== kept) setKept(tip);
   const shown2 = tip ?? kept;
   useLayoutEffect2(() => {
@@ -1666,13 +2239,13 @@ function Area({ bands, layout, colour }) {
 }
 
 // src/blocks/chart/HBarChart.tsx
-import { Fragment as Fragment3, useRef as useRef2, useState as useState5 } from "react";
+import { Fragment as Fragment3, useRef as useRef3, useState as useState6 } from "react";
 import { jsx as jsx11, jsxs as jsxs8 } from "react/jsx-runtime";
 function HBarChart({ spec }) {
-  const [tip, setTip] = useState5(null);
-  const [picked, setPicked] = useState5(null);
-  const box = useRef2(null);
-  const tracks = useRef2([]);
+  const [tip, setTip] = useState6(null);
+  const [picked, setPicked] = useState6(null);
+  const box = useRef3(null);
+  const tracks = useRef3([]);
   const values = spec.series.flatMap((s) => s.data.filter((v) => v !== null));
   const lo = Math.min(0, ...values);
   const hi = Math.max(0, ...values);
@@ -1755,7 +2328,7 @@ function HBarChart({ spec }) {
 }
 
 // src/blocks/chart/PieChart.tsx
-import { useRef as useRef3, useState as useState6 } from "react";
+import { useRef as useRef4, useState as useState7 } from "react";
 import { jsx as jsx12, jsxs as jsxs9 } from "react/jsx-runtime";
 var BOX = 168;
 var C = BOX / 2;
@@ -1784,9 +2357,9 @@ function sliceColour(label, i) {
   return partColour(i);
 }
 function PieChart({ spec }) {
-  const [picked, setPicked] = useState6(null);
-  const [tip, setTip] = useState6(null);
-  const svg = useRef3(null);
+  const [picked, setPicked] = useState7(null);
+  const [tip, setTip] = useState7(null);
+  const svg = useRef4(null);
   const box = spec.height ?? BOX;
   const scale = box / BOX;
   const values = spec.series[0].data;
@@ -1876,14 +2449,14 @@ function PieChart({ spec }) {
 }
 
 // src/blocks/chart/ScatterChart.tsx
-import { useMemo as useMemo2, useRef as useRef4, useState as useState7 } from "react";
+import { useMemo as useMemo2, useRef as useRef5, useState as useState8 } from "react";
 import { jsx as jsx13, jsxs as jsxs10 } from "react/jsx-runtime";
 var PICK_RADIUS = 28;
 function ScatterChart({ spec }) {
-  const plot = useRef4(null);
-  const svg = useRef4(null);
+  const plot = useRef5(null);
+  const svg = useRef5(null);
   const width = useWidth(plot);
-  const [hover, setHover] = useState7(null);
+  const [hover, setHover] = useState8(null);
   const scales = useMemo2(() => chartScales(spec, null), [spec]);
   const layout = useMemo2(() => scatterLayout(spec, width, scales), [spec, width, scales]);
   const tip = useMemo2(
@@ -1973,13 +2546,13 @@ function nameOf(spec, layout) {
 }
 
 // src/blocks/chart/WaterfallChart.tsx
-import { useMemo as useMemo3, useRef as useRef5, useState as useState8 } from "react";
+import { useMemo as useMemo3, useRef as useRef6, useState as useState9 } from "react";
 import { jsx as jsx14, jsxs as jsxs11 } from "react/jsx-runtime";
 function WaterfallChart({ spec }) {
-  const plot = useRef5(null);
-  const svg = useRef5(null);
+  const plot = useRef6(null);
+  const svg = useRef6(null);
   const width = useWidth(plot);
-  const [hover, setHover] = useState8(null);
+  const [hover, setHover] = useState9(null);
   const layout = useMemo3(() => waterfallLayout(spec, width), [spec, width]);
   const tip = hover === null || !layout.bars[hover] ? null : waterfallTip(spec, hover, layout);
   const unit = spec.series[0]?.unit ?? spec.unit;
@@ -2106,10 +2679,10 @@ function Chart({ spec }) {
   return /* @__PURE__ */ jsx15(XYChart, { spec });
 }
 function XYChart({ spec }) {
-  const plot = useRef6(null);
-  const svg = useRef6(null);
+  const plot = useRef7(null);
+  const svg = useRef7(null);
   const width = useWidth(plot);
-  const [hover, setHover] = useState9(null);
+  const [hover, setHover] = useState10(null);
   const gid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const n = spec.x.length;
   const piled = spec.type === "stacked" || spec.type === "area";
@@ -2174,7 +2747,7 @@ function Headline({ spec, hover }) {
   const shown2 = hover ?? lastIndex(spec);
   const big = piled ? totalAt(spec.series, shown2) : spec.series[0].data[shown2] ?? null;
   const bigUnit = piled ? spec.unit : spec.series[0].unit ?? spec.unit;
-  const listed = piled ? [] : spec.series.slice(1);
+  const listed2 = piled ? [] : spec.series.slice(1);
   const withFigure = spec.figure !== false;
   return /* @__PURE__ */ jsxs12(Fragment4, { children: [
     /* @__PURE__ */ jsxs12("figcaption", { className: "hb-chart-head", children: [
@@ -2190,7 +2763,7 @@ function Headline({ spec, hover }) {
       /* @__PURE__ */ jsx15("span", { className: "hb-chart-big", children: big === null ? "\u2013" : fmt(big, bigUnit) }),
       /* @__PURE__ */ jsxs12("span", { className: "hb-chart-at", children: [
         hover !== null ? spec.x[shown2] : "",
-        listed.map((s, k) => {
+        listed2.map((s, k) => {
           const v = s.data[shown2] ?? null;
           return v === null ? null : /* @__PURE__ */ jsxs12("span", { className: "hb-chart-other", children: [
             s.name ? `${s.name} ` : "",
@@ -2216,8 +2789,22 @@ function AxisTitles({ spec, layout }) {
 // src/blocks/calculator/Calculator.tsx
 import { jsx as jsx16, jsxs as jsxs13 } from "react/jsx-runtime";
 function Calculator({ title, inputs, outputs, chart }) {
-  const [values, setValues] = useState10(() => new Map(inputs.map((x) => [x.id, x.value])));
-  const move = (id, v) => setValues((all) => new Map(all).set(id, v));
+  const [answers, write] = useStoredValue({
+    door: "identity",
+    initial: () => Object.fromEntries(inputs.map((x) => [x.id, x.value])),
+    revive: (saved) => {
+      if (!saved || typeof saved !== "object" || Array.isArray(saved)) return null;
+      const known = new Set(inputs.map((x) => x.id));
+      const out = {};
+      for (const [id, v] of Object.entries(saved)) {
+        if (known.has(id) && typeof v === "number" && isFinite(v)) out[id] = v;
+      }
+      return out;
+    },
+    stored: (value) => value
+  });
+  const values = useMemo5(() => new Map(inputs.map((x) => [x.id, answers[x.id] ?? x.value])), [inputs, answers]);
+  const move = (id, v) => write({ ...answers, [id]: v });
   const spec = useMemo5(() => chart ? calcChartSpec(chart, values) : null, [chart, values]);
   return /* @__PURE__ */ jsxs13("div", { className: "hb-card hb-calc", children: [
     title && /* @__PURE__ */ jsx16("div", { className: "hb-card-title", children: /* @__PURE__ */ jsx16(InlineText, { text: title }) }),
@@ -2332,7 +2919,7 @@ function niceStep(rough) {
 }
 
 // src/blocks/calendar/Calendar.tsx
-import { useContext as useContext3 } from "react";
+import { useContext as useContext4 } from "react";
 import { jsx as jsx17, jsxs as jsxs14 } from "react/jsx-runtime";
 var parts = (iso) => {
   const [y, m, d] = iso.split("-").map(Number);
@@ -2354,7 +2941,7 @@ function nextEvent(events, iso, now) {
   return events.find((e) => (e.end ?? e.start) > hm) ?? events.at(-1);
 }
 function Calendar({ date, title, events, week, ask }) {
-  const { fill } = useContext3(BlockActions);
+  const { fill } = useContext4(BlockActions);
   const now = /* @__PURE__ */ new Date();
   const day = parts(date);
   const next = nextEvent(events, date, now);
@@ -2456,7 +3043,7 @@ function Callout({ tone, title, text }) {
 }
 
 // src/blocks/upnext/UpNext.tsx
-import { useContext as useContext4 } from "react";
+import { useContext as useContext5 } from "react";
 
 // src/lib/EventArt.tsx
 import { useId as useId2 } from "react";
@@ -2678,7 +3265,7 @@ var dayOf2 = (iso) => {
   return new Date(y, m - 1, d);
 };
 function Card({ item, compact }) {
-  const { fill } = useContext4(BlockActions);
+  const { fill } = useContext5(BlockActions);
   const day = dayOf2(item.date);
   return /* @__PURE__ */ jsxs17(
     "button",
@@ -2956,61 +3543,7 @@ function readWaterfallPoint(raw, here) {
 }
 
 // src/blocks/checklist/Checklist.tsx
-import { useContext as useContext5, useEffect, useId as useId3, useRef as useRef7, useState as useState11 } from "react";
-
-// src/blocks/checklist/savedState.ts
-var boards = /* @__PURE__ */ new Map();
-function stateIn(answer) {
-  const state = answer?.state;
-  if (state && typeof state === "object" && !Array.isArray(state)) return { ...state };
-  return {};
-}
-function loadBoardState(rest, blockId) {
-  const known = boards.get(blockId);
-  if (known) return known.loaded;
-  const board = { state: {}, loaded: Promise.resolve({}), saving: Promise.resolve() };
-  board.loaded = rest(`/blocks/${blockId}/state`).then(
-    (answer) => {
-      board.state = stateIn(answer);
-      return board.state;
-    },
-    () => {
-      boards.delete(blockId);
-      return {};
-    }
-  );
-  boards.set(blockId, board);
-  return board.loaded;
-}
-async function saveBoardValue(rest, blockId, key, value) {
-  await loadBoardState(rest, blockId);
-  const board = boards.get(blockId);
-  if (!board) return;
-  board.state = { ...board.state, [key]: value };
-  const state = board.state;
-  board.saving = board.saving.then(() => rest(`/blocks/${blockId}/state`, { method: "PUT", body: { state } })).then(() => {
-  }, () => {
-  });
-  await board.saving;
-}
-function toggleTick(ticks, i) {
-  if (ticks.includes(i)) return ticks.filter((t) => t !== i);
-  return [...ticks, i].sort((a, b) => a - b);
-}
-function readTicks(saved, count2) {
-  if (!Array.isArray(saved)) return null;
-  const ticks = /* @__PURE__ */ new Set();
-  for (const t of saved) {
-    if (Number.isInteger(t) && t >= 0 && t < count2) ticks.add(t);
-  }
-  return [...ticks].sort((a, b) => a - b);
-}
-function ticksAfterLoad(saved, onScreen, tapped) {
-  if (tapped) return onScreen;
-  return saved ?? onScreen;
-}
-
-// src/blocks/checklist/Checklist.tsx
+import { useId as useId3 } from "react";
 import { jsx as jsx22, jsxs as jsxs19 } from "react/jsx-runtime";
 var STATE_WORDS = {
   pending: void 0,
@@ -3135,29 +3668,14 @@ function segmentsOf(items) {
   return segments;
 }
 function useSavedTicks(path, ticked, count2) {
-  const { rest, blockId } = useContext5(BlockActions);
-  const [ticks, setTicks] = useState11(ticked);
-  const shown2 = useRef7(ticked);
-  const tapped = useRef7(false);
-  shown2.current = ticks;
-  useEffect(() => {
-    if (!rest || !blockId) return;
-    let live = true;
-    loadBoardState(rest, blockId).then((state) => {
-      if (live) setTicks(ticksAfterLoad(readTicks(state[path], count2), shown2.current, tapped.current));
-    });
-    return () => {
-      live = false;
-    };
-  }, [rest, blockId, path, count2]);
-  function tap(i) {
-    tapped.current = true;
-    const next = toggleTick(shown2.current, i);
-    shown2.current = next;
-    setTicks(next);
-    if (rest && blockId) void saveBoardValue(rest, blockId, path, next);
-  }
-  return [ticks, tap];
+  const [ticks, setTicks] = useStoredValue({
+    path,
+    door: "always",
+    initial: () => ticked,
+    revive: (saved) => readTicks(saved, count2),
+    stored: (value) => value
+  });
+  return [ticks, (i) => setTicks(toggleTick(ticks, i))];
 }
 
 // src/blocks/checklist/read.ts
@@ -3262,7 +3780,7 @@ function readState(raw, here) {
 }
 
 // src/blocks/flip/Flip.tsx
-import { useState as useState12 } from "react";
+import { useState as useState11 } from "react";
 
 // src/blocks/flip/columns.ts
 function flipColumns(cards) {
@@ -3274,7 +3792,7 @@ function flipColumns(cards) {
 // src/blocks/flip/Flip.tsx
 import { jsx as jsx23, jsxs as jsxs20 } from "react/jsx-runtime";
 function Flip({ title, cards }) {
-  const [turned, setTurned] = useState12(() => cards.map(() => false));
+  const [turned, setTurned] = useState11(() => cards.map(() => false));
   const toggle = (i) => setTurned((was) => was.map((t, k) => k === i ? !t : t));
   const tall = cards.some((c) => c.image);
   return /* @__PURE__ */ jsxs20("div", { className: "hb-flip", children: [
@@ -3290,7 +3808,7 @@ function Flip({ title, cards }) {
   ] });
 }
 function Card2({ card, place: place2, turned, onTurn }) {
-  const [photoFailed, setPhotoFailed] = useState12(false);
+  const [photoFailed, setPhotoFailed] = useState11(false);
   const photo = card.image && !photoFailed ? card.image : void 0;
   const label = turned ? `${card.front}: ${card.back}` : `${card.front}, tap to see the answer`;
   return /* @__PURE__ */ jsx23("button", { type: "button", className: "hb-flip-card", onClick: onTurn, "aria-pressed": turned, "aria-label": label, children: /* @__PURE__ */ jsxs20("span", { className: turned ? "hb-flip-inner hb-flip-turned" : "hb-flip-inner", children: [
@@ -3330,7 +3848,7 @@ function readFlip(raw, here) {
 }
 
 // src/blocks/flow/Flow.tsx
-import { Fragment as Fragment5, useId as useId4, useLayoutEffect as useLayoutEffect3, useMemo as useMemo6, useRef as useRef8, useState as useState13 } from "react";
+import { Fragment as Fragment5, useId as useId4, useLayoutEffect as useLayoutEffect3, useMemo as useMemo6, useRef as useRef8, useState as useState12 } from "react";
 
 // src/lib/motion.ts
 function lessMotion() {
@@ -3422,7 +3940,7 @@ function Flow({ id, title, direction, nodes, groups = [] }) {
   const packet = useRef8(null);
   const boxes = useRef8([]);
   const width = useWidth(box);
-  const [open, setOpen] = useState13(null);
+  const [open, setOpen] = useState12(null);
   const walk = useWalk(id);
   const steps = walk?.steps ?? NO_STEPS;
   const target = useMemo6(() => flowState(nodes, groups, steps, walk?.at ?? 0), [nodes, groups, steps, walk?.at]);
@@ -3479,7 +3997,7 @@ function Counter({ layer, count: count2 }) {
   return /* @__PURE__ */ jsx24("span", { className: "hb-chip hb-chip-soft hb-flow-count", children: layer ? `layer ${layer} of ${count2}` : `\xD7 ${count2}` });
 }
 function useTravel(walk, nodes, groups, target, packet, boxes, frame) {
-  const [travelling, setTravelling] = useState13(null);
+  const [travelling, setTravelling] = useState12(null);
   useLayoutEffect3(() => {
     const step = walk && walk.from !== null && walk.at === walk.from + 1 ? walk.steps[walk.at] : void 0;
     const dot = packet.current;
@@ -3658,7 +4176,7 @@ function readChips(raw, here) {
 }
 
 // src/blocks/form/Form.tsx
-import { useContext as useContext6, useEffect as useEffect2, useRef as useRef9, useState as useState14 } from "react";
+import { useContext as useContext6 } from "react";
 
 // src/blocks/form/read.ts
 var MAX_FIELDS = 12;
@@ -3852,6 +4370,17 @@ function readSent(saved, form) {
   }
   return values;
 }
+function draftFits(saved, form) {
+  if (!saved || typeof saved !== "object" || Array.isArray(saved)) return null;
+  const given = saved;
+  const values = startingValues(form);
+  for (const field of form.fields) {
+    if (!Object.prototype.hasOwnProperty.call(given, field.id)) continue;
+    const kept = fitting(field, given[field.id]);
+    if (kept !== void 0) values[field.id] = kept;
+  }
+  return values;
+}
 function fitting(field, value) {
   if (field.kind === "slider") return typeof value === "number" && isFinite(value) ? onStep(value, field.min, field.max, field.step) : void 0;
   if (field.kind === "text") return typeof value === "string" && value.length <= TEXT_VALUE ? value : void 0;
@@ -3868,12 +4397,27 @@ function fitting(field, value) {
 import { jsx as jsx25, jsxs as jsxs22 } from "react/jsx-runtime";
 function Form(form) {
   const { send } = useContext6(BlockActions);
-  const [values, setValues] = useState14(() => startingValues(form));
-  const [sent, markSent] = useSentForm(form, setValues);
+  const [draft, writeDraft] = useStoredValue({
+    door: "identity",
+    field: "~v",
+    initial: () => startingValues(form),
+    revive: (saved) => draftFits(saved, form),
+    stored: (value) => value
+  });
+  const [record, setRecord] = useStoredValue({
+    path: form.path,
+    door: "always",
+    initial: () => null,
+    revive: (saved) => readSent(saved, form) !== null ? saved : null,
+    stored: (value) => value
+  });
+  const sent = record !== null;
+  const answers = record !== null ? readSent(record, form) : null;
+  const values = answers ?? draft;
   const ready = canSend(form, values, sent);
   function onSend() {
     if (!ready) return;
-    markSent(values);
+    setRecord(sentRecord(values));
     send(answerMessage(form, values));
   }
   return /* @__PURE__ */ jsxs22(
@@ -3889,7 +4433,14 @@ function Form(form) {
         form.title && /* @__PURE__ */ jsx25("div", { className: "hb-card-title", children: /* @__PURE__ */ jsx25(InlineText, { text: form.title }) }),
         /* @__PURE__ */ jsx25("fieldset", { disabled: sent, children: form.fields.map((field, i) => /* @__PURE__ */ jsxs22("div", { children: [
           startsGroup(form.fields, i) && /* @__PURE__ */ jsx25("div", { className: "hb-form-group", children: /* @__PURE__ */ jsx25(InlineText, { text: field.group }) }),
-          /* @__PURE__ */ jsx25(FieldView, { field, value: values[field.id], onChange: (v) => setValues((all) => ({ ...all, [field.id]: v })) })
+          /* @__PURE__ */ jsx25(
+            FieldView,
+            {
+              field,
+              value: values[field.id],
+              onChange: (v) => writeDraft({ ...values, [field.id]: v })
+            }
+          )
         ] }, field.id)) }),
         /* @__PURE__ */ jsxs22("div", { className: "hb-form-foot", children: [
           sent && /* @__PURE__ */ jsx25("span", { className: "hb-form-done", children: "\u2713 Sent" }),
@@ -3898,33 +4449,6 @@ function Form(form) {
       ]
     }
   );
-}
-function useSentForm(form, setValues) {
-  const { rest, blockId } = useContext6(BlockActions);
-  const [sent, setSent] = useState14(false);
-  const sentHere = useRef9(false);
-  const latest = useRef9(form);
-  latest.current = form;
-  useEffect2(() => {
-    if (!rest || !blockId) return;
-    let live = true;
-    loadBoardState(rest, blockId).then((state) => {
-      if (!live || sentHere.current) return;
-      const answers = readSent(state[latest.current.path], latest.current);
-      if (!answers) return;
-      setValues(answers);
-      setSent(true);
-    });
-    return () => {
-      live = false;
-    };
-  }, [rest, blockId, form.path, setValues]);
-  function markSent(values) {
-    sentHere.current = true;
-    setSent(true);
-    if (rest && blockId) void saveBoardValue(rest, blockId, form.path, sentRecord(values));
-  }
-  return [sent, markSent];
 }
 function FieldView({ field, value, onChange }) {
   if (field.kind === "slider") {
@@ -4005,7 +4529,7 @@ function Pills({ field, value, onChange }) {
 }
 
 // src/blocks/heatmap/Heatmap.tsx
-import { Fragment as Fragment7, useState as useState15 } from "react";
+import { Fragment as Fragment7, useState as useState13 } from "react";
 
 // src/blocks/heatmap/heatmapColour.ts
 var FAINT = 10;
@@ -4051,7 +4575,7 @@ function cellText(value, unit) {
 import { jsx as jsx26, jsxs as jsxs23 } from "react/jsx-runtime";
 var SHOW_NUMBERS_UP_TO = 6;
 function Heatmap({ title, rows, cols, values, unit, scale }) {
-  const [picked, setPicked] = useState15(null);
+  const [picked, setPicked] = useState13(null);
   const range = rangeOf(values);
   const numbersInCells = cols.length <= SHOW_NUMBERS_UP_TO;
   return /* @__PURE__ */ jsxs23("div", { className: "hb-card hb-heatmap", children: [
@@ -4149,12 +4673,12 @@ function scaleOf(asked, values) {
 }
 
 // src/blocks/images/Images.tsx
-import { useEffect as useEffect3, useState as useState16 } from "react";
+import { useEffect as useEffect2, useState as useState14 } from "react";
 import { jsx as jsx27, jsxs as jsxs24 } from "react/jsx-runtime";
 var GRID_FROM = 4;
 function Images({ block }) {
-  const [failed, setFailed] = useState16(/* @__PURE__ */ new Set());
-  const [open, setOpen] = useState16(null);
+  const [failed, setFailed] = useState14(/* @__PURE__ */ new Set());
+  const [open, setOpen] = useState14(null);
   const shown2 = block.images.filter((p) => !failed.has(p.url));
   if (!shown2.length) return null;
   const fail = (url) => setFailed((before) => new Set(before).add(url));
@@ -4195,7 +4719,7 @@ function Images({ block }) {
   ] });
 }
 function Overlay({ photo, onClose }) {
-  useEffect3(() => {
+  useEffect2(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -4356,20 +4880,24 @@ function readStat(raw, here) {
 }
 
 // src/blocks/layout/Containers.tsx
-import { useState as useState17 } from "react";
+import { isValidElement, useState as useState15 } from "react";
 import { jsx as jsx29, jsxs as jsxs26 } from "react/jsx-runtime";
+function cellKey(child, i) {
+  const k = isValidElement(child) ? child.key : null;
+  return `c:${k ?? i}`;
+}
 var OWN_WIDTH_KINDS = ["badge", "button", "link"];
 function Row({ kinds, children }) {
-  return /* @__PURE__ */ jsx29("div", { className: "hb-row", children: children.map((child, i) => /* @__PURE__ */ jsx29("div", { className: OWN_WIDTH_KINDS.includes(kinds[i]) ? "hb-row-cell hb-row-cell-own" : "hb-row-cell", children: child }, i)) });
+  return /* @__PURE__ */ jsx29("div", { className: "hb-row", children: children.map((child, i) => /* @__PURE__ */ jsx29("div", { className: OWN_WIDTH_KINDS.includes(kinds[i]) ? "hb-row-cell hb-row-cell-own" : "hb-row-cell", children: child }, cellKey(child, i))) });
 }
 function Grid({ children }) {
-  return /* @__PURE__ */ jsx29("div", { className: "hb-grid", children: children.map((child, i) => /* @__PURE__ */ jsx29("div", { className: "hb-grid-cell", children: child }, i)) });
+  return /* @__PURE__ */ jsx29("div", { className: "hb-grid", children: children.map((child, i) => /* @__PURE__ */ jsx29("div", { className: "hb-grid-cell", children: child }, cellKey(child, i))) });
 }
 function Columns({ children }) {
-  return /* @__PURE__ */ jsx29("div", { className: "hb-columns", children: children.map((child, i) => /* @__PURE__ */ jsx29("div", { className: "hb-column", children: child }, i)) });
+  return /* @__PURE__ */ jsx29("div", { className: "hb-columns", children: children.map((child, i) => /* @__PURE__ */ jsx29("div", { className: "hb-column", children: child }, cellKey(child, i))) });
 }
 function Section({ title, collapsed, children }) {
-  const [open, setOpen] = useState17(!collapsed);
+  const [open, setOpen] = useState15(!collapsed);
   if (!collapsed) {
     return /* @__PURE__ */ jsxs26("div", { className: "hb-card hb-section", children: [
       title && /* @__PURE__ */ jsx29("div", { className: "hb-card-title", children: /* @__PURE__ */ jsx29(InlineText, { text: title }) }),
@@ -4514,7 +5042,7 @@ function readTabChildren(list, here, depth, readChild) {
 }
 
 // src/blocks/layout/Tabs.tsx
-import { useId as useId5, useRef as useRef10, useState as useState18 } from "react";
+import { useId as useId5, useRef as useRef9 } from "react";
 import { jsx as jsx30, jsxs as jsxs27 } from "react/jsx-runtime";
 function tabAfterKey(current, count2, key) {
   if (key === "ArrowRight") return (current + 1) % count2;
@@ -4522,14 +5050,20 @@ function tabAfterKey(current, count2, key) {
   return current;
 }
 function Tabs({ labels: labels2, badges = [], panel }) {
-  const [picked, setPicked] = useState18(0);
-  const buttons = useRef10([]);
+  const [answer, pick] = useStoredValue({
+    door: "identity",
+    initial: () => 0,
+    revive: (saved) => Number.isInteger(saved) && saved >= 0 ? saved : null,
+    stored: (value) => value
+  });
+  const picked = answer < labels2.length ? answer : 0;
+  const buttons = useRef9([]);
   const base = useId5().replace(/[^a-zA-Z0-9]/g, "");
   const onKey = (e) => {
     const next = tabAfterKey(picked, labels2.length, e.key);
     if (next === picked) return;
     e.preventDefault();
-    setPicked(next);
+    pick(next);
     buttons.current[next]?.focus();
   };
   return /* @__PURE__ */ jsxs27("div", { className: "hb-tabs", children: [
@@ -4546,7 +5080,7 @@ function Tabs({ labels: labels2, badges = [], panel }) {
         ref: (el) => {
           buttons.current[i] = el;
         },
-        onClick: () => setPicked(i),
+        onClick: () => pick(i),
         "aria-label": badges[i] ? `${label}, ${badges[i]} open` : void 0,
         children: [
           /* @__PURE__ */ jsx30(InlineText, { text: label }),
@@ -4560,7 +5094,7 @@ function Tabs({ labels: labels2, badges = [], panel }) {
 }
 
 // src/blocks/list/List.tsx
-import { useContext as useContext7, useState as useState19 } from "react";
+import { useContext as useContext7, useState as useState16 } from "react";
 
 // src/blocks/list/rowAvatar.ts
 var AVATAR_COLOURS = [1, 3, 8, 4, 6];
@@ -4597,7 +5131,7 @@ function List({ title, ranked, items, max }) {
 }
 function ListRow({ item, rank, ceiling }) {
   const { send } = useContext7(BlockActions);
-  const [photoFailed, setPhotoFailed] = useState19(false);
+  const [photoFailed, setPhotoFailed] = useState16(false);
   const lead = rowLead(item, rank !== null, photoFailed);
   const width = ceiling > 0 ? Math.max(0, Math.min(1, (item.bar ?? 0) / ceiling)) * 100 : 0;
   const body = /* @__PURE__ */ jsxs28(Fragment8, { children: [
@@ -4644,10 +5178,10 @@ function Chevron() {
 }
 
 // src/blocks/layers/Layers.tsx
-import { useEffect as useEffect5, useRef as useRef11, useState as useState21 } from "react";
+import { useEffect as useEffect4, useRef as useRef10, useState as useState18 } from "react";
 
 // src/lib/canvas.ts
-import { useEffect as useEffect4, useState as useState20 } from "react";
+import { useEffect as useEffect3, useState as useState17 } from "react";
 function fitCanvas(canvas, height) {
   const ctx = canvas.getContext?.("2d");
   if (!ctx) return null;
@@ -4667,8 +5201,8 @@ function colourOf2(el, token) {
   return colour;
 }
 function useTheme() {
-  const [version, setVersion] = useState20(0);
-  useEffect4(() => {
+  const [version2, setVersion] = useState17(0);
+  useEffect3(() => {
     const bump = () => setVersion((v) => v + 1);
     const watcher = typeof MutationObserver === "undefined" ? null : new MutationObserver(bump);
     watcher?.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "style", "data-theme"] });
@@ -4679,7 +5213,7 @@ function useTheme() {
       scheme?.removeEventListener?.("change", bump);
     };
   }, []);
-  return version;
+  return version2;
 }
 
 // src/blocks/layers/geometry.ts
@@ -4751,18 +5285,18 @@ var TONE_TOKEN = {
 };
 var rad = (deg3) => deg3 * Math.PI / 180;
 function Layers({ title, caption: caption2, layers }) {
-  const canvas = useRef11(null);
-  const shapes = useRef11([]);
-  const drag = useRef11(null);
-  const [at2, setAt] = useState21(0);
-  const [yaw, setYaw] = useState21(START_YAW);
+  const canvas = useRef10(null);
+  const shapes = useRef10([]);
+  const drag = useRef10(null);
+  const [at2, setAt] = useState18(0);
+  const [yaw, setYaw] = useState18(START_YAW);
   const open = useOpening(at2, layers.length);
   const width = useWidth(canvas);
   const theme = useTheme();
   const layer = layers[at2];
   const go = (i) => setAt(Math.max(0, Math.min(layers.length - 1, i)));
   const turn = (by) => setYaw((was) => Math.max(-TURN, Math.min(TURN, was + by)));
-  useEffect5(() => {
+  useEffect4(() => {
     const el = canvas.current;
     const fit = el && fitCanvas(el);
     if (!el || !fit) return;
@@ -4845,10 +5379,10 @@ function Layers({ title, caption: caption2, layers }) {
   ] });
 }
 function useOpening(at2, n) {
-  const [open, setOpen] = useState21(() => Array.from({ length: n }, (_, i) => i === at2 ? 1 : 0));
-  const now = useRef11(open);
+  const [open, setOpen] = useState18(() => Array.from({ length: n }, (_, i) => i === at2 ? 1 : 0));
+  const now = useRef10(open);
   now.current = open;
-  useEffect5(() => {
+  useEffect4(() => {
     const target = Array.from({ length: n }, (_, i) => i === at2 ? 1 : 0);
     if (lessMotion() || typeof requestAnimationFrame !== "function") return setOpen(target);
     const from = now.current;
@@ -5344,7 +5878,7 @@ function readPile(p, names, here) {
 }
 
 // src/blocks/simulate/Simulate.tsx
-import { useEffect as useEffect7, useMemo as useMemo7, useRef as useRef14, useState as useState22 } from "react";
+import { useEffect as useEffect6, useMemo as useMemo7, useRef as useRef13, useState as useState19 } from "react";
 
 // src/blocks/source/Source.tsx
 import { jsx as jsx34, jsxs as jsxs31 } from "react/jsx-runtime";
@@ -5374,7 +5908,7 @@ function Source({ text, url, title, items }) {
 }
 
 // src/blocks/simulate/Piles.tsx
-import { useEffect as useEffect6, useRef as useRef12 } from "react";
+import { useEffect as useEffect5, useRef as useRef11 } from "react";
 
 // src/blocks/simulate/sim.ts
 var MAX_DOTS = 600;
@@ -5439,8 +5973,8 @@ function Piles({ piles, amounts, start, per, most, playing, unit, label }) {
   ] });
 }
 function Pile({ k, name, amount, counts, startDots, tallest, playing, unit }) {
-  const canvas = useRef12(null);
-  const born = useRef12([]);
+  const canvas = useRef11(null);
+  const born = useRef11([]);
   const width = useWidth(canvas);
   const theme = useTheme();
   const count2 = counts[k];
@@ -5448,7 +5982,7 @@ function Pile({ k, name, amount, counts, startDots, tallest, playing, unit }) {
   const size = width / cols;
   const height = Math.ceil(tallest / cols) * size;
   const shown2 = amount === null ? "\u2013" : fmt(amount, unit, { full: true });
-  useEffect6(() => {
+  useEffect5(() => {
     const el = canvas.current;
     if (!el) return;
     const grow = playing && !lessMotion();
@@ -5483,12 +6017,12 @@ function Pile({ k, name, amount, counts, startDots, tallest, playing, unit }) {
 }
 
 // src/blocks/simulate/SimChart.tsx
-import { useRef as useRef13 } from "react";
+import { useRef as useRef12 } from "react";
 import { jsx as jsx36, jsxs as jsxs33 } from "react/jsx-runtime";
 var HEIGHT = 220;
 var PAD = { left: 52, right: 12, top: 10, bottom: 22 };
 function SimChart({ piles, lines, times, index, unit }) {
-  const box = useRef13(null);
+  const box = useRef12(null);
   const width = useWidth(box);
   const to = times[times.length - 1];
   const top = Math.max(1e-9, ...lines.flat().map((v) => v ?? 0));
@@ -5532,12 +6066,32 @@ function valueText(v, unit) {
 import { jsx as jsx37, jsxs as jsxs34 } from "react/jsx-runtime";
 function Simulate(block) {
   const { title, t: time, inputs, values: fixed, piles, unit, source } = block;
-  const root = useRef14(null);
-  const clock = useRef14(time.to);
-  const [sliders, setSliders] = useState22(() => new Map(inputs.map((x) => [x.id, x.value])));
-  const [view, setView] = useState22(block.view);
-  const [at2, setAt] = useState22(time.to);
-  const [playing, setPlaying] = useState22(false);
+  const root = useRef13(null);
+  const clock = useRef13(time.to);
+  const [answers, write] = useStoredValue({
+    door: "identity",
+    initial: () => Object.fromEntries(inputs.map((x) => [x.id, x.value])),
+    revive: (saved) => {
+      if (!saved || typeof saved !== "object" || Array.isArray(saved)) return null;
+      const known = new Set(inputs.map((x) => x.id));
+      const out = {};
+      for (const [id, v] of Object.entries(saved)) {
+        if (known.has(id) && typeof v === "number" && isFinite(v)) out[id] = v;
+      }
+      return out;
+    },
+    stored: (value) => value
+  });
+  const sliders = useMemo7(() => new Map(Object.entries(answers)), [answers]);
+  const [view, setView] = useStoredValue({
+    door: "identity",
+    field: "~view",
+    initial: () => block.view,
+    revive: (saved) => saved === "dots" || saved === "chart" ? saved : null,
+    stored: (value) => value
+  });
+  const [at2, setAt] = useState19(time.to);
+  const [playing, setPlaying] = useState19(false);
   const trees = useMemo7(() => piles.map((p) => parseFormula(p.formula)), [piles]);
   const names = useMemo7(() => new Map([...fixed, ...sliders]), [fixed, sliders]);
   const times = useMemo7(() => timesOf(time.to, time.step), [time]);
@@ -5602,7 +6156,7 @@ function Simulate(block) {
         {
           input,
           value: sliders.get(input.id) ?? input.value,
-          onMove: (v) => setSliders((all) => new Map(all).set(input.id, v))
+          onMove: (v) => write({ ...answers, [input.id]: v })
         },
         input.id
       ))
@@ -5619,7 +6173,7 @@ function valuesOver(trees, names, tName, times) {
   return trees.map((tree) => times.map((t) => evaluate(tree, new Map(names).set(tName, t), budget)));
 }
 function usePlay(playing, stop, clock, time, show) {
-  useEffect7(() => {
+  useEffect6(() => {
     if (!playing) return;
     let last = performance.now();
     let frame = requestAnimationFrame(function tick(now) {
@@ -5633,10 +6187,10 @@ function usePlay(playing, stop, clock, time, show) {
   }, [playing]);
 }
 function usePauseWhenHidden(root, playing, pause) {
-  useEffect7(() => {
+  useEffect6(() => {
     if (!playing || !root.current || typeof IntersectionObserver === "undefined") return;
-    const watcher = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) pause();
+    const watcher = new IntersectionObserver(([entry2]) => {
+      if (!entry2.isIntersecting) pause();
     });
     watcher.observe(root.current);
     return () => watcher.disconnect();
@@ -5729,20 +6283,20 @@ function readHolds(raw, here) {
 }
 
 // src/blocks/steps/Steps.tsx
-import { useEffect as useEffect8, useRef as useRef15, useState as useState23 } from "react";
+import { useEffect as useEffect7, useRef as useRef14, useState as useState20 } from "react";
 import { jsx as jsx38, jsxs as jsxs35 } from "react/jsx-runtime";
 function Steps({ title, for: flow, items }) {
-  const [at2, setAt] = useState23(0);
-  const [failed, setFailed] = useState23(() => /* @__PURE__ */ new Set());
+  const [at2, setAt] = useState20(0);
+  const [failed, setFailed] = useState20(() => /* @__PURE__ */ new Set());
   const setWalk = useSetWalk();
-  const before = useRef15(null);
+  const before = useRef14(null);
   const step = items[at2];
   const go = (to) => setAt(Math.max(0, Math.min(items.length - 1, to)));
-  useEffect8(() => {
+  useEffect7(() => {
     if (flow !== void 0) setWalk(flow, { steps: items, at: at2, from: before.current });
     before.current = at2;
   }, [flow, items, at2, setWalk]);
-  useEffect8(() => () => {
+  useEffect7(() => () => {
     if (flow !== void 0) setWalk(flow, void 0);
   }, [flow, setWalk]);
   function onKeyDown(e) {
@@ -6058,10 +6612,10 @@ function isIndex(n, length) {
 }
 
 // src/blocks/table/Table.tsx
-import { useState as useState25 } from "react";
+import { useState as useState22 } from "react";
 
 // src/blocks/table/StructuredTable.tsx
-import { useMemo as useMemo8, useState as useState24 } from "react";
+import { useMemo as useMemo8, useState as useState21 } from "react";
 import { jsx as jsx40, jsxs as jsxs37 } from "react/jsx-runtime";
 var PAGE = 10;
 function shown(cell, column) {
@@ -6085,8 +6639,8 @@ function aggregateLabel(op) {
   return { sum: "Total", avg: "Average", min: "Lowest", max: "Highest", count: "Count" }[op];
 }
 function StructuredTable({ caption: caption2, columns, rows, filterable, page, aggregates }) {
-  const [query, setQuery] = useState24("");
-  const [at2, setAt] = useState24(page);
+  const [query, setQuery] = useState21("");
+  const [at2, setAt] = useState21(page);
   const needle = query.trim().toLowerCase();
   const filtered = useMemo8(() => {
     if (!needle) return rows;
@@ -6240,7 +6794,7 @@ var MINI_BARS_FROM = 3;
 function Table(props) {
   if ("structured" in props && props.structured) return /* @__PURE__ */ jsx41(StructuredTable, { ...props });
   const { columns, rows, highlight, caption: caption2 } = props;
-  const [sort, setSort] = useState25(null);
+  const [sort, setSort] = useState22(null);
   const order = sortedOrder(rows, sort);
   const bestRow = highlight && "row" in highlight ? highlight.row : -1;
   const bestColumn = highlight && "column" in highlight ? highlight.column : -1;
@@ -6352,7 +6906,7 @@ function readTile(item) {
 }
 
 // src/blocks/tiles/Tiles.tsx
-import { useContext as useContext8, useState as useState26 } from "react";
+import { useContext as useContext8, useState as useState23 } from "react";
 import { Fragment as Fragment11, jsx as jsx42, jsxs as jsxs39 } from "react/jsx-runtime";
 var WASHES = [1, 4, 8, 3, 6];
 function Tiles({ items }) {
@@ -6365,7 +6919,7 @@ function tapOf(tile, send, fill) {
 }
 function Tile({ tile, wash }) {
   const { send, fill } = useContext8(BlockActions);
-  const [photoFailed, setPhotoFailed] = useState26(false);
+  const [photoFailed, setPhotoFailed] = useState23(false);
   const tap = tapOf(tile, send, fill);
   const colour = `var(--hb-chart-${wash})`;
   const content = /* @__PURE__ */ jsxs39(Fragment11, { children: [
@@ -6505,11 +7059,11 @@ function readBriefing(raw, here) {
 }
 
 // src/blocks/prepared/Prepared.tsx
-import { useContext as useContext9, useState as useState27 } from "react";
+import { useContext as useContext9, useState as useState24 } from "react";
 import { jsx as jsx44, jsxs as jsxs41 } from "react/jsx-runtime";
 function IdeaCard({ idea, group }) {
   const { fill } = useContext9(BlockActions);
-  const [broken, setBroken] = useState27(false);
+  const [broken, setBroken] = useState24(false);
   return /* @__PURE__ */ jsxs41("button", { type: "button", className: "hb-prep-idea", onClick: () => fill(`Tell me more about ${idea.title} for ${group}`), children: [
     !broken && /* @__PURE__ */ jsx44("img", { src: idea.photo, alt: "", loading: "lazy", onError: () => setBroken(true) }),
     /* @__PURE__ */ jsxs41("span", { className: "hb-prep-cap", children: [
@@ -6624,11 +7178,11 @@ function readTracker(raw, here) {
 }
 
 // src/blocks/tracker/Tracker.tsx
-import { useContext as useContext10, useEffect as useEffect9, useState as useState28 } from "react";
+import { useContext as useContext10, useEffect as useEffect8, useState as useState25 } from "react";
 import { Fragment as Fragment13, jsx as jsx45, jsxs as jsxs42 } from "react/jsx-runtime";
 var VIEW_KEY = "hermes-genui.tracker.view";
 var SEEN_KEY = "hermes-genui.tracker.handled";
-function stored(key) {
+function stored2(key) {
   try {
     return localStorage.getItem(key);
   } catch {
@@ -6699,14 +7253,14 @@ function RowView({ row, onReopen }) {
 }
 function Tracker({ need, handled }) {
   const { rest } = useContext10(BlockActions);
-  const [view, setView] = useState28(() => stored(VIEW_KEY) === "done" ? "done" : "need");
-  const [reopened, setReopened] = useState28([]);
-  const [pulse, setPulse] = useState28(false);
+  const [view, setView] = useState25(() => stored2(VIEW_KEY) === "done" ? "done" : "need");
+  const [reopened, setReopened] = useState25([]);
+  const [pulse, setPulse] = useState25(false);
   const rows = handled.filter((r) => !reopened.includes(r.id));
-  useEffect9(() => {
-    const before = Number(stored(SEEN_KEY));
+  useEffect8(() => {
+    const before = Number(stored2(SEEN_KEY));
     store(SEEN_KEY, String(handled.length));
-    if (stored(SEEN_KEY) !== null && Number.isFinite(before) && handled.length > before && before > 0) setPulse(true);
+    if (stored2(SEEN_KEY) !== null && Number.isFinite(before) && handled.length > before && before > 0) setPulse(true);
   }, [handled.length]);
   const choose = (v) => {
     setView(v);
@@ -6813,9 +7367,9 @@ var REGISTRY = {
 // src/core/Blocks.tsx
 import { jsx as jsx48 } from "react/jsx-runtime";
 function BlockView({ block }) {
-  const entry = REGISTRY[block.type];
-  if (!entry) return null;
-  const { Component } = entry;
+  const entry2 = REGISTRY[block.type];
+  if (!entry2) return null;
+  const { Component } = entry2;
   return /* @__PURE__ */ jsx48(Contained, { block, children: /* @__PURE__ */ jsx48(Component, { block, draw: drawAll }) });
 }
 var Contained = class extends ReactComponent {
@@ -6831,27 +7385,155 @@ var Contained = class extends ReactComponent {
     return /* @__PURE__ */ jsx48("p", { className: "hb-block-failed", role: "note", children: "This part couldn't be drawn." });
   }
 };
+function blockKey(b, i, carried2) {
+  const asked = carriedKey(b);
+  if (asked !== void 0) {
+    noteMounted(b, asked);
+    return asked;
+  }
+  if (carried2) {
+    const fresh = mintKey(b);
+    noteMounted(b, fresh);
+    return fresh;
+  }
+  noteMounted(b, String(i));
+  return i;
+}
+function Slotted({ block, flat }) {
+  const parent = useContext11(BlockSlot);
+  const slot = parent === null ? flat : `${parent}/${flat}`;
+  return /* @__PURE__ */ jsx48(BlockSlot.Provider, { value: slot, children: /* @__PURE__ */ jsx48(BlockView, { block }) });
+}
 function drawAll(blocks) {
-  return blocks.map((b, i) => /* @__PURE__ */ jsx48(BlockView, { block: b }, i));
+  const seen = /* @__PURE__ */ new Map();
+  const carried2 = blocks.some((b) => carriedKey(b) !== void 0);
+  return blocks.map((b, i) => {
+    const id = identityOf(b);
+    const occ = seen.get(id) ?? 0;
+    seen.set(id, occ + 1);
+    return /* @__PURE__ */ jsx48(Slotted, { block: b, flat: `${id}:${occ}` }, blockKey(b, i, carried2));
+  });
 }
 function Blocks({ blocks }) {
   return /* @__PURE__ */ jsx48("div", { className: "hb-blocks", children: /* @__PURE__ */ jsx48(FlowLightBoard, { children: drawAll(blocks) }) });
 }
 
+// src/core/boardRoster.ts
+var entries = /* @__PURE__ */ new Map();
+function entry(id) {
+  let e = entries.get(id);
+  if (!e) entries.set(id, e = { owner: null, pointers: [], meta: {}, listeners: /* @__PURE__ */ new Set(), pokers: /* @__PURE__ */ new Set() });
+  return e;
+}
+function shout(e) {
+  for (const cb of e.listeners) cb();
+}
+function claim(id, token) {
+  const e = entry(id);
+  if (e.owner === token) return true;
+  if (e.pointers.includes(token)) return false;
+  if (e.owner === null) {
+    e.owner = token;
+    shout(e);
+    return true;
+  }
+  e.pointers.push(token);
+  return false;
+}
+function release(id, token) {
+  const e = entries.get(id);
+  if (e !== void 0) {
+    if (e.owner === token) {
+      e.owner = e.pointers.shift() ?? null;
+      shout(e);
+    } else {
+      const at2 = e.pointers.indexOf(token);
+      if (at2 >= 0) e.pointers.splice(at2, 1);
+    }
+    if (e.owner === null && e.pointers.length === 0 && e.listeners.size === 0 && e.pokers.size === 0) {
+      entries.delete(id);
+      return true;
+    }
+  }
+  return !occupied(id);
+}
+function occupied(id) {
+  const e = entries.get(id);
+  return e !== void 0 && (e.owner !== null || e.pointers.length > 0);
+}
+function owns(id, token) {
+  const e = entries.get(id);
+  return !!e && e.owner === token;
+}
+function listed(id, token) {
+  const e = entries.get(id);
+  return !!e && (e.owner === token || e.pointers.includes(token));
+}
+function setMeta(id, meta) {
+  const e = entry(id);
+  const same = e.meta.version === meta.version && e.meta.updatedAt === meta.updatedAt;
+  e.meta = meta;
+  if (!same) shout(e);
+}
+function getMeta(id) {
+  return entry(id).meta;
+}
+function poke(id) {
+  const e = entry(id);
+  if (e && e.owner !== null) for (const cb of e.pokers) cb();
+}
+function onPoke(id, cb) {
+  const e = entry(id);
+  e.pokers.add(cb);
+  return () => {
+    e.pokers.delete(cb);
+    if (e.owner === null && e.pointers.length === 0 && e.listeners.size === 0 && e.pokers.size === 0) {
+      entries.delete(id);
+    }
+  };
+}
+function subscribe(id, cb) {
+  const e = entry(id);
+  e.listeners.add(cb);
+  return () => {
+    e.listeners.delete(cb);
+    if (e.owner === null && e.pointers.length === 0 && e.listeners.size === 0 && e.pokers.size === 0) {
+      entries.delete(id);
+    }
+  };
+}
+
+// src/core/LivingBoards.tsx
+import { useContext as useContext12, useEffect as useEffect9, useState as useState26 } from "react";
+
 // src/core/readBlocks.ts
 var BLOCK_TYPES = Object.keys(REGISTRY);
 function readBlocksNoted(data) {
   let list = data;
-  if (isObject2(list) && Array.isArray(list.blocks)) list = list.blocks;
-  if (isObject2(list) && typeof list.type === "string") list = [list];
+  let boardVersion;
+  let boardUpdatedAt;
+  let boardLinks;
   const top = new Trail();
+  if (isObject2(list) && Array.isArray(list.blocks)) {
+    if (typeof list.type !== "string") {
+      boardVersion = version(list.version);
+      boardUpdatedAt = str(list.updated_at, 40);
+      boardLinks = readBoardLinks(list.links, top.at("links"));
+    }
+    list = list.blocks;
+  }
+  if (isObject2(list) && typeof list.type === "string") list = [list];
   const blocks = [];
   if (Array.isArray(list)) {
     list.forEach((raw, i) => {
       blocks.push(...readOne(raw, top.at(i), 0));
     });
   }
-  return { blocks, dropped: top.dropped };
+  const noted = { blocks, dropped: top.dropped };
+  if (boardVersion !== void 0) noted.version = boardVersion;
+  if (boardUpdatedAt !== void 0) noted.updatedAt = boardUpdatedAt;
+  if (boardLinks !== void 0) noted.links = boardLinks;
+  return noted;
 }
 function readBlocks(data) {
   return readBlocksNoted(data).blocks;
@@ -6859,56 +7541,273 @@ function readBlocks(data) {
 function isObject2(v) {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
+function readBoardLinks(value, here) {
+  if (!Array.isArray(value)) return void 0;
+  const items = [];
+  value.forEach((item, i) => {
+    const id = boardId(typeof item === "string" ? item : item?.id);
+    if (!id) {
+      here.at(i).drop("a link must name a board by its address");
+      return;
+    }
+    const note = typeof item === "object" && item !== null ? str(item.note, 80) : void 0;
+    items.push(note ? { id, note } : { id });
+  });
+  const kept = keepFirst(items, 3, here, "links");
+  return kept.length ? kept : void 0;
+}
 function readOne(raw, here, depth) {
   if (!isObject2(raw)) {
     here.drop("not a block object");
     return [];
   }
   const kind = raw.type;
-  const entry = Object.hasOwn(REGISTRY, kind) ? REGISTRY[kind] : void 0;
-  if (!entry) {
+  const entry2 = Object.hasOwn(REGISTRY, kind) ? REGISTRY[kind] : void 0;
+  if (!entry2) {
     here.drop(`unknown type "${kind}"`);
     return [];
   }
-  const read = entry.read(raw, here, depth, readOne);
+  const read = entry2.read(raw, here, depth, readOne);
   if (!read) return [];
   return Array.isArray(read) ? read : [read];
 }
 
-// src/host/BlockTag.tsx
-import { jsx as jsx49 } from "react/jsx-runtime";
-var ID_PATTERN = /^[0-9a-f]{8}$/;
-function BlockTag({ id, streaming, load }) {
-  const validId = typeof id === "string" && ID_PATTERN.test(id);
-  const actions = useContext11(BlockActions);
-  const [state, setState] = useState29({ kind: "loading" });
-  useEffect10(() => {
-    if (streaming || !validId) return;
+// src/core/LivingBoards.tsx
+import { jsx as jsx49, jsxs as jsxs44 } from "react/jsx-runtime";
+var HISTORY_SHOWN = 4;
+function LiveRow({ id, version: version2, updatedAt, links, viewing, onShow, canReach }) {
+  const older = version2 != null ? Array.from({ length: Math.min(version2 - 1, HISTORY_SHOWN) }, (_, i) => version2 - 1 - i) : [];
+  return /* @__PURE__ */ jsxs44("div", { className: "hb-live", "data-board": id, children: [
+    /* @__PURE__ */ jsxs44("div", { className: "hb-live-line", children: [
+      /* @__PURE__ */ jsx49("span", { className: "hb-live-mark", "aria-hidden": "true", children: "\u21BB" }),
+      version2 != null && /* @__PURE__ */ jsx49("span", { className: "hb-live-version", children: viewing === null ? `v${version2}` : `viewing v${viewing}` }),
+      updatedAt && viewing === null && /* @__PURE__ */ jsx49("span", { className: "hb-live-when", children: updatedAt.slice(0, 10) }),
+      /* @__PURE__ */ jsxs44("code", { className: "hb-live-addr", children: [
+        "#",
+        id
+      ] }),
+      canReach && older.map((n) => /* @__PURE__ */ jsxs44(
+        "button",
+        {
+          type: "button",
+          className: "hb-live-history",
+          "aria-pressed": viewing === n,
+          onClick: () => onShow(viewing === n ? null : n),
+          children: [
+            "v",
+            n,
+            " \u21A9"
+          ]
+        },
+        n
+      )),
+      viewing !== null && /* @__PURE__ */ jsx49("button", { type: "button", className: "hb-live-back", onClick: () => onShow(null), children: "current" })
+    ] }),
+    !!links?.length && /* @__PURE__ */ jsxs44("div", { className: "hb-links", children: [
+      /* @__PURE__ */ jsx49("span", { className: "hb-links-label", children: "linked across time \xB7 AI-suggested" }),
+      links.map((l) => /* @__PURE__ */ jsx49(LinkChip, { link: l }, l.id))
+    ] })
+  ] });
+}
+function LinkChip({ link }) {
+  const [open, setOpen] = useState26(false);
+  return /* @__PURE__ */ jsxs44("div", { className: "hb-link", children: [
+    /* @__PURE__ */ jsx49(
+      "button",
+      {
+        type: "button",
+        className: "hb-link-chip",
+        "aria-expanded": open,
+        title: link.note ? `${link.note} \u2014 board #${link.id}` : `board #${link.id}`,
+        onClick: () => setOpen((o) => !o),
+        children: link.note ?? `#${link.id}`
+      }
+    ),
+    open && /* @__PURE__ */ jsx49(LinkedBoard, { link })
+  ] });
+}
+function LinkedBoard({ link }) {
+  const actions = useContext12(BlockActions);
+  const rest = actions.rest;
+  const [board, setBoard] = useState26("loading");
+  useEffect9(() => {
+    if (!rest) {
+      setBoard(null);
+      return;
+    }
     let live = true;
-    load(id).then((data) => {
-      const blocks = readBlocks(data);
-      if (live) setState(blocks.length ? { kind: "drawn", blocks } : { kind: "failed" });
+    rest(`/blocks/${link.id}`).then((data) => {
+      const noted = readBlocksNoted(data);
+      if ((noted.version ?? 0) >= 2) markLiving(link.id);
+      if (live) setBoard(noted.blocks.length ? noted.blocks : null);
     }).catch(() => {
-      if (live) setState({ kind: "failed" });
+      if (live) setBoard(null);
     });
     return () => {
       live = false;
     };
-  }, [id, streaming, validId]);
+  }, [link.id, rest]);
+  if (board === "loading") {
+    return /* @__PURE__ */ jsxs44("div", { className: "hb-linked hb-linked-loading", children: [
+      "Fetching #",
+      link.id,
+      " from the store\u2026"
+    ] });
+  }
+  if (!board) {
+    return /* @__PURE__ */ jsxs44("div", { className: "hb-linked hb-linked-gone", children: [
+      "#",
+      link.id,
+      " is not a board on this machine."
+    ] });
+  }
+  return /* @__PURE__ */ jsxs44("div", { className: "hb-linked", "data-linked": link.id, children: [
+    /* @__PURE__ */ jsxs44("div", { className: "hb-linked-head", children: [
+      /* @__PURE__ */ jsx49("span", { "aria-hidden": "true", children: "\u25C8" }),
+      /* @__PURE__ */ jsx49("span", { children: link.note ? link.note : "linked board" }),
+      /* @__PURE__ */ jsxs44("code", { children: [
+        "#",
+        link.id
+      ] })
+    ] }),
+    /* @__PURE__ */ jsx49(BlockActions.Provider, { value: { ...actions, blockId: link.id }, children: /* @__PURE__ */ jsx49(Blocks, { blocks: board }) })
+  ] });
+}
+function LivePointer({ id, address }) {
+  const meta = getMeta(address);
+  return /* @__PURE__ */ jsxs44("div", { className: "hb-tag hb-live-pointer", "data-pointer": id, children: [
+    /* @__PURE__ */ jsx49("span", { className: "hb-live-mark", "aria-hidden": "true", children: "\u21BB" }),
+    /* @__PURE__ */ jsxs44("span", { children: [
+      "The same live board",
+      meta.version ? ` \xB7 v${meta.version}` : "",
+      " \u2014 its live view is where its first tag stands above."
+    ] }),
+    /* @__PURE__ */ jsxs44("code", { className: "hb-live-addr", children: [
+      "#",
+      id
+    ] })
+  ] });
+}
+
+// src/host/BlockTag.tsx
+import { jsx as jsx50, jsxs as jsxs45 } from "react/jsx-runtime";
+var ID_PATTERN = /^[0-9a-f]{8}$/;
+function BlockTag({ id, streaming, load }) {
+  const validId = typeof id === "string" && ID_PATTERN.test(id);
+  const actions = useContext13(BlockActions);
+  const address = validId ? `${actions.sessionScope ?? ""}|${id}` : "";
+  const [state, setState] = useState27({ kind: "loading" });
+  const [viewing, setViewing] = useState27(null);
+  const drawn = useRef15(null);
+  const self = useRef15(null);
+  if (self.current === null) self.current = { token: /* @__PURE__ */ Symbol("hb-tag") };
+  const [role, setRole] = useState27("unknown");
+  const [refresh, setRefresh] = useState27(0);
+  const [, force] = useReducer((x) => x + 1, 0);
+  const [live, setLive] = useState27({});
+  useLayoutEffect4(() => {
+    if (streaming || !validId) return;
+    const token = self.current.token;
+    const claim2 = claim(address, token);
+    setRole(claim2 ? "home" : "pointer");
+    if (!claim2) poke(address);
+    const recompute = () => {
+      const mine = owns(address, token);
+      setRole(mine ? "home" : listed(address, token) ? "pointer" : "unknown");
+      force();
+    };
+    const unsub = subscribe(address, recompute);
+    const offPoke = onPoke(address, () => {
+      setViewing(null);
+      setRefresh((r) => r + 1);
+    });
+    return () => {
+      unsub();
+      offPoke();
+      if (release(address, token)) forgetBlock(id);
+    };
+  }, [address, id, streaming, validId]);
+  useEffect10(() => {
+    if (streaming || !validId || role !== "home") return;
+    let alive = true;
+    const ask = viewing === null || !actions.rest ? load(id) : actions.rest(`/blocks/${id}?version=${viewing}`);
+    Promise.resolve(ask).then((data) => {
+      const { blocks, version: boardVersion, updatedAt: boardUpdatedAt, links: boardLinks } = readBlocksNoted(data);
+      if (!alive) return;
+      if (blocks.length) {
+        const headless = drawn.current === null && viewing === null && (boardVersion ?? 0) >= 2;
+        const commitDraw = () => {
+          if (!alive) return;
+          if (drawn.current) carryBlocks(drawn.current, blocks);
+          if (drawn.current && viewing === null) void promoteOnUpdate(actions.rest, id, drawn.current, blocks);
+          if (viewing === null && (boardVersion ?? 0) >= 2) markLiving(id);
+          drawn.current = blocks;
+          setState({ kind: "drawn", blocks });
+          if (viewing === null) {
+            setLive({ version: boardVersion, updatedAt: boardUpdatedAt, links: boardLinks });
+            setMeta(address, { version: boardVersion, updatedAt: boardUpdatedAt });
+          }
+        };
+        if (headless && actions.rest !== void 0) {
+          const rest = actions.rest;
+          void migrateArchived(
+            rest,
+            id,
+            async (v) => {
+              const answer = await rest(`/blocks/${id}?version=${v}`);
+              const read = readBlocksNoted(answer).blocks;
+              return read.length > 0 ? read : null;
+            },
+            blocks,
+            boardVersion ?? 2
+          ).then(commitDraw, commitDraw);
+        } else {
+          commitDraw();
+        }
+      } else if (viewing === null) {
+        setState({ kind: "failed" });
+      } else {
+        setViewing(null);
+      }
+    }).catch(() => {
+      if (!alive) return;
+      if (viewing === null) setState({ kind: "failed" });
+      else setViewing(null);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [address, id, streaming, validId, role, refresh, viewing]);
   if (!validId && !streaming) return null;
-  if (streaming || state.kind === "loading") return /* @__PURE__ */ jsx49(Note, { text: "drawing\u2026", pulse: true });
+  if (streaming || role === "unknown") return /* @__PURE__ */ jsx50(Note, { text: "drawing\u2026", pulse: true });
+  if (role === "pointer") return /* @__PURE__ */ jsx50(LivePointer, { id, address });
+  if (state.kind === "loading") return /* @__PURE__ */ jsx50(Note, { text: "drawing\u2026", pulse: true });
   if (state.kind === "failed") return null;
-  return /* @__PURE__ */ jsx49(BlockActions.Provider, { value: { ...actions, blockId: id }, children: /* @__PURE__ */ jsx49(Blocks, { blocks: state.blocks }) });
+  return /* @__PURE__ */ jsxs45(BlockActions.Provider, { value: { ...actions, blockId: id }, children: [
+    /* @__PURE__ */ jsx50(Blocks, { blocks: state.blocks }),
+    (live.version != null || live.links) && /* @__PURE__ */ jsx50(
+      LiveRow,
+      {
+        id,
+        version: live.version,
+        updatedAt: live.updatedAt,
+        links: live.links,
+        viewing,
+        onShow: setViewing,
+        canReach: Boolean(actions.rest)
+      }
+    )
+  ] });
 }
 function Note({ text, pulse = false }) {
-  return /* @__PURE__ */ jsx49("div", { className: pulse ? "hb-state hb-pulse" : "hb-state", children: text });
+  return /* @__PURE__ */ jsx50("div", { className: pulse ? "hb-state hb-pulse" : "hb-state", children: text });
 }
 
 // src/live/DashboardView.tsx
-import { useCallback as useCallback2, useEffect as useEffect11, useRef as useRef16, useState as useState30 } from "react";
+import { useCallback as useCallback2, useEffect as useEffect11, useRef as useRef16, useState as useState28 } from "react";
 
 // src/live/RefreshBar.tsx
-import { jsx as jsx50, jsxs as jsxs44 } from "react/jsx-runtime";
+import { jsx as jsx51, jsxs as jsxs46 } from "react/jsx-runtime";
 function when(iso, now = /* @__PURE__ */ new Date()) {
   const at2 = new Date(iso);
   const time = at2.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
@@ -6916,15 +7815,15 @@ function when(iso, now = /* @__PURE__ */ new Date()) {
   return `${at2.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}, ${time}`;
 }
 function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) {
-  return /* @__PURE__ */ jsxs44("div", { className: "hb-refresh", role: "status", children: [
-    /* @__PURE__ */ jsx50("span", { className: "hb-refresh-label", children: label }),
-    /* @__PURE__ */ jsx50("span", { className: "hb-refresh-when", children: at2 ? `updated ${when(at2)}` : "not filled yet" }),
-    schedule && /* @__PURE__ */ jsxs44("span", { className: "hb-refresh-when", children: [
+  return /* @__PURE__ */ jsxs46("div", { className: "hb-refresh", role: "status", children: [
+    /* @__PURE__ */ jsx51("span", { className: "hb-refresh-label", children: label }),
+    /* @__PURE__ */ jsx51("span", { className: "hb-refresh-when", children: at2 ? `updated ${when(at2)}` : "not filled yet" }),
+    schedule && /* @__PURE__ */ jsxs46("span", { className: "hb-refresh-when", children: [
       "\xB7 refreshes ",
       schedule
     ] }),
-    error && /* @__PURE__ */ jsx50("span", { className: "hb-refresh-error", children: error }),
-    /* @__PURE__ */ jsxs44(
+    error && /* @__PURE__ */ jsx51("span", { className: "hb-refresh-error", children: error }),
+    /* @__PURE__ */ jsxs46(
       "button",
       {
         type: "button",
@@ -6933,7 +7832,7 @@ function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) 
         onClick: onRefresh,
         "aria-label": refreshing ? "Refreshing" : `Refresh ${label}`,
         children: [
-          /* @__PURE__ */ jsx50("span", { "aria-hidden": "true", children: "\u21BB" }),
+          /* @__PURE__ */ jsx51("span", { "aria-hidden": "true", children: "\u21BB" }),
           " ",
           refreshing ? "Refreshing\u2026" : "Refresh"
         ]
@@ -6943,7 +7842,7 @@ function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) 
 }
 
 // src/live/DashboardView.tsx
-import { jsx as jsx51, jsxs as jsxs45 } from "react/jsx-runtime";
+import { jsx as jsx52, jsxs as jsxs47 } from "react/jsx-runtime";
 function snapshotOf(b) {
   if (b.snapshots) return b.snapshots;
   if (b.at !== void 0 || b.refreshing !== void 0) {
@@ -6972,8 +7871,8 @@ function signature(ids) {
   return (h >>> 0).toString(36);
 }
 function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, refreshLabel = "Snapshot" }) {
-  const [board, setBoard] = useState30(null);
-  const [missing, setMissing] = useState30(false);
+  const [board, setBoard] = useState28(null);
+  const [missing, setMissing] = useState28(false);
   const live = useRef16(false);
   const lastTicks = useRef16({});
   const reload = useCallback2(async () => {
@@ -7012,7 +7911,7 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
     };
   }, [reload]);
   if (!board) {
-    return /* @__PURE__ */ jsx51("div", { className: "hb-blocks hb-dash", children: /* @__PURE__ */ jsx51("p", { className: "hb-dash-sub", children: missing ? "This page isn't in this profile. Switch back to the profile it was made in, or ask Hermes to make it here." : "Loading\u2026" }) });
+    return /* @__PURE__ */ jsx52("div", { className: "hb-blocks hb-dash", children: /* @__PURE__ */ jsx52("p", { className: "hb-dash-sub", children: missing ? "This page isn't in this profile. Switch back to the profile it was made in, or ask Hermes to make it here." : "Loading\u2026" }) });
   }
   const ids = checklistsByPath(board.blocks);
   const sig = signature(ids);
@@ -7039,12 +7938,12 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
     if (Object.keys(ticks).length) await saveTicks(ticks);
     return { ok: true };
   };
-  return /* @__PURE__ */ jsxs45("div", { className: "hb-blocks hb-dash", children: [
-    board.blocks[0]?.type !== "briefing" && /* @__PURE__ */ jsxs45("header", { className: "hb-dash-head", children: [
-      /* @__PURE__ */ jsx51("div", { className: "hb-dash-date", children: board.at.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }) }),
-      /* @__PURE__ */ jsx51("h1", { children: board.greeting ?? board.title ?? "Today" })
+  return /* @__PURE__ */ jsxs47("div", { className: "hb-blocks hb-dash", children: [
+    board.blocks[0]?.type !== "briefing" && /* @__PURE__ */ jsxs47("header", { className: "hb-dash-head", children: [
+      /* @__PURE__ */ jsx52("div", { className: "hb-dash-date", children: board.at.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }) }),
+      /* @__PURE__ */ jsx52("h1", { children: board.greeting ?? board.title ?? "Today" })
     ] }),
-    refresh && board.snapshot && /* @__PURE__ */ jsx51(RefreshBar, { label: refreshLabel, ...board.snapshot, onRefresh: async () => {
+    refresh && board.snapshot && /* @__PURE__ */ jsx52(RefreshBar, { label: refreshLabel, ...board.snapshot, onRefresh: async () => {
       setBoard((b) => b ? { ...b, snapshot: { ...b.snapshot, refreshing: true, error: null } } : b);
       try {
         await refresh();
@@ -7052,7 +7951,7 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
         void reload();
       }
     } }),
-    /* @__PURE__ */ jsx51(BlockActions.Provider, { value: { send: fill, fill, rest, blockId: `dashboard-${sig}` }, children: /* @__PURE__ */ jsx51(Blocks, { blocks: board.blocks }, sig) })
+    /* @__PURE__ */ jsx52(BlockActions.Provider, { value: { send: fill, fill, rest, blockId: `dashboard-${sig}` }, children: /* @__PURE__ */ jsx52(Blocks, { blocks: board.blocks }, sig) })
   ] });
 }
 
@@ -7062,9 +7961,9 @@ function pageRoutes(register, view) {
   const shown2 = /* @__PURE__ */ new Map();
   return (list) => {
     const wanted = new Map(list.filter((p) => p.kind === "dashboard" && /^[a-z0-9-]{1,40}$/.test(p.slug)).map((p) => [p.slug, p.title]));
-    for (const [slug2, entry] of shown2) {
-      if (wanted.get(slug2) !== entry.title) {
-        entry.off.forEach((off) => off());
+    for (const [slug2, entry2] of shown2) {
+      if (wanted.get(slug2) !== entry2.title) {
+        entry2.off.forEach((off) => off());
         shown2.delete(slug2);
       }
     }
@@ -7084,7 +7983,7 @@ function pageRoutes(register, view) {
 }
 
 // src/live/register.tsx
-import { jsx as jsx52 } from "react/jsx-runtime";
+import { jsx as jsx53 } from "react/jsx-runtime";
 var POLL_MS = 5e3;
 var TODAY_PATH = "/genui-today";
 function registerLive(ctx, fill) {
@@ -7095,7 +7994,7 @@ function registerLive(ctx, fill) {
     area: "routes",
     title: "Today",
     data: { path: TODAY_PATH },
-    render: () => /* @__PURE__ */ jsx52(
+    render: () => /* @__PURE__ */ jsx53(
       DashboardView,
       {
         fill,
@@ -7133,7 +8032,7 @@ function registerLive(ctx, fill) {
       sync();
     }
   };
-  const syncPages = pageRoutes(ctx.register, (slug2) => /* @__PURE__ */ jsx52(
+  const syncPages = pageRoutes(ctx.register, (slug2) => /* @__PURE__ */ jsx53(
     DashboardView,
     {
       fill,
@@ -7147,8 +8046,8 @@ function registerLive(ctx, fill) {
   ));
   const checkPages = async () => {
     try {
-      const listed = await ctx.rest("/pages");
-      if (Array.isArray(listed?.pages)) syncPages(listed.pages);
+      const listed2 = await ctx.rest("/pages");
+      if (Array.isArray(listed2?.pages)) syncPages(listed2.pages);
     } catch {
       syncPages([]);
     }
@@ -7250,7 +8149,99 @@ var tokens_default = `/* Hermes GenUI: every class starts with hb- so nothing le
 var shared_default = "/* Pieces several blocks share: cards, chips, pill buttons and the motion they use. */\n/* A block that threw while drawing: a quiet one-line note in its place (core/Blocks.tsx). */\n.hb-block-failed {\n  margin: 0;\n  font-size: 12px;\n  line-height: 18px;\n  color: var(--hb-muted);\n}\n/* Cards */\n.hb-card {\n  background: var(--hb-card);\n  border: 1px solid var(--hb-line);\n  border-radius: 16px;\n  padding: 14px 16px;\n}\n.hb-card-title {\n  font-size: 16px;\n  line-height: 22px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n}\n/* Chips */\n.hb-chip {\n  display: inline-flex;\n  align-items: center;\n  align-self: flex-start;\n  gap: 4px;\n  padding: 2px 9px;\n  border-radius: 999px;\n  font-size: 12px;\n  font-weight: 600;\n  line-height: 18px;\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-chip-soft { background: var(--hb-accent-soft); color: var(--hb-accent-ink); }\n.hb-chip-good { background: color-mix(in srgb, var(--hb-good) 14%, transparent); color: var(--hb-good); }\n.hb-chip-warn { background: color-mix(in srgb, var(--hb-warn) 13%, transparent); color: var(--hb-warn); }\n.hb-chip-plain { background: var(--hb-well); color: var(--hb-ink-2); }\n/* Pill buttons that act (actions, button, a form's Send): soft for buttons in a reply, solid for a form's Send. */\n.hb-pill {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  min-height: 36px;\n  max-width: 100%;\n  padding: 7px 14px;\n  border: 0;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n  font: inherit;\n  font-size: 13.5px;\n  font-weight: 600;\n  line-height: 18px;\n  text-align: left;\n  text-decoration: none;\n  cursor: pointer;\n  transition: background 0.15s ease, transform 0.1s var(--hb-ease-out);\n}\n.hb-pill svg { flex: none; }\n.hb-pill:hover { background: color-mix(in srgb, var(--hb-accent) 22%, transparent); }\n.hb-pill:active { transform: scale(0.97); }\n.hb-pill:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-pill-solid { background: var(--hb-accent); color: #fff; }\n.hb-pill-solid:hover { background: color-mix(in srgb, var(--hb-accent) 86%, #000); }\n.hb-pill:disabled { opacity: 0.45; cursor: default; transform: none; }\n.hb-pill-solid:disabled:hover { background: var(--hb-accent); }\n/* Motion: a panel appearing (section, tabs, photo overlay) and a bar growing (bar, progress). */\n.hb-appear { animation: hb-appear 0.22s var(--hb-ease-out); }\n@keyframes hb-appear { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }\n@keyframes hb-grow { from { transform: scaleX(0); } }\n@media (prefers-reduced-motion: reduce) {\n  .hb-pill { transition: none; }\n  .hb-appear { animation: none; }\n}\n";
 
 // src/host/blockTag.css
-var blockTag_default = "/* The block tag's own states */\n.hb-state {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  margin: 8px 0;\n  padding: 10px 14px;\n  max-width: 100%;\n  border-radius: 14px;\n  background: color-mix(in srgb, var(--foreground, #1f2328) 5%, transparent);\n  color: var(--ui-text-tertiary, #6b7280);\n  font-size: 13px;\n}\n.hb-pulse { animation: hb-pulse 1.2s ease-in-out infinite; }\n@keyframes hb-pulse { 50% { opacity: 0.45; } }\n@media (prefers-reduced-motion: reduce) {\n  .hb-pulse { animation: none; }\n}\n";
+var blockTag_default = `/* The block tag's own states */
+.hb-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 10px 14px;
+  max-width: 100%;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--foreground, #1f2328) 5%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 13px;
+}
+.hb-pulse { animation: hb-pulse 1.2s ease-in-out infinite; }
+@keyframes hb-pulse { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) {
+  .hb-pulse { animation: none; }
+}
+
+/* --- Living Boards ---------------------------------------------------------------------------
+   The quiet row a live board says under itself, and the pointer a later tag of the same address
+   draws instead of a second board. Both sit OUTSIDE .hb-blocks (the board's own DOM is untouched)
+   and animate nothing: with no motion of their own there is nothing for prefers-reduced-motion
+   to still. Colors ride the app's own variables with fallbacks, as the chrome row's do. */
+.hb-live {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 10%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--background, #ffffff) 60%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.hb-live-line { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hb-live-mark { color: var(--ui-success, #1a7f37); }
+.hb-live-version { font-weight: 600; color: var(--foreground, #1f2328); }
+.hb-live-addr {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--foreground, #1f2328) 7%, transparent);
+}
+.hb-live-history, .hb-live-back, .hb-link-chip {
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 1px 10px;
+  cursor: pointer;
+}
+.hb-live-history[aria-pressed="true"], .hb-link-chip[aria-expanded="true"] {
+  border-color: var(--theme-primary, #e0a83c);
+  color: var(--foreground, #1f2328);
+}
+.hb-links { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hb-links-label { font-style: italic; }
+.hb-link { display: contents; }
+.hb-linked {
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px dashed color-mix(in srgb, var(--foreground, #1f2328) 22%, transparent);
+  border-radius: 10px;
+}
+.hb-linked-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.hb-linked-gone { color: var(--ui-text-tertiary, #6b7280); font-style: italic; }
+.hb-live-pointer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 6px 0;
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+`;
 
 // src/blocks/atoms/atoms.css
 var atoms_default = "/* Small pieces: heading, text, divider, badge, link, image, bar */\n.hb-heading { font-size: 16px; line-height: 22px; font-weight: 700; letter-spacing: -0.01em; margin-top: 4px; }\n.hb-text { color: var(--hb-ink-2); }\n.hb-text strong { color: var(--hb-ink); font-weight: 650; }\n.hb-divider { height: 1px; background: var(--hb-line); margin: 2px 0; }\n\n.hb-badge { display: flex; align-items: center; }\n.hb-link a {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 14px;\n  font-weight: 600;\n  color: var(--hb-accent-ink);\n  text-decoration: underline;\n  text-underline-offset: 2px;\n}\n.hb-image { margin: 0; display: flex; flex-direction: column; gap: 6px; }\n.hb-image img {\n  display: block;\n  width: 100%;\n  max-height: 300px;\n  object-fit: cover;\n  border: 1px solid var(--hb-line);\n  border-radius: 16px;\n  background: var(--hb-well);\n}\n.hb-image figcaption { padding: 0 4px; font-size: 12px; line-height: 16px; color: var(--hb-muted); }\n.hb-bar { display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 11px 14px; }\n.hb-bar-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: 13px; }\n.hb-bar-label { flex: 1 0 auto; font-weight: 600; color: var(--hb-ink-2); }\n.hb-bar-amount { color: var(--hb-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }\n.hb-bar-track { height: 8px; border-radius: 999px; background: var(--hb-accent-soft); overflow: hidden; }\n.hb-bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-accent); }\n.hb-bar-fill { transform-origin: left; animation: hb-grow 0.9s var(--hb-ease-out); }\n@media (prefers-reduced-motion: reduce) {\n  .hb-bar-fill { animation: none; }\n}\n";
@@ -7574,7 +8565,7 @@ var STYLE_PARTS = [
 var styles_default = STYLE_PARTS.join("\n");
 
 // src/plugin.tsx
-import { jsx as jsx53 } from "react/jsx-runtime";
+import { jsx as jsx54 } from "react/jsx-runtime";
 var ID4 = "hermes-genui";
 var STYLE_ID = "hermes-genui-css";
 function injectStyles() {
@@ -7600,7 +8591,7 @@ var plugin_default = {
       area: TRANSCRIPT_DIRECTIVE_AREA,
       data: {
         name: "blocks",
-        render: ({ attrs, streaming }) => /* @__PURE__ */ jsx53(BlockActions.Provider, { value: { send, fill, rest, blockId: attrs?.id }, children: /* @__PURE__ */ jsx53(BlockTag, { id: attrs?.id, streaming: Boolean(streaming), load }) })
+        render: ({ attrs, sessionId, streaming }) => /* @__PURE__ */ jsx54(BlockActions.Provider, { value: { send, fill, rest, blockId: attrs?.id, sessionScope: sessionId }, children: /* @__PURE__ */ jsx54(BlockTag, { id: attrs?.id, streaming: Boolean(streaming), load }) })
       }
     });
     const open = (text) => void openAndFill(text, host ?? {});

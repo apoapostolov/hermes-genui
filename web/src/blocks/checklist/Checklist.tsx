@@ -1,12 +1,14 @@
 // Things to tick off, with "3 of 9 done" and a bar above them; items of one group sit under its heading and each item
 // can say where its work stands (state), who holds it and why it waits. Inside a `::blocks` tag the ticks are saved
-// with the board (savedState.ts), so they're there after a reload and on the laptop.
-import { useContext, useEffect, useId, useRef, useState } from "react";
-import { BlockActions } from "../../host/actions";
+// with the board, so they're there after a reload and on the laptop. The ticks live on the BOARD keyed by the
+// checklist's identity chain (core/blockState.ts) — an insertion, a reorder, a move to another container or a
+// reopen all find them; a never-updated board still files them by position, exactly as before.
+import { useId } from "react";
+import { useStoredValue } from "../../core/blockState";
 import type { ChecklistBlock, ChecklistItem, ItemState } from "./read";
 import { InlineText } from "../../lib/InlineText";
 import { Icon } from "../../lib/Icon";
-import { loadBoardState, readTicks, saveBoardValue, ticksAfterLoad, toggleTick } from "./savedState";
+import { readTicks, toggleTick } from "./savedState";
 
 /** The word drawn beside an item (and read with it): pending has none, done is carried by the tick and the count. */
 const STATE_WORDS: Record<ItemState, string | undefined> = {
@@ -142,32 +144,16 @@ function segmentsOf(items: ChecklistItem[]): { label?: string; rows: Row[] }[] {
   return segments;
 }
 
-/** The ticks on screen and a tap handler. With a board and a REST door (inside a `::blocks` tag) the saved ticks are
- *  loaded and every tap is saved; without them (or when the server fails) the ticks just live on screen. */
+/** The ticks on screen and a tap handler. Inside a `::blocks` tag they are the BOARD's: saved at once on the
+ *  door (by position until an update makes the board living, by identity after) and restored on every mount —
+ *  a tap made while the door is still answering stays the truth the reader last touched. With no board and no
+ *  door (or when the server fails) the ticks just live on screen. */
 function useSavedTicks(path: string, ticked: number[], count: number): [number[], (i: number) => void] {
-  const { rest, blockId } = useContext(BlockActions);
-  const [ticks, setTicks] = useState(ticked);
-  const shown = useRef(ticked);
-  const tapped = useRef(false);
-  shown.current = ticks;
-
-  useEffect(() => {
-    if (!rest || !blockId) return;
-    let live = true;
-    loadBoardState(rest, blockId).then((state) => {
-      if (live) setTicks(ticksAfterLoad(readTicks(state[path], count), shown.current, tapped.current));
-    });
-    return () => {
-      live = false;
-    };
-  }, [rest, blockId, path, count]);
-
-  function tap(i: number) {
-    tapped.current = true;
-    const next = toggleTick(shown.current, i);
-    shown.current = next;
-    setTicks(next);
-    if (rest && blockId) void saveBoardValue(rest, blockId, path, next);
-  }
-  return [ticks, tap];
+  const [ticks, setTicks] = useStoredValue<number[]>({
+    path, door: "always",
+    initial: () => ticked,
+    revive: (saved) => readTicks(saved, count),
+    stored: (value) => value,
+  });
+  return [ticks, (i) => setTicks(toggleTick(ticks, i))];
 }

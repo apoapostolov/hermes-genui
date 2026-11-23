@@ -1,23 +1,40 @@
 // A form in a reply: the user changes the model's prefilled answers and presses Send, which sends one plain message
 // (formMessage.ts) as the user. A form is sent once; then it greys out with the choices still showing and "✓ Sent".
 // Inside a `::blocks` tag the sent state is saved with the board (sentForm.ts), so it stays sent after a reload.
-import { useContext, useEffect, useRef, useState } from "react";
+// Both answers live on the BOARD, keyed by the form's identity — the unsent draft the reader is typing (filed from
+// the keystroke) and the sent record (positionally until an update makes the board living). An update that moves the
+// form, a reopen of the board, a reload: the form comes back as the reader left it, and a different form wearing the
+// vacated position reads nothing of it.
+import { useContext } from "react";
 import { BlockActions } from "../../host/actions";
+import { useStoredValue } from "../../core/blockState";
 import { formatWithUnit } from "../../lib/format";
 import { TEXT_VALUE, type CheckboxField, type ChoiceField, type FormBlock, type FormField, type FormOption } from "./read";
 import { InlineText } from "../../lib/InlineText";
-import { loadBoardState, saveBoardValue } from "../checklist/savedState";
 import { answerMessage, canSend, startingValues, startsGroup, type FormValue, type FormValues } from "./formMessage";
-import { readSent, sentRecord } from "./sentForm";
+import { draftFits, readSent, sentRecord, type SentRecord } from "./sentForm";
 
 export function Form(form: FormBlock) {
   const { send } = useContext(BlockActions);
-  const [values, setValues] = useState<FormValues>(() => startingValues(form));
-  const [sent, markSent] = useSentForm(form, setValues);
+  const [draft, writeDraft] = useStoredValue<FormValues>({
+    door: "identity", field: "~v",
+    initial: () => startingValues(form),
+    revive: (saved) => draftFits(saved, form),
+    stored: (value) => value,
+  });
+  const [record, setRecord] = useStoredValue<SentRecord | null>({
+    path: form.path, door: "always",
+    initial: () => null,
+    revive: (saved) => (readSent(saved, form) !== null ? (saved as SentRecord) : null),
+    stored: (value) => value,
+  });
+  const sent = record !== null;                       // a Send pressed before the door answers stays sent:
+  const answers = record !== null ? readSent(record, form) : null;  // the local record is the newest truth
+  const values = answers ?? draft;
   const ready = canSend(form, values, sent);
   function onSend() {
     if (!ready) return;
-    markSent(values);  // saved as the message goes
+    setRecord(sentRecord(values));  // saved as the message goes
     send(answerMessage(form, values));
   }
   return (
@@ -28,7 +45,8 @@ export function Form(form: FormBlock) {
         {form.fields.map((field, i) => (
           <div key={field.id}>
             {startsGroup(form.fields, i) && <div className="hb-form-group"><InlineText text={field.group!} /></div>}
-            <FieldView field={field} value={values[field.id]} onChange={(v) => setValues((all) => ({ ...all, [field.id]: v }))} />
+            <FieldView field={field} value={values[field.id]}
+              onChange={(v) => writeDraft({ ...values, [field.id]: v })} />
           </div>
         ))}
       </fieldset>
@@ -38,39 +56,6 @@ export function Form(form: FormBlock) {
       </div>
     </form>
   );
-}
-
-/** Whether the form was sent, and how to mark it sent. With a board and a REST door (inside a `::blocks` tag) a form
- *  sent before shows as sent with the answers it sent, and Send is saved; without them (or when the server fails) the
- *  sent state just lives on screen. A Send pressed before the saved state arrives stays sent. */
-function useSentForm(form: FormBlock, setValues: (values: FormValues) => void): [boolean, (values: FormValues) => void] {
-  const { rest, blockId } = useContext(BlockActions);
-  const [sent, setSent] = useState(false);
-  const sentHere = useRef(false);
-  const latest = useRef(form);
-  latest.current = form;
-
-  useEffect(() => {
-    if (!rest || !blockId) return;
-    let live = true;
-    loadBoardState(rest, blockId).then((state) => {
-      if (!live || sentHere.current) return;
-      const answers = readSent(state[latest.current.path], latest.current);
-      if (!answers) return;
-      setValues(answers);
-      setSent(true);
-    });
-    return () => {
-      live = false;
-    };
-  }, [rest, blockId, form.path, setValues]);
-
-  function markSent(values: FormValues) {
-    sentHere.current = true;
-    setSent(true);
-    if (rest && blockId) void saveBoardValue(rest, blockId, form.path, sentRecord(values));
-  }
-  return [sent, markSent];
 }
 
 function FieldView({ field, value, onChange }: { field: FormField; value: FormValue | undefined; onChange: (v: FormValue) => void }) {

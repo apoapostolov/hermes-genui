@@ -36,8 +36,9 @@ export default {
       area: TRANSCRIPT_DIRECTIVE_AREA,
       data: {
         name: "blocks",
-        render: ({ attrs, streaming }: { attrs: Record<string, string>; streaming: boolean }) => (
-          <BlockActions.Provider value={{ send, fill, rest, blockId: attrs?.id }}>
+        render: ({ attrs, sessionId, streaming }:
+          { attrs: Record<string, string>; sessionId?: string; streaming: boolean }) => (
+          <BlockActions.Provider value={{ send, fill, rest, blockId: attrs?.id, sessionScope: sessionId }}>
             <BlockTag id={attrs?.id} streaming={Boolean(streaming)} load={load} />
           </BlockActions.Provider>
         ),

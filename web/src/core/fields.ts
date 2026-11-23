@@ -59,6 +59,19 @@ export function icon(v: unknown): IconName | undefined {
   return undefined;
 }
 
+/** A board address: the eight lowercase hex characters of its stored id, the same bytes its tag carries
+ *  ("7f3a09bc"). Anything else names no board. */
+export function boardId(v: unknown): string | undefined {
+  return typeof v === "string" && /^[0-9a-f]{8}$/.test(v) ? v : undefined;
+}
+
+/** Which version of a live board this is (Living Boards): a whole number 1 and up, else nothing said.
+ *  Text, bools and fractions are not version numbers, leniently ignored like every model word. */
+export function version(v: unknown): number | undefined {
+  if (typeof v !== "number" || !Number.isInteger(v) || v < 1 || v > 9999) return undefined;
+  return v;
+}
+
 /** A short lowercase name one block uses to point at another (a flow's id, its nodes' ids, a steps block's `for`),
  *  or undefined. The same rule as the Python side's SLUG. "tf" → "tf";  "next-word" → "next-word";  "Big Flow" → undefined */
 export function slug(v: unknown): string | undefined {

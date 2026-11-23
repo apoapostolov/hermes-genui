@@ -1,5 +1,9 @@
-// What-if numbers: a slider per input, and results worked out again on every move. Nothing is sent or saved.
-import { useMemo, useState } from "react";
+// What-if numbers: a slider per input, and results worked out again on every move. Nothing is sent; every moved
+// line is the BOARD's answer from the edit itself (core/blockState.ts) — a never-updated board, a living update,
+// a move into another container or a reopen all find every slider where the reader left it, over the state door
+// and across an unmounted first update alike.
+import { useMemo } from "react";
+import { useStoredValue } from "../../core/blockState";
 import type { CalcInput, CalcOutput } from "./read";
 import { calcChartSpec, type CalcChart } from "./calcChart";
 import { formatWithUnit } from "../../lib/format";
@@ -12,8 +16,22 @@ type Props = { title?: string; inputs: CalcInput[]; outputs: CalcOutput[]; chart
 /** Sliders, then the results, then (when the block has one) a chart worked out again from the same values on every
  *  move. A chart with no point that can be worked out isn't shown. */
 export function Calculator({ title, inputs, outputs, chart }: Props) {
-  const [values, setValues] = useState(() => new Map(inputs.map((x) => [x.id, x.value])));
-  const move = (id: string, v: number) => setValues((all) => new Map(all).set(id, v));
+  const [answers, write] = useStoredValue<Record<string, number>>({
+    door: "identity",
+    initial: () => Object.fromEntries(inputs.map((x) => [x.id, x.value])),
+    revive: (saved) => {
+      if (!saved || typeof saved !== "object" || Array.isArray(saved)) return null;
+      const known = new Set(inputs.map((x) => x.id));
+      const out: Record<string, number> = {};
+      for (const [id, v] of Object.entries(saved as Record<string, unknown>)) {
+        if (known.has(id) && typeof v === "number" && isFinite(v)) out[id] = v;
+      }
+      return out;
+    },
+    stored: (value) => value,
+  });
+  const values = useMemo(() => new Map(inputs.map((x) => [x.id, answers[x.id] ?? x.value])), [inputs, answers]);
+  const move = (id: string, v: number) => write({ ...answers, [id]: v });
   const spec = useMemo(() => (chart ? calcChartSpec(chart, values) : null), [chart, values]);
   return (
     <div className="hb-card hb-calc">

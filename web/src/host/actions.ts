@@ -12,6 +12,10 @@ export type Actions = {
   fill(text: string): void;
   /** The id of the stored board these blocks were drawn from ("7f3a09bc"); absent outside a `::blocks` tag. */
   blockId?: string;
+  /** The conversation this board is drawn in (the host's sessionId, when the carrier knows it). Living
+   *  boards' one-live-view-per-address rule is scoped to it: an address is THE CHAT's visual memory, and
+   *  two conversations open on one page (or a session switch mid-mount) never pointer each other. */
+  sessionScope?: string;
   /** The plugin's REST door (ctx.rest); absent in tests and previews, where nothing is saved. */
   rest?: Rest;
 };

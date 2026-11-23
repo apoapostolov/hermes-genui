@@ -169,4 +169,20 @@ describe("checklist compact density", () => {
     expect(seg.getAttribute("aria-checked")).toBe("true");
     expect(screen.getByText("2 of 4 done, 1 blocked, 1 skipped")).toBeTruthy();
   });
+
+  it("keeps a segment's tick on the board across a remount", async () => {
+    // The ticks of the new strip ride the board's state door (useStoredValue): a tap is saved as the
+    // board's own, and the next mount shows it again — the persistence main's component must keep.
+    const saved: Record<string, unknown> = {};
+    const rest = vi.fn(async (_path: string, init?: { method?: string; body?: unknown }) =>
+      (init ? ((saved.state = (init as { body: { state: unknown } }).body.state), { ok: true }) : { state: saved.state }));
+    const view = draw([phases], { rest, blockId: "7f3a09bc" });
+    await act(async () => { fireEvent.click(screen.getByRole("checkbox", { name: /Post the changelog, in progress/ })); });
+    await waitFor(() => expect(rest).toHaveBeenCalledWith("/blocks/7f3a09bc/state", { method: "PUT", body: { state: { "0": [0, 2] } } }));
+    view.unmount();
+    draw([phases], { rest, blockId: "7f3a09bc" });
+    // The restored tick makes the segment done — its name and checked state both say so on the next mount.
+    await waitFor(() => expect(screen.getByRole("checkbox", { name: /^Post the changelog, done/ }).getAttribute("aria-checked")).toBe("true"));
+    expect(screen.getByText("2 of 4 done, 1 blocked, 1 skipped")).toBeTruthy();
+  });
 });
