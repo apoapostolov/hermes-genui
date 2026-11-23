@@ -11,6 +11,14 @@ plugin_store = importlib.import_module("hermes_genui.core.store")
 
 CATALOG = json.loads((ROOT / "core" / "catalog.json").read_text(encoding="utf-8"))
 EXAMPLES = {entry["kind"]: entry["example"] for entry in CATALOG["blocks"]}
+# The catalog example is a structured table now, so the legacy array form is written out here.
+LEGACY_TABLE = {
+    "type": "table",
+    "caption": "Phones under ₹50k",
+    "columns": ["Phone", "Price", "Camera"],
+    "highlight": {"row": 0},
+    "rows": [["Pixel 10a", "₹44,999", "Best in class"], ["Nothing 4", "₹39,999", "OK"]],
+}
 
 
 def render(*blocks: dict) -> str:
@@ -294,7 +302,7 @@ def test_waterfall_names_an_unknown_step_and_leaves_the_close_unstated():
 # --- tables ---------------------------------------------------------------------------------------
 
 def test_table_is_markdown():
-    out = render(EXAMPLES["table"])
+    out = render(LEGACY_TABLE)
     assert out == (
         "**Phones under ₹50k**\n"
         "| Phone | Price | Camera |\n"
@@ -316,6 +324,23 @@ def test_table_escapes_pipes_and_keeps_12_rows():
 def test_table_rows_as_objects_and_short_rows():
     out = render({"type": "table", "columns": ["A", "B"], "rows": [{"A": 1, "B": 2.5}, ["x"]]})
     assert out.splitlines()[2:] == ["| 1 | 2.5 |", "| x |  |"]
+
+
+def test_structured_table_reads_as_markdown_with_footer():
+    out = render({"type": "table", "caption": "Spend", "columns": [
+        {"id": "shop", "label": "Shop"}, {"id": "spend", "label": "Spend", "kind": "currency", "unit": "$"},
+        {"id": "share", "label": "Share", "kind": "percent"}, {"id": "from", "label": "From", "kind": "sources"}],
+        "rows": [{"cells": {"shop": {"text": "A"}, "spend": {"text": "1200", "value": 1200},
+                            "share": {"text": "40", "value": 40}},
+                  "sources": [{"label": "POS"}, {"label": "Bank"}]}],
+        "aggregates": [{"column": "spend", "op": "sum", "label": "Spend"}]})
+    assert out == (
+        "**Spend**\n"
+        "| Shop | Spend | Share | From |\n"
+        "| --- | --- | --- | --- |\n"
+        "| A | $1,200 | 40% | POS, Bank |\n"
+        "_Spend: 1,200_"
+    )
 
 
 def test_heatmap_is_a_compact_table():
@@ -500,7 +525,7 @@ def test_row_grid_columns_give_children_in_order():
 
 
 def test_section_title_then_children():
-    section = {"type": "section", "title": "Prices", "children": [EXAMPLES["table"], {"type": "text", "text": "ok"}]}
+    section = {"type": "section", "title": "Prices", "children": [LEGACY_TABLE, {"type": "text", "text": "ok"}]}
     out = render(section)
     assert out.startswith("**Prices**\n\n**Phones under ₹50k**\n| Phone | Price | Camera |")
     assert out.endswith("| Nothing 4 | ₹39,999 | OK |\n\nok")
