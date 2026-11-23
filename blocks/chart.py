@@ -34,27 +34,31 @@ def _limit(kind: str, most: int) -> str:
 
 def _range_points(block: dict, x: object, series: object, path: str
                    ) -> tuple[object, object, list[tuple[str, str]]]:
-    """Accept the points form the guide shows: [{label, low, high, now}] on the series, one point per x. When a series
-    carries points and no low/high arrays, turn the labels into x (if x is missing) and the fields into the parallel
-    arrays the rest of the check reads. A series already written as low/high/now arrays is left alone.
+    """Accept the points form the guide shows: [{label, low, high, now}] on the series, or at chart level when there is
+    one series and no x. When points are present and no low/high arrays are, turn the labels into x (if x is missing)
+    and the fields into the parallel arrays the rest of the check reads. A series already written as low/high/now
+    arrays is left alone.
 
     points [{label: "Mon", low: 18, high: 34, now: 26}] → x ["Mon"], series[0].low [18], .high [34], .now [26]
     """
-    if not isinstance(series, list) or not series:
-        return x, series, []
-    first = series[0]
-    if not isinstance(first, dict):
-        return x, series, []
+    if isinstance(series, list) and series and isinstance(series[0], dict):
+        first = series[0]
+    else:
+        first = {}
     points = first.get("points")
-    if not isinstance(points, list) or isinstance(first.get("low"), list) or isinstance(first.get("high"), list):
-        return x, series, []
+    points_path = f"{path}.series.0.points"
+    if not (isinstance(points, list) and not isinstance(first.get("low"), list) and not isinstance(first.get("high"), list)):
+        points = block.get("points")
+        points_path = f"{path}.points"
+        if not (isinstance(points, list) and not isinstance(first.get("low"), list) and not isinstance(first.get("high"), list)):
+            return x, series, []
     labels: list[str] = []
     lows: list[object] = []
     highs: list[object] = []
     nows: list[object] = []
     problems: list[tuple[str, str]] = []
     for j, p in enumerate(points):
-        at = f"{path}.series.0.points.{j}"
+        at = f"{points_path}.{j}"
         if not isinstance(p, dict):
             problems.append((at, "point is not an object"))
             continue
@@ -70,7 +74,8 @@ def _range_points(block: dict, x: object, series: object, path: str
     converted = {**first, "low": lows, "high": highs}
     if any(v is not None for v in nows):
         converted["now"] = nows
-    return x, [converted, *series[1:]], []
+    rest = series[1:] if isinstance(series, list) else []
+    return x, [converted, *rest], []
 
 
 def check_chart(block: dict, path: str) -> list[tuple[str, str]]:
@@ -88,6 +93,12 @@ def check_chart(block: dict, path: str) -> list[tuple[str, str]]:
     x = block.get("x")
     series = block.get("series")
     kind = chart_kind(block.get("kind"))
+    if kind in ("scatter", "waterfall", "range") and isinstance(block.get("points"), list):
+        first = series[0] if isinstance(series, list) and series and isinstance(series[0], dict) else {}
+        has_points = isinstance(first.get("points"), list)
+        if not has_points and not (kind == "range" and (isinstance(first.get("low"), list) or isinstance(first.get("high"), list))):
+            rest = series[1:] if isinstance(series, list) else []
+            series = [{**first, "points": block["points"]}, *rest]
     if kind == "scatter":
         return _check_scatter(block, path)
     if kind == "waterfall":
@@ -475,9 +486,14 @@ def text_chart(block: dict) -> str:
             {**s, "data": [s.get("data", [])[i] if i < len(s.get("data", [])) else None for i in order]}
             for s in series
         ]
+    kind = chart_kind(block.get("kind"))
+    if kind in ("scatter", "waterfall", "range") and isinstance(block.get("points"), list):
+        first = series[0] if series and isinstance(series[0], dict) else {}
+        has_points = isinstance(first.get("points"), list)
+        if not has_points and not (kind == "range" and (isinstance(first.get("low"), list) or isinstance(first.get("high"), list))):
+            series = [{**first, "points": block["points"]}, *series[1:]]
     if not series:
         return ""
-    kind = chart_kind(block.get("kind"))
     title = safe_text(block.get("title"), 80)
     if kind == "range":
         nx, ns, _ = _range_points(block, x, series, "0")

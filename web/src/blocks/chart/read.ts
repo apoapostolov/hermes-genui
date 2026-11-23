@@ -62,18 +62,27 @@ function caption(value: unknown, max: number): string | undefined {
 }
 
 function readSpec(d: any): ChartSpec | null {
-  if (!Array.isArray(d.series) || !d.series.length) return null;
+  const rawSeries = Array.isArray(d.series) ? d.series : [];
   const type = chartKind(d.kind);
   const unit = typeof d.unit === "string" ? d.unit : undefined;
   const range = type === "range";
+  let seriesInput = rawSeries;
+  if (range && Array.isArray(d.points)) {
+    const first = rawSeries[0] && typeof rawSeries[0] === "object" ? rawSeries[0] : {};
+    if (!Array.isArray((first as any).points) && !Array.isArray((first as any).low) && !Array.isArray((first as any).high)) {
+      seriesInput = [{ ...first, points: d.points }, ...rawSeries.slice(1)];
+    }
+  }
+  if (!seriesInput.length) return null;
   let x: string[] = Array.isArray(d.x) ? d.x.map(String) : [];
-  let series: ChartSeries[] = d.series
+  let series: ChartSeries[] = seriesInput
     .filter((s: any) => s && (Array.isArray(s.data) || (range && (Array.isArray(s.low) || Array.isArray(s.high) || Array.isArray(s.points)))))
     .slice(0, maxSeries(type))
     .map((s: any, k: number) => (range ? readSpanSeries(s, x) : readSeries(s, k, type, unit)));
   if (range && !x.length && series[0]?.span?.length) {
+    const points = (seriesInput[0] as any)?.points;
     x = series[0].span.map((_, i) => {
-      const p = (d.series[0] as any)?.points?.[i];
+      const p = Array.isArray(points) ? points[i] : undefined;
       const label = p && typeof p === "object" ? p.label ?? p.x : undefined;
       return label === undefined || label === null ? `Point ${i + 1}` : String(label);
     });
@@ -96,10 +105,15 @@ function readSpec(d: any): ChartSpec | null {
  *   waterfall: 2 series → 1 kept;  no point with a value or a total → the block is dropped
  */
 function readPoints(d: any, type: "scatter" | "waterfall", here: Trail): ChartSpec | null {
-  if (!Array.isArray(d.series) || !d.series.length) {
+  let rawSeries = Array.isArray(d.series) ? d.series : [];
+  if (Array.isArray(d.points)) {
+    const first = rawSeries[0] && typeof rawSeries[0] === "object" ? rawSeries[0] : {};
+    if (!Array.isArray((first as any).points)) rawSeries = [{ ...first, points: d.points }, ...rawSeries.slice(1)];
+  }
+  if (!rawSeries.length) {
     return here.drop(type === "scatter" ? "scatter needs series with points" : "waterfall needs series with points");
   }
-  const series = keepFirst(d.series, maxSeries(type), here, `${type} series`)
+  const series = keepFirst(rawSeries, maxSeries(type), here, `${type} series`)
     .map((s: any, k: number) => (type === "scatter" ? readScatterSeries(s, k, here) : readWaterfallSeries(s, here)));
   if (type === "scatter") {
     if (!scatterPoints(series).length) return here.drop("scatter needs a point with a number on both scales");
