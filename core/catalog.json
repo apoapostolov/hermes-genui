@@ -37,8 +37,8 @@
   {
    "kind": "chart",
    "for": "A trend, a comparison, or parts of a whole.",
-   "use_when": "line: trends. bar: periods or items; bars turn sideways for long labels or rankings; time stays upright. hbar: rankings, 2-5 named items. donut, pie: parts of a whole, 3-7 parts. stacked: parts of a total over time. area: growth that builds up. combo: two measures. 2-3 items on several metrics: a table, not a chart each.",
-   "fields": "kind. title. x: labels. series: [{name, data: numbers, null=gap}], 1-3 (stacked/area 6; pie/donut 1). combo: first bars, rest lines; another unit gets a right axis. stepped holds the line at each value. sortDesc ranks bars by the first series. height 120-480. unit: \"%\", \"₹Cr\", \"$M\" or word. tone: \"change\" colours a line. caveat ≤120: a data limit. xLabel/yLabel ≤40: name axes. source: site.",
+   "use_when": "line: trends. bar: periods or items; bars turn sideways for long labels or rankings; time stays upright. hbar: rankings, 2-5 named items. donut, pie: parts of a whole, 3-7 parts. stacked: parts of a total over time. area: growth that builds up. combo: two measures. 2-3 items on several metrics: a table, not a chart each. scatter: two measures. waterfall: steps to a total.",
+   "fields": "kind. title. x: labels. series: [{name, data: numbers, null=gap}], 1-3 (stacked/area 6; pie/donut 1). combo: first bars, rest lines; another unit gets a right axis. stepped holds the line at each value. sortDesc ranks bars by the first series. height 120-480. unit: \"%\", \"₹Cr\", \"$M\" or word. tone: \"change\" colours a line. caveat ≤120: a data limit. xLabel/yLabel ≤40: name axes. source: site. scatter: points [{x, y, label}], ≤2 series, ≤200 points. waterfall: points [{label, value, total: true}], null breaks.",
    "example": {
     "type": "chart",
     "kind": "bar",
