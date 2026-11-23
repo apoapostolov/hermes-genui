@@ -46,7 +46,7 @@ export type BooleanDecl = { type: "boolean"; label: string; initial: boolean };
 export type StateDecl = NumberDecl | StringDecl | BooleanDecl;
 export type StateValues = Record<string, number | string | boolean>;
 
-export type SetAction = { op: "set"; target: string; value: Expr };
+export type SetAction = { op: "set"; state: string; value: Expr };
 export type ResetAction = { op: "reset" };
 export type FillAction = { op: "fill"; message: string; fields: string[] };
 export type WidgetAction = SetAction | ResetAction | FillAction;
@@ -402,12 +402,12 @@ function readAction(raw: unknown, here: Trail, context: ReadContext): WidgetActi
   if (!isObject(raw)) return here.drop("button needs an action");
   if (raw.op === "reset") return { op: "reset" };
   if (raw.op === "set") {
-    const target = stateName(raw.target);
-    if (!target || !Object.hasOwn(context.state, target)) return here.drop("set needs a declared state target");
+    const name = stateName(raw.state);
+    if (!name || !Object.hasOwn(context.state, name)) return here.drop("set needs a declared state name");
     const value = readExpr(raw.value);
     if (value === null) return here.drop("set value expression is malformed");
     if (value === undefined) return here.drop("set needs a value expression");
-    return { op: "set", target, value };
+    return { op: "set", state: name, value };
   }
   if (raw.op === "fill") {
     const message = str(raw.message, 300);
@@ -438,14 +438,14 @@ function readWhen(raw: Record<string, unknown>, here: Trail, context: ReadContex
   if (test === null) return here.drop("when test expression is malformed");
   if (test === undefined) return here.drop("when needs a test expression");
   if (!Array.isArray(raw.then)) return here.drop("when needs a then list");
-  if (!Array.isArray(raw.else)) return here.drop("when needs an else list");
+  if (raw.else !== undefined && !Array.isArray(raw.else)) return here.drop("else must be a list");
   const branch = { ...context, depth: context.depth + 1 };
   return {
     kind: "when",
     id,
     test,
     then: readNodes(raw.then, here.at("then"), branch),
-    else: readNodes(raw.else, here.at("else"), branch),
+    else: Array.isArray(raw.else) ? readNodes(raw.else, here.at("else"), branch) : [],
   };
 }
 

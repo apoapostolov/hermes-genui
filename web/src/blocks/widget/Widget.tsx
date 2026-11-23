@@ -247,12 +247,12 @@ function runAction(action: WidgetAction, context: Context, item: Item, scope: Ex
     context.fill(fillMessage(action, context));
     return;
   }
-  const decl = context.block.state[action.target];
+  const decl = context.block.state[action.state];
   if (!decl) return;
   const result = evaluate(action.value, { ...scope, item });
   if (result.error || result.value === null) return;
   const value = typedValue(decl, result.value);
-  if (value !== null) context.set(action.target, value);
+  if (value !== null) context.set(action.state, value);
 }
 
 /** The composer text a fill button prepares: its message, then one labelled line per state field it lists. */

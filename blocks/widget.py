@@ -801,13 +801,13 @@ def _element_button(element: dict, path: str, depth: int, ctx: _Ctx, seen: set[s
 
 
 def _check_set(action: dict, path: str, ctx: _Ctx, problems: list[tuple[str, str]]) -> None:
-    target = action.get("target")
+    target = action.get("state")
     if isinstance(target, str) and target.split(".", 1)[0] in ("data", "computed", "item"):
         problems.append((path, "set can only change state; data and computed are read-only"))
         return
     name = _state_target(target)
     if name is None or name not in ctx.state:
-        problems.append((path, 'set needs a state target, like "state.nights"'))
+        problems.append((path, 'set needs state, like "state.nights"'))
         return
     if "value" not in action:
         problems.append((path, "set needs a value"))
@@ -838,12 +838,18 @@ def _element_when(element: dict, path: str, depth: int, ctx: _Ctx, seen: set[str
     else:
         problems += _check_expr(element["test"], f"{path}.test", ctx)
         problems += _eval_problem(element["test"], f"{path}.test", ctx)
-    for branch in ("then", "else"):
-        children = element.get(branch)
-        if not isinstance(children, list):
-            problems.append((path, f"when needs {branch} (use [] for nothing)"))
-            continue
-        _check_elements(children, f"{path}.{branch}", depth + 1, ctx, seen, problems)
+    then = element.get("then")
+    if not isinstance(then, list):
+        problems.append((path, "when needs then (use [] for nothing)"))
+    else:
+        _check_elements(then, f"{path}.then", depth + 1, ctx, seen, problems)
+    otherwise = element.get("else")
+    if otherwise is None:
+        return
+    if not isinstance(otherwise, list):
+        problems.append((path, "else is a list of elements (or leave it out for nothing)"))
+        return
+    _check_elements(otherwise, f"{path}.else", depth + 1, ctx, seen, problems)
 
 
 def _element_repeat(element: dict, path: str, depth: int, ctx: _Ctx, seen: set[str],

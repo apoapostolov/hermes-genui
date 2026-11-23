@@ -414,7 +414,7 @@
                   "label": "Select",
                   "action": {
                     "op": "set",
-                    "target": "state.selected",
+                    "state": "state.selected",
                     "value": {
                       "get": "item.id"
                     }

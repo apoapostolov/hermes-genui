@@ -387,7 +387,7 @@ def test_controls_must_match_the_state_they_change():
 
 def test_a_button_sets_state_resets_or_fills_the_composer():
     triage = copy("issue-triage")
-    triage["view"][2]["template"][0]["children"][2]["action"]["target"] = "computed.capacity"
+    triage["view"][2]["template"][0]["children"][2]["action"]["state"] = "computed.capacity"
     assert checked(triage) == [
         "0.view.2.template.0.children.2: set can only change state; data and computed are read-only"]
 

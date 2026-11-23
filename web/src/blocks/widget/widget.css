@@ -6,6 +6,10 @@
   flex-direction: column;
   gap: 10px;
   min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--hb-line);
+  border-radius: 16px;
+  background: var(--hb-card);
 }
 /* The gap a layout element asked for; xs through lg keep to the spacing the rest of the blocks use. */
 .hb-widget-gap-xs { gap: 4px; }
