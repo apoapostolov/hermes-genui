@@ -32,6 +32,8 @@ const SCATTER_POINTS = 200;
  *   → spec.series[0].points as read, spec.x ["Revenue", "Returns"]
  *   {type: "chart", kind: "range", x: ["Mon"], series: [{low: [18], high: [34], now: [26]}]}
  *   → spec.series [{data: [26], span: [{low: 18, high: 34, now: 26}]}]
+ *   {type: "chart", kind: "range", series: [{points: [{label: "Mon", low: 18, high: 34, now: 26}]}]}
+ *   → same shape, x taken from the point labels
  * figure: false (a % change comparison, where a change of a change means nothing) drops the headline number and change
  * chip; only true or false count, anything else is ignored.
  *   {..., figure: false} → spec.figure false;  {..., figure: "false"} → no spec.figure (the default: shown)
@@ -60,15 +62,23 @@ function caption(value: unknown, max: number): string | undefined {
 }
 
 function readSpec(d: any): ChartSpec | null {
-  if (!Array.isArray(d.x) || !Array.isArray(d.series) || !d.series.length) return null;
+  if (!Array.isArray(d.series) || !d.series.length) return null;
   const type = chartKind(d.kind);
   const unit = typeof d.unit === "string" ? d.unit : undefined;
   const range = type === "range";
-  let x: string[] = d.x.map(String);
+  let x: string[] = Array.isArray(d.x) ? d.x.map(String) : [];
   let series: ChartSeries[] = d.series
-    .filter((s: any) => s && (Array.isArray(s.data) || (range && (Array.isArray(s.low) || Array.isArray(s.high)))))
+    .filter((s: any) => s && (Array.isArray(s.data) || (range && (Array.isArray(s.low) || Array.isArray(s.high) || Array.isArray(s.points)))))
     .slice(0, maxSeries(type))
-    .map((s: any, k: number) => (range ? readSpanSeries(s, x.length) : readSeries(s, k, type, unit)));
+    .map((s: any, k: number) => (range ? readSpanSeries(s, x) : readSeries(s, k, type, unit)));
+  if (range && !x.length && series[0]?.span?.length) {
+    x = series[0].span.map((_, i) => {
+      const p = (d.series[0] as any)?.points?.[i];
+      const label = p && typeof p === "object" ? p.label ?? p.x : undefined;
+      return label === undefined || label === null ? `Point ${i + 1}` : String(label);
+    });
+  }
+  if (!x.length) return null;
   if (!series.length || series.every((s) => s.data.every((v) => v === null))) return null;
   if (type === "pie" || type === "donut") {
     const slices = pieSlices(x, series[0].data);
@@ -186,14 +196,20 @@ function readWaterfallPoint(raw: any, here: Trail): ChartPoint | null {
 }
 
 /** A range series as written → one window per x label plus the name, the unit and the middle of each window as `data`.
- *  The ends are read lower-first; a window missing one end is no window (null), and its dot may still be there. */
-function readSpanSeries(s: any, n: number): ChartSeries {
+ *  Accepts the array form (low/high/now arrays keyed to x) and the points form the guide shows
+ *  ({label, low, high, now} per point). The ends are read lower-first; a window missing one end is no window (null),
+ *  and its dot may still be there. */
+function readSpanSeries(s: any, x: string[]): ChartSeries {
+  const points = Array.isArray(s.points) ? s.points : null;
+  const usePoints = points && !Array.isArray(s.low) && !Array.isArray(s.high);
+  const n = usePoints ? points!.length : x.length;
   const lows: unknown[] = Array.isArray(s.low) ? s.low : [];
   const highs: unknown[] = Array.isArray(s.high) ? s.high : [];
   const nows: unknown[] = Array.isArray(s.now) ? s.now : [];
   const span: ChartSpan[] = Array.from({ length: n }, (_, i) => {
-    const a = num(lows[i]), b = num(highs[i]);
-    const now = num(nows[i]);
+    const p = usePoints && points![i] && typeof points![i] === "object" ? points![i] as any : null;
+    const a = num(usePoints ? p?.low : lows[i]), b = num(usePoints ? p?.high : highs[i]);
+    const now = num(usePoints ? p?.now : nows[i]);
     if (a === null || b === null) return { low: null, high: null, now };
     return a <= b ? { low: a, high: b, now } : { low: b, high: a, now };
   });

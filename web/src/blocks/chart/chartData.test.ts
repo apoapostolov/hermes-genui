@@ -264,6 +264,16 @@ describe("histogram and range", () => {
     expect(chartScales(spec, null).left.max).toBeGreaterThan(34);
   });
 
+  it("reads a range written as points", () => {
+    const spec = read({ kind: "range", series: [{ name: "Delivery", points: [
+      { label: "Mon", low: 18, high: 34, now: 26 },
+      { label: "Tue", low: 19, high: 36, now: 31 },
+    ] }] })[0]?.spec;
+    expect(spec?.x).toEqual(["Mon", "Tue"]);
+    expect(spec?.series[0].span).toEqual([{ low: 18, high: 34, now: 26 }, { low: 19, high: 36, now: 31 }]);
+    expect(spec?.series[0].data).toEqual([26, 27.5]);
+  });
+
   it("writes a window's ends with the unit on each, and a dash when neither is known", () => {
     expect(fmtSpan(18, 34, "min")).toBe("18 min–34 min");
     expect(fmtSpan(18, 34, "%")).toBe("18%–34%");

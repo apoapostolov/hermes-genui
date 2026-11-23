@@ -120,6 +120,17 @@ def test_range_needs_low_and_high_for_each_x():
     assert check_blocks([two]) == ["0: a range chart takes 1 series"]
 
 
+def test_range_accepts_points_form():
+    points = {"type": "chart", "kind": "range", "unit": "min",
+              "series": [{"name": "Delivery",
+                          "points": [{"label": "Mon", "low": 18, "high": 34, "now": 26},
+                                     {"label": "Tue", "low": 19, "high": 36, "now": 31}]}]}
+    assert check_blocks([points]) == []
+    assert check_blocks([{"type": "chart", "kind": "range",
+                          "series": [{"points": [{"label": "Mon", "low": 40, "high": 30}]}]}]) == [
+        "0.series.0.0: low must not be above high"]
+
+
 def test_chart_tone_is_change_on_a_line_chart_only():
     rising = [{"name": "Close", "data": [1, 2]}]
     assert check_blocks([{**chart_with(rising), "tone": "change"}]) == []

@@ -331,6 +331,14 @@ def test_range_with_a_dot_below_its_window():
     assert render(band) == "**Rent** (₹): Indiranagar 38,000-52,000, now 35,000 (below the band)"
 
 
+def test_range_points_form_writes_windows():
+    band = {"type": "chart", "kind": "range", "title": "Delivery time", "unit": "min",
+            "series": [{"name": "Delivery",
+                        "points": [{"label": "Mon", "low": 18, "high": 34, "now": 26},
+                                   {"label": "Tue", "low": 19, "high": 36}]}]}
+    assert render(band) == "**Delivery time** (min): Mon 18-34, now 26; Tue 19-36"
+
+
 # --- tables ---------------------------------------------------------------------------------------
 
 def test_table_is_markdown():

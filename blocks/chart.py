@@ -32,12 +32,53 @@ def _limit(kind: str, most: int) -> str:
     return f"a {kind} chart takes 1 series" if most == 1 else f"a {kind} chart takes 1-{most} series"
 
 
+def _range_points(block: dict, x: object, series: object, path: str
+                   ) -> tuple[object, object, list[tuple[str, str]]]:
+    """Accept the points form the guide shows: [{label, low, high, now}] on the series, one point per x. When a series
+    carries points and no low/high arrays, turn the labels into x (if x is missing) and the fields into the parallel
+    arrays the rest of the check reads. A series already written as low/high/now arrays is left alone.
+
+    points [{label: "Mon", low: 18, high: 34, now: 26}] → x ["Mon"], series[0].low [18], .high [34], .now [26]
+    """
+    if not isinstance(series, list) or not series:
+        return x, series, []
+    first = series[0]
+    if not isinstance(first, dict):
+        return x, series, []
+    points = first.get("points")
+    if not isinstance(points, list) or isinstance(first.get("low"), list) or isinstance(first.get("high"), list):
+        return x, series, []
+    labels: list[str] = []
+    lows: list[object] = []
+    highs: list[object] = []
+    nows: list[object] = []
+    problems: list[tuple[str, str]] = []
+    for j, p in enumerate(points):
+        at = f"{path}.series.0.points.{j}"
+        if not isinstance(p, dict):
+            problems.append((at, "point is not an object"))
+            continue
+        label = p.get("label", p.get("x"))
+        labels.append(label if label is not None else f"Point {j + 1}")
+        lows.append(p.get("low"))
+        highs.append(p.get("high"))
+        nows.append(p.get("now"))
+    if problems:
+        return x, series, problems
+    if not isinstance(x, list) or not x:
+        x = labels
+    converted = {**first, "low": lows, "high": highs}
+    if any(v is not None for v in nows):
+        converted["now"] = nows
+    return x, [converted, *series[1:]], []
+
+
 def check_chart(block: dict, path: str) -> list[tuple[str, str]]:
     """x labels; 1-3 series (stacked and area up to 6, histogram and range exactly 1); every series as long as x,
     holding numbers or null gaps; at least one number, a histogram at least one count above zero and no negative ones,
     and for a pie or donut at least one positive one. A scatter's and a waterfall's series hold points instead of data
     and their checks are their own (_check_scatter, _check_waterfall); a range series carries low and high per x (both
-    numbers or both null, low never above high) and an optional now.
+    numbers or both null, low never above high) and an optional now, or points [{label, low, high, now}].
 
     x = ["Mon", "Tue", "Wed"], series[0].data = [1, 2] → [("0.series.0", "data has 2 values but x has 3 labels")]
     a line chart with 4 series → [("0", "a line chart takes 1-3 series")]
@@ -51,6 +92,10 @@ def check_chart(block: dict, path: str) -> list[tuple[str, str]]:
         return _check_scatter(block, path)
     if kind == "waterfall":
         return _check_waterfall(block, path)
+    if kind == "range":
+        x, series, point_problems = _range_points(block, x, series, path)
+        if point_problems:
+            return point_problems
     if not isinstance(x, list) or not x:
         return [(path, "chart needs x labels")]
     if not isinstance(series, list) or not series:
@@ -338,7 +383,7 @@ def _waterfall_line(series: dict) -> str:
     → "Opening 2,140 → +3,200 Salary → -1,450 Rent → card, unknown → closing not stated"
     """
     points = [p for p in series.get("points", []) if isinstance(p, dict)]
-    balance = 0
+    balance = 0.0
     moved = False     # whether a step has moved the balance yet
     broken = False
     parts = []
@@ -352,7 +397,7 @@ def _waterfall_line(series: dict) -> str:
         if total:
             opening = p.get("value")
             if not moved and is_number(opening):
-                balance = opening
+                balance = float(opening)  # type: ignore[arg-type]
             parts.append(f"{label} {fmt_num(balance)}".strip())
             continue
         value = p.get("value")
@@ -360,9 +405,9 @@ def _waterfall_line(series: dict) -> str:
             parts.append(f"{label}, unknown" if label else "unknown")
             broken = True
             continue
-        balance += value
+        balance += float(value)  # type: ignore[arg-type]
         moved = True
-        parts.append(f"{_signed(value)} {label}".strip())
+        parts.append(f"{_signed(float(value))} {label}".strip())  # type: ignore[arg-type]
     return " → ".join(part for part in parts if part)
 
 
@@ -401,10 +446,12 @@ def _windows_line(x: list, series: dict) -> str:
         if not (is_number(low) and is_number(high)):
             parts.append(f"{name} no window".strip())
             continue
-        part = f"{name} {fmt_num(low)}-{fmt_num(high)}".strip()
+        low_n, high_n = float(low), float(high)  # type: ignore[arg-type]
+        part = f"{name} {fmt_num(low_n)}-{fmt_num(high_n)}".strip()
         if is_number(now):
-            part += f", now {fmt_num(now)}"
-            part += " (above the band)" if now > high else " (below the band)" if now < low else ""
+            now_n = float(now)  # type: ignore[arg-type]
+            part += f", now {fmt_num(now_n)}"
+            part += " (above the band)" if now_n > high_n else " (below the band)" if now_n < low_n else ""
         parts.append(part)
     return "; ".join(parts)
 
@@ -432,6 +479,12 @@ def text_chart(block: dict) -> str:
         return ""
     kind = chart_kind(block.get("kind"))
     title = safe_text(block.get("title"), 80)
+    if kind == "range":
+        nx, ns, _ = _range_points(block, x, series, "0")
+        if isinstance(nx, list):
+            x = nx
+        if isinstance(ns, list):
+            series = [s for s in ns if isinstance(s, dict)]
     if kind in ("pie", "donut"):
         body = _slices(x, series[0])
     elif kind == "histogram":
