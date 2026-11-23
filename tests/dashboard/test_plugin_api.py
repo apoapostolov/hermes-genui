@@ -286,3 +286,29 @@ def test_a_page_on_a_schedule_says_so(client, tmp_path):
     assert http.get("/pages/executive").json()["schedule"] == "every day at 8am"
     _page(api, tmp_path)
     assert http.get("/pages/executive").json()["schedule"] is None
+
+
+def test_api_passes_the_boards_own_provenance(client, tmp_path):
+    http, api = client
+    board = {"as_of": "2026-11-18", "live": True, "blocks": [{"type": "text", "text": "hi"}]}
+    block_id = api.store.save(board, root=tmp_path)
+    assert http.get(f"/blocks/{block_id}").json() == {"blocks": board["blocks"], "as_of": "2026-11-18", "live": True}
+
+
+def test_api_keeps_live_false_and_skips_junk(client, tmp_path):
+    http, api = client
+    board = {"as_of": 5, "live": False, "blocks": [{"type": "text", "text": "hi"}]}
+    block_id = api.store.save(board, root=tmp_path)
+    # an as_of that was never a string is not served; a live false is.
+    assert http.get(f"/blocks/{block_id}").json() == {"blocks": board["blocks"], "live": False}
+
+
+def test_api_answers_provenance_and_living_words_from_one_envelope(client, tmp_path):
+    http, api = client
+    board = {"version": 3, "updated_at": "2026-11-18T10:00:00+00:00", "as_of": "Nov 18, 09:55 UTC",
+             "live": True, "blocks": [{"type": "text", "text": "hi"}]}
+    block_id = api.store.save(board, root=tmp_path)
+    assert http.get(f"/blocks/{block_id}").json() == {
+        "blocks": board["blocks"], "version": 3, "updated_at": board["updated_at"],
+        "as_of": "Nov 18, 09:55 UTC", "live": True,
+    }

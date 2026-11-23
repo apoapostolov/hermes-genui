@@ -4,7 +4,7 @@ import json
 import math
 
 from ..blocks.chart import CHART_KINDS
-from ..blocks.common import board_address, link_problems, link_words
+from ..blocks.common import as_of_line, board_address, link_problems, link_words, live_flag
 from ..core import drawn, store, surface
 from ..core.catalog_text import describe, icons_line, spec
 from ..core.catalog_text import menu as core_menu
@@ -285,7 +285,16 @@ def show_blocks(params: dict, **kwargs) -> str:
         problems = [deep] if (deep := too_deep(blocks)) else []
     if problems:
         return _not_drawn(problems)
-    board: list | dict = {"links": links, "blocks": blocks} if links else blocks
+    board: list | dict = blocks
+    envelope: dict = {}
+    if links:
+        envelope["links"] = links
+    if (as_of := as_of_line(params.get("as_of"))) is not None:  # and its provenance, beside the living words
+        envelope["as_of"] = as_of
+    if (live := live_flag(params.get("live"))) is not None:
+        envelope["live"] = live
+    if envelope:  # the board's own words ride beside its blocks, in the same envelope the living words use
+        board = {**envelope, "blocks": blocks}
     refusal = too_big(board)
     if refusal:
         return refusal
@@ -347,6 +356,17 @@ def schema(guide: str = "full") -> dict:
                     "open the linked board from this one without it being redrawn. Every address must be a board "
                     "that exists; a board never links to itself. The note is the connection as you suggest it, one "
                     "short line. Most turns need no links.",
+                },
+                "as_of": {
+                    "type": "string",
+                    "description": "Optional. When the board's data is from, as one line people read rather than a "
+                    "format you must get exactly right: \"2026-11-18\", \"Nov 18, 14:05 UTC\". The board's footer "
+                    "shows it beside its source line.",
+                },
+                "live": {
+                    "type": "boolean",
+                    "description": "Optional. true: the figures update live; false: this is a snapshot taken at "
+                    "as_of. The board's footer shows the word Live or Snapshot. Only give it when you really know.",
                 },
             },
             "required": ["blocks"],

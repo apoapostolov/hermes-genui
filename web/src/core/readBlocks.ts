@@ -14,29 +14,35 @@ export type BoardLink = { id: string; note?: string };
 
 /**
  * Stored JSON → its blocks, notes on what was dropped, and — for a board that speaks them — the living
- * words its stored envelope carries: which version this is, when an update wrote it, and what it links to.
- * A lone block object is a list of one, and the store's {blocks: [...]} envelope is unwrapped. Anything
- * else gives no blocks.
+ * words its stored envelope carries: which version this is, when an update wrote it, what it links to,
+ * and its provenance: asOf (when the data is from, one short line) and live (true: the figures update;
+ * false: a snapshot; undefined: the board didn't say). A lone block object is a list of one, and the
+ * store's {blocks: [...]} envelope is unwrapped. Anything else gives no blocks.
  *   [{type: "heading", text: "Day 1"}, {type: "weather"}]
  *   → {blocks: [{type: "heading", text: "Day 1"}], dropped: [{path: "1", why: 'unknown type "weather"'}]}
  */
 export function readBlocksNoted(data: unknown): {
   blocks: Block[]; dropped: Diagnostic[];
-  version?: number; updatedAt?: string; links?: BoardLink[];
+  version?: number; updatedAt?: string; links?: BoardLink[]; asOf?: string; live?: boolean;
 } {
   let list: unknown = data;
   let boardVersion: number | undefined;
   let boardUpdatedAt: string | undefined;
   let boardLinks: BoardLink[] | undefined;
+  let boardAsOf: string | undefined;
+  let boardLive: boolean | undefined;
   const top = new Trail();
   if (isObject(list) && Array.isArray((list as any).blocks)) {
     if (typeof (list as any).type !== "string") {
       // The envelope's own words (Living Boards): which version the address is on, when it was written,
-      // and what it connects to. A block that merely spells its children `blocks` is not an envelope
-      // and says nothing here — its type names a block, not a board.
+      // and what it connects to — and, if the board says it, where its data came from and when. A block
+      // that merely spells its children `blocks` is not an envelope and says nothing here — its type
+      // names a block, not a board.
       boardVersion = version((list as any).version);
       boardUpdatedAt = str((list as any).updated_at, 40);
       boardLinks = readBoardLinks((list as any).links, top.at("links"));
+      boardAsOf = str((list as any).as_of, 80);  // cut the way every shown string is; junk gives nothing
+      boardLive = typeof (list as any).live === "boolean" ? (list as any).live : undefined;
     }
     list = (list as any).blocks;
   }
@@ -47,11 +53,15 @@ export function readBlocksNoted(data: unknown): {
       blocks.push(...readOne(raw, top.at(i), 0));
     });
   }
-  const noted: { blocks: Block[]; dropped: Diagnostic[]; version?: number; updatedAt?: string; links?: BoardLink[] } =
-    { blocks, dropped: top.dropped };
+  const noted: {
+    blocks: Block[]; dropped: Diagnostic[];
+    version?: number; updatedAt?: string; links?: BoardLink[]; asOf?: string; live?: boolean;
+  } = { blocks, dropped: top.dropped };
   if (boardVersion !== undefined) noted.version = boardVersion;
   if (boardUpdatedAt !== undefined) noted.updatedAt = boardUpdatedAt;
   if (boardLinks !== undefined) noted.links = boardLinks;
+  if (boardAsOf !== undefined) noted.asOf = boardAsOf;
+  if (boardLive !== undefined) noted.live = boardLive;
   return noted;
 }
 

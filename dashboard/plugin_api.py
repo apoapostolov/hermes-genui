@@ -253,6 +253,10 @@ async def get_block(block_id: str, version: str | None = None):
         answer["updated_at"] = stamp
     if (links := store.links_of(board)) is not None:  # and the boards this one connects to, each by address
         answer["links"] = links
+    if (as_of := store.as_of_of(board)) is not None:  # and its provenance: when the data is from, live or snapshot
+        answer["as_of"] = as_of
+    if (live := store.live_of(board)) is not None:
+        answer["live"] = live
     return answer
 
 

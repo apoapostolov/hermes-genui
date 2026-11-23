@@ -303,3 +303,25 @@ def link_words(value: object) -> list[dict] | None:
             entry["note"] = CONTROL.sub("", note).strip()
         words.append(entry)
     return words
+
+
+# --- where the board's data came from and when (the envelope's provenance words) ---------------------------------
+
+# The as_of line is shown as one quiet footer line, not parsed: any date or timestamp text is fine, cut short so
+# it stays a line. Non-text and blanks are ignored, as every model word is.
+AS_OF_MAX = 80
+
+
+def as_of_line(value: object) -> str | None:
+    """A date/timestamp line safe to show: trimmed text (control characters stripped) capped at AS_OF_MAX, or None
+    when it isn't usable text. " 2026-11-18 " → "2026-11-18";  5 → None;  "  " → None."""
+    if not isinstance(value, str):
+        return None
+    text = CONTROL.sub("", value).replace("\t", " ").strip()
+    return text[:AS_OF_MAX] if text else None
+
+
+def live_flag(value: object) -> bool | None:
+    """The board's own word for whether its figures update: a real bool is kept (false means snapshot, and is a
+    word of its own); anything else — "yes", 1, missing — gives None and is ignored."""
+    return value if isinstance(value, bool) else None

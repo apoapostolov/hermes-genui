@@ -169,7 +169,7 @@ function composerActions(composer) {
 import { useContext as useContext13, useEffect as useEffect10, useLayoutEffect as useLayoutEffect4, useReducer, useRef as useRef15, useState as useState27 } from "react";
 
 // src/core/Blocks.tsx
-import { Component as ReactComponent, useContext as useContext11 } from "react";
+import { Component as ReactComponent, Fragment as Fragment14, useContext as useContext11 } from "react";
 
 // src/blocks/flow/highlight.tsx
 import { createContext as createContext2, useCallback, useContext, useMemo, useState } from "react";
@@ -7365,7 +7365,7 @@ var REGISTRY = {
 };
 
 // src/core/Blocks.tsx
-import { jsx as jsx48 } from "react/jsx-runtime";
+import { jsx as jsx48, jsxs as jsxs44 } from "react/jsx-runtime";
 function BlockView({ block }) {
   const entry2 = REGISTRY[block.type];
   if (!entry2) return null;
@@ -7414,8 +7414,57 @@ function drawAll(blocks) {
     return /* @__PURE__ */ jsx48(Slotted, { block: b, flat: `${id}:${occ}` }, blockKey(b, i, carried2));
   });
 }
-function Blocks({ blocks }) {
-  return /* @__PURE__ */ jsx48("div", { className: "hb-blocks", children: /* @__PURE__ */ jsx48(FlowLightBoard, { children: drawAll(blocks) }) });
+function ProvenanceFooter({ source, chartSources, asOf, live }) {
+  const parts2 = [];
+  const add = (key, node) => {
+    if (parts2.length) parts2.push(/* @__PURE__ */ jsx48("span", { className: "hb-provenance-dot", "aria-hidden": "true", children: "\xB7" }, `${key}-dot`));
+    parts2.push(/* @__PURE__ */ jsx48(Fragment14, { children: node }, key));
+  };
+  for (const [i, s] of (chartSources ?? []).entries()) {
+    add(`chart-${i}`, /* @__PURE__ */ jsx48("span", { className: "hb-provenance-source", children: s }));
+  }
+  if (asOf) add("as_of", /* @__PURE__ */ jsx48("span", { className: "hb-provenance-time", children: asOf }));
+  if (live !== void 0) {
+    add("live", /* @__PURE__ */ jsx48("span", { className: "hb-provenance-badge", "data-live": live ? "live" : "snapshot", children: live ? "Live" : "Snapshot" }));
+  }
+  return /* @__PURE__ */ jsxs44("div", { className: "hb-provenance", children: [
+    source && drawAll([source]),
+    /* @__PURE__ */ jsx48("div", { className: "hb-provenance-line", children: parts2 })
+  ] });
+}
+function Blocks({ blocks, provenance }) {
+  const declared = provenance?.asOf !== void 0 || provenance?.live !== void 0;
+  let list = blocks;
+  let source;
+  let chartSources = [];
+  if (declared) {
+    const at2 = blocks.findIndex((b) => b.type === "source");
+    if (at2 >= 0) {
+      source = blocks[at2];
+      list = blocks.filter((_, i) => i !== at2);
+    }
+    const said = new Set(source?.text ? [source.text] : []);
+    for (const b of list) {
+      if (b.type !== "chart") continue;
+      const s = b.spec.source;
+      if (typeof s === "string" && s.trim() && !said.has(s)) {
+        said.add(s);
+        chartSources.push(s);
+      }
+    }
+  }
+  return /* @__PURE__ */ jsxs44("div", { className: "hb-blocks", children: [
+    /* @__PURE__ */ jsx48(FlowLightBoard, { children: drawAll(list) }),
+    declared && /* @__PURE__ */ jsx48(
+      ProvenanceFooter,
+      {
+        source,
+        chartSources,
+        asOf: provenance?.asOf,
+        live: provenance?.live
+      }
+    )
+  ] });
 }
 
 // src/core/boardRoster.ts
@@ -7513,12 +7562,16 @@ function readBlocksNoted(data) {
   let boardVersion;
   let boardUpdatedAt;
   let boardLinks;
+  let boardAsOf;
+  let boardLive;
   const top = new Trail();
   if (isObject2(list) && Array.isArray(list.blocks)) {
     if (typeof list.type !== "string") {
       boardVersion = version(list.version);
       boardUpdatedAt = str(list.updated_at, 40);
       boardLinks = readBoardLinks(list.links, top.at("links"));
+      boardAsOf = str(list.as_of, 80);
+      boardLive = typeof list.live === "boolean" ? list.live : void 0;
     }
     list = list.blocks;
   }
@@ -7533,6 +7586,8 @@ function readBlocksNoted(data) {
   if (boardVersion !== void 0) noted.version = boardVersion;
   if (boardUpdatedAt !== void 0) noted.updatedAt = boardUpdatedAt;
   if (boardLinks !== void 0) noted.links = boardLinks;
+  if (boardAsOf !== void 0) noted.asOf = boardAsOf;
+  if (boardLive !== void 0) noted.live = boardLive;
   return noted;
 }
 function readBlocks(data) {
@@ -7573,20 +7628,20 @@ function readOne(raw, here, depth) {
 }
 
 // src/core/LivingBoards.tsx
-import { jsx as jsx49, jsxs as jsxs44 } from "react/jsx-runtime";
+import { jsx as jsx49, jsxs as jsxs45 } from "react/jsx-runtime";
 var HISTORY_SHOWN = 4;
 function LiveRow({ id, version: version2, updatedAt, links, viewing, onShow, canReach }) {
   const older = version2 != null ? Array.from({ length: Math.min(version2 - 1, HISTORY_SHOWN) }, (_, i) => version2 - 1 - i) : [];
-  return /* @__PURE__ */ jsxs44("div", { className: "hb-live", "data-board": id, children: [
-    /* @__PURE__ */ jsxs44("div", { className: "hb-live-line", children: [
+  return /* @__PURE__ */ jsxs45("div", { className: "hb-live", "data-board": id, children: [
+    /* @__PURE__ */ jsxs45("div", { className: "hb-live-line", children: [
       /* @__PURE__ */ jsx49("span", { className: "hb-live-mark", "aria-hidden": "true", children: "\u21BB" }),
       version2 != null && /* @__PURE__ */ jsx49("span", { className: "hb-live-version", children: viewing === null ? `v${version2}` : `viewing v${viewing}` }),
       updatedAt && viewing === null && /* @__PURE__ */ jsx49("span", { className: "hb-live-when", children: updatedAt.slice(0, 10) }),
-      /* @__PURE__ */ jsxs44("code", { className: "hb-live-addr", children: [
+      /* @__PURE__ */ jsxs45("code", { className: "hb-live-addr", children: [
         "#",
         id
       ] }),
-      canReach && older.map((n) => /* @__PURE__ */ jsxs44(
+      canReach && older.map((n) => /* @__PURE__ */ jsxs45(
         "button",
         {
           type: "button",
@@ -7603,7 +7658,7 @@ function LiveRow({ id, version: version2, updatedAt, links, viewing, onShow, can
       )),
       viewing !== null && /* @__PURE__ */ jsx49("button", { type: "button", className: "hb-live-back", onClick: () => onShow(null), children: "current" })
     ] }),
-    !!links?.length && /* @__PURE__ */ jsxs44("div", { className: "hb-links", children: [
+    !!links?.length && /* @__PURE__ */ jsxs45("div", { className: "hb-links", children: [
       /* @__PURE__ */ jsx49("span", { className: "hb-links-label", children: "linked across time \xB7 AI-suggested" }),
       links.map((l) => /* @__PURE__ */ jsx49(LinkChip, { link: l }, l.id))
     ] })
@@ -7611,7 +7666,7 @@ function LiveRow({ id, version: version2, updatedAt, links, viewing, onShow, can
 }
 function LinkChip({ link }) {
   const [open, setOpen] = useState26(false);
-  return /* @__PURE__ */ jsxs44("div", { className: "hb-link", children: [
+  return /* @__PURE__ */ jsxs45("div", { className: "hb-link", children: [
     /* @__PURE__ */ jsx49(
       "button",
       {
@@ -7648,24 +7703,24 @@ function LinkedBoard({ link }) {
     };
   }, [link.id, rest]);
   if (board === "loading") {
-    return /* @__PURE__ */ jsxs44("div", { className: "hb-linked hb-linked-loading", children: [
+    return /* @__PURE__ */ jsxs45("div", { className: "hb-linked hb-linked-loading", children: [
       "Fetching #",
       link.id,
       " from the store\u2026"
     ] });
   }
   if (!board) {
-    return /* @__PURE__ */ jsxs44("div", { className: "hb-linked hb-linked-gone", children: [
+    return /* @__PURE__ */ jsxs45("div", { className: "hb-linked hb-linked-gone", children: [
       "#",
       link.id,
       " is not a board on this machine."
     ] });
   }
-  return /* @__PURE__ */ jsxs44("div", { className: "hb-linked", "data-linked": link.id, children: [
-    /* @__PURE__ */ jsxs44("div", { className: "hb-linked-head", children: [
+  return /* @__PURE__ */ jsxs45("div", { className: "hb-linked", "data-linked": link.id, children: [
+    /* @__PURE__ */ jsxs45("div", { className: "hb-linked-head", children: [
       /* @__PURE__ */ jsx49("span", { "aria-hidden": "true", children: "\u25C8" }),
       /* @__PURE__ */ jsx49("span", { children: link.note ? link.note : "linked board" }),
-      /* @__PURE__ */ jsxs44("code", { children: [
+      /* @__PURE__ */ jsxs45("code", { children: [
         "#",
         link.id
       ] })
@@ -7675,14 +7730,14 @@ function LinkedBoard({ link }) {
 }
 function LivePointer({ id, address }) {
   const meta = getMeta(address);
-  return /* @__PURE__ */ jsxs44("div", { className: "hb-tag hb-live-pointer", "data-pointer": id, children: [
+  return /* @__PURE__ */ jsxs45("div", { className: "hb-tag hb-live-pointer", "data-pointer": id, children: [
     /* @__PURE__ */ jsx49("span", { className: "hb-live-mark", "aria-hidden": "true", children: "\u21BB" }),
-    /* @__PURE__ */ jsxs44("span", { children: [
+    /* @__PURE__ */ jsxs45("span", { children: [
       "The same live board",
       meta.version ? ` \xB7 v${meta.version}` : "",
       " \u2014 its live view is where its first tag stands above."
     ] }),
-    /* @__PURE__ */ jsxs44("code", { className: "hb-live-addr", children: [
+    /* @__PURE__ */ jsxs45("code", { className: "hb-live-addr", children: [
       "#",
       id
     ] })
@@ -7690,7 +7745,7 @@ function LivePointer({ id, address }) {
 }
 
 // src/host/BlockTag.tsx
-import { jsx as jsx50, jsxs as jsxs45 } from "react/jsx-runtime";
+import { jsx as jsx50, jsxs as jsxs46 } from "react/jsx-runtime";
 var ID_PATTERN = /^[0-9a-f]{8}$/;
 function BlockTag({ id, streaming, load }) {
   const validId = typeof id === "string" && ID_PATTERN.test(id);
@@ -7705,6 +7760,7 @@ function BlockTag({ id, streaming, load }) {
   const [refresh, setRefresh] = useState27(0);
   const [, force] = useReducer((x) => x + 1, 0);
   const [live, setLive] = useState27({});
+  const [provenance, setProvenance] = useState27({});
   useLayoutEffect4(() => {
     if (streaming || !validId) return;
     const token = self.current.token;
@@ -7732,7 +7788,14 @@ function BlockTag({ id, streaming, load }) {
     let alive = true;
     const ask = viewing === null || !actions.rest ? load(id) : actions.rest(`/blocks/${id}?version=${viewing}`);
     Promise.resolve(ask).then((data) => {
-      const { blocks, version: boardVersion, updatedAt: boardUpdatedAt, links: boardLinks } = readBlocksNoted(data);
+      const {
+        blocks,
+        version: boardVersion,
+        updatedAt: boardUpdatedAt,
+        links: boardLinks,
+        asOf: boardAsOf,
+        live: boardLive
+      } = readBlocksNoted(data);
       if (!alive) return;
       if (blocks.length) {
         const headless = drawn.current === null && viewing === null && (boardVersion ?? 0) >= 2;
@@ -7743,6 +7806,8 @@ function BlockTag({ id, streaming, load }) {
           if (viewing === null && (boardVersion ?? 0) >= 2) markLiving(id);
           drawn.current = blocks;
           setState({ kind: "drawn", blocks });
+          const stale = viewing !== null && boardLive === true;
+          setProvenance({ asOf: boardAsOf, live: stale ? false : boardLive });
           if (viewing === null) {
             setLive({ version: boardVersion, updatedAt: boardUpdatedAt, links: boardLinks });
             setMeta(address, { version: boardVersion, updatedAt: boardUpdatedAt });
@@ -7783,8 +7848,8 @@ function BlockTag({ id, streaming, load }) {
   if (role === "pointer") return /* @__PURE__ */ jsx50(LivePointer, { id, address });
   if (state.kind === "loading") return /* @__PURE__ */ jsx50(Note, { text: "drawing\u2026", pulse: true });
   if (state.kind === "failed") return null;
-  return /* @__PURE__ */ jsxs45(BlockActions.Provider, { value: { ...actions, blockId: id }, children: [
-    /* @__PURE__ */ jsx50(Blocks, { blocks: state.blocks }),
+  return /* @__PURE__ */ jsxs46(BlockActions.Provider, { value: { ...actions, blockId: id }, children: [
+    /* @__PURE__ */ jsx50(Blocks, { blocks: state.blocks, provenance }),
     (live.version != null || live.links) && /* @__PURE__ */ jsx50(
       LiveRow,
       {
@@ -7807,7 +7872,7 @@ function Note({ text, pulse = false }) {
 import { useCallback as useCallback2, useEffect as useEffect11, useRef as useRef16, useState as useState28 } from "react";
 
 // src/live/RefreshBar.tsx
-import { jsx as jsx51, jsxs as jsxs46 } from "react/jsx-runtime";
+import { jsx as jsx51, jsxs as jsxs47 } from "react/jsx-runtime";
 function when(iso, now = /* @__PURE__ */ new Date()) {
   const at2 = new Date(iso);
   const time = at2.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
@@ -7815,15 +7880,15 @@ function when(iso, now = /* @__PURE__ */ new Date()) {
   return `${at2.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}, ${time}`;
 }
 function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) {
-  return /* @__PURE__ */ jsxs46("div", { className: "hb-refresh", role: "status", children: [
+  return /* @__PURE__ */ jsxs47("div", { className: "hb-refresh", role: "status", children: [
     /* @__PURE__ */ jsx51("span", { className: "hb-refresh-label", children: label }),
     /* @__PURE__ */ jsx51("span", { className: "hb-refresh-when", children: at2 ? `updated ${when(at2)}` : "not filled yet" }),
-    schedule && /* @__PURE__ */ jsxs46("span", { className: "hb-refresh-when", children: [
+    schedule && /* @__PURE__ */ jsxs47("span", { className: "hb-refresh-when", children: [
       "\xB7 refreshes ",
       schedule
     ] }),
     error && /* @__PURE__ */ jsx51("span", { className: "hb-refresh-error", children: error }),
-    /* @__PURE__ */ jsxs46(
+    /* @__PURE__ */ jsxs47(
       "button",
       {
         type: "button",
@@ -7842,7 +7907,7 @@ function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) 
 }
 
 // src/live/DashboardView.tsx
-import { jsx as jsx52, jsxs as jsxs47 } from "react/jsx-runtime";
+import { jsx as jsx52, jsxs as jsxs48 } from "react/jsx-runtime";
 function snapshotOf(b) {
   if (b.snapshots) return b.snapshots;
   if (b.at !== void 0 || b.refreshing !== void 0) {
@@ -7938,8 +8003,8 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
     if (Object.keys(ticks).length) await saveTicks(ticks);
     return { ok: true };
   };
-  return /* @__PURE__ */ jsxs47("div", { className: "hb-blocks hb-dash", children: [
-    board.blocks[0]?.type !== "briefing" && /* @__PURE__ */ jsxs47("header", { className: "hb-dash-head", children: [
+  return /* @__PURE__ */ jsxs48("div", { className: "hb-blocks hb-dash", children: [
+    board.blocks[0]?.type !== "briefing" && /* @__PURE__ */ jsxs48("header", { className: "hb-dash-head", children: [
       /* @__PURE__ */ jsx52("div", { className: "hb-dash-date", children: board.at.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }) }),
       /* @__PURE__ */ jsx52("h1", { children: board.greeting ?? board.title ?? "Today" })
     ] }),
@@ -8143,6 +8208,39 @@ var tokens_default = `/* Hermes GenUI: every class starts with hb- so nothing le
 .hb-blocks { overflow-wrap: break-word; }
 /* The chat's prose styles give images, figures and tables their own margins; blocks place their own. */
 .hb-blocks img, .hb-blocks figure, .hb-blocks table { margin: 0; }
+/* The provenance footer: the quiet lines a board grows when its envelope says as_of or live \u2014 the source on its
+   own row, then the joined line: each chart's own source, the date \xB7 the word Live or Snapshot. The source keeps
+   its own row (a flex child of the join line would shrink-wrap it to its content; as a row of the footer's column
+   it fills the width exactly like a block of the board). The joins on the line are plain text
+   (.hb-provenance-source needs no rule of its own \u2014 the line's voice already fits them). The badge always carries
+   its word; colour (the existing good green for Live) only sits beside it. */
+.hb-provenance {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--hb-muted);
+}
+.hb-provenance-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+.hb-provenance .hb-source { font-size: inherit; }
+.hb-provenance-dot { opacity: 0.7; }
+.hb-provenance-badge {
+  padding: 0 7px;
+  border: 1px solid var(--hb-line-strong);
+  border-radius: 999px;
+  font-size: 10.5px;
+  color: var(--hb-ink-2);
+}
+.hb-provenance-badge[data-live="live"] {
+  color: var(--hb-good);
+  border-color: color-mix(in srgb, var(--hb-good) 45%, transparent);
+}
 `;
 
 // src/styles/shared.css
