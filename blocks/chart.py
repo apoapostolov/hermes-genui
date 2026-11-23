@@ -32,6 +32,10 @@ def _limit(kind: str, most: int) -> str:
     return f"a {kind} chart takes 1 series" if most == 1 else f"a {kind} chart takes 1-{most} series"
 
 
+def _has_window_arrays(first: dict) -> bool:
+    return isinstance(first.get("low"), list) or isinstance(first.get("high"), list)
+
+
 def _range_points(block: dict, x: object, series: object, path: str
                    ) -> tuple[object, object, list[tuple[str, str]]]:
     """Accept the points form the guide shows: [{label, low, high, now}] on the series, or at chart level when there is
@@ -47,10 +51,10 @@ def _range_points(block: dict, x: object, series: object, path: str
         first = {}
     points = first.get("points")
     points_path = f"{path}.series.0.points"
-    if not (isinstance(points, list) and not isinstance(first.get("low"), list) and not isinstance(first.get("high"), list)):
+    if not (isinstance(points, list) and not _has_window_arrays(first)):
         points = block.get("points")
         points_path = f"{path}.points"
-        if not (isinstance(points, list) and not isinstance(first.get("low"), list) and not isinstance(first.get("high"), list)):
+        if not (isinstance(points, list) and not _has_window_arrays(first)):
             return x, series, []
     labels: list[str] = []
     lows: list[object] = []
@@ -96,7 +100,7 @@ def check_chart(block: dict, path: str) -> list[tuple[str, str]]:
     if kind in ("scatter", "waterfall", "range") and isinstance(block.get("points"), list):
         first = series[0] if isinstance(series, list) and series and isinstance(series[0], dict) else {}
         has_points = isinstance(first.get("points"), list)
-        if not has_points and not (kind == "range" and (isinstance(first.get("low"), list) or isinstance(first.get("high"), list))):
+        if not has_points and not (kind == "range" and _has_window_arrays(first)):
             rest = series[1:] if isinstance(series, list) else []
             series = [{**first, "points": block["points"]}, *rest]
     if kind == "scatter":
@@ -490,7 +494,7 @@ def text_chart(block: dict) -> str:
     if kind in ("scatter", "waterfall", "range") and isinstance(block.get("points"), list):
         first = series[0] if series and isinstance(series[0], dict) else {}
         has_points = isinstance(first.get("points"), list)
-        if not has_points and not (kind == "range" and (isinstance(first.get("low"), list) or isinstance(first.get("high"), list))):
+        if not has_points and not (kind == "range" and _has_window_arrays(first)):
             series = [{**first, "points": block["points"]}, *series[1:]]
     if not series:
         return ""
