@@ -23,22 +23,12 @@ import { StructuredTable } from "./StructuredTable";
 import { bigNumber, changeOf, isChangeColumn, miniBar } from "./cells";
 import { cellNumber, isNumberColumn, nextSort, sortedOrder, type SortState } from "./sort";
 import { livePicks, pickedMessage, rowKey, rowMatches, selectedRows } from "./pick";
-import { BlockActions, type SendResult } from "../../host/actions";
+import { BlockActions, SENT_WORDS, type SendResult } from "../../host/actions";
 import { InlineText } from "../../lib/InlineText";
 import { Icon } from "../../lib/Icon";
 
 // Mini bars need a few rows to compare; with 2 the coloured numbers say it all.
 const MINI_BARS_FROM = 3;
-
-// Where the last tap went, told plainly — and only once the host has said so. A word never claims more than the
-// host acknowledged: no draft without an ack, no send without a yes, and a refusal that saved nothing says so.
-const SENT_WORDS: Record<SendResult, string> = {
-  sent: "Sent to chat.",
-  drafted: "In the composer — press Send.",
-  blocked: "Blocked from sending — in the composer — press Send.",
-  failed: "Send failed — nothing was sent or kept.",
-  nowhere: "No chat here.",
-};
 
 export function Table(props: TableBlock) {
   if ("structured" in props && props.structured) return <StructuredTable {...props} />;
