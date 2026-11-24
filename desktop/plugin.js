@@ -7041,13 +7041,6 @@ function pickedMessage(caption2, columns, rows, picked) {
 // src/blocks/table/Table.tsx
 import { jsx as jsx41, jsxs as jsxs38 } from "react/jsx-runtime";
 var MINI_BARS_FROM = 3;
-var SENT_WORDS2 = {
-  sent: "Sent to chat.",
-  drafted: "In the composer \u2014 press Send.",
-  blocked: "Blocked from sending \u2014 in the composer \u2014 press Send.",
-  failed: "Send failed \u2014 nothing was sent or kept.",
-  nowhere: "No chat here."
-};
 function Table(props) {
   if ("structured" in props && props.structured) return /* @__PURE__ */ jsx41(StructuredTable, { ...props });
   const { columns, rows, highlight, caption: caption2, interactive } = props;
@@ -7113,7 +7106,7 @@ function Table(props) {
           ]
         }
       ),
-      /* @__PURE__ */ jsx41("span", { className: "hb-table-sent", role: "status", "aria-live": "polite", children: sent ? SENT_WORDS2[sent] : "" })
+      /* @__PURE__ */ jsx41("span", { className: "hb-table-sent", role: "status", "aria-live": "polite", children: sent ? SENT_WORDS[sent] : "" })
     ] }),
     /* @__PURE__ */ jsx41("div", { className: "hb-table-scroll", children: /* @__PURE__ */ jsxs38("table", { className: columns.length >= 3 ? "hb-table hb-table-wide" : "hb-table", children: [
       /* @__PURE__ */ jsx41("thead", { children: /* @__PURE__ */ jsxs38("tr", { children: [
