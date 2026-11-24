@@ -89,6 +89,21 @@ describe("structured table reader", () => {
     expect(legacy.interactive).toBeUndefined();
     expect(legacy.rows).toEqual([["x"]]);
   });
+  it("finds a row's cells by the column id as it was written, not only by the normalized one", () => {
+    const read = (columns: unknown[], rows: unknown[]) =>
+      readBlocksNoted([{ type: "table", columns, rows }]).blocks[0] as any;
+    // an id the model wrote in capitals: the column becomes "sku", and the row is keyed "SKU"
+    const upper = read([{ id: "SKU", label: "Product" }], [{ cells: { SKU: { text: "Phone" } } }]);
+    expect(upper.columns.map((c: any) => c.id)).toEqual(["sku"]);
+    expect(upper.rows[0].cells.sku.text).toBe("Phone");
+    // an id with a capital letter in the middle
+    const camel = read([{ id: "monthlyPrice", label: "Monthly price" }], [{ cells: { monthlyPrice: { value: 12 } } }]);
+    expect(camel.rows[0].cells.monthlyprice.value).toBe(12);
+    // the normalized id and the column label keep working, with no duplicate row keys needed
+    expect(read([{ id: "SKU", label: "Product" }], [{ cells: { sku: { text: "Phone" } } }]).rows[0].cells.sku.text)
+      .toBe("Phone");
+    expect(read([{ id: "SKU", label: "Product" }], [{ Product: "Phone" }]).rows[0].cells.sku.text).toBe("Phone");
+  });
   it("refuses interactive on bare column names, the way the Python check does", () => {
     const bare = (extra: Record<string, unknown>) => readBlocksNoted([{ type: "table", filterable: true, ...extra }]);
     const refused = bare({ interactive: true, columns: ["A", "B"], rows: [["1", "2"]] });

@@ -6680,6 +6680,17 @@ function readStructuredCell(raw, column) {
   }
   return { text };
 }
+function asColumnId(key) {
+  return key.replace(/[^A-Za-z0-9_-]+/g, "-").toLowerCase();
+}
+function cellAt(values, column) {
+  if (column.id in values) return values[column.id];
+  if (column.label in values) return values[column.label];
+  for (const [key, value] of Object.entries(values)) {
+    if (asColumnId(key) === column.id) return value;
+  }
+  return void 0;
+}
 function readAggregates(raw, columns) {
   if (!Array.isArray(raw)) return [];
   return raw.slice(0, 4).map((item, i) => {
@@ -6709,7 +6720,7 @@ function readStructuredTable(raw, here, caption2) {
     const sources = readSources(isObject(row) ? row.sources ?? row.sourceIds : void 0);
     columns.forEach((column, ci) => {
       const values = isObject(row) && isObject(row.cells) ? row.cells : row;
-      const value = isObject(values) ? values[column.id] ?? values[column.label] : Array.isArray(values) ? values[ci] : void 0;
+      const value = isObject(values) ? cellAt(values, column) : Array.isArray(values) ? values[ci] : void 0;
       if (column.kind === "sources") {
         sources.push(...readSources(Array.isArray(value) ? value : value ? [value] : []));
         return;

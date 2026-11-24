@@ -104,6 +104,24 @@ function readStructuredCell(raw: unknown, column: TableColumn): TableCell | null
   return { text };
 }
 
+/** A row key as the column id it belongs to: the same normalization readStructuredColumns gives an id, so a row
+ *  keyed by the id as the model wrote it ("SKU", "monthlyPrice") finds the column it was written for. */
+function asColumnId(key: string): string {
+  return key.replace(/[^A-Za-z0-9_-]+/g, "-").toLowerCase();
+}
+
+/** One cell of an object row: by the column's id, by its label, then by any key that normalizes to the id, so an id
+ *  written in another case or with a space still reads. Without this a row keyed "SKU" for a column whose id became
+ *  "sku" was silently skipped, and a table of such rows was dropped. */
+function cellAt(values: Record<string, unknown>, column: TableColumn): unknown {
+  if (column.id in values) return values[column.id];
+  if (column.label in values) return values[column.label];
+  for (const [key, value] of Object.entries(values)) {
+    if (asColumnId(key) === column.id) return value;
+  }
+  return undefined;
+}
+
 function readAggregates(raw: unknown, columns: TableColumn[]): Aggregate[] {
   if (!Array.isArray(raw)) return [];
   return raw.slice(0, 4).map((item: any, i: number) => {
@@ -140,7 +158,7 @@ function readStructuredTable(raw: any, here: Trail, caption: string | undefined)
     columns.forEach((column, ci) => {
       const values = isObject(row) && isObject(row.cells) ? row.cells : row;
       const value = isObject(values)
-        ? values[column.id] ?? values[column.label]
+        ? cellAt(values, column)
         : Array.isArray(values) ? values[ci] : undefined;
       if (column.kind === "sources") {
         sources.push(...readSources(Array.isArray(value) ? value : value ? [value] : []));
