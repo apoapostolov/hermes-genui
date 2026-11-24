@@ -365,10 +365,14 @@ def test_a_repeat_reads_a_data_array_with_a_stable_key():
     assert checked(triage) == ['0.view.2: every repeat item needs a stable "id"']
 
 
-def test_a_when_needs_both_branches_written_out():
+def test_a_when_may_leave_else_out_and_refuses_an_else_that_is_not_a_list():
     trip = copy("trip-budget")
     del trip["view"][5]["else"]
-    assert checked(trip) == ["0.view.5: when needs else (use [] for nothing)"]
+    assert checked(trip) == []
+
+    trip = copy("trip-budget")
+    trip["view"][5]["else"] = {"kind": "text", "text": "no"}
+    assert checked(trip) == ["0.view.5: else is a list of elements (or leave it out for nothing)"]
 
 
 def test_controls_must_match_the_state_they_change():

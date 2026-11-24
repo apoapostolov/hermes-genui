@@ -105,8 +105,8 @@ def test_the_widget_spec_carries_the_shapes_a_widget_needs():
 
 def test_the_widget_menu_line_says_what_the_reader_can_try():
     line = next(one for one in catalog_text.menu().splitlines() if one.startswith("- widget: "))
-    for words in ("controls change computed numbers", "reset restores the start", "fill button",
-                  "Not for a static picture"):
+    for words in ("controls change numbers", "reset restores", "fill hands state back",
+                  "Not static"):
         assert words in line, words
 
 

@@ -122,22 +122,24 @@ describe("reading a widget", () => {
     }
   });
 
-  it("refuses a nested repeat, a when without else, and a control that does not match its state", () => {
+  it("refuses a nested repeat and a control that does not match its state, and allows a when without else", () => {
     const nested = handMade([{ kind: "repeat", id: "outer", items: { get: "data.list" }, key: "id",
       template: [{ kind: "repeat", id: "inner", items: { get: "data.list" }, key: "id", template: [] }] }],
     { data: { list: [{ id: "a" }] } });
     const noElse = handMade([{ kind: "when", id: "w", test: true, then: [] }]);
     const badControl = handMade([{ kind: "input", id: "i", control: "select", state: "nights", label: "Nights" }]);
     expect(readBlocksNoted([nested]).dropped[0].why).toContain("cannot nest");
-    expect(readBlocksNoted([noElse]).dropped[0].why).toBe("when needs an else list");
+    const noElseRead = readBlocksNoted([noElse]);
+    expect(noElseRead.dropped).toHaveLength(0);
+    expect(noElseRead.blocks).toHaveLength(1);
     expect(readBlocksNoted([badControl]).dropped[0].why).toContain("select");
   });
 
   it("refuses a set that targets something other than declared state", () => {
-    for (const target of ["item.id", "data.total", "computed.total", "state.missing"]) {
-      const raw = handMade([{ kind: "button", id: "b", label: "Pick", action: { op: "set", target, value: 1 } }]);
+    for (const state of ["item.id", "data.total", "computed.total", "state.missing"]) {
+      const raw = handMade([{ kind: "button", id: "b", label: "Pick", action: { op: "set", state, value: 1 } }]);
       const { dropped } = readBlocksNoted([raw]);
-      expect(dropped[0].why).toBe("set needs a declared state target");
+      expect(dropped[0].why).toBe("set needs a declared state name");
     }
   });
 
@@ -247,7 +249,7 @@ describe("a hand-made widget", () => {
   it("resets to the declared starting values", () => {
     drawWithActions([handMade([
       { kind: "number", id: "n", label: "Nights", expr: { get: "state.nights" } },
-      { kind: "button", id: "nine", label: "Nine", action: { op: "set", target: "state.nights", value: 9 } },
+      { kind: "button", id: "nine", label: "Nine", action: { op: "set", state: "state.nights", value: 9 } },
       { kind: "button", id: "reset", label: "Reset", action: { op: "reset" } },
     ])]);
     expect(figure("Nights")).toBe("2");
@@ -260,7 +262,7 @@ describe("a hand-made widget", () => {
   it("keeps a typed set inside the declaration's bounds", () => {
     drawWithActions([handMade([
       { kind: "number", id: "n", label: "Nights", expr: { get: "state.nights" } },
-      { kind: "button", id: "far", label: "Far", action: { op: "set", target: "state.nights", value: 99 } },
+      { kind: "button", id: "far", label: "Far", action: { op: "set", state: "state.nights", value: 99 } },
     ])]);
     fireEvent.click(screen.getByRole("button", { name: "Far" }));
     expect(figure("Nights")).toBe("10");
