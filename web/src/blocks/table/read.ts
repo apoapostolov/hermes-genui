@@ -29,7 +29,7 @@ const KINDS: TableColumnKind[] = ["text", "number", "currency", "percent", "date
 const OPS: AggregateOp[] = ["sum", "avg", "min", "max", "count"];
 const TONES = ["accent", "good", "warn", "neutral"];
 
-function isObject(v: unknown): v is Record<string, any> {
+function isObject(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
 
