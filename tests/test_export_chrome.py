@@ -82,6 +82,8 @@ CHROME_CANDIDATES = [
     Path("/usr/bin/google-chrome"),
     Path("/usr/bin/chromium"),
     Path("/usr/bin/chromium-browser"),
+    Path("C:/Program Files/Google/Chrome/Application/chrome.exe"),
+    Path("C:/Program Files (x86)/Google/Chrome/Application/chrome.exe"),
 ]
 
 
@@ -102,7 +104,14 @@ def find_chrome() -> Path | None:
 CHROME = find_chrome()
 
 
-ESBUILD = REPO / "web" / "node_modules" / ".bin" / "esbuild"
+def _esbuild() -> Path:
+    """The bundler this harness spawns. `.bin/esbuild` is a shell shim, which Windows cannot execute
+    (WinError 193) — the platform package holds the real binary there, so prefer it when it exists."""
+    native = REPO / "web" / "node_modules" / "@esbuild" / "win32-x64" / "esbuild.exe"
+    return native if native.exists() else REPO / "web" / "node_modules" / ".bin" / "esbuild"
+
+
+ESBUILD = _esbuild()
 CSS = BASE_CSS[:2] + [SRC / "host" / "blockTag.css"] + BASE_CSS[2:]
 
 class CDP:
@@ -211,7 +220,7 @@ def _devtools_port(profile: Path) -> int:
     while time.monotonic() < end:
         if marker.exists():
             try:
-                return int(marker.read_text().splitlines()[0])
+                return int(marker.read_text(encoding="utf-8").splitlines()[0])
             except (ValueError, IndexError):
                 pass
         time.sleep(0.1)
@@ -502,7 +511,8 @@ def bundle() -> str:
         pytest.skip("web/node_modules not installed — cannot bundle the real components")
     proc = subprocess.run(
         [str(ESBUILD), "--bundle", "--format=iife", "--jsx=automatic", "--loader=tsx", "--log-level=warning"],
-        input=DRIVER, capture_output=True, text=True, timeout=180, cwd=str(REPO / "web"))
+        input=DRIVER, capture_output=True, text=True, encoding="utf-8", errors="replace",
+        timeout=180, cwd=str(REPO / "web"))
     assert proc.returncode == 0, proc.stderr
     return proc.stdout
 
@@ -517,9 +527,9 @@ def chrome_export_page(board: object, driver_js: str, *, width: int = WINDOW_W, 
     with tempfile.TemporaryDirectory() as work:
         downloads = Path(work) / "downloads"
         downloads.mkdir()
-        (Path(work) / "driver.js").write_text(driver_js)
+        (Path(work) / "driver.js").write_text(driver_js, encoding="utf-8")
         page = Path(work) / "probe.html"
-        css = "\n".join(p.read_text() for p in CSS)
+        css = "\n".join(p.read_text(encoding="utf-8") for p in CSS)
         page.write_text(
             "<!doctype html><html><head><meta charset='utf-8'>"
             f"<style>{css}</style>"
@@ -533,7 +543,7 @@ def chrome_export_page(board: object, driver_js: str, *, width: int = WINDOW_W, 
             + "</head><body style='margin:0'>"
             "<div id='app'></div>"
             f"<script id='spec' type='application/json'>{json.dumps(board)}</script>"
-            "<script src='driver.js'></script></body></html>")
+            "<script src='driver.js'></script></body></html>", encoding="utf-8")
         profile = Path(work) / "profile"
         profile.mkdir()
         proc = subprocess.Popen(
