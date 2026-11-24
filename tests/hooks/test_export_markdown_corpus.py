@@ -112,6 +112,17 @@ def _cases() -> list:
              "series": [{"name": "Samples", "data": [10, 14, 12]}]},
             {"type": "chart", "kind": "histogram", "series": [{"data": [3, 40, 40, 70, 5]}]},
         ]),
+        # #35's kinds, ported into the TS twin: the bins line, its "most in" branch, and the range windows
+        ("chart histogram labelled", [{
+            "type": "chart", "kind": "histogram", "title": "Calls", "x": ["0-50", "50-100"],
+            "series": [{"data": [4, 12]}]}]),
+        ("chart histogram many bins", [{
+            "type": "chart", "kind": "histogram", "title": "Calls",
+            "x": ["0-10", "10-20", "20-30", "30-40", "40-50", "50-60", "60-70", "70-80", "80-90"],
+            "series": [{"data": [1, 2, 3, 4, 5, 6, 7, 8, 9]}]}]),
+        ("chart range windows", [{
+            "type": "chart", "kind": "range", "title": "Week", "x": ["Mon", "Tue", "Wed"],
+            "series": [{"low": [18, 19, 20], "high": [34, 36, 38], "now": [26, 30, 42]}]}]),
         ("chart bar hbar words", [{
             "type": "chart", "kind": "hbar", "title": "Costs", "x": ["Stay", "Flights", "Local"],
             "series": [{"name": "Cost", "data": [42000, 31500, -28000]}]}]),
@@ -311,6 +322,7 @@ def _cases() -> list:
 
 
 def _corpus_entries():
+    assert tf is not None, "the plugin package must load to build the corpus"
     entries = []
     for name, board in _cases():
         assert isinstance(board, list), name
