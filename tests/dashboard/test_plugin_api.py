@@ -26,6 +26,17 @@ def test_api_returns_blocks(client, tmp_path):
     assert response.json() == {"blocks": [{"type": "text", "text": "hi"}]}
 
 
+def test_an_envelope_board_answers_with_its_blocks_and_its_words(client, tmp_path):
+    http, api = client
+    block_id = api.store.save({"align": "center", "text_align": "right",
+                               "blocks": [{"type": "text", "text": "hi"}]}, root=tmp_path)
+    response = http.get(f"/blocks/{block_id}")
+    assert response.status_code == 200
+    assert response.json() == {"blocks": [{"type": "text", "text": "hi"}],
+                               "align": "center", "text_align": "right"}
+
+
+
 def test_api_404_for_unknown(client):
     http, _ = client
     response = http.get("/blocks/0badc0de")

@@ -4,6 +4,34 @@ All notable changes to this plugin. Versions follow [Semantic Versioning](https:
 
 ## Unreleased
 
+### A board can say where its blocks sit
+
+- **`align`: left | center | right — per block, and as a board default.** `show_blocks` takes `align` and
+  `text_align` beside `blocks`; any block can also ask for its own place. A block that didn't ask takes the
+  board's word; a board that said nothing draws exactly as it did before, byte for byte. A placed block is
+  drawn inside a `.hb-place` box whose auto margin shares out only the space the block left over, so a capped
+  card keeps its cap centered, a hugging table keeps hugging, and a full-width line does not move.
+- **One block's ask belongs to that block.** "Center the verdict" centers the verdict: the menu and the two
+  board words say in plain terms that the call's `align`/`text_align` move the whole board, and a single ask is
+  that block's own word. A block's `align` never becomes a board word — pinned through store, tool and drawing.
+- **`text_align` moves the words, not the box:** inside heading, text, stat and callout only — a drawing that
+  owns a layout (a chart, a table, photos, any container) is never re-typed by the board. The word reads words,
+  never sits cards.
+- **Charts center like everything else.** `.hb-chart` resets its root margin (the host's prose styles give a
+  figure one), and at equal class specificity that reset vetoed the placement ask purely on load order — a
+  chart asked to center sat flush left while a calculator centered fine. The placement rule compounds its two
+  classes, so the ask outranks every block root reset; real Chrome measures the centered chart at symmetric
+  margins (190/190 on the 1100px column).
+- **A placed kpis row moves its cards.** The row is one grid whose auto-fill tracks eat the whole column, so an
+  auto margin on it had no visible effect; under a placement class the empty tracks collapse and the used ones
+  gather center or end at the right, while the box keeps filling its column and the unplaced row parks its cards
+  flush left exactly as shipped.
+- **Nested blocks are placed inside their cells** by the same cascade — row, grid, columns, section, tabs — and
+  a placed block in a cell fills exactly like its unplaced twin (pinned by Chrome twins in
+  `tests/test_layout_alignment.py`). Includes and kept pages take a board's blocks; its words stay with it.
+- The placement words ride the same stored envelope as the living words (a version, links); the text-only half
+  ignores both: on Telegram and the CLI the same boards read the same.
+
 ### The block guide stops growing (#42)
 
 - **The model reads a short menu instead of every block's fields.** The `show_blocks` description is now one line per

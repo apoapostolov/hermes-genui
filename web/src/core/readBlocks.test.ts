@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import catalog from "../../../core/catalog.json";
-import { readBlocks, readBlocksNoted } from "./readBlocks";
+import { alignOf, readBlocks, readBlocksNoted, textAlignOf } from "./readBlocks";
 
 describe("readBlocks", () => {
   it("reads chart, kpis and source; skips unknown types", () => {
@@ -55,5 +55,60 @@ describe("long prose", () => {
     endsCut(callout.text, 400);
     endsCut(list.items[0].subtitle, 160);
     endsCut(timeline.groups[0].items[0].note, 160);
+  });
+});
+
+describe("placement words", () => {
+  it("reads the board's own words from the stored envelope", () => {
+    const r = readBlocksNoted({ align: "center", text_align: "right", blocks: [{ type: "heading", text: "A" }] });
+    expect(r.align).toBe("center");
+    expect(r.textAlign).toBe("right");
+    expect(r.blocks.map((b) => b.type)).toEqual(["heading"]);
+  });
+
+  it("reads a junk board word as nothing said", () => {
+    const r = readBlocksNoted({ align: "middle", blocks: [{ type: "heading", text: "A" }] });
+    expect(r.align).toBeUndefined();
+    expect(r.textAlign).toBeUndefined();
+  });
+
+  it("says nothing about the board for a plain list, or a lone block that spells its children blocks", () => {
+    expect(readBlocksNoted([{ type: "heading", text: "A" }]).align).toBeUndefined();
+    const section = readBlocksNoted({ type: "section", title: "T", blocks: [{ type: "heading", text: "A", align: "center" }] });
+    expect(section.align).toBeUndefined(); // the word belongs to the block, not to the board
+    expect(alignOf(section.blocks[0])).toBe("center");
+  });
+
+  it("carries a block's own asks, and a junk word reads as nothing said", () => {
+    const r = readBlocksNoted([
+      { type: "heading", text: "A", align: "center", text_align: "right" },
+      { type: "text", text: "b", align: "middle", text_align: 7 },
+    ]);
+    expect(alignOf(r.blocks[0])).toBe("center");
+    expect(textAlignOf(r.blocks[0])).toBe("right");
+    expect(alignOf(r.blocks[1])).toBeUndefined();
+    expect(textAlignOf(r.blocks[1])).toBeUndefined();
+  });
+
+  it("reaches each block of a row drawn as a stack, at the row's ask", () => {
+    const r = readBlocksNoted([
+      { type: "row", align: "center", children: [
+        { type: "list", items: [{ title: "x" }] },
+        { type: "text", text: "b" },
+      ] },
+    ]);
+    expect(r.blocks.map((b) => b.type)).toEqual(["list", "text"]); // a list can't sit in a row: drawn as a stack
+    for (const b of r.blocks) expect(alignOf(b)).toBe("center");
+  });
+
+  it("keeps a child's own ask when its flattened container asks too", () => {
+    const r = readBlocksNoted([
+      { type: "row", align: "center", children: [
+        { type: "list", items: [{ title: "x" }] },
+        { type: "text", text: "b", align: "right" },
+      ] },
+    ]);
+    expect(alignOf(r.blocks[0])).toBe("center");
+    expect(alignOf(r.blocks[1])).toBe("right");
   });
 });

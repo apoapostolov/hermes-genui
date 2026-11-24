@@ -6,7 +6,9 @@
 // pokes the owner, whose refetch updates the SAME mounted subtree in place — a layout/state change of the
 // same elements, never a second renderer (a calculator's sliders, an unsent form, a lit tab all ride
 // through). A board that speaks a living word (a version, links) says it in a quiet row under itself; a board
-// that speaks nothing draws the DOM and the note it always drew.
+// that speaks nothing draws the DOM and the note it always drew. The stored answer may also carry the board's
+// own placement words (align, text_align) beside its blocks; they ride through to the drawing, which resolves
+// them for every block that didn't ask for itself.
 import { useContext, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 import { Blocks } from "../core/Blocks";
 import * as boards from "../core/boardRoster";
@@ -14,12 +16,14 @@ import { carryBlocks } from "../core/living-identity";
 import { forgetBlock, markLiving, migrateArchived, promoteOnUpdate } from "../blocks/checklist/savedState";
 import { LivePointer, LiveRow } from "../core/LivingBoards";
 import { readBlocksNoted, type BoardLink } from "../core/readBlocks";
+import type { Align } from "../core/fields";
 import type { Block } from "../registry";
 import { BlockActions } from "./actions";
 
 const ID_PATTERN = /^[0-9a-f]{8}$/;
 
-type State = { kind: "loading" } | { kind: "drawn"; blocks: Block[] } | { kind: "failed" };
+type State = { kind: "loading" } | { kind: "drawn"; blocks: Block[]; align?: Align; textAlign?: Align }
+  | { kind: "failed" };
 
 /**
  * load fetches the stored JSON for an id (in the app: the plugin's REST route).
@@ -90,7 +94,8 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
       : actions.rest(`/blocks/${id}?version=${viewing}`);
     Promise.resolve(ask)
       .then((data) => {
-        const { blocks, version: boardVersion, updatedAt: boardUpdatedAt, links: boardLinks } = readBlocksNoted(data);
+        const { blocks, version: boardVersion, updatedAt: boardUpdatedAt, links: boardLinks,
+          align: boardAlign, textAlign: boardTextAlign } = readBlocksNoted(data);
         if (!alive) return;
         if (blocks.length) {
           // Drawing the answer is a function of the board and the door; the ONE thing that may precede it
@@ -113,7 +118,7 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
             if (drawn.current && viewing === null) void promoteOnUpdate(actions.rest, id, drawn.current, blocks);
             if (viewing === null && (boardVersion ?? 0) >= 2) markLiving(id);
             drawn.current = blocks;
-            setState({ kind: "drawn", blocks });
+            setState({ kind: "drawn", blocks, align: boardAlign, textAlign: boardTextAlign });
             // Only the LIVE answer says what this address IS now: the live row and the roster's word about
             // the address speak of the current version, whatever older one is being looked at.
             if (viewing === null) {
@@ -159,7 +164,7 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
   if (state.kind === "failed") return null;
   return (
     <BlockActions.Provider value={{ ...actions, blockId: id }}>
-      <Blocks blocks={state.blocks} />
+      <Blocks blocks={state.blocks} boardAlign={state.align} boardTextAlign={state.textAlign} />
       {(live.version != null || live.links) && (
         <LiveRow id={id as string} version={live.version} updatedAt={live.updatedAt} links={live.links}
           viewing={viewing} onShow={setViewing} canReach={Boolean(actions.rest)} />

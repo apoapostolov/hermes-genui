@@ -4,7 +4,7 @@ import json
 import math
 
 from ..blocks.chart import CHART_KINDS
-from ..blocks.common import board_address, link_problems, link_words
+from ..blocks.common import align_word, board_address, link_problems, link_words
 from ..core import drawn, store, surface
 from ..core.catalog_text import describe, icons_line, spec
 from ..core.catalog_text import menu as core_menu
@@ -196,6 +196,7 @@ def _included(block_id: str, here: str, problems: list[str]) -> list:
         problems.append(f"{here}: board {block_id} is too big to include (max {INCLUDE_LIMIT // 1024} KB)")
     elif board is None:
         problems.append(f"{here}: no stored board with id {block_id}")
+    # the board's own words (living, placement) stay with the board; includes take just the blocks
     return store.blocks_of(board)
 
 
@@ -285,7 +286,16 @@ def show_blocks(params: dict, **kwargs) -> str:
         problems = [deep] if (deep := too_deep(blocks)) else []
     if problems:
         return _not_drawn(problems)
-    board: list | dict = {"links": links, "blocks": blocks} if links else blocks
+    # The board's own placement words ride beside its blocks; said or not, a block can override either one.
+    word, text_word = align_word(params.get("align")), align_word(params.get("text_align"))
+    envelope: dict = {}
+    if word is not None:
+        envelope["align"] = word
+    if text_word is not None:
+        envelope["text_align"] = text_word
+    if links:
+        envelope["links"] = links
+    board: list | dict = {**envelope, "blocks": blocks} if envelope else blocks
     refusal = too_big(board)
     if refusal:
         return refusal
@@ -325,7 +335,8 @@ def schema(guide: str = "full") -> dict:
                 "blocks": {
                     "type": "array",
                     "items": {"type": "object"},
-                    "description": "The blocks to draw, in order. Each has a `type`.",
+                    "description": "The blocks to draw, in order. Each has a `type`, and may ask for its place "
+                    "with `align`: left | center | right (its words with `text_align`).",
                 },
                 "target": {
                     "type": "string",
@@ -347,6 +358,19 @@ def schema(guide: str = "full") -> dict:
                     "open the linked board from this one without it being redrawn. Every address must be a board "
                     "that exists; a board never links to itself. The note is the connection as you suggest it, one "
                     "short line. Most turns need no links.",
+                },
+                "align": {
+                    "type": "string",
+                    "description": "Optional. Where the blocks of this whole board sit across the reply when a "
+                    "block doesn't ask for itself: left (the default) | center | right. A board word: it moves the "
+                    "whole board — to place one block (a verdict, a chart), give that block its own align instead.",
+                },
+                "text_align": {
+                    "type": "string",
+                    "description": "Optional. How the words inside the board's text blocks read when a block "
+                    "doesn't ask for itself: left (the default) | center | right. A board word: it moves the whole "
+                    "board — to re-read one block, give that block its own text_align. It changes how words read, "
+                    "never where cards sit.",
                 },
             },
             "required": ["blocks"],

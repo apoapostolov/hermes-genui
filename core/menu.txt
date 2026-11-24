@@ -1,5 +1,5 @@
 Draw visual blocks in the reply (Hermes Desktop) when the answer reads better drawn than written.
-How: pick blocks from the menu below, call block_guide with their names to get fields and examples, then call show_blocks once with all blocks in order. Paste the returned tag on its own line exactly as returned. Use only numbers and image URLs a tool returned; null means no data, never 0.
+How: pick blocks from the menu below, call block_guide with their names to get fields and examples, then call show_blocks once with all blocks in order. Paste the returned tag on its own line exactly as returned. Use only numbers and image URLs a tool returned; null means no data, never 0. Any block can ask for its place: align: left | center | right — to move ONE block, say it on that block; the call's align and text_align move the whole board.
 Judgment
 - Lead with the answer: verdict or headline number first, the evidence under it.
 - A plain board is a fine answer: style a block only when it helps this reader understand.

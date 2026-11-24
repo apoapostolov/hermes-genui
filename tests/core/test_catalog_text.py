@@ -53,3 +53,10 @@ def test_flow_says_it_is_a_chain_and_where_branching_graphs_go():
         assert words in flow["fields"], words
     for words in ("for: a flow id", "items 2-12", "text ≤600", "node", "image"):
         assert words in steps["fields"], words
+
+
+def test_the_about_line_tells_the_model_its_blocks_can_ask_for_their_place():
+    # The placement lever is board-wide, not per type, so it is stated once in the about line the model reads first
+    # (describe()'s opening), rather than repeated in all 39 field lists.
+    assert "align: left | center | right" in CATALOG["about"]
+    assert "text_align" in CATALOG["about"]

@@ -1,8 +1,8 @@
 /* Calculator; a form's slider uses the same .hb-calc-head, .hb-calc-label, .hb-calc-value and .hb-range. */
 .hb-calc { display: flex; flex-direction: column; }
-/* At the top of a reply sliders stop at 720px rather than stretching across a wide board; in a layout block they fill
-   their place. */
-.hb-blocks > .hb-calc { max-width: 720px; }
+/* At the top of a reply sliders stop at 720px rather than stretching across a wide board, placed or not; in a
+   layout block they fill their place. */
+.hb-blocks > .hb-calc, .hb-blocks > .hb-place > .hb-calc { max-width: 720px; }
 .hb-calc-slider { display: block; padding: 8px 0; }
 .hb-calc-head { display: flex; align-items: baseline; gap: 8px; }
 .hb-calc-label { flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--hb-ink-2); }

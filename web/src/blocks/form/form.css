@@ -1,5 +1,6 @@
-/* Form: at most 720px wide at the top of a reply (like a calculator), filling its place in a layout block. */
-.hb-blocks > .hb-form { max-width: 720px; }
+/* Form: at most 720px wide at the top of a reply (like a calculator), placed or not, filling its place in a
+   layout block. */
+.hb-blocks > .hb-form, .hb-blocks > .hb-place > .hb-form { max-width: 720px; }
 .hb-form-field { display: block; padding: 8px 0; }
 .hb-form fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .hb-form-sent fieldset { opacity: 0.6; }

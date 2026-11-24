@@ -1,5 +1,5 @@
 {
- "about": "JSON blocks in order; invalid blocks skipped. Use sourced numbers only.",
+ "about": "JSON blocks in order; invalid blocks skipped. Use sourced numbers only. Any block can ask for its place: align: left | center | right, and its words' reading: text_align (same three words).",
  "icons": [
   "mail",
   "rupee",

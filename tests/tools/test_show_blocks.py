@@ -266,3 +266,77 @@ def test_a_made_up_icon_comes_back_with_the_icons_to_choose_from(store_dir):
     result = tools.show_blocks({"blocks": [flow]})
     assert "isn't one of the catalog icons" in result
     assert result.endswith(importlib.import_module("hermes_genui.core.catalog_text").icons_line())
+
+
+# --- the placement words --------------------------------------------------------------------------------------------
+
+
+def test_a_board_align_comes_back_as_an_envelope(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE], "align": " Center "})
+    board = plugin_store.load(stored_id(result), root=store_dir)
+    assert board == {"align": "center", "blocks": [TIMELINE]}
+
+
+def test_a_board_text_align_rides_the_same_envelope(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE], "text_align": "right"})
+    board = plugin_store.load(stored_id(result), root=store_dir)
+    assert board == {"text_align": "right", "blocks": [TIMELINE]}
+
+
+def test_both_words_share_the_one_envelope(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE], "align": "center", "text_align": "center"})
+    board = plugin_store.load(stored_id(result), root=store_dir)
+    assert board == {"align": "center", "text_align": "center", "blocks": [TIMELINE]}
+
+
+def test_no_word_or_a_junk_word_stores_the_plain_list(store_dir):
+    for params in ({"blocks": [TIMELINE]}, {"blocks": [TIMELINE], "align": "middle"},
+                   {"blocks": [TIMELINE], "text_align": 7}):
+        result = tools.show_blocks(dict(params))
+        assert plugin_store.load(stored_id(result), root=store_dir) == [TIMELINE]
+
+
+def test_centering_one_block_leaves_the_board_default_left(store_dir):
+    # Sagar's note: "center the verdict" centered the WHOLE board because the model reached for the call's
+    # words. The ask for ONE block belongs to that block, and the tool must never turn a block's align into
+    # a board word: the board stays a plain list (board default left) and the word rides inside the block.
+    text = {"type": "text", "text": "A verdict worth centering"}
+    blocks = [{"type": "heading", "text": "Picks"}, {**text, "align": "center"}]
+    result = tools.show_blocks({"blocks": blocks})
+    board = plugin_store.load(stored_id(result), root=store_dir)
+    assert board == blocks  # stored plain, the ask living inside the block's own JSON
+    assert plugin_store.align_of(board) is None
+    assert plugin_store.text_align_of(board) is None
+
+
+def test_the_menu_points_a_single_block_ask_at_the_block():
+    # The guidance fix for the same note: the menu must say, in the model's own words, that one block's ask
+    # is that block's word, and that the call's board words move the whole board.
+    menu = importlib.import_module("hermes_genui.core.catalog_text").menu()
+    assert "say it on that block" in menu
+    assert "move the whole board" in menu
+
+
+def test_the_board_words_say_they_move_the_whole_board():
+    props = tools.SHOW_BLOCKS_SCHEMA["parameters"]["properties"]
+    assert "moves the whole board" in props["align"]["description"]
+    assert "moves the whole board" in props["text_align"]["description"]
+    # and the two asks stay distinct: the text word reads words, it never sits the cards.
+    assert "never where cards sit" in props["text_align"]["description"]
+
+
+def test_an_included_envelope_board_lends_only_its_blocks(store_dir):
+    board_id = plugin_store.save({"align": "center", "blocks": [TIMELINE]}, root=store_dir)
+    layout = [{"type": "row", "children": [{"type": "include", "id": board_id}]}]
+    result = tools.show_blocks({"blocks": layout})
+    stored = plugin_store.load(stored_id(result), root=store_dir)
+    assert stored == [{"type": "row", "children": [TIMELINE]}]  # the kept board's own words stay on its board
+
+
+def test_the_envelope_words_count_in_the_boards_size(store_dir, monkeypatch):
+    import json as _json
+    monkeypatch.setattr(plugin_store, "BOARD_LIMIT", len(_json.dumps([TIMELINE])) + 20)
+    plain = tools.show_blocks({"blocks": [TIMELINE]})
+    assert plain.startswith("Drawn.")
+    big = tools.show_blocks({"blocks": [TIMELINE], "align": "center", "text_align": "center"})
+    assert big.startswith("Not drawn: board too big (")

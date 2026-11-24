@@ -58,3 +58,45 @@
 .hb-blocks { overflow-wrap: break-word; }
 /* The chat's prose styles give images, figures and tables their own margins; blocks place their own. */
 .hb-blocks img, .hb-blocks figure, .hb-blocks table { margin: 0; }
+/* Block placement: a board puts a block off the left by drawing it inside a .hb-place box, which fills the column
+   or cell just as the block did and keeps a plain block layout inside. That is the point: a block in a plain block
+   context sizes exactly as it sized unwrapped (a capped card stays its cap, a fit-content table keeps hugging), and
+   the auto margin then shares out only the space the block left over. A block that fills the width (a long line, a
+   table card, prose) shifts by nothing. Never auto-margin a block in a flex column: the margin stops the stretch
+   and the block collapses to its content. Left is how blocks sit already, so a board with no ask anywhere grows no
+   .hb-place at all.
+   The two classes compound on purpose: a block's own root reset (.hb-chart { margin: 0 } in chart.css, the host's
+   figure margin in the line above) ties a single placement class on specificity and wins on load order alone —
+   block css is joined after tokens. Compounded, the ask (0,2,0) outranks every root reset (0,1,0 and 0,1,1), so a
+   chart asked to center centers like every other card (measured in real Chrome: symmetric margins, never flush
+   left). Placed cards keep the width caps their own rules give them; those are duplicated through the wrapper in
+   each block's css. */
+.hb-place { display: flow-root; }
+.hb-place.hb-place-center > * { margin-inline: auto; }
+.hb-place.hb-place-right > * { margin-inline-start: auto; margin-inline-end: 0; }
+/* Text voice: how the words inside a block read (the model's `text_align`, the block's word or the board's
+   default). The voice is a class on the block's wrapper and reaches the words by inheritance; a text-align only
+   moves words that sit in a line box filling the available width, so where a block keeps its words in a
+   shrink-wrapped box, the voice first opens that box (below). The box stays exactly where placement put it, and
+   only blocks whose draw is words (heading, text, stat, callout) ever carry it. Left is how words read anyway,
+   so a board with no ask grows no class and no wrapper. */
+.hb-ta-center { text-align: center; }
+.hb-ta-right { text-align: right; }
+/* The line width a voice needs: text-align is no property of a shrink-wrapped flex item — a body that hugs its
+   words has no free line for the words to travel on. heading and text are block boxes that already fill their
+   column; a lone stat card fills its column and its label, value and change lines stretch across the card; only
+   the callout sets its words in a non-growing body beside the fixed icon, so where a voice asks, that body is
+   opened to the row beside the icon. Scoped to the voice classes on purpose: a callout nobody asked about keeps
+   every rect it always had. A new text-bearing kind joins TEXT_BEARING (core/Blocks.tsx) only once its words
+   measure at their voice in the Chrome probe (tests/test_layout_alignment.py). */
+.hb-ta-center .hb-callout-body, .hb-ta-right .hb-callout-body { flex: 1 1 auto; min-width: 0; }
+/* A placed kpis row (maintainer note 2): the cards are no ordinary card — the row is one grid whose auto-fill
+   tracks eat the whole column and park the cards left, so an auto margin on a box that wide never moves
+   (and the wrapper, display:flow-root, fills the width by design). Placed, the empty tracks collapse
+   (auto-fit) and the used ones gather where the ask put them; the grid's box keeps filling the column and a
+   card's own rects stay exactly as the unplaced row measured them. Left asks grow no wrapper at all, so the
+   shipped default row is untouched by these rules — every selector here sits under a placement class. */
+.hb-place.hb-place-center > .hb-kpis,
+.hb-place.hb-place-right > .hb-kpis { grid-template-columns: repeat(auto-fit, minmax(130px, 200px)); }
+.hb-place.hb-place-center > .hb-kpis { justify-content: center; }
+.hb-place.hb-place-right > .hb-kpis { justify-content: end; }

@@ -72,6 +72,18 @@ export function version(v: unknown): number | undefined {
   return v;
 }
 
+/** Where a block sits across its column, or how its words read: the three placement words. */
+export type Align = "left" | "center" | "right";
+
+/** One of the alignment words, trimmed and caseless the way models write; anything else gives undefined, which
+ *  leaves the block to the board's default (left). " Center " → "center"; "middle" → undefined.
+ *  The same rule as the Python side's align_word (blocks/common.py). */
+export function align(v: unknown): Align | undefined {
+  if (typeof v !== "string") return undefined;
+  const word = v.trim().toLowerCase();
+  return word === "left" || word === "center" || word === "right" ? word : undefined;
+}
+
 /** A short lowercase name one block uses to point at another (a flow's id, its nodes' ids, a steps block's `for`),
  *  or undefined. The same rule as the Python side's SLUG. "tf" → "tf";  "next-word" → "next-word";  "Big Flow" → undefined */
 export function slug(v: unknown): string | undefined {

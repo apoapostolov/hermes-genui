@@ -1,7 +1,8 @@
 /* Charts are drawn at their real width and fill their place inside a layout block (a column, a cell, a tab). At the
-   top of a reply they stop at 720px; a long line (60+ points) takes the board's full width. */
+   top of a reply, placed or not, they stop at 720px; a long line (60+ points) takes the board's full width. */
 .hb-chart { margin: 0; padding: 14px 16px 10px; }
-.hb-blocks > .hb-chart:not(.hb-chart-wide) { max-width: 720px; }
+.hb-blocks > .hb-chart:not(.hb-chart-wide),
+.hb-blocks > .hb-place > .hb-chart:not(.hb-chart-wide) { max-width: 720px; }
 .hb-chart-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .hb-chart-title {
   display: block;

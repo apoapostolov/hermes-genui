@@ -1,7 +1,7 @@
 /* Simulation: a title with the view switch, then Play, the time scrubber and the sliders, then the piles of dots or
    the line chart. The sliders use the calculator's .hb-calc-slider and .hb-range; the legend the chart's. */
 .hb-sim { display: flex; flex-direction: column; gap: 12px; container-type: inline-size; }
-.hb-blocks > .hb-sim { max-width: 720px; }
+.hb-blocks > .hb-sim, .hb-blocks > .hb-place > .hb-sim { max-width: 720px; }
 .hb-sim-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
 .hb-sim-switch { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--hb-well); }
 .hb-sim-switch button {

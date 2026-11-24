@@ -38,6 +38,24 @@ def is_https(v: object) -> bool:
     return isinstance(v, str) and v.startswith("https://")
 
 
+# The three placement words, on this side and the web's (core/fields.ts align): anything else a model wrote is
+# ignored, and the block sits left (align) or reads left (text_align). Both words share the one reader.
+ALIGN_WORDS = ("left", "center", "right")
+
+
+def align_word(value: object) -> str | None:
+    """One of the alignment words, trimmed and caseless the way models write; anything else gives None.
+
+    " Center " → "center";  "middle" → None. Used for `align` (where the card sits) and `text_align` (how its
+    words read), for a whole board and, leniently at draw time, for any block inside it.
+    """
+    if not isinstance(value, str):
+        return None
+    word = value.strip().lower()
+    return word if word in ALIGN_WORDS else None
+
+
+
 # A button's message is sent as the user's own, and Hermes acts on some messages before the model reads them: "/reset"
 # runs a command, "!…" a shell line, and "@file:path", "@url:…" (any "@word:"), "@diff" or "@staged" pull a file, a
 # page or the working tree into the message. A button may not send any of these.

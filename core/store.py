@@ -75,7 +75,8 @@ def board_size(blocks: list | dict) -> int:
 
 
 def save(blocks: list[dict] | dict, root: Path | None = None) -> str:
-    """Store a board (a list of blocks, or the envelope a live board's links ride in) and return its new id.
+    """Store a board (a list of blocks, or the envelope a live board's links and a placed board's words ride
+    in: {align, text_align, version, updated_at, links, blocks}) and return its new id.
     Refused (BoardTooBig, nothing written) over BOARD_LIMIT.
 
     The id is one no store on this machine uses yet (with root given, no board in root), so a new board never
@@ -136,8 +137,9 @@ def size(block_id: str, root: Path | None = None) -> int | None:
     return path.stat().st_size if path.is_file() else None
 
 
-def load(block_id: str, root: Path | None = None) -> list[dict] | None:
-    """The stored blocks for an id, or None when the id is malformed or unknown.
+def load(block_id: str, root: Path | None = None) -> list[dict] | dict | None:
+    """The stored board for an id — a list of blocks, or an envelope carrying the board's own placement words —
+    or None when the id is malformed or unknown.
 
     load("7f3a09bc") → [{"type": "chart", ...}]
     load("../etc/passwd") → None (never a path outside the store)
@@ -165,7 +167,8 @@ HISTORY_LIMIT = 512 * 1024      # the sidecar's byte cap; oldest archived entrie
 
 def blocks_of(board: object) -> list:
     """The blocks inside a stored board, either shape: the plain list it has always been, or the envelope
-    {"version": ..., "blocks": [...]} that an update-in-place leaves at the address. Anything else gives no blocks.
+    that carries the board's own words beside them (a version from an update-in-place, placement words).
+    Anything else gives no blocks.
 
     blocks_of([chart, source]) → [chart, source]
     blocks_of({"version": 2, "blocks": [chart]}) → [chart]
@@ -206,6 +209,26 @@ def links_of(board: object) -> list | None:
     """
     links = board.get("links") if isinstance(board, dict) else None
     return links if isinstance(links, list) and links else None
+
+
+def align_of(board: object) -> str | None:
+    """The placement word a stored envelope carries for the whole board, or None. The word is checked where it
+    is drawn (anything that isn't left, center or right reads as left), as every model word is.
+
+    align_of({"align": "right", "blocks": [x]}) → "right";  align_of([x]) → None
+    """
+    word = board.get("align") if isinstance(board, dict) else None
+    return word if isinstance(word, str) else None
+
+
+def text_align_of(board: object) -> str | None:
+    """The text-alignment word a stored envelope carries for the whole board (how the words inside read), or
+    None. Like the placement word it is checked where it is drawn.
+
+    text_align_of({"text_align": "center", "blocks": [x]}) → "center";  text_align_of([x]) → None
+    """
+    word = board.get("text_align") if isinstance(board, dict) else None
+    return word if isinstance(word, str) else None
 
 
 def history_path(block_id: str, root: Path) -> Path:

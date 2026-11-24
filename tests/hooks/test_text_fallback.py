@@ -795,3 +795,10 @@ def test_steps_say_what_each_step_changes_using_the_flow_labels():
 def test_steps_without_a_flow_on_the_board_name_the_node_id():
     steps = {"type": "steps", "for": "tf", "items": [{"title": "A", "holds": {"emb": ["v"]}}, {"title": "B"}]}
     assert render(steps) == "**Step 1 of 2 · A**\nemb now holds: v\n\n**Step 2 of 2 · B**"
+
+
+def test_an_envelope_board_still_becomes_text():
+    # Placement words are a drawing concern; the text side just takes the blocks out of either board shape.
+    board = {"align": "center", "text_align": "center", "blocks": [{"type": "heading", "text": "Kyoto"}]}
+    reply = '::blocks{id="7f3a09bc"}'
+    assert tf.replace_tags(reply, load=lambda _id: board) == "**Kyoto**"

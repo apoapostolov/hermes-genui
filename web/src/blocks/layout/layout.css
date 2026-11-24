@@ -3,6 +3,9 @@
 .hb-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
 .hb-row-cell { flex: 1 1 140px; min-width: 0; display: flex; flex-direction: column; }
 .hb-row-cell > * { flex: 1; }
+/* A block placed inside a row cell: the wrapper takes the flex:1 above and the block fills it, ending at the same
+   height it would have sitting there directly. */
+.hb-row-cell > .hb-place > * { height: 100%; }
 /* Grid: each cell keeps its block's own height, top-aligned in its row. */
 .hb-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; align-items: start; }
 .hb-grid-cell { min-width: 0; display: flex; flex-direction: column; }
@@ -64,5 +67,7 @@
 /* Columns: dashboards side by side, each block at its own height (a short card beside a tall one stays short). */
 .hb-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 10px; align-items: start; }
 .hb-column { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
-/* Beside other blocks a table's card fills its column or cell (on its own it hugs its columns). */
-:is(.hb-column, .hb-grid-cell) > .hb-table-card { width: auto; }
+/* Beside other blocks a table's card fills its column or cell (on its own it hugs its columns); a place around it
+   changes nothing about that. */
+:is(.hb-column, .hb-grid-cell) > .hb-table-card,
+:is(.hb-column, .hb-grid-cell) > .hb-place > .hb-table-card { width: auto; }

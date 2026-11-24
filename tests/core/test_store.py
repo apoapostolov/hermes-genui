@@ -156,3 +156,33 @@ def test_a_new_board_never_takes_an_id_used_in_another_profile(tmp_path, monkeyp
     monkeypatch.setattr(store, "secrets", FakeSecrets(taken, "bbbbbbbb"))
     assert store.save([{"type": "text", "text": "mine"}]) == "bbbbbbbb"
     assert not (active / f"{taken}.json").exists()
+
+
+# --- the two shapes a stored board comes in -------------------------------------------------------------------------
+
+TEXT = {"type": "text", "text": "hi"}
+
+
+def test_blocks_of_takes_the_blocks_of_either_shape():
+    assert store.blocks_of([TEXT]) == [TEXT]
+    assert store.blocks_of({"align": "center", "blocks": [TEXT]}) == [TEXT]
+    assert store.blocks_of({"text_align": "right", "blocks": [TEXT]}) == [TEXT]
+    assert store.blocks_of(None) == []
+    assert store.blocks_of({"blocks": "not a list"}) == []
+    assert store.blocks_of([TEXT, {"blocks": [TEXT]}]) == [TEXT, {"blocks": [TEXT]}]
+
+
+def test_the_board_words_come_from_the_envelope_only():
+    assert store.align_of({"align": "center", "blocks": [TEXT]}) == "center"
+    assert store.align_of({"align": "whatever", "blocks": [TEXT]}) == "whatever"  # checked where it is drawn
+    assert store.align_of([TEXT]) is None
+    assert store.align_of(None) is None
+    assert store.text_align_of({"text_align": "right", "blocks": [TEXT]}) == "right"
+    assert store.text_align_of({"align": "right", "blocks": [TEXT]}) is None
+    assert store.text_align_of([TEXT]) is None
+
+
+def test_an_envelope_board_round_trips(tmp_path):
+    board = {"align": "center", "text_align": "center", "blocks": [TEXT]}
+    block_id = store.save(board, root=tmp_path)
+    assert store.load(block_id, root=tmp_path) == board

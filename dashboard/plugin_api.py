@@ -253,6 +253,10 @@ async def get_block(block_id: str, version: str | None = None):
         answer["updated_at"] = stamp
     if (links := store.links_of(board)) is not None:  # and the boards this one connects to, each by address
         answer["links"] = links
+    if (word := store.align_of(board)) is not None:  # the board's placement words, when it carries them
+        answer["align"] = word
+    if (word := store.text_align_of(board)) is not None:
+        answer["text_align"] = word
     return answer
 
 

@@ -59,4 +59,26 @@ describe("BlockTag", () => {
     await waitFor(() => expect(screen.getByText("1 of 2 done")).toBeTruthy());
     expect(rest).toHaveBeenCalledWith("/blocks/7f3a09bc/state");
   });
+
+  it("threads the board's placement words from the stored answer into the drawing", async () => {
+    const heading = { type: "heading", text: "Revenue hit ₹72,275 Cr" };
+    const { container } = render(
+      <BlockTag id="7f3a09bc" streaming={false}
+        load={() => Promise.resolve({ blocks: [heading], align: "center", text_align: "center" })} />,
+    );
+    await waitFor(() => expect(container.querySelector(".hb-place")).toBeTruthy());
+    const place = container.querySelector(".hb-place")!;
+    expect(place.getAttribute("data-align")).toBe("center");
+    expect(place.getAttribute("data-text-align")).toBe("center"); // a heading carries words; the voice lands too
+    expect(place.querySelector(".hb-heading")).toBeTruthy();
+  });
+
+  it("threads nothing when the answer carries no words: the board draws the DOM it always drew", async () => {
+    const { container } = render(
+      <BlockTag id="7f3a09bc" streaming={false} load={() => Promise.resolve({ blocks: [timeline] })} />,
+    );
+    await waitFor(() => expect(container.querySelector(".hb-blocks")).toBeTruthy());
+    expect(container.querySelector(".hb-place")).toBeNull();
+    expect(container.querySelector("[data-align], [data-text-align]")).toBeNull();
+  });
 });

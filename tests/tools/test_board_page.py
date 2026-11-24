@@ -71,6 +71,20 @@ def test_keep_copies_the_chat_board_without_its_keep_button(tmp_path):
     assert '"enabled_toolsets": ["hermes_genui", "mocksecops"]' in out and "attach_job" in out
 
 
+def test_keep_copies_an_envelope_board_as_its_plain_blocks(tmp_path):
+    # The id from a ::blocks tag may name an envelope board (it said where its blocks sit). The page keeps the
+    # blocks; the board's own placement words stay on the board.
+    home = home_at(tmp_path)
+    board_id = blocks_store.save({"align": "center", "blocks": DESIGN}, root=root(home))
+    out = call({"action": "keep", "title": "Security", "servers": ["mocksecops"], "board_id": board_id}, home)
+    assert "Not saved" not in out, out
+    page = pages.load("security", root(home))
+    kept = page["snapshot"]["blocks"]
+    assert kept[:3] == DESIGN[:3]
+    assert kept[3] == {"type": "actions", "items": [KEEP["items"][0]]}
+
+
+
 def test_a_keep_button_on_its_own_goes_with_its_block(tmp_path):
     home = home_at(tmp_path)
     alone = {"type": "actions", "items": [{"label": "Keep in sidebar", "run": board_page.KEEP_RUN}]}

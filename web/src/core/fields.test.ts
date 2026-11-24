@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cutAtWord, firstWords } from "./fields";
+import { align, cutAtWord, firstWords } from "./fields";
 
 describe("cutAtWord", () => {
   it("leaves text that fits alone", () => {
@@ -26,5 +26,21 @@ describe("firstWords", () => {
     expect(firstWords([undefined, "  Most golds?  "], 140)).toBe("Most golds?");
     expect(firstWords([" ", "one two three"], 10)).toBe("one two…");
     expect(firstWords([5, null], 10)).toBeUndefined();
+  });
+});
+
+describe("align", () => {
+  it("reads the three words, trimmed and caseless the way models write", () => {
+    expect(align("center")).toBe("center");
+    expect(align(" Center ")).toBe("center");
+    expect(align("RIGHT")).toBe("right");
+    expect(align("left")).toBe("left");
+  });
+  it("gives nothing for anything else, which leaves the ask to the board", () => {
+    expect(align("middle")).toBeUndefined();
+    expect(align(7)).toBeUndefined();
+    expect(align(undefined)).toBeUndefined();
+    expect(align(null)).toBeUndefined();
+    expect(align(["center"])).toBeUndefined();
   });
 });
