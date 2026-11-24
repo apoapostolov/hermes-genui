@@ -1,0 +1,1615 @@
+[
+ {
+  "name": "heading",
+  "blocks": [
+   {
+    "type": "heading",
+    "text": "Day 1"
+   }
+  ],
+  "expected": "**Day 1**"
+ },
+ {
+  "name": "text multi-line kept",
+  "blocks": [
+   {
+    "type": "text",
+    "text": "one\ntwo\nthree"
+   }
+  ],
+  "expected": "one\ntwo\nthree"
+ },
+ {
+  "name": "text capped and inline-stripped",
+  "blocks": [
+   {
+    "type": "text",
+    "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   }
+  ],
+  "expected": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…"
+ },
+ {
+  "name": "text control and marks",
+  "blocks": [
+   {
+    "type": "text",
+    "text": "a\u001b[31mb\t[c](javascript:x) <b>tag</b>"
+   }
+  ],
+  "expected": "a\\[31mb \\[c\\](javascript:x) \\<b\\>tag\\</b\\>"
+ },
+ {
+  "name": "divider badge link",
+  "blocks": [
+   {
+    "type": "divider"
+   },
+   {
+    "type": "badge",
+    "label": "New"
+   },
+   {
+    "type": "link",
+    "text": "Book",
+    "url": "https://x.org/a b"
+   },
+   {
+    "type": "link",
+    "text": "Bad",
+    "url": "javascript:alert(1)"
+   }
+  ],
+  "expected": "---\n\n[New]\n\n[Book](https://x.org/a%20b)\n\nBad"
+ },
+ {
+  "name": "image fields",
+  "blocks": [
+   {
+    "type": "image",
+    "url": "https://a.org/k.jpg",
+    "caption": "Kyoto"
+   },
+   {
+    "type": "image",
+    "src": "http://a.org/m.jpg",
+    "alt": "M",
+    "title": "T"
+   },
+   {
+    "type": "image",
+    "caption": "no url",
+    "url": "data:text/html,x"
+   }
+  ],
+  "expected": "![Kyoto](https://a.org/k.jpg)\n\n![M](http://a.org/m.jpg)\n\nno url"
+ },
+ {
+  "name": "bar and progress",
+  "blocks": [
+   {
+    "type": "bar",
+    "label": "Level 4",
+    "value": 95,
+    "max": 120,
+    "unit": "XP"
+   },
+   {
+    "type": "progress",
+    "title": "Road",
+    "value": 30,
+    "goal": 90,
+    "unit": "%"
+   }
+  ],
+  "expected": "Level 4: 95 / 120 XP\n\nRoad: 30 / 90%"
+ },
+ {
+  "name": "callout",
+  "blocks": [
+   {
+    "type": "callout",
+    "title": "Note",
+    "text": "one\ntwo"
+   }
+  ],
+  "expected": "> **Note**\n> one\n> two"
+ },
+ {
+  "name": "source with url",
+  "blocks": [
+   {
+    "type": "source",
+    "text": "Trip ledger",
+    "url": "https://led.gr"
+   }
+  ],
+  "expected": "_Source: [Trip ledger](https://led.gr)_"
+ },
+ {
+  "name": "stat units and chips",
+  "blocks": [
+   {
+    "type": "stat",
+    "label": "Saved",
+    "value": 12500,
+    "unit": "₹"
+   },
+   {
+    "type": "stat",
+    "label": "Close",
+    "value": 80,
+    "change": -0.9,
+    "change_unit": "pt"
+   },
+   {
+    "type": "stat",
+    "label": "Fmt",
+    "value": 0.004567
+   },
+   {
+    "type": "stat",
+    "label": "Rounded",
+    "value": 1234.5678
+   },
+   {
+    "type": "stat",
+    "label": "Half",
+    "value": 2.675
+   },
+   {
+    "type": "stat",
+    "label": "NegZero",
+    "value": -0.001
+   },
+   {
+    "type": "stat",
+    "label": "IntFloat",
+    "value": 7200.0
+   }
+  ],
+  "expected": "Saved: 12,500 ₹\n\nClose: 80 (▼ 0.9 pt)\n\nFmt: 0.00457\n\nRounded: 1,234.57\n\nHalf: 2.67\n\nNegZero: -0.001\n\nIntFloat: 7,200"
+ },
+ {
+  "name": "kpis",
+  "blocks": [
+   {
+    "type": "kpis",
+    "items": [
+     {
+      "label": "Revenue",
+      "value": 72275,
+      "unit": "₹Cr",
+      "change": 2.2
+     },
+     {
+      "value": 3
+     },
+     {
+      "label": "Empty"
+     }
+    ]
+   }
+  ],
+  "expected": "Revenue: 72,275 ₹Cr (▲ 2.2%)\nEmpty: no data"
+ },
+ {
+  "name": "table escapes and notes",
+  "blocks": [
+   {
+    "type": "table",
+    "caption": "Lodging, compared",
+    "columns": [
+     "Hotel",
+     "Price, nightly",
+     "No\"tes"
+    ],
+    "rows": [
+     [
+      "Hotel Kanra",
+      "¥42,000",
+      "has a \"cypress\" bath"
+     ],
+     {
+      "Hotel": "Object",
+      "Price, nightly": "line\nbreak",
+      "No\"tes": "piped|cell"
+     },
+     [
+      "Short"
+     ],
+     [
+      "R4"
+     ],
+     [
+      "R5"
+     ],
+     [
+      "R6"
+     ],
+     [
+      "R7"
+     ],
+     [
+      "R8"
+     ],
+     [
+      "R9"
+     ],
+     [
+      "R10"
+     ],
+     [
+      "R11"
+     ],
+     [
+      "R12"
+     ],
+     [
+      "R13"
+     ]
+    ]
+   }
+  ],
+  "expected": "**Lodging, compared**\n| Hotel | Price, nightly | No\"tes |\n| --- | --- | --- |\n| Hotel Kanra | ¥42,000 | has a \"cypress\" bath |\n| Object | line break | piped\\|cell |\n| Short |  |  |\n| R4 |  |  |\n| R5 |  |  |\n| R6 |  |  |\n| R7 |  |  |\n| R8 |  |  |\n| R9 |  |  |\n| R10 |  |  |\n| R11 |  |  |\n| R12 |  |  |\n_(1 more rows)_"
+ },
+ {
+  "name": "table no columns or rows",
+  "blocks": [
+   {
+    "type": "table",
+    "columns": [],
+    "rows": [
+     [
+      "x"
+     ]
+    ]
+   }
+  ],
+  "expected": ""
+ },
+ {
+  "name": "list ranked and rows",
+  "blocks": [
+   {
+    "type": "list",
+    "ranked": true,
+    "title": "Stops",
+    "items": [
+     "Third Wave",
+     {
+      "name": "Dyu",
+      "subtitle": "cafe",
+      "value": "4.5★"
+     },
+     {
+      "subtitle": "skipped"
+     }
+    ]
+   }
+  ],
+  "expected": "**Stops**\n1. Third Wave\n2. Dyu — cafe · 4.5★"
+ },
+ {
+  "name": "checklist",
+  "blocks": [
+   {
+    "type": "checklist",
+    "title": "Pack",
+    "items": [
+     "Passport",
+     {
+      "text": "Jacket",
+      "group": "Clothes"
+     },
+     {
+      "group": "no text"
+     }
+    ]
+   }
+  ],
+  "expected": "**Pack**\n- [ ] Passport\n- [ ] Jacket"
+ },
+ {
+  "name": "tiles",
+  "blocks": [
+   {
+    "type": "tiles",
+    "items": [
+     {
+      "title": "Kyoto",
+      "subtitle": "Temples"
+     },
+     {
+      "title": "Nara"
+     },
+     "dropped"
+    ]
+   }
+  ],
+  "expected": "- Kyoto: Temples\n- Nara"
+ },
+ {
+  "name": "streak",
+  "blocks": [
+   {
+    "type": "streak",
+    "count": 12,
+    "label": "Best",
+    "unit": "d"
+   },
+   {
+    "type": "streak",
+    "count": "nope"
+   }
+  ],
+  "expected": "Best: 12 d"
+ },
+ {
+  "name": "chart trend",
+  "blocks": [
+   {
+    "type": "chart",
+    "kind": "line",
+    "title": "Revenue vs profit",
+    "unit": "₹Cr",
+    "x": [
+     "Q1",
+     "Q2",
+     "Q3"
+    ],
+    "series": [
+     {
+      "name": "Revenue",
+      "data": [
+       67087,
+       null,
+       72275
+      ]
+     },
+     {
+      "name": "Flat",
+      "data": [
+       0,
+       0
+      ]
+     }
+    ]
+   }
+  ],
+  "expected": "**Revenue vs profit** (₹Cr): Revenue 67,087 → 72,275 (▲ 7.7%), 1 gap (Q2); Flat 0 → 0"
+ },
+ {
+  "name": "chart pie slices",
+  "blocks": [
+   {
+    "type": "chart",
+    "kind": "donut",
+    "x": [
+     "A",
+     "B",
+     "C",
+     "D",
+     "E"
+    ],
+    "series": [
+     {
+      "data": [
+       50,
+       20,
+       15,
+       10,
+       5
+      ]
+     }
+    ]
+   }
+  ],
+  "expected": "**Chart**: A 50%, B 20%, C 15%, D 10%, +1 more"
+ },
+ {
+  "name": "chart scatter and histogram",
+  "blocks": [
+   {
+    "type": "chart",
+    "kind": "scatter",
+    "x": [
+     1,
+     2,
+     3
+    ],
+    "series": [
+     {
+      "name": "Samples",
+      "data": [
+       10,
+       14,
+       12
+      ]
+     }
+    ]
+   },
+   {
+    "type": "chart",
+    "kind": "histogram",
+    "series": [
+     {
+      "data": [
+       3,
+       40,
+       40,
+       70,
+       5
+      ]
+     }
+    ]
+   }
+  ],
+  "expected": "**Chart**: 3 → 5 (▲ 66.7%)"
+ },
+ {
+  "name": "chart bar hbar words",
+  "blocks": [
+   {
+    "type": "chart",
+    "kind": "hbar",
+    "title": "Costs",
+    "x": [
+     "Stay",
+     "Flights",
+     "Local"
+    ],
+    "series": [
+     {
+      "name": "Cost",
+      "data": [
+       42000,
+       31500,
+       -28000
+      ]
+     }
+    ]
+   }
+  ],
+  "expected": "**Costs**: Cost 42,000 → -28,000 (▼ 166.7%)"
+ },
+ {
+  "name": "images strip",
+  "blocks": [
+   {
+    "type": "images",
+    "title": "Picks",
+    "images": [
+     {
+      "url": "https://a.org/1.jpg",
+      "caption": "One",
+      "source": "Wikimedia"
+     },
+     {
+      "url": "/Users/me/gen.png",
+      "caption": "Made"
+     },
+     {
+      "url": "/Users/me/gen2.png"
+     }
+    ]
+   }
+  ],
+  "expected": "**Picks**\n![One](https://a.org/1.jpg) [Wikimedia]\nMade"
+ },
+ {
+  "name": "include",
+  "blocks": [
+   {
+    "type": "include",
+    "id": "7f3a09bc"
+   }
+  ],
+  "expected": ""
+ },
+ {
+  "name": "flip",
+  "blocks": [
+   {
+    "type": "flip",
+    "title": "Quiz",
+    "cards": [
+     {
+      "front": "Most golds?",
+      "back": "China"
+     },
+     {
+      "question": "Q2",
+      "answer": "A2"
+     },
+     {
+      "front": "x"
+     }
+    ]
+   }
+  ],
+  "expected": "**Quiz**\n- Q: Most golds? — A: China\n- Q: Q2 — A: A2"
+ },
+ {
+  "name": "actions and button",
+  "blocks": [
+   {
+    "type": "actions",
+    "items": [
+     {
+      "label": "Plan day 2",
+      "run": "Plan day 2"
+     },
+     {
+      "label": "",
+      "run": "x"
+     },
+     {
+      "run": "no label"
+     }
+    ]
+   },
+   {
+    "type": "button",
+    "label": "Open",
+    "url": "https://x.org"
+   },
+   {
+    "type": "button",
+    "label": "Plain",
+    "run": "hello"
+   }
+  ],
+  "expected": "Next: Plan day 2\n\nNext: [Open](https://x.org)\n\nNext: Plain"
+ },
+ {
+  "name": "layers",
+  "blocks": [
+   {
+    "type": "layers",
+    "title": "Stack",
+    "caption": "bottom first",
+    "layers": [
+     {
+      "label": "Embedding",
+      "note": "Turns tokens into vectors"
+     },
+     {
+      "label": "Heads"
+     },
+     {
+      "note": "no label"
+     }
+    ]
+   }
+  ],
+  "expected": "**Stack**\nbottom first\n1. Embedding — Turns tokens into vectors\n2. Heads"
+ },
+ {
+  "name": "timeline",
+  "blocks": [
+   {
+    "type": "timeline",
+    "title": "Day 1",
+    "groups": [
+     {
+      "label": "Morning",
+      "items": [
+       {
+        "time": "07:00",
+        "title": "Fushimi Inari",
+        "place": "Inari"
+       },
+       {
+        "title": "no time"
+       },
+       {
+        "no_title": 1
+       }
+      ]
+     },
+     {
+      "label": "Empty",
+      "items": []
+     }
+    ]
+   },
+   {
+    "type": "timeline",
+    "items": [
+     {
+      "time": "20:00",
+      "title": "Dinner"
+     }
+    ]
+   }
+  ],
+  "expected": "**Day 1**\n**Morning**\n- 07:00 · Fushimi Inari (Inari)\n- no time\n\n- 20:00 · Dinner"
+ },
+ {
+  "name": "heatmap",
+  "blocks": [
+   {
+    "type": "heatmap",
+    "title": "Crowds",
+    "unit": "%",
+    "rows": [
+     "Mon",
+     "Tue"
+    ],
+    "cols": [
+     "AM",
+     "PM",
+     "X",
+     "X2",
+     "X3",
+     "X4",
+     "X5",
+     "X6",
+     "X7",
+     "X8",
+     "X9",
+     "X10",
+     "X11"
+    ],
+    "values": [
+     [
+      1,
+      2
+     ],
+     [
+      3
+     ]
+    ]
+   }
+  ],
+  "expected": "**Crowds** (%)\n|  | AM | PM | X | X2 | X3 | X4 | X5 | X6 | X7 | X8 | X9 | X10 |\n| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n| Mon | 1 | 2 |  |  |  |  |  |  |  |  |  |  |\n| Tue | 3 |  |  |  |  |  |  |  |  |  |  |  |"
+ },
+ {
+  "name": "flow",
+  "blocks": [
+   {
+    "type": "flow",
+    "id": "tf",
+    "title": "Pipeline",
+    "nodes": [
+     {
+      "id": "tok",
+      "label": "Tokens",
+      "note": "Split",
+      "holds": [
+       "The",
+       {
+        "text": "it",
+        "tone": "accent"
+       }
+      ]
+     },
+     {
+      "id": "emb",
+      "label": "Embeddings"
+     }
+    ],
+    "groups": [
+     {
+      "label": "Repeated",
+      "nodes": [
+       "tok",
+       "emb"
+      ],
+      "count": 6
+     },
+     {
+      "label": "Solo",
+      "nodes": [
+       "emb"
+      ]
+     }
+    ]
+   }
+  ],
+  "expected": "**Pipeline**\n1. Tokens — Split (holds: The, it)\n2. Embeddings\n_Repeated × 6: steps 1-2_\n_Solo: step 2_"
+ },
+ {
+  "name": "steps with flow",
+  "blocks": [
+   {
+    "type": "flow",
+    "id": "tf",
+    "nodes": [
+     {
+      "id": "emb",
+      "label": "Embeddings"
+     },
+     {
+      "id": "tok",
+      "label": "Tokens"
+     }
+    ]
+   },
+   {
+    "type": "steps",
+    "title": "Run it",
+    "for": "tf",
+    "items": [
+     {
+      "title": "Split",
+      "text": "into pieces",
+      "holds": {
+       "emb": [
+        ".2 …"
+       ],
+       "ghost": [
+        "x"
+       ]
+      },
+      "tick": 5
+     },
+     {
+      "title": "Only title"
+     }
+    ]
+   }
+  ],
+  "expected": "1. Embeddings\n2. Tokens\n\n**Run it**\n\n**Step 1 of 2 · Split**\ninto pieces\nEmbeddings now holds: .2 …\nghost now holds: x\nThe repeated part runs 5 more times.\n\n**Step 2 of 2 · Only title**"
+ },
+ {
+  "name": "steps without flow",
+  "blocks": [
+   {
+    "type": "steps",
+    "items": [
+     {
+      "title": "One",
+      "holds": {
+       "emb": [
+        "v"
+       ]
+      }
+     },
+     {
+      "title": "Two"
+     }
+    ]
+   }
+  ],
+  "expected": "**Step 1 of 2 · One**\nemb now holds: v\n\n**Step 2 of 2 · Two**"
+ },
+ {
+  "name": "calculator",
+  "blocks": [
+   {
+    "type": "calculator",
+    "inputs": [
+     {
+      "id": "price",
+      "label": "Price",
+      "value": 200,
+      "unit": "₹"
+     },
+     {
+      "id": "qty",
+      "min": 3,
+      "max": 10
+     },
+     {
+      "value": 9
+     }
+    ],
+    "outputs": [
+     {
+      "label": "Total",
+      "formula": "(price + 2) * qty"
+     },
+     {
+      "label": "EMI",
+      "formula": "emi(price, 8.5, 20)"
+     },
+     {
+      "label": "Pow",
+      "formula": "price ^ 2"
+     },
+     {
+      "label": "Div0",
+      "formula": "price / 0"
+     },
+     {
+      "formula": "price"
+     }
+    ]
+   }
+  ],
+  "expected": "With Price 200 ₹, qty 3:\n- Total: 606\n- EMI: open in Hermes Desktop for the live calculator\n- Pow: open in Hermes Desktop for the live calculator\n- Div0: open in Hermes Desktop for the live calculator"
+ },
+ {
+  "name": "calculator headerless",
+  "blocks": [
+   {
+    "type": "calculator",
+    "outputs": [
+     {
+      "label": "Two",
+      "formula": "1 + 1"
+     }
+    ]
+   }
+  ],
+  "expected": "- Two: 2"
+ },
+ {
+  "name": "simulate",
+  "blocks": [
+   {
+    "type": "simulate",
+    "title": "Savings",
+    "unit": "₹",
+    "t": {
+     "name": "years",
+     "to": 30,
+     "step": 1
+    },
+    "inputs": [
+     {
+      "name": "rate",
+      "label": "Rate",
+      "value": 10,
+      "unit": "%"
+     }
+    ],
+    "values": {
+     "start": 100
+    },
+    "view": {
+     "piles": [
+      {
+       "name": "Simple",
+       "formula": "start * (1 + rate / 100 * years)"
+      },
+      {
+       "name": "Compound",
+       "formula": "start * (1 + rate / 100) ^ years"
+      },
+      {
+       "name": "Helper",
+       "formula": "balance(start, rate, years, years)"
+      }
+     ]
+    }
+   }
+  ],
+  "expected": "**Savings**\nWith Rate 10%:\n| years | Simple | Compound | Helper |\n| --- | --- | --- | --- |\n| 0 | 100 ₹ | 100 ₹ | – |\n| 8 | 180 ₹ | 214 ₹ | – |\n| 15 | 250 ₹ | 418 ₹ | – |\n| 23 | 330 ₹ | 895 ₹ | – |\n| 30 | 400 ₹ | 1,745 ₹ | – |"
+ },
+ {
+  "name": "form",
+  "blocks": [
+   {
+    "type": "form",
+    "title": "Trip",
+    "fields": [
+     {
+      "id": "style",
+      "label": "Style",
+      "group": "The basics",
+      "type": "select",
+      "options": [
+       {
+        "value": "easy",
+        "label": "Easy",
+        "note": "Beach, long lunches"
+       },
+       "Full"
+      ],
+      "value": "easy"
+     },
+     {
+      "id": "where",
+      "label": "Where",
+      "type": "text",
+      "value": "Hills",
+      "unit": "s"
+     },
+     {
+      "id": "days",
+      "label": "Days",
+      "type": "number",
+      "value": 3
+     },
+     {
+      "id": "none"
+     }
+    ]
+   }
+  ],
+  "expected": "**Trip**\nThe basics:\n- Style: Easy (Easy — Beach, long lunches / Full)\n- Where: Hills s\n- Days: 3\n- none\n(answer in a message)"
+ },
+ {
+  "name": "nested containers",
+  "blocks": [
+   {
+    "type": "section",
+    "title": "Picks",
+    "children": [
+     {
+      "type": "grid",
+      "children": [
+       {
+        "type": "heading",
+        "text": "Left"
+       },
+       {
+        "type": "table",
+        "columns": [
+         "A"
+        ],
+        "rows": [
+         [
+          "1"
+         ]
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "type": "tabs",
+    "tabs": [
+     {
+      "label": "First",
+      "children": [
+       {
+        "type": "text",
+        "text": "one"
+       }
+      ]
+     },
+     {
+      "label": "Second",
+      "children": [
+       {
+        "type": "stat",
+        "label": "S",
+        "value": 2
+       }
+      ]
+     },
+     {
+      "label": "",
+      "children": [
+       {
+        "type": "text",
+        "text": "no label tab"
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "type": "row",
+    "children": [
+     {
+      "type": "badge",
+      "text": "b"
+     },
+     {
+      "type": "divider"
+     }
+    ]
+   }
+  ],
+  "expected": "**Picks**\n\n**Left**\n\n| A |\n| --- |\n| 1 |\n\n**First**\n\none\n\n**Second**\n\nS: 2\n\nno label tab\n\n[b]\n\n---"
+ },
+ {
+  "name": "section with no text inside",
+  "blocks": [
+   {
+    "type": "section",
+    "title": "Quiet",
+    "children": [
+     {
+      "type": "include",
+      "id": "7f3a09bc"
+     }
+    ]
+   }
+  ],
+  "expected": ""
+ },
+ {
+  "name": "too deep",
+  "blocks": [
+   {
+    "type": "grid",
+    "children": [
+     {
+      "type": "grid",
+      "children": [
+       {
+        "type": "grid",
+        "children": [
+         {
+          "type": "grid",
+          "children": [
+           {
+            "type": "grid",
+            "children": [
+             {
+              "type": "grid",
+              "children": [
+               {
+                "type": "grid",
+                "children": [
+                 {
+                  "type": "heading",
+                  "text": "buried"
+                 }
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "expected": ""
+ },
+ {
+  "name": "unknown and bad",
+  "blocks": [
+   {
+    "type": "mystery"
+   },
+   {
+    "text": "no type"
+   },
+   {
+    "type": "heading",
+    "text": "kept after the junk"
+   }
+  ],
+  "expected": "**kept after the junk**"
+ },
+ {
+  "name": "nothing readable",
+  "blocks": [
+   {
+    "type": "divider"
+   },
+   {
+    "type": "unknown"
+   }
+  ],
+  "expected": "---"
+ },
+ {
+  "name": "source list kinds dates notes",
+  "blocks": [
+   {
+    "type": "source",
+    "title": "Where this came from",
+    "items": [
+     {
+      "label": "BLS",
+      "url": "https://bls.gov",
+      "kind": "web",
+      "accessed": "2026-11-17",
+      "note": "seasonal"
+     },
+     {
+      "label": "ledger.csv",
+      "kind": "file"
+     },
+     {
+      "url": "https://no-label.org"
+     }
+    ]
+   },
+   {
+    "type": "source",
+    "items": [
+     {
+      "label": "Headlines only",
+      "kind": "news"
+     }
+    ]
+   },
+   {
+    "type": "source",
+    "text": "Trip ledger",
+    "url": "https://led.gr"
+   }
+  ],
+  "expected": "**Where this came from**\n_Sources: [BLS](https://bls.gov) [web] · accessed 2026-11-17 · seasonal · ledger.csv [file]_\n\n_Sources: Headlines only_\n\n_Source: [Trip ledger](https://led.gr)_"
+ },
+ {
+  "name": "table structured kinds sources aggregates",
+  "blocks": [
+   {
+    "type": "table",
+    "caption": "Q4",
+    "filterable": true,
+    "page": 1,
+    "columns": [
+     {
+      "id": "h",
+      "label": "Hotel",
+      "kind": "text"
+     },
+     {
+      "id": "p",
+      "label": "Price",
+      "kind": "currency",
+      "unit": "¥"
+     },
+     {
+      "id": "r",
+      "label": "Rating",
+      "kind": "percent"
+     },
+     {
+      "id": "s",
+      "label": "Sources",
+      "kind": "sources"
+     }
+    ],
+    "rows": [
+     {
+      "cells": {
+       "h": {
+        "text": "Kanra"
+       },
+       "p": {
+        "text": "¥42,000",
+        "value": 42000
+       },
+       "r": {
+        "value": 92.5
+       }
+      },
+      "sources": [
+       {
+        "label": "booking"
+       },
+       {
+        "label": "hotel.site",
+        "url": "https://h.site"
+       }
+      ]
+     },
+     {
+      "cells": {
+       "h": {
+        "text": "Hoshiya, JR"
+       },
+       "p": {
+        "text": "¥18,000",
+        "value": 18000
+       },
+       "r": {
+        "text": "n/a"
+       }
+      },
+      "sources": []
+     }
+    ],
+    "aggregates": [
+     {
+      "column": "p",
+      "op": "sum",
+      "label": "Total"
+     },
+     {
+      "column": "missing",
+      "op": "max"
+     }
+    ]
+   }
+  ],
+  "expected": "**Q4**\n| Hotel | Price | Rating | Sources |\n| --- | --- | --- | --- |\n| Kanra | ¥42,000 | 92.5% | booking, hotel.site |\n| Hoshiya, JR | ¥18,000 | n/a |  |\n_Total: 60,000_"
+ },
+ {
+  "name": "table nulls are unknown not zero",
+  "blocks": [
+   {
+    "type": "table",
+    "columns": [
+     "A",
+     "B"
+    ],
+    "rows": [
+     [
+      null,
+      0
+     ],
+     [
+      "x",
+      null
+     ]
+    ]
+   }
+  ],
+  "expected": "| A | B |\n| --- | --- |\n| – | 0 |\n| x | – |"
+ },
+ {
+  "name": "chart scatter against title",
+  "blocks": [
+   {
+    "type": "chart",
+    "kind": "scatter",
+    "title": "Price against mileage",
+    "unit": "₹L",
+    "series": [
+     {
+      "name": "Petrol",
+      "points": [
+       {
+        "x": 9,
+        "y": 1.2
+       },
+       {
+        "x": 62,
+        "y": 24.6,
+        "label": "Fortuner"
+       },
+       {
+        "x": 30,
+        "y": 9.9
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "type": "chart",
+    "kind": "scatter",
+    "x": [
+     1,
+     2,
+     3
+    ],
+    "series": [
+     {
+      "name": "Samples",
+      "data": [
+       10,
+       14,
+       12
+      ]
+     }
+    ]
+   }
+  ],
+  "expected": "**Price against mileage** (₹L): 3 points; mileage 9 to 62, price 1.2 to 24.6; highest 24.6 at 62 (Fortuner)"
+ },
+ {
+  "name": "chart waterfall bridge",
+  "blocks": [
+   {
+    "type": "chart",
+    "kind": "waterfall",
+    "title": "Cash flow",
+    "unit": "€",
+    "series": [
+     {
+      "points": [
+       {
+        "label": "Opening",
+        "value": 2140,
+        "total": true
+       },
+       {
+        "label": "Salary",
+        "value": 3200
+       },
+       {
+        "label": "Rent",
+        "value": -1450
+       },
+       {
+        "label": "card"
+       },
+       {
+        "label": "closing",
+        "total": true
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "expected": "**Cash flow** (€): Opening 2,140 → +3,200 Salary → -1,450 Rent → card, unknown → closing not stated"
+ },
+ {
+  "name": "chart caveat and sorted bars",
+  "blocks": [
+   {
+    "type": "chart",
+    "kind": "bar",
+    "title": "Ties",
+    "sortDesc": true,
+    "x": [
+     "A",
+     "B",
+     "C"
+    ],
+    "series": [
+     {
+      "name": "Score",
+      "data": [
+       10,
+       null,
+       30
+      ]
+     }
+    ],
+    "caveat": "Q3 onward is a projection."
+   }
+  ],
+  "expected": "**Ties**: Score 30 → 10 (▼ 66.7%), 1 gap (C)\n_Q3 onward is a projection._"
+ },
+ {
+  "name": "kpis previous and no data",
+  "blocks": [
+   {
+    "type": "kpis",
+    "items": [
+     {
+      "label": "Margin",
+      "value": 18.6,
+      "unit": "%",
+      "previous": 19.5
+     },
+     {
+      "label": "Revenue",
+      "value": 72275,
+      "unit": "₹Cr",
+      "previous": 70223
+     },
+     {
+      "label": "Chargebacks",
+      "value": null
+     },
+     {
+      "label": "Flat",
+      "value": 3,
+      "previous": 3
+     },
+     {
+      "label": "FromZero",
+      "value": 70,
+      "previous": 0
+     },
+     {
+      "label": "Written",
+      "value": 80,
+      "change": -0.9,
+      "change_unit": "pt"
+     }
+    ]
+   }
+  ],
+  "expected": "Margin: 18.6% (▼ 0.9 pt)\nRevenue: 72,275 ₹Cr (▲ 2.9%)\nChargebacks: no data\nFlat: 3 (0.0%)\nFromZero: 70\nWritten: 80 (▼ 0.9 pt)"
+ },
+ {
+  "name": "checklist states owners sources",
+  "blocks": [
+   {
+    "type": "checklist",
+    "title": "Move",
+    "items": [
+     {
+      "text": "Copy",
+      "state": "active",
+      "owner": "P"
+     },
+     {
+      "text": "Verify",
+      "state": "blocked",
+      "note": "Waiting on storage"
+     },
+     {
+      "text": "Boxes",
+      "done": true
+     },
+     {
+      "text": "Lift",
+      "state": "done"
+     },
+     {
+      "text": "Deposit",
+      "sourceIds": [
+       "a1b2c3d4",
+       "e5f6a7b8",
+       "01234567",
+       "89abcdef0",
+       "overflow"
+      ]
+     },
+     "Plain"
+    ]
+   }
+  ],
+  "expected": "**Move**\n- [ ] Copy (in progress, P)\n- [ ] Verify (blocked: Waiting on storage)\n- [x] Boxes\n- [x] Lift\n- [ ] Deposit (sources a1b2c3d4, e5f6a7b8, 01234567, 89abcdef0)\n- [ ] Plain"
+ },
+ {
+  "name": "list value fields and bar",
+  "blocks": [
+   {
+    "type": "list",
+    "ranked": true,
+    "items": [
+     {
+      "title": "Kanra",
+      "bar": 120000
+     },
+     {
+      "title": "Unknown",
+      "price": null
+     },
+     {
+      "title": "Words",
+      "value": "",
+      "badge": "Iconic"
+     },
+     {
+      "title": "Quiet",
+      "bar": "nope"
+     }
+    ]
+   }
+  ],
+  "expected": "1. Kanra · 120,000\n2. Unknown · –\n3. Words · Iconic\n4. Quiet"
+ },
+ {
+  "name": "progress percent tones marks segments",
+  "blocks": [
+   {
+    "type": "progress",
+    "title": "Server load",
+    "value": 88,
+    "goal": 100,
+    "unit": "%",
+    "thresholds": [
+     {
+      "at": 60,
+      "tone": "good",
+      "label": "OK"
+     },
+     {
+      "at": 85,
+      "tone": "warning",
+      "label": "Hot"
+     },
+     {
+      "at": 100,
+      "tone": "danger",
+      "label": "Full"
+     }
+    ]
+   },
+   {
+    "type": "progress",
+    "title": "Sprint",
+    "value": 60,
+    "goal": 100,
+    "show_percent": true,
+    "segments": [
+     {
+      "label": "Done",
+      "value": 40
+     },
+     {
+      "label": "Review",
+      "value": 20
+     }
+    ]
+   },
+   {
+    "type": "progress",
+    "title": "Half",
+    "value": 14,
+    "goal": 21.1,
+    "unit": "km",
+    "thresholds": [
+     {
+      "at": 10,
+      "label": "10K"
+     },
+     {
+      "at": 21.1,
+      "label": "Finish"
+     }
+    ]
+   }
+  ],
+  "expected": "Server load: 88 / 100% (bad). Marks: OK, Hot, Full.\n\nSprint: 60 / 100 (60%). Done 40, Review 20.\n\nHalf: 14 / 21.1 km. Marks: 10K, Finish."
+ },
+ {
+  "name": "calendar day and events",
+  "blocks": [
+   {
+    "type": "calendar",
+    "date": "2026-11-14",
+    "events": [
+     {
+      "title": "Farmers market",
+      "start": "09:00",
+      "end": "10:00",
+      "place": "Ballard Ave NW"
+     },
+     {
+      "title": "Flight",
+      "start": "2026-11-14T18:30:00"
+     }
+    ]
+   },
+   {
+    "type": "calendar",
+    "date": "2026-02-30",
+    "events": []
+   },
+   {
+    "type": "calendar",
+    "date": "14 Nov",
+    "events": [
+     {
+      "title": "ignored",
+      "start": "09:00"
+     }
+    ]
+   }
+  ],
+  "expected": "**Sat 14 Nov**\n- 09:00–10:00 Farmers market · Ballard Ave NW\n- 18:30 Flight\n\n\n- Nothing planned\n\n\n- 09:00 ignored"
+ },
+ {
+  "name": "upnext rows",
+  "blocks": [
+   {
+    "type": "upnext",
+    "items": [
+     {
+      "date": "2026-11-17",
+      "title": "Emma's birthday"
+     },
+     {
+      "date": "2026-11-18",
+      "title": "Electricity bill",
+      "amount": "₹1,420",
+      "state": "overdue",
+      "stateText": "1 day late"
+     },
+     {
+      "title": "No date"
+     }
+    ]
+   }
+  ],
+  "expected": "**Up next**\n- Tue 17 Nov · Emma's birthday\n- Wed 18 Nov · Electricity bill · ₹1,420 · 1 day late"
+ },
+ {
+  "name": "weather one place",
+  "blocks": [
+   {
+    "type": "weather",
+    "temp": 17.6,
+    "place": "Pimpri Chinchwad",
+    "condition": "Cloudy",
+    "high": 30,
+    "low": 16
+   },
+   {
+    "type": "weather",
+    "temp": 20,
+    "place": "  "
+   }
+  ],
+  "expected": "**18°** Cloudy in Pimpri Chinchwad · High 30° · 16° tonight"
+ }
+]

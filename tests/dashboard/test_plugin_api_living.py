@@ -43,7 +43,9 @@ def test_unsaid_board_carries_no_version_keys(client, tmp_path):
     http, api = client
     block_id = api.store.save(V1, root=tmp_path)
     answer = http.get(f"/blocks/{block_id}").json()
-    assert answer == {"blocks": V1}  # the accepted shape, byte for byte: no new keys
+    # The accepted shape survives: an unsaid board speaks no version words. The one key a board page gains
+    # (enhancement #6) is `stored` — and for a never-updated board that IS exactly its blocks, byte for byte.
+    assert answer == {"blocks": V1, "stored": V1}
     assert http.get(f"/blocks/{block_id}/versions").json() == {"versions": []}
 
 
@@ -69,6 +71,8 @@ def test_version_one_answers_from_the_archive(client, tmp_path):
     answer = http.get(f"/blocks/{block_id}", params={"version": "1"}).json()
     assert answer["blocks"] == V1
     assert answer["version"] == 1
+    # `stored` answers reach-back with THAT version's envelope — the export of a prior version is that board.
+    assert answer["stored"] == V1
 
 
 def test_version_three_with_nothing_behind_it_is_a_404(client, tmp_path):

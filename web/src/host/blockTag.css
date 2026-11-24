@@ -91,9 +91,9 @@
   overflow-wrap: anywhere;
 }
 /* Expand / full-screen board (host/BlockTag.tsx): the images strip's full-size overlay pattern, raised to a
-   whole board — the photo scrim's own numbers (fixed, same z, same appear animation) and the same way of
+   whole board â€” the photo scrim's own numbers (fixed, same z, same appear animation) and the same way of
    closing (Escape, the scrim, a close control). One honest correction: a stateless photo may be re-drawn at
-   full size, a board may not — its blocks carry live state. So the host wrapper (.hb-board-host) is a plain
+   full size, a board may not â€” its blocks carry live state. So the host wrapper (.hb-board-host) is a plain
    block container at rest, costing the inline board nothing, and IS the dialog while expanded: the ONE drawn
    .hb-blocks is lifted into it, not duplicated, and settles back into flow on close. The control lives
    OUTSIDE .hb-blocks and out of flow (absolute); it stays quiet until the pointer is on the board or the key
@@ -134,9 +134,9 @@
   background: rgba(0, 0, 0, 0.82);
   animation: hb-appear 0.18s ease-out;
 }
-/* The wider container, in the ONE shipped rule: the expanded board box is a single element — it sheds the
+/* The wider container, in the ONE shipped rule: the expanded board box is a single element â€” it sheds the
    reading cap and its margin (folded into the panel's own padding) and carries the paper of its own accord.
-   The caps are .hb-blocks > X rules, scoped to the blocks themselves — this selector reaches none of them. */
+   The caps are .hb-blocks > X rules, scoped to the blocks themselves â€” this selector reaches none of them. */
 .hb-board-overlay .hb-blocks {
   box-sizing: border-box;
   width: min(1600px, 100%);
@@ -165,3 +165,109 @@
   cursor: pointer;
 }
 .hb-overlay-close:hover { background: rgba(0, 0, 0, 0.65); }
+
+/* Export affordance (host/ExportChrome.tsx): deterministic host acts, zero requests â€” a chart's PNG (the SVG
+   kinds and the DOM-drawn bars alike), a table's CSV, the whole board's Markdown or JSON from the envelope the
+   page already holds. The board menu sits in the tag's top corner: quiet until the pointer is on the board or
+   the key reaches it, and visible while its own menu is open. The per-block corner buttons live in a layer
+   OUTSIDE .hb-blocks: the board's drawing stays exactly what it always was, the one mounted instance is never
+   re-rendered by the chrome, and the walk pairs data with the elements the reader is looking at. Every
+   exportable block's button is ALWAYS in the DOM and in the tab order (keyboard readers reach it without a
+   mouse); at rest it is merely invisible and unreachable to the pointer (opacity 0, pointer-events none â€”
+   neither keeps focus away), and the pointer lights its corner while any focus, especially a keyboard one,
+   shows it whole. The menu's word (a failure) and the corner's word (no 2D painting here) WRAP: they may grow
+   taller, never wider than their box, the rule every status word here keeps. Controls sit outside .hb-blocks,
+   so --hb-* tokens are undefined here: the app tokens, with fallbacks. The tag itself takes position:relative
+   and no part in layout beyond what it had â€” it only anchors the layer and the menu. */
+.hb-export {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background, #ffffff) 85%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  cursor: pointer;
+  opacity: 0;
+}
+.hb-tag:hover .hb-export, .hb-export:focus-visible, .hb-export[aria-expanded="true"] { opacity: 1; }
+.hb-export-menu {
+  position: absolute;
+  top: 38px;
+  right: 6px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+  max-width: 240px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
+  border-radius: 10px;
+  background: var(--background, #ffffff);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.hb-export-menu > button {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--foreground, #1f2328);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.hb-export-menu > button:hover, .hb-export-menu > button:focus-visible {
+  background: color-mix(in srgb, var(--foreground, #1f2328) 7%, transparent);
+}
+.hb-export-failed {
+  padding: 4px 10px 6px;
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 12px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.hb-export-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.hb-export-btn {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background, #ffffff) 88%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  cursor: pointer;
+  opacity: 0;              /* invisible at rest, never in the pointer's way â€” and still in the tab order */
+  pointer-events: none;
+}
+.hb-export-btn.lit, .hb-export-btn:hover, .hb-export-btn:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  color: var(--foreground, #1f2328);
+  background: var(--background, #ffffff);
+}
+.hb-export-said {
+  position: absolute;
+  max-width: 220px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background, #ffffff) 90%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 12px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

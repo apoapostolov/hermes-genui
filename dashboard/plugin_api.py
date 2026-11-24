@@ -17,20 +17,23 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
 
-def _load_store():
-    path = Path(__file__).resolve().parent.parent / "core" / "store.py"
-    spec = importlib.util.spec_from_file_location("hermes_genui_store", path)
+def _module_at(name: str, path: Path):
+    """The module at a file path, loaded by name. A path that yields no spec or no loader is a broken install and
+    says so here, once, instead of failing later on a None."""
+    spec = importlib.util.spec_from_file_location(name, path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"no loadable module at {path}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def _load_store():
+    return _module_at("hermes_genui_store", Path(__file__).resolve().parent.parent / "core" / "store.py")
 
 
 def _load_by_path(name: str, *parts: str):
-    path = Path(__file__).resolve().parent.parent.joinpath(*parts)
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return _module_at(name, Path(__file__).resolve().parent.parent.joinpath(*parts))
 
 
 store = _load_store()
@@ -57,6 +60,8 @@ def _checker():
             if name not in sys.modules:
                 spec = importlib.util.spec_from_file_location(name, root / "__init__.py",
                                                               submodule_search_locations=[str(root)])
+                if spec is None or spec.loader is None:
+                    raise ImportError(f"no loadable package at {root}")
                 package = importlib.util.module_from_spec(spec)
                 sys.modules[name] = package
                 spec.loader.exec_module(package)
@@ -246,7 +251,12 @@ async def get_block(block_id: str, version: str | None = None):
                 return JSONResponse({"error": f"no version {want} of this board"}, status_code=404)
             board = archived["board"]
             served_version = want
-    answer = {"blocks": store.blocks_of(board)}
+    # `stored` is the envelope exactly as it was saved, riding along so a board's JSON export is the board's
+    # OWN words — unknown fields and all — with no second read and no request at export time (enhancement #6:
+    # an export is a deterministic host act, local to the page). The drawer ignores the key; its reader
+    # (core/readBlocks.ts) reads the words it knows, as it always did. With ?version=N it is that version's
+    # envelope, the same board this answer describes.
+    answer = {"blocks": store.blocks_of(board), "stored": board}
     if served_version is not None:  # living boards: which version this answer is
         answer["version"] = served_version
     if (stamp := store.updated_at_of(board)) is not None:  # and when this version was written

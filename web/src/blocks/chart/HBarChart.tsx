@@ -2,6 +2,7 @@
 // labels read better as rows (kindToDraw in chartData.ts).
 import { Fragment, useRef, useState } from "react";
 import { chartLabel, fmt, partColour, seriesName, type ChartSpec } from "./chartData";
+import { hbarBarOf, hbarSpan } from "./hbarLayout";  // the shared layout math — the export measures what this draws
 import { ChartTip, type Tip } from "./ChartTip";
 import { ChartLegend } from "./Legend";
 import { pickKeys } from "./pick";
@@ -18,11 +19,7 @@ export function HBarChart({ spec }: { spec: ChartSpec }) {
   const box = useRef<HTMLDivElement>(null);
   const tracks = useRef<(HTMLDivElement | null)[]>([]);
 
-  const values = spec.series.flatMap((s) => s.data.filter((v): v is number => v !== null));
-  const lo = Math.min(0, ...values);
-  const hi = Math.max(0, ...values);
-  const span = hi - lo || 1;
-  const zeroAt = (-lo / span) * 100;  // where zero sits along the track, in %
+  const { lo, span, zeroAt } = hbarSpan(spec);  // one scale for every row (hbarLayout.ts)
   const single = spec.series.length === 1;
   const signed = lo < 0;
   const colourOf = (k: number, v: number) => {
@@ -30,10 +27,7 @@ export function HBarChart({ spec }: { spec: ChartSpec }) {
     return v >= 0 ? "var(--hb-good)" : "var(--hb-warn)";
   };
   const unitOf = (k: number) => spec.series[k].unit ?? spec.unit;
-  const barOf = (v: number) => {
-    const width = Math.max((Math.abs(v) / span) * 100, 1.5);  // at least a sliver, so a tiny value still shows
-    return { left: v < 0 ? zeroAt - width : zeroAt, width };
-  };
+  const barOf = (v: number) => hbarBarOf(v, span, zeroAt);
 
   /** Picks row i (or none) and points the hover card at the far end of its longest bar. */
   function pick(i: number | null) {

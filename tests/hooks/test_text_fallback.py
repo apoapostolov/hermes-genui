@@ -802,3 +802,24 @@ def test_an_envelope_board_still_becomes_text():
     board = {"align": "center", "text_align": "center", "blocks": [{"type": "heading", "text": "Kyoto"}]}
     reply = '::blocks{id="7f3a09bc"}'
     assert tf.replace_tags(reply, load=lambda _id: board) == "**Kyoto**"
+
+
+def test_replace_tags_reads_both_board_shapes():
+    # A stored board is either a plain list or the Living Boards envelope; as text, both are just their blocks:
+    # which version an address is on and when it was written are the DRAWER's words, never the serializer's.
+    heading = EXAMPLES["heading"]
+    plain = tf.replace_tags('::blocks{id="7f3a09bc"}', load=lambda _: [heading])
+    wrapped = tf.replace_tags('::blocks{id="7f3a09bc"}',
+                              load=lambda _: {"version": 2, "updated_at": "2026-11-18T10:00:00+05:30",
+                                              "blocks": [heading]})
+    assert wrapped == plain
+    assert wrapped.strip() and wrapped != tf.NOT_SHOWN
+
+
+def test_blocks_as_text_can_go_uncapped_for_exports():
+    """limit=None is the export's ask: every block whole. The default cap is the chat contract, untouched."""
+    blocks = [{"type": "text", "text": f"line {i} " + "x" * 60} for i in range(80)]
+    whole = tf.blocks_as_text(blocks, limit=None)
+    assert len(whole) > tf.LIMIT and whole.count("line ") == 80
+    capped = tf.blocks_as_text(blocks)
+    assert len(capped) <= tf.LIMIT and capped.endswith(tf.MORE_NOTE)
