@@ -351,15 +351,17 @@ describe("the export chrome is the only control a board grows", () => {
   // enhancement #6: the tag gains a board menu and a corner per exportable chart/table — view acts, never
   // placement or composer asks. Everything the chrome adds lives OUTSIDE .hb-blocks; the drawing itself is
   // none of its business (ExportChrome.test.tsx pins the bytes and the acts).
-  it("every host button at rest is an export control", async () => {
+  it("every host button at rest is a view-act control", async () => {
     const chart = { type: "chart", title: "T", x: ["a"], series: [{ name: "s", data: [1, 2] }] };
     render(<BlockTag id="7f3a09bc" streaming={false} load={async () => ({ blocks: [chart], stored: [chart] })} />);
     await waitFor(() => expect(document.querySelector(".hb-blocks")).toBeTruthy());
     const tag = document.querySelector(".hb-tag")!;
     const buttons = [...tag.querySelectorAll("button")];
-    expect(buttons.length).toBe(2);                       // the menu + this chart's corner
+    expect(buttons.length).toBe(3);                       // expand + the menu + this chart's corner
     for (const b of buttons) {
-      expect(b.classList.contains("hb-export") || b.classList.contains("hb-export-btn")).toBe(true);
+      expect(
+        b.classList.contains("hb-expand") || b.classList.contains("hb-export") || b.classList.contains("hb-export-btn"),
+      ).toBe(true);
     }
     expect(document.querySelector(".hb-blocks button")).toBeNull();   // nothing inside the drawing
   });
