@@ -1,12 +1,13 @@
 // A test helper: draws stored blocks with the app's actions stubbed, so a test can check what a tap sends or fills.
+// send answers like the real seam — a promise — because blocks that report where a send went await the host's word.
 import { render } from "@testing-library/react";
 import { vi } from "vitest";
-import { BlockActions, type Actions } from "../host/actions";
+import { BlockActions, type Actions, type SendResult } from "../host/actions";
 import { Blocks } from "./Blocks";
 import { readBlocks } from "./readBlocks";
 
 export function drawWithActions(blocks: unknown[], actions: Partial<Actions> = {}) {
-  const value: Actions = { send: vi.fn(), fill: vi.fn(), ...actions };
+  const value: Actions = { send: vi.fn(async (): Promise<SendResult> => "sent"), fill: vi.fn(), ...actions };
   const view = render(<BlockActions.Provider value={value}><Blocks blocks={readBlocks(blocks)} /></BlockActions.Provider>);
   return { ...view, send: value.send as ReturnType<typeof vi.fn>, fill: value.fill as ReturnType<typeof vi.fn> };
 }

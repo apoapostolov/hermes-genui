@@ -4,7 +4,7 @@ import json
 import math
 
 from ..blocks.chart import CHART_KINDS
-from ..blocks.common import board_address, link_problems, link_words
+from ..blocks.common import board_address, follow_up_problems, follow_up_words, link_problems, link_words
 from ..core import drawn, store, surface
 from ..core.catalog_text import describe, icons_line, spec
 from ..core.catalog_text import menu as core_menu
@@ -273,7 +273,7 @@ def show_blocks(params: dict, **kwargs) -> str:
         return _not_drawn(["blocks: not valid JSON"])
     if not blocks:
         return _not_drawn(["blocks: give at least one block"])
-    problems = check_blocks(blocks)
+    problems = check_blocks(blocks) + follow_up_problems(params.get("follow_ups"))
     if problems:  # the check's problems come with how to write the blocks they're about
         return _not_drawn(problems, blocks)
     target = _target_address(params.get("target"), problems)
@@ -285,7 +285,12 @@ def show_blocks(params: dict, **kwargs) -> str:
         problems = [deep] if (deep := too_deep(blocks)) else []
     if problems:
         return _not_drawn(problems)
-    board: list | dict = {"links": links, "blocks": blocks} if links else blocks
+    ups = follow_up_words(params.get("follow_ups"))  # its shape was answered by follow_up_problems above
+    board: list | dict
+    if links or ups:  # the board's own words ride beside its blocks, in one envelope
+        board = {**({"links": links} if links else {}), **({"follow_ups": ups} if ups else {}), "blocks": blocks}
+    else:
+        board = blocks
     refusal = too_big(board)
     if refusal:
         return refusal
@@ -347,6 +352,16 @@ def schema(guide: str = "full") -> dict:
                     "open the linked board from this one without it being redrawn. Every address must be a board "
                     "that exists; a board never links to itself. The note is the connection as you suggest it, one "
                     "short line. Most turns need no links.",
+                },
+                "follow_ups": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                    "description": "Optional. One line of quiet tappable prompts (1-4) drawn under the board, each "
+                    "{\"label\": \"Plan day 2\", \"run\": \"Plan the second day of my Kyoto itinerary\"}. A tap sends "
+                    "the run message to the chat as the reader's own — you choose the prompts; the reader gets no "
+                    "controls. Offer them when one more exchange would genuinely help (a next step, a deeper cut, a "
+                    "fix to a flaw the board itself shows); skip them when the answer is finished. A message Hermes "
+                    "acts on before the model (starting / @ or !, or carrying an @-reference) is refused.",
                 },
             },
             "required": ["blocks"],

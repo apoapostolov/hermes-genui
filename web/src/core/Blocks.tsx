@@ -5,10 +5,16 @@
 // block's answers under — context only, no DOM), and a list an update has CARRIED is keyed by carried identity, so
 // React reconciles each surviving drawing onto the very element already mounted. A plain list — every unsaid board,
 // every first draw — keeps the accepted index keys, byte for byte.
+// A board whose envelope offers follow-ups (boardFollowUps, readBlocks.ts) also grows a quiet strip beneath
+// its blocks: up to four tappable prompts the AI chose so the reader can continue the conversation in one tap.
+// Their drawing is core/FollowUps.tsx; the row costs a fit-content hug zero width and wraps long labels rather
+// than clipping them. Nothing offered, no strip: the same DOM as always.
 import { Component as ReactComponent, useContext, type ErrorInfo, type ReactNode } from "react";
 import { FlowLightBoard } from "../blocks/flow/highlight";
 import { REGISTRY, type Block } from "../registry";
 import type { BlockEntry } from "./types";
+import type { FollowUp } from "./readBlocks";
+import { FollowUps } from "./FollowUps";
 import { BlockSlot } from "./blockState";
 import { carriedKey, identityOf, mintKey, noteMounted } from "./living-identity";
 
@@ -71,6 +77,11 @@ function drawAll(blocks: Block[]): ReactNode[] {
   });
 }
 
-export function Blocks({ blocks }: { blocks: Block[] }) {
-  return <div className="hb-blocks"><FlowLightBoard>{drawAll(blocks)}</FlowLightBoard></div>;
+export function Blocks({ blocks, boardFollowUps }: { blocks: Block[]; boardFollowUps?: FollowUp[] }) {
+  return (
+    <div className="hb-blocks">
+      <FlowLightBoard>{drawAll(blocks)}</FlowLightBoard>
+      {!!boardFollowUps?.length && <FollowUps items={boardFollowUps} />}
+    </div>
+  );
 }

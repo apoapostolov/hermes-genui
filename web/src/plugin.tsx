@@ -1,7 +1,7 @@
 // The Hermes Desktop half: claims the `::blocks{id="..."}` tag and draws the stored blocks inside the reply. Buttons,
 // tiles and forms in them act through the app's composer; checklists save their ticks through the plugin's REST routes.
 import { host, TRANSCRIPT_DIRECTIVE_AREA } from "@hermes/plugin-sdk";
-import { BlockActions, composerActions, type Rest } from "./host/actions";
+import { BlockActions, composerActions, type Rest, type SendOptions } from "./host/actions";
 import { BlockTag } from "./host/BlockTag";
 import { registerLive } from "./live/register";
 import { openAndFill } from "./live/open";
@@ -29,7 +29,9 @@ export default {
     const load = (blockId: string) => ctx.rest(`/blocks/${blockId}`);
     const rest: Rest = (path, init) => ctx.rest(path, init);
     // host.composer is looked up on each tap, not once here, so a composer the app sets up later is still found.
-    const send = (text: string) => composerActions(host?.composer).send(text);
+    // opts rides along: a block that forces its own message (a follow-up tapped from a board's strip) must not
+    // lose that at this seam.
+    const send = (text: string, opts?: SendOptions) => composerActions(host?.composer).send(text, opts);
     const fill = (text: string) => composerActions(host?.composer).fill(text);
     ctx.register({
       id: "hermes-genui-tag",
@@ -46,7 +48,7 @@ export default {
     });
     // The plugin's pages: Today, an assembled dashboard, and each kept dashboard.
     // A tap on a page opens a chat first: a page has no message box.
-    const open = (text: string) => void openAndFill(text, host ?? {});
+    const open = (text: string) => openAndFill(text, host ?? {});
     registerLive(ctx, open);
   },
 };

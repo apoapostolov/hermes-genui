@@ -303,3 +303,49 @@ def link_words(value: object) -> list[dict] | None:
             entry["note"] = CONTROL.sub("", note).strip()
         words.append(entry)
     return words
+
+
+# --- what the reader can tap next (the envelope's follow-up words) ----------------------------------------------
+
+# A quiet strip of up to four prompts the AI offers under its board; the reader taps one to continue the
+# conversation. The count belongs to the strip, not to the store, so the writer is told 1-4 (as it is for a
+# row of action buttons) and the drawing side keeps the first four whatever a stored board carries.
+FOLLOW_UP_MAX = 4
+
+
+def follow_up_problems(value: object) -> list[str]:
+    """Problems with the follow-ups a board's envelope declares, as "<path>: <why>"; [] when it says nothing or
+    says it well. A follow-up tap sends its message as the reader's own, so a message Hermes would act on before
+    the model is refused exactly as a button's is, and every button needs both halves.
+
+    None → []                                     (the board said nothing)
+    "keep going" → ['follow_ups: needs a list of buttons, each with a label and a run message']
+    [] or five items → ['follow_ups: needs 1-4 buttons']
+    {"label": "Go"} → ['follow_ups.0: button needs a label and a run message']
+    {"label": "Go", "run": "/reset"} → ['follow_ups.0: ' + NO_SEND]
+    """
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        return ["follow_ups: needs a list of buttons, each with a label and a run message"]
+    if not 1 <= len(value) <= FOLLOW_UP_MAX:
+        return [f"follow_ups: needs 1-{FOLLOW_UP_MAX} buttons"]
+    problems = []
+    for i, item in enumerate(value):
+        if not (isinstance(item, dict) and has_text(item.get("label")) and has_text(item.get("run"))):
+            problems.append(f"follow_ups.{i}: button needs a label and a run message")
+        elif acts_before_the_model(item["run"]):
+            problems.append(f"follow_ups.{i}: {NO_SEND}")
+    return problems
+
+
+def follow_up_words(value: object) -> list[dict] | None:
+    """The follow-ups as they should be stored: each label and message with control characters stripped and
+    blanks trimmed, or None when the board said nothing. Call after follow_up_problems has said []: messages
+    are kept whole — the reader's length convention alone decides what a tap does with a long one (as it does
+    for every tap today), and how much room a label has is the drawing side's business, as it is for every
+    block."""
+    if not isinstance(value, list) or not value:
+        return None
+    return [{"label": CONTROL.sub("", item.get("label", "")).strip(),
+             "run": CONTROL.sub("", item.get("run", "")).strip()} for item in value if isinstance(item, dict)]

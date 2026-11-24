@@ -253,6 +253,8 @@ async def get_block(block_id: str, version: str | None = None):
         answer["updated_at"] = stamp
     if (links := store.links_of(board)) is not None:  # and the boards this one connects to, each by address
         answer["links"] = links
+    if (ups := store.follow_ups_of(board)) is not None:  # and its tappable follow-ups, when the board offers them
+        answer["follow_ups"] = ups
     return answer
 
 

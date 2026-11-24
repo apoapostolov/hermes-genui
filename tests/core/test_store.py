@@ -156,3 +156,21 @@ def test_a_new_board_never_takes_an_id_used_in_another_profile(tmp_path, monkeyp
     monkeypatch.setattr(store, "secrets", FakeSecrets(taken, "bbbbbbbb"))
     assert store.save([{"type": "text", "text": "mine"}]) == "bbbbbbbb"
     assert not (active / f"{taken}.json").exists()
+
+
+def test_follow_ups_of_reads_the_envelope_word(tmp_path):
+    plain = [{"type": "text", "text": "hi"}]
+    ups = [{"label": "Go", "run": "Tell me more"}]
+    assert store.follow_ups_of({"follow_ups": ups, "blocks": plain}) == ups
+    assert store.follow_ups_of(plain) is None
+    assert store.follow_ups_of({"blocks": plain}) is None
+    assert store.follow_ups_of({"follow_ups": "not a list", "blocks": plain}) is None
+    assert store.follow_ups_of({"follow_ups": [], "blocks": plain}) is None
+    assert store.follow_ups_of(None) is None
+
+
+def test_save_and_load_round_trip_a_follow_ups_envelope(tmp_path):
+    ups = [{"label": "Go", "run": "Tell me more"}]
+    board = {"links": [{"id": "7f3a09bc"}], "follow_ups": ups, "blocks": [{"type": "text", "text": "hi"}]}
+    block_id = store.save(board, root=tmp_path)
+    assert store.load(block_id, root=tmp_path) == board

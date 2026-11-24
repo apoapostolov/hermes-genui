@@ -270,6 +270,17 @@ def _now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
 
+def follow_ups_of(board: object) -> list | None:
+    """The tappable follow-ups a stored envelope carries for the whole board, or None. The shape was checked
+    where it was written (show_blocks refuses an unusable one); here only "is it a list with anything in it".
+
+    follow_ups_of({"follow_ups": [{"label": "Go", "run": "More"}], "blocks": [x]}) → [that list]
+    follow_ups_of([x]) → None;  follow_ups_of({"follow_ups": "yes", ...}) → None
+    """
+    ups = board.get("follow_ups") if isinstance(board, dict) else None
+    return ups if isinstance(ups, list) and ups else None
+
+
 PHOTO_LIST = "photo-urls.txt"
 # Only the most recent photo URLs are kept: enough for the boards of a conversation, and the file stays small.
 MAX_PHOTO_URLS = 500
