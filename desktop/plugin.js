@@ -185,14 +185,10 @@ function composerActions(composer) {
 }
 
 // src/host/BlockTag.tsx
-import { useContext as useContext14, useEffect as useEffect10, useLayoutEffect as useLayoutEffect4, useReducer, useRef as useRef16, useState as useState28 } from "react";
+import { useContext as useContext16, useEffect as useEffect11, useLayoutEffect as useLayoutEffect5, useReducer, useRef as useRef18, useState as useState29 } from "react";
 
 // src/core/Blocks.tsx
-<<<<<<< HEAD
-import { Component as ReactComponent, createContext as createContext4, useContext as useContext11 } from "react";
-=======
-import { Component as ReactComponent, useContext as useContext12 } from "react";
->>>>>>> pr-74
+import { Component as ReactComponent, createContext as createContext4, Fragment as Fragment14, useContext as useContext13 } from "react";
 
 // src/blocks/flow/highlight.tsx
 import { createContext as createContext2, useCallback, useContext, useMemo, useState } from "react";
@@ -436,8 +432,8 @@ function barAmount(value, max, unit) {
   if (max === 100 && !unit) return `${value}%`;
   const money = formatAmount(value, unit);
   if (money !== null) return `${money} / ${formatAmount(max, unit)}`;
-  const amount = `${formatNumber(value, { digits: 3 })} / ${formatNumber(max, { digits: 3 })}`;
-  return unit ? `${amount} ${unit}` : amount;
+  const amount2 = `${formatNumber(value, { digits: 3 })} / ${formatNumber(max, { digits: 3 })}`;
+  return unit ? `${amount2} ${unit}` : amount2;
 }
 function Bar({ label, value, max, unit }) {
   const share = value === null ? 0 : Math.max(0, Math.min(1, value / max));
@@ -1175,36 +1171,36 @@ function changePct(data) {
 }
 var MAX_SLICES = 8;
 function pieSlices(x, data) {
-  const slices = [];
+  const slices2 = [];
   data.forEach((v, i) => {
-    if (v !== null && v > 0 && i < x.length) slices.push({ label: x[i], value: v });
+    if (v !== null && v > 0 && i < x.length) slices2.push({ label: x[i], value: v });
   });
-  if (slices.length <= MAX_SLICES) return { x: slices.map((s) => s.label), data: slices.map((s) => s.value) };
-  const biggestFirst = [...slices].sort((a, b) => b.value - a.value);
+  if (slices2.length <= MAX_SLICES) return { x: slices2.map((s) => s.label), data: slices2.map((s) => s.value) };
+  const biggestFirst = [...slices2].sort((a, b) => b.value - a.value);
   const kept = new Set(biggestFirst.slice(0, MAX_SLICES - 1));
-  const shown2 = slices.filter((s) => kept.has(s));
+  const shown2 = slices2.filter((s) => kept.has(s));
   let other = 0;
-  for (const s of slices) if (!kept.has(s)) other += s.value;
+  for (const s of slices2) if (!kept.has(s)) other += s.value;
   return { x: [...shown2.map((s) => s.label), "Other"], data: [...shown2.map((s) => s.value), other] };
 }
 function stackSeries(series, n) {
   const up = new Array(n).fill(0);
   const down = new Array(n).fill(0);
   return series.map((s) => {
-    const bands = [];
+    const bands2 = [];
     for (let i = 0; i < n; i++) {
       const v = s.data[i] ?? null;
       if (v === null) {
-        bands.push(null);
+        bands2.push(null);
       } else if (v >= 0) {
-        bands.push({ from: up[i], to: up[i] + v });
+        bands2.push({ from: up[i], to: up[i] + v });
         up[i] += v;
       } else {
-        bands.push({ from: down[i], to: down[i] + v });
+        bands2.push({ from: down[i], to: down[i] + v });
         down[i] += v;
       }
     }
-    return bands;
+    return bands2;
   });
 }
 function totalAt(series, i) {
@@ -1288,7 +1284,7 @@ function seriesName(series, k) {
 function missingLabels(spec) {
   return spec.x.filter((_, i) => spec.series.every((s) => s.data[i] === null || s.data[i] === void 0)).map(String);
 }
-function chartScales(spec, bands) {
+function chartScales(spec, bands2) {
   if (spec.type === "scatter") {
     const drawn = scatterPoints(spec.series);
     return {
@@ -1297,8 +1293,8 @@ function chartScales(spec, bands) {
       x: scaleFor(drawn.map((p) => p.x), false)
     };
   }
-  if (bands) {
-    const ends = bands.flat().flatMap((b) => b === null ? [] : [b.from, b.to]);
+  if (bands2) {
+    const ends = bands2.flat().flatMap((b) => b === null ? [] : [b.from, b.to]);
     return { left: scaleFor(ends, true), right: null };
   }
   if (spec.type === "range") {
@@ -2107,16 +2103,16 @@ function stepPick(at2, key, n, rows = false) {
   if (back) return at2 === null ? n - 1 : Math.max(0, at2 - 1);
   return void 0;
 }
-function pickKeys(n, at2, pick, rows = false) {
+function pickKeys(n, at2, pick2, rows = false) {
   return {
     tabIndex: 0,
     onKeyDown: (e) => {
       const next = stepPick(at2, e.key, n, rows);
       if (next === void 0) return;
       e.preventDefault();
-      pick(next);
+      pick2(next);
     },
-    onBlur: () => pick(null)
+    onBlur: () => pick2(null)
   };
 }
 
@@ -2284,10 +2280,10 @@ function BarMarks({ spec, layout, hover }) {
     /* @__PURE__ */ jsx9(Baseline, { layout })
   ] });
 }
-function StackMarks({ bands, layout, hover }) {
+function StackMarks({ bands: bands2, layout, hover }) {
   const { xAt, yAt, bar } = layout;
   return /* @__PURE__ */ jsxs6("g", { children: [
-    bands.map((partBands, k) => partBands.map((b, i) => b === null || b.from === b.to ? null : /* @__PURE__ */ jsx9(
+    bands2.map((partBands, k) => partBands.map((b, i) => b === null || b.from === b.to ? null : /* @__PURE__ */ jsx9(
       "rect",
       {
         x: xAt(i) - bar / 2,
@@ -2375,16 +2371,16 @@ function RangeMarks({ spec, layout, hover }) {
 
 // src/blocks/chart/AreaMarks.tsx
 import { jsx as jsx10, jsxs as jsxs7 } from "react/jsx-runtime";
-function AreaMarks({ bands, layout }) {
+function AreaMarks({ bands: bands2, layout }) {
   return /* @__PURE__ */ jsxs7("g", { children: [
     /* @__PURE__ */ jsx10("line", { x1: layout.left, x2: layout.right, y1: layout.base, y2: layout.base, className: "hb-chart-rule" }),
-    bands.map((partBands, k) => /* @__PURE__ */ jsx10(Area, { bands: partBands, layout, colour: partColour(k) }, k))
+    bands2.map((partBands, k) => /* @__PURE__ */ jsx10(Area, { bands: partBands, layout, colour: partColour(k) }, k))
   ] });
 }
-function Area({ bands, layout, colour }) {
-  const tops = bands.map((b, i) => b === null ? null : [layout.xAt(i), layout.yAt(b.to)]);
+function Area({ bands: bands2, layout, colour }) {
+  const tops = bands2.map((b, i) => b === null ? null : [layout.xAt(i), layout.yAt(b.to)]);
   return /* @__PURE__ */ jsx10("g", { children: lineRuns(tops).filter((run) => run.pts.length > 1).map((run, j) => {
-    const bottoms = run.pts.map((_, k) => layout.yAt(bands[run.from + k].from));
+    const bottoms = run.pts.map((_, k) => layout.yAt(bands2[run.from + k].from));
     const backAlongBottom = linePath(run.pts.map(([x], k) => [x, bottoms[k]]).reverse()).replace(/^M/, "L");
     const topEdge = linePath(run.pts);
     return /* @__PURE__ */ jsxs7("g", { children: [
@@ -2396,17 +2392,28 @@ function Area({ bands, layout, colour }) {
 
 // src/blocks/chart/HBarChart.tsx
 import { Fragment as Fragment3, useRef as useRef3, useState as useState6 } from "react";
+
+// src/blocks/chart/hbarLayout.ts
+function hbarSpan(spec) {
+  const values = spec.series.flatMap((s) => s.data.filter((v) => v !== null));
+  const lo = Math.min(0, ...values);
+  const hi = Math.max(0, ...values);
+  const span = hi - lo || 1;
+  return { lo, hi, span, zeroAt: -lo / span * 100 };
+}
+function hbarBarOf(v, span, zeroAt) {
+  const width = Math.max(Math.abs(v) / span * 100, 1.5);
+  return { left: v < 0 ? zeroAt - width : zeroAt, width };
+}
+
+// src/blocks/chart/HBarChart.tsx
 import { jsx as jsx11, jsxs as jsxs8 } from "react/jsx-runtime";
 function HBarChart({ spec }) {
   const [tip, setTip] = useState6(null);
   const [picked, setPicked] = useState6(null);
   const box = useRef3(null);
   const tracks = useRef3([]);
-  const values = spec.series.flatMap((s) => s.data.filter((v) => v !== null));
-  const lo = Math.min(0, ...values);
-  const hi = Math.max(0, ...values);
-  const span = hi - lo || 1;
-  const zeroAt = -lo / span * 100;
+  const { lo, span, zeroAt } = hbarSpan(spec);
   const single = spec.series.length === 1;
   const signed = lo < 0;
   const colourOf3 = (k, v) => {
@@ -2414,11 +2421,8 @@ function HBarChart({ spec }) {
     return v >= 0 ? "var(--hb-good)" : "var(--hb-warn)";
   };
   const unitOf2 = (k) => spec.series[k].unit ?? spec.unit;
-  const barOf = (v) => {
-    const width = Math.max(Math.abs(v) / span * 100, 1.5);
-    return { left: v < 0 ? zeroAt - width : zeroAt, width };
-  };
-  function pick(i) {
+  const barOf = (v) => hbarBarOf(v, span, zeroAt);
+  function pick2(i) {
     setPicked(i);
     const track = i === null ? null : tracks.current[i];
     if (i === null || !track || !box.current) return setTip(null);
@@ -2436,7 +2440,7 @@ function HBarChart({ spec }) {
     setTip({ x: t.left - b.left + t.width * end / 100, y: t.top - b.top, title: String(spec.x[i]), rows });
   }
   const shade2 = (i) => picked === null || picked === i ? 1 : 0.55;
-  const rowEvents = (i) => ({ onPointerEnter: () => pick(i), onPointerDown: () => pick(i) });
+  const rowEvents = (i) => ({ onPointerEnter: () => pick2(i), onPointerDown: () => pick2(i) });
   return /* @__PURE__ */ jsxs8("figure", { className: "hb-card hb-chart", children: [
     /* @__PURE__ */ jsx11("figcaption", { className: "hb-chart-title", children: spec.title ?? spec.series[0].name ?? "Chart" }),
     !single && /* @__PURE__ */ jsx11(ChartLegend, { series: spec.series }),
@@ -2448,8 +2452,8 @@ function HBarChart({ spec }) {
           role: "img",
           "aria-label": chartLabel(spec),
           style: spec.height ? { minHeight: spec.height } : void 0,
-          ...pickKeys(spec.x.length, picked, pick, true),
-          onPointerLeave: () => pick(null),
+          ...pickKeys(spec.x.length, picked, pick2, true),
+          onPointerLeave: () => pick2(null),
           children: spec.x.map((label, i) => /* @__PURE__ */ jsxs8(Fragment3, { children: [
             /* @__PURE__ */ jsx11("div", { className: "hb-hbar-label", ...rowEvents(i), children: label }),
             /* @__PURE__ */ jsx11("div", { className: "hb-hbar-tracks", ref: (el) => {
@@ -2523,21 +2527,21 @@ function PieChart({ spec }) {
   const unit = spec.series[0].unit ?? spec.unit;
   const donut = spec.type === "donut";
   const hole = donut ? HOLE : 0;
-  const slices = [];
+  const slices2 = [];
   let start = 0;
   for (const v of values) {
-    slices.push({ start, end: start + v / total });
+    slices2.push({ start, end: start + v / total });
     start += v / total;
   }
   const valuesAreShares = unit === "%";
   const biggest = values.indexOf(Math.max(...values));
   const headline = valuesAreShares ? { value: sharePct(values[biggest] / total), label: String(spec.x[biggest]) } : { value: fmt(total, unit), label: "Total" };
-  function pick(i) {
+  function pick2(i) {
     setPicked(i);
     const el = svg.current;
     const body = el?.parentElement;
     if (i === null || !el || !body) return setTip(null);
-    const [x, y] = at((slices[i].start + slices[i].end) / 2, donut ? (OUTER + HOLE) / 2 : OUTER * 0.6);
+    const [x, y] = at((slices2[i].start + slices2[i].end) / 2, donut ? (OUTER + HOLE) / 2 : OUTER * 0.6);
     const drawing = el.getBoundingClientRect();
     const around = body.getBoundingClientRect();
     const label = String(spec.x[i]);
@@ -2549,9 +2553,9 @@ function PieChart({ spec }) {
       note: valuesAreShares ? void 0 : shareNote(values, values[i])
     });
   }
-  const toggle = (i) => pick(picked === i ? null : i);
+  const toggle = (i) => pick2(picked === i ? null : i);
   const faded = (i) => picked === null || picked === i ? 1 : 0.5;
-  const mouse = (i) => (e) => e.pointerType === "mouse" && pick(i);
+  const mouse = (i) => (e) => e.pointerType === "mouse" && pick2(i);
   return /* @__PURE__ */ jsxs9("figure", { className: "hb-card hb-chart hb-pie", children: [
     /* @__PURE__ */ jsx12("figcaption", { className: "hb-chart-title", children: spec.title ?? spec.series[0].name ?? "Chart" }),
     !donut && /* @__PURE__ */ jsxs9("div", { className: "hb-chart-figure", children: [
@@ -2569,9 +2573,9 @@ function PieChart({ spec }) {
           className: "hb-pie-svg",
           role: "img",
           "aria-label": chartLabel(spec),
-          ...pickKeys(values.length, picked, pick),
+          ...pickKeys(values.length, picked, pick2),
           children: [
-            slices.map((s, i) => /* @__PURE__ */ jsx12(
+            slices2.map((s, i) => /* @__PURE__ */ jsx12(
               "path",
               {
                 d: slicePath(s.start, s.end, hole),
@@ -2842,8 +2846,8 @@ function XYChart({ spec }) {
   const gid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const n = spec.x.length;
   const piled = spec.type === "stacked" || spec.type === "area";
-  const bands = useMemo4(() => piled ? stackSeries(spec.series, n) : null, [spec, n, piled]);
-  const scales = useMemo4(() => chartScales(spec, bands), [spec, bands]);
+  const bands2 = useMemo4(() => piled ? stackSeries(spec.series, n) : null, [spec, n, piled]);
+  const scales = useMemo4(() => chartScales(spec, bands2), [spec, bands2]);
   const layout = useMemo4(() => xyLayout(spec, width, scales), [spec, width, scales]);
   const tip = useMemo4(() => hover === null ? null : xyTip(spec, hover, layout), [spec, hover, layout]);
   function pickAt(e) {
@@ -2879,8 +2883,8 @@ function XYChart({ spec }) {
             spec.type === "range" && layout.ticks.length > 0 && /* @__PURE__ */ jsx15(Gridlines, { spec, layout }),
             spec.type === "line" && /* @__PURE__ */ jsx15(LineMarks, { spec, layout, gid, hover }),
             spec.type === "bar" && /* @__PURE__ */ jsx15(BarMarks, { spec, layout, hover }),
-            spec.type === "stacked" && bands && /* @__PURE__ */ jsx15(StackMarks, { bands, layout, hover }),
-            spec.type === "area" && bands && /* @__PURE__ */ jsx15(AreaMarks, { bands, layout }),
+            spec.type === "stacked" && bands2 && /* @__PURE__ */ jsx15(StackMarks, { bands: bands2, layout, hover }),
+            spec.type === "area" && bands2 && /* @__PURE__ */ jsx15(AreaMarks, { bands: bands2, layout }),
             spec.type === "combo" && /* @__PURE__ */ jsx15(ComboMarks, { spec, layout, hover }),
             spec.type === "histogram" && /* @__PURE__ */ jsx15(HistogramMarks, { spec, layout, hover }),
             spec.type === "range" && /* @__PURE__ */ jsx15(RangeMarks, { spec, layout, hover }),
@@ -3637,10 +3641,10 @@ function readSpec(d) {
   if (!x.length) return null;
   if (!series.length || series.every((s) => s.data.every((v) => v === null))) return null;
   if (type === "pie" || type === "donut") {
-    const slices = pieSlices(x, series[0].data);
-    if (!slices.x.length) return null;
-    x = slices.x;
-    series = [{ ...series[0], data: slices.data }];
+    const slices2 = pieSlices(x, series[0].data);
+    if (!slices2.x.length) return null;
+    x = slices2.x;
+    series = [{ ...series[0], data: slices2.data }];
   }
   return specOf(d, type, x, series, unit);
 }
@@ -4702,14 +4706,14 @@ function FieldView({ field, value, onChange }) {
     ] });
   }
   if (field.kind === "select") {
-    const chosen = field.options.find((o) => o.value === value);
+    const chosen2 = field.options.find((o) => o.value === value);
     return /* @__PURE__ */ jsxs22("label", { className: "hb-form-field", children: [
       /* @__PURE__ */ jsx25("span", { className: "hb-form-label", children: /* @__PURE__ */ jsx25(InlineText, { text: field.label }) }),
-      /* @__PURE__ */ jsxs22("select", { className: "hb-input", value: chosen ? chosen.value : "", onChange: (e) => onChange(e.target.value), children: [
-        !chosen && /* @__PURE__ */ jsx25("option", { value: "", disabled: true, children: "Choose\u2026" }),
+      /* @__PURE__ */ jsxs22("select", { className: "hb-input", value: chosen2 ? chosen2.value : "", onChange: (e) => onChange(e.target.value), children: [
+        !chosen2 && /* @__PURE__ */ jsx25("option", { value: "", disabled: true, children: "Choose\u2026" }),
         field.options.map((o) => /* @__PURE__ */ jsx25("option", { value: o.value, children: o.label }, o.value))
       ] }),
-      chosen?.note && /* @__PURE__ */ jsx25("span", { className: "hb-form-note", children: chosen.note })
+      chosen2?.note && /* @__PURE__ */ jsx25("span", { className: "hb-form-note", children: chosen2.note })
     ] });
   }
   return /* @__PURE__ */ jsx25(Pills, { field, value, onChange });
@@ -5267,7 +5271,7 @@ function tabAfterKey(current, count2, key) {
   return current;
 }
 function Tabs({ labels: labels2, badges = [], panel }) {
-  const [answer, pick] = useStoredValue({
+  const [answer, pick2] = useStoredValue({
     door: "identity",
     initial: () => 0,
     revive: (saved) => Number.isInteger(saved) && saved >= 0 ? saved : null,
@@ -5280,7 +5284,7 @@ function Tabs({ labels: labels2, badges = [], panel }) {
     const next = tabAfterKey(picked, labels2.length, e.key);
     if (next === picked) return;
     e.preventDefault();
-    pick(next);
+    pick2(next);
     buttons.current[next]?.focus();
   };
   return /* @__PURE__ */ jsxs27("div", { className: "hb-tabs", children: [
@@ -5297,7 +5301,7 @@ function Tabs({ labels: labels2, badges = [], panel }) {
         ref: (el) => {
           buttons.current[i] = el;
         },
-        onClick: () => pick(i),
+        onClick: () => pick2(i),
         "aria-label": badges[i] ? `${label}, ${badges[i]} open` : void 0,
         children: [
           /* @__PURE__ */ jsx30(InlineText, { text: label }),
@@ -5500,7 +5504,7 @@ var TONE_TOKEN = {
   accent: "--hb-accent",
   grey: "--hb-muted"
 };
-var rad = (deg3) => deg3 * Math.PI / 180;
+var rad = (deg4) => deg4 * Math.PI / 180;
 function Layers({ title, caption: caption2, layers }) {
   const canvas = useRef10(null);
   const shapes = useRef10([]);
@@ -5772,15 +5776,15 @@ function zoneTone(value, thresholds, fallback = "good", goal = Infinity) {
 var place = (at2, goal) => at2 === null || goal === null ? 0 : Math.max(0, Math.min(1, at2 / goal));
 var pctOf = (share) => `${Math.round(share * 1e4) / 100}%`;
 function bandsOf(thresholds, goal) {
-  const bands = [];
+  const bands2 = [];
   let from = 0;
   for (const t of [...thresholds].sort((a, b) => a.at - b.at)) {
     if (!t.tone) continue;
     const to = Math.max(from, place(t.at, goal));
-    if (to > from) bands.push({ from, to, tone: t.tone });
+    if (to > from) bands2.push({ from, to, tone: t.tone });
     from = to;
   }
-  return bands;
+  return bands2;
 }
 function Progress({ title, value, goal, unit, steps, shape = "line", show_percent, tone, thresholds = [], segments = [] }) {
   const marks = thresholds.length ? thresholds : [];
@@ -5806,11 +5810,11 @@ function Progress({ title, value, goal, unit, steps, shape = "line", show_percen
   ] });
 }
 function Bar2({ share, marks, goal, unit }) {
-  const bands = bandsOf(marks, goal);
+  const bands2 = bandsOf(marks, goal);
   const track = `hb-progress-track${marks.length ? " hb-progress-track-zoned" : ""}`;
   const body = /* @__PURE__ */ jsxs30(Fragment9, { children: [
     /* @__PURE__ */ jsxs30("div", { className: track, children: [
-      bands.map((b, k) => /* @__PURE__ */ jsx33(
+      bands2.map((b, k) => /* @__PURE__ */ jsx33(
         "span",
         {
           className: `hb-progress-band hb-progress-band-${b.tone}`,
@@ -6149,8 +6153,8 @@ function dotPer(per, most) {
   return niceAbove(most / (per === void 0 ? DEFAULT_DOTS : MAX_DOTS));
 }
 function dotColour(n, start, counts, k) {
-  const bands = [start, ...counts.slice(0, k + 1)];
-  const band = bands.findIndex((limit) => n < limit);
+  const bands2 = [start, ...counts.slice(0, k + 1)];
+  const band = bands2.findIndex((limit) => n < limit);
   return band < 0 ? k + 1 : band;
 }
 
@@ -6189,7 +6193,7 @@ function Piles({ piles, amounts, start, per, most, playing, unit, label }) {
     ] })
   ] });
 }
-function Pile({ k, name, amount, counts, startDots, tallest, playing, unit }) {
+function Pile({ k, name, amount: amount2, counts, startDots, tallest, playing, unit }) {
   const canvas = useRef11(null);
   const born = useRef11([]);
   const width = useWidth(canvas);
@@ -6198,7 +6202,7 @@ function Pile({ k, name, amount, counts, startDots, tallest, playing, unit }) {
   const cols = Math.max(20, Math.floor(width / DOT));
   const size = width / cols;
   const height = Math.ceil(tallest / cols) * size;
-  const shown2 = amount === null ? "\u2013" : fmt(amount, unit, { full: true });
+  const shown2 = amount2 === null ? "\u2013" : fmt(amount2, unit, { full: true });
   useEffect5(() => {
     const el = canvas.current;
     if (!el) return;
@@ -6760,7 +6764,8 @@ function readTable(raw, here) {
   if (!rows.length) here.drop("table has no rows");
   const kept = keepFirst(rows, MAX_ROWS, here.at("rows"), "rows");
   const highlight = readHighlight(raw.highlight, columns, kept, here.at("highlight"));
-  return clean({ type: "table", columns, rows: kept, highlight, caption: caption2 });
+  const interactive = raw.interactive === true ? true : void 0;
+  return clean({ type: "table", columns, rows: kept, highlight, caption: caption2, interactive });
 }
 function readColumns(list) {
   if (!list) return [];
@@ -6829,7 +6834,7 @@ function isIndex(n, length) {
 }
 
 // src/blocks/table/Table.tsx
-import { useState as useState22 } from "react";
+import { useContext as useContext8, useRef as useRef15, useState as useState22 } from "react";
 
 // src/blocks/table/StructuredTable.tsx
 import { useMemo as useMemo8, useState as useState21 } from "react";
@@ -7005,14 +7010,59 @@ function bigNumber(cell) {
   return { short: plus + fmt(v, unit), full: plus + fmt(v, unit, { full: true }) };
 }
 
+// src/blocks/table/pick.ts
+function rowMatches(row, query) {
+  const wanted = query.trim().toLowerCase();
+  if (!wanted) return true;
+  return row.some((cell) => cell.toLowerCase().includes(wanted));
+}
+function rowKey(row) {
+  return JSON.stringify(row);
+}
+function livePicks(rows, picked) {
+  if (!picked.length) return picked;
+  const present = /* @__PURE__ */ new Set();
+  for (const row of rows) if (Array.isArray(row)) present.add(rowKey(row));
+  return picked.filter((key) => present.has(key));
+}
+function selectedRows(rows, picked) {
+  const wanted = new Set(picked);
+  return rows.filter((row) => Array.isArray(row) && wanted.has(rowKey(row)));
+}
+function pickedMessage(caption2, columns, rows, picked) {
+  const line = (cells) => cells.join(" | ");
+  return [
+    `${caption2 ? `${caption2}:` : "Table:"}`,
+    line(columns),
+    ...selectedRows(rows, picked).map(line)
+  ].join("\n");
+}
+
 // src/blocks/table/Table.tsx
 import { jsx as jsx41, jsxs as jsxs38 } from "react/jsx-runtime";
 var MINI_BARS_FROM = 3;
+var SENT_WORDS2 = {
+  sent: "Sent to chat.",
+  drafted: "In the composer \u2014 press Send.",
+  blocked: "Blocked from sending \u2014 in the composer \u2014 press Send.",
+  failed: "Send failed \u2014 nothing was sent or kept.",
+  nowhere: "No chat here."
+};
 function Table(props) {
   if ("structured" in props && props.structured) return /* @__PURE__ */ jsx41(StructuredTable, { ...props });
-  const { columns, rows, highlight, caption: caption2 } = props;
+  const { columns, rows, highlight, caption: caption2, interactive } = props;
   const [sort, setSort] = useState22(null);
+  const [query, setQuery] = useState22("");
+  const [picked, setPicked] = useState22([]);
+  const [sent, setSent] = useState22(null);
+  const taps = useRef15(0);
+  const { send } = useContext8(BlockActions);
+  const live = livePicks(rows, picked);
+  if (live.length !== picked.length) setPicked(live);
   const order = sortedOrder(rows, sort);
+  const visible = interactive ? order.filter((r) => rowMatches(rows[r], query)) : order;
+  const message = pickedMessage(caption2, columns, rows, picked);
+  const chosen2 = selectedRows(rows, picked);
   const bestRow = highlight && "row" in highlight ? highlight.row : -1;
   const bestColumn = highlight && "column" in highlight ? highlight.column : -1;
   const numeric = columns.map((_, c) => isNumberColumn(rows, c));
@@ -7026,26 +7076,86 @@ function Table(props) {
     text.length > 28 ? "hb-wrap" : "",
     extra
   ].filter(Boolean).join(" ");
-  return /* @__PURE__ */ jsxs38("div", { className: "hb-card hb-table-card", children: [
+  return /* @__PURE__ */ jsxs38("div", { className: interactive ? "hb-card hb-table-card hb-table-interactive" : "hb-card hb-table-card", children: [
     caption2 && /* @__PURE__ */ jsx41("div", { className: "hb-chart-title hb-table-caption", children: /* @__PURE__ */ jsx41(InlineText, { text: caption2 }) }),
+    interactive && /* @__PURE__ */ jsxs38("div", { className: "hb-table-tools", children: [
+      /* @__PURE__ */ jsx41(
+        "input",
+        {
+          type: "search",
+          className: "hb-table-filter",
+          placeholder: "Filter rows",
+          "aria-label": "Filter rows",
+          value: query,
+          onChange: (e) => {
+            setQuery(e.target.value);
+            setSent(null);
+          }
+        }
+      ),
+      /* @__PURE__ */ jsxs38(
+        "button",
+        {
+          type: "button",
+          className: "hb-pill",
+          "aria-label": "Send selected rows as context",
+          title: chosen2.length ? message : void 0,
+          disabled: !chosen2.length,
+          onClick: () => {
+            const tap = ++taps.current;
+            send(message, { force: true }).then((where) => {
+              if (tap === taps.current) setSent(where);
+            });
+          },
+          children: [
+            /* @__PURE__ */ jsx41(Icon, { name: "spark", size: 14, stroke: 2.2 }),
+            /* @__PURE__ */ jsx41("span", { className: "hb-pill-label", children: "Send selected as context" })
+          ]
+        }
+      ),
+      /* @__PURE__ */ jsx41("span", { className: "hb-table-sent", role: "status", "aria-live": "polite", children: sent ? SENT_WORDS2[sent] : "" })
+    ] }),
     /* @__PURE__ */ jsx41("div", { className: "hb-table-scroll", children: /* @__PURE__ */ jsxs38("table", { className: columns.length >= 3 ? "hb-table hb-table-wide" : "hb-table", children: [
-      /* @__PURE__ */ jsx41("thead", { children: /* @__PURE__ */ jsx41("tr", { children: columns.map((name, c) => /* @__PURE__ */ jsx41("th", { "aria-sort": ariaSort(sort, c), className: cellClass(c, name, sort?.column === c ? "hb-sorted" : ""), children: /* @__PURE__ */ jsxs38("button", { type: "button", onClick: () => setSort(nextSort(sort, c)), children: [
-        /* @__PURE__ */ jsx41("span", { children: name }),
-        /* @__PURE__ */ jsx41("span", { className: "hb-sort", "aria-hidden": "true", children: sortMark(sort, c) }),
-        c === bestColumn && /* @__PURE__ */ jsx41("span", { className: "hb-chip hb-chip-soft", children: "Best" })
-      ] }) }, c)) }) }),
+      /* @__PURE__ */ jsx41("thead", { children: /* @__PURE__ */ jsxs38("tr", { children: [
+        interactive && /* @__PURE__ */ jsx41("th", { className: "hb-pick", "aria-label": "Selected rows" }),
+        columns.map((name, c) => /* @__PURE__ */ jsx41("th", { "aria-sort": ariaSort(sort, c), className: cellClass(c, name, sort?.column === c ? "hb-sorted" : ""), children: /* @__PURE__ */ jsxs38("button", { type: "button", onClick: () => setSort(nextSort(sort, c)), children: [
+          /* @__PURE__ */ jsx41("span", { children: name }),
+          /* @__PURE__ */ jsx41("span", { className: "hb-sort", "aria-hidden": "true", children: sortMark(sort, c) }),
+          c === bestColumn && /* @__PURE__ */ jsx41("span", { className: "hb-chip hb-chip-soft", children: "Best" })
+        ] }) }, c))
+      ] }) }),
       /* @__PURE__ */ jsxs38("tbody", { children: [
-        !rows.length && /* @__PURE__ */ jsx41("tr", { children: /* @__PURE__ */ jsx41("td", { className: "hb-table-empty", colSpan: columns.length, children: "No rows to show." }) }),
-        order.map((r) => /* @__PURE__ */ jsx41("tr", { className: r === bestRow ? "hb-best" : void 0, children: rows[r].map((cell, c) => {
-          const big = bigNumber(cell);
-          const direction = change[c] ? changeOf(cell) : null;
-          const bar = change[c] && withBars ? cellNumber(cell) : null;
-          return /* @__PURE__ */ jsxs38("td", { className: cellClass(c, cell, direction ? `hb-${direction}` : ""), title: big?.full, children: [
-            bar !== null && /* @__PURE__ */ jsx41(MiniBar, { value: bar, largest: largest[c] }),
-            big ? big.short : /* @__PURE__ */ jsx41(InlineText, { text: cell }),
-            c === 0 && r === bestRow && /* @__PURE__ */ jsx41("span", { className: "hb-chip hb-chip-soft", children: "Best" })
-          ] }, c);
-        }) }, r))
+        !rows.length && /* @__PURE__ */ jsx41("tr", { children: /* @__PURE__ */ jsx41("td", { className: "hb-table-empty", colSpan: interactive ? columns.length + 1 : columns.length, children: "No rows to show." }) }),
+        interactive && rows.length > 0 && visible.length === 0 && query.trim() && /* @__PURE__ */ jsx41("tr", { children: /* @__PURE__ */ jsxs38("td", { className: "hb-table-empty", colSpan: columns.length + 1, children: [
+          "Nothing matches \u201C",
+          query.trim(),
+          "\u201D."
+        ] }) }),
+        visible.map((r) => /* @__PURE__ */ jsxs38("tr", { className: r === bestRow ? "hb-best" : void 0, children: [
+          interactive && /* @__PURE__ */ jsx41("td", { className: "hb-pick", children: /* @__PURE__ */ jsx41(
+            "input",
+            {
+              type: "checkbox",
+              checked: picked.includes(rowKey(rows[r])),
+              onChange: () => {
+                const key = rowKey(rows[r]);
+                setPicked((p) => p.includes(key) ? p.filter((x) => x !== key) : [...p, key]);
+                setSent(null);
+              },
+              "aria-label": `Select row ${rows[r][0] || `#${r + 1}`}`
+            }
+          ) }),
+          rows[r].map((cell, c) => {
+            const big = bigNumber(cell);
+            const direction = change[c] ? changeOf(cell) : null;
+            const bar = change[c] && withBars ? cellNumber(cell) : null;
+            return /* @__PURE__ */ jsxs38("td", { className: cellClass(c, cell, direction ? `hb-${direction}` : ""), title: big?.full, children: [
+              bar !== null && /* @__PURE__ */ jsx41(MiniBar, { value: bar, largest: largest[c] }),
+              big ? big.short : /* @__PURE__ */ jsx41(InlineText, { text: cell }),
+              c === 0 && r === bestRow && /* @__PURE__ */ jsx41("span", { className: "hb-chip hb-chip-soft", children: "Best" })
+            ] }, c);
+          })
+        ] }, r))
       ] })
     ] }) })
   ] });
@@ -7123,7 +7233,7 @@ function readTile(item) {
 }
 
 // src/blocks/tiles/Tiles.tsx
-import { useContext as useContext8, useState as useState23 } from "react";
+import { useContext as useContext9, useState as useState23 } from "react";
 import { Fragment as Fragment11, jsx as jsx42, jsxs as jsxs39 } from "react/jsx-runtime";
 var WASHES = [1, 4, 8, 3, 6];
 function Tiles({ items }) {
@@ -7135,7 +7245,7 @@ function tapOf(tile, send, fill) {
   return void 0;
 }
 function Tile({ tile, wash }) {
-  const { send, fill } = useContext8(BlockActions);
+  const { send, fill } = useContext9(BlockActions);
   const [photoFailed, setPhotoFailed] = useState23(false);
   const tap = tapOf(tile, send, fill);
   const colour = `var(--hb-chart-${wash})`;
@@ -7276,10 +7386,10 @@ function readBriefing(raw, here) {
 }
 
 // src/blocks/prepared/Prepared.tsx
-import { useContext as useContext9, useState as useState24 } from "react";
+import { useContext as useContext10, useState as useState24 } from "react";
 import { jsx as jsx44, jsxs as jsxs41 } from "react/jsx-runtime";
 function IdeaCard({ idea, group }) {
-  const { fill } = useContext9(BlockActions);
+  const { fill } = useContext10(BlockActions);
   const [broken, setBroken] = useState24(false);
   return /* @__PURE__ */ jsxs41("button", { type: "button", className: "hb-prep-idea", onClick: () => fill(`Tell me more about ${idea.title} for ${group}`), children: [
     !broken && /* @__PURE__ */ jsx44("img", { src: idea.photo, alt: "", loading: "lazy", onError: () => setBroken(true) }),
@@ -7290,7 +7400,7 @@ function IdeaCard({ idea, group }) {
   ] });
 }
 function GroupView({ group }) {
-  const { fill } = useContext9(BlockActions);
+  const { fill } = useContext10(BlockActions);
   return /* @__PURE__ */ jsxs41("article", { className: "hb-prep-group", children: [
     /* @__PURE__ */ jsxs41("div", { className: "hb-prep-head", children: [
       /* @__PURE__ */ jsx44("span", { className: "hb-prep-title", children: group.title }),
@@ -7395,7 +7505,7 @@ function readTracker(raw, here) {
 }
 
 // src/blocks/tracker/Tracker.tsx
-import { useContext as useContext10, useEffect as useEffect8, useState as useState25 } from "react";
+import { useContext as useContext11, useEffect as useEffect8, useState as useState25 } from "react";
 import { Fragment as Fragment13, jsx as jsx45, jsxs as jsxs42 } from "react/jsx-runtime";
 var VIEW_KEY = "hermes-genui.tracker.view";
 var SEEN_KEY = "hermes-genui.tracker.handled";
@@ -7437,7 +7547,7 @@ function More({ d }) {
   ] });
 }
 function CardView({ card }) {
-  const { fill } = useContext10(BlockActions);
+  const { fill } = useContext11(BlockActions);
   return /* @__PURE__ */ jsxs42("article", { className: `hb-tr-card hb-tr-${card.state}`, children: [
     /* @__PURE__ */ jsxs42("div", { className: "hb-tr-top", children: [
       /* @__PURE__ */ jsx45("span", { className: "hb-tr-title", children: card.title }),
@@ -7469,7 +7579,7 @@ function RowView({ row, onReopen }) {
   ] });
 }
 function Tracker({ need, handled }) {
-  const { rest } = useContext10(BlockActions);
+  const { rest } = useContext11(BlockActions);
   const [view, setView] = useState25(() => stored2(VIEW_KEY) === "done" ? "done" : "need");
   const [reopened, setReopened] = useState25([]);
   const [pulse, setPulse] = useState25(false);
@@ -7581,7 +7691,39 @@ var REGISTRY = {
   tabs: { read: readTabs, Component: ({ block, draw }) => /* @__PURE__ */ jsx47(Tabs, { labels: block.tabs.map((t) => t.label), badges: block.tabs.map((t) => t.badge), panel: (i) => draw(block.tabs[i].children) }) }
 };
 
-<<<<<<< HEAD
+// src/core/FollowUps.tsx
+import { useContext as useContext12, useRef as useRef16, useState as useState26 } from "react";
+import { jsx as jsx48, jsxs as jsxs44 } from "react/jsx-runtime";
+var PENDING_WORD = "Pending\u2026";
+function FollowUps({ items }) {
+  const { send } = useContext12(BlockActions);
+  const [said, setSaid] = useState26(null);
+  const taps = useRef16(0);
+  return /* @__PURE__ */ jsxs44("div", { className: "hb-followups", children: [
+    items.map((f, i) => /* @__PURE__ */ jsxs44(
+      "button",
+      {
+        type: "button",
+        className: "hb-pill",
+        title: f.run,
+        onClick: () => {
+          const tap = ++taps.current;
+          setSaid("pending");
+          send(f.run, { force: true }).then((where) => {
+            if (tap === taps.current) setSaid(where);
+          });
+        },
+        children: [
+          /* @__PURE__ */ jsx48(Icon, { name: "spark", size: 14, stroke: 2.2 }),
+          /* @__PURE__ */ jsx48("span", { className: "hb-followup-label", children: f.label })
+        ]
+      },
+      i
+    )),
+    /* @__PURE__ */ jsx48("span", { className: "hb-followups-said", role: "status", "aria-live": "polite", children: said === "pending" ? PENDING_WORD : said ? SENT_WORDS[said] : "" })
+  ] });
+}
+
 // src/core/readBlocks.ts
 var BLOCK_TYPES = Object.keys(REGISTRY);
 function readBlocksNoted(data) {
@@ -7591,6 +7733,9 @@ function readBlocksNoted(data) {
   let boardLinks;
   let boardAlign;
   let boardTextAlign;
+  let boardAsOf;
+  let boardLive;
+  let boardFollowUps;
   const top = new Trail();
   if (isObject2(list) && Array.isArray(list.blocks)) {
     if (typeof list.type !== "string") {
@@ -7599,6 +7744,9 @@ function readBlocksNoted(data) {
       boardLinks = readBoardLinks(list.links, top.at("links"));
       boardAlign = align(list.align);
       boardTextAlign = align(list.text_align);
+      boardAsOf = str(list.as_of, 80);
+      boardLive = typeof list.live === "boolean" ? list.live : void 0;
+      boardFollowUps = readFollowUps(list.follow_ups, top.at("follow_ups"));
     }
     list = list.blocks;
   }
@@ -7615,6 +7763,9 @@ function readBlocksNoted(data) {
   if (boardLinks !== void 0) noted.links = boardLinks;
   if (boardAlign !== void 0) noted.align = boardAlign;
   if (boardTextAlign !== void 0) noted.textAlign = boardTextAlign;
+  if (boardAsOf !== void 0) noted.asOf = boardAsOf;
+  if (boardLive !== void 0) noted.live = boardLive;
+  if (boardFollowUps !== void 0) noted.followUps = boardFollowUps;
   return noted;
 }
 function readBlocks(data) {
@@ -7642,6 +7793,25 @@ function readBoardLinks(value, here) {
     items.push(note ? { id, note } : { id });
   });
   const kept = keepFirst(items, 3, here, "links");
+  return kept.length ? kept : void 0;
+}
+function readFollowUps(value, here) {
+  if (!Array.isArray(value)) return void 0;
+  const items = [];
+  value.forEach((item, i) => {
+    const label = firstText([item?.label, item?.text], Infinity);
+    const run = firstText([item?.run, item?.ask, item?.message], Infinity);
+    if (!label || !run) {
+      here.at(i).drop("button needs a label and a run message");
+      return;
+    }
+    if (actsBeforeTheModel(run)) {
+      here.at(i).drop(NO_SEND);
+      return;
+    }
+    items.push({ label, run });
+  });
+  const kept = keepFirst(items, 4, here, "follow-ups");
   return kept.length ? kept : void 0;
 }
 function readOne(raw, here, depth) {
@@ -7672,46 +7842,9 @@ function readOne(raw, here, depth) {
 }
 
 // src/core/Blocks.tsx
-import { jsx as jsx48 } from "react/jsx-runtime";
+import { jsx as jsx49, jsxs as jsxs45 } from "react/jsx-runtime";
 var AlignScope = createContext4({ board: void 0, text: void 0 });
 var TEXT_BEARING = /* @__PURE__ */ new Set(["heading", "text", "stat", "callout"]);
-=======
-// src/core/FollowUps.tsx
-import { useContext as useContext11, useRef as useRef15, useState as useState26 } from "react";
-import { jsx as jsx48, jsxs as jsxs44 } from "react/jsx-runtime";
-var PENDING_WORD = "Pending\u2026";
-function FollowUps({ items }) {
-  const { send } = useContext11(BlockActions);
-  const [said, setSaid] = useState26(null);
-  const taps = useRef15(0);
-  return /* @__PURE__ */ jsxs44("div", { className: "hb-followups", children: [
-    items.map((f, i) => /* @__PURE__ */ jsxs44(
-      "button",
-      {
-        type: "button",
-        className: "hb-pill",
-        title: f.run,
-        onClick: () => {
-          const tap = ++taps.current;
-          setSaid("pending");
-          send(f.run, { force: true }).then((where) => {
-            if (tap === taps.current) setSaid(where);
-          });
-        },
-        children: [
-          /* @__PURE__ */ jsx48(Icon, { name: "spark", size: 14, stroke: 2.2 }),
-          /* @__PURE__ */ jsx48("span", { className: "hb-followup-label", children: f.label })
-        ]
-      },
-      i
-    )),
-    /* @__PURE__ */ jsx48("span", { className: "hb-followups-said", role: "status", "aria-live": "polite", children: said === "pending" ? PENDING_WORD : said ? SENT_WORDS[said] : "" })
-  ] });
-}
-
-// src/core/Blocks.tsx
-import { jsx as jsx49, jsxs as jsxs45 } from "react/jsx-runtime";
->>>>>>> pr-74
 function BlockView({ block }) {
   const entry2 = REGISTRY[block.type];
   if (!entry2) return null;
@@ -7746,13 +7879,9 @@ function blockKey(b, i, carried2) {
   return i;
 }
 function Slotted({ block, flat }) {
-  const parent = useContext12(BlockSlot);
+  const parent = useContext13(BlockSlot);
   const slot = parent === null ? flat : `${parent}/${flat}`;
-<<<<<<< HEAD
-  return /* @__PURE__ */ jsx48(BlockSlot.Provider, { value: slot, children: /* @__PURE__ */ jsx48(Placed, { block }) });
-=======
-  return /* @__PURE__ */ jsx49(BlockSlot.Provider, { value: slot, children: /* @__PURE__ */ jsx49(BlockView, { block }) });
->>>>>>> pr-74
+  return /* @__PURE__ */ jsx49(BlockSlot.Provider, { value: slot, children: /* @__PURE__ */ jsx49(Placed, { block }) });
 }
 function drawAll(blocks) {
   const seen = /* @__PURE__ */ new Map();
@@ -7764,17 +7893,16 @@ function drawAll(blocks) {
     return /* @__PURE__ */ jsx49(Slotted, { block: b, flat: `${id}:${occ}` }, blockKey(b, i, carried2));
   });
 }
-<<<<<<< HEAD
 function Placed({ block }) {
-  const { board, text } = useContext11(AlignScope);
+  const { board, text } = useContext13(AlignScope);
   const at2 = alignOf(block) ?? board ?? "left";
   const ta = TEXT_BEARING.has(block.type) ? textAlignOf(block) ?? text ?? "left" : "left";
-  const view = /* @__PURE__ */ jsx48(BlockView, { block });
+  const view = /* @__PURE__ */ jsx49(BlockView, { block });
   if (at2 === "left" && ta === "left") return view;
   const cls = ["hb-place"];
   if (at2 !== "left") cls.push(`hb-place-${at2}`);
   if (ta !== "left") cls.push(`hb-ta-${ta}`);
-  return /* @__PURE__ */ jsx48(
+  return /* @__PURE__ */ jsx49(
     "div",
     {
       className: cls.join(" "),
@@ -7784,15 +7912,58 @@ function Placed({ block }) {
     }
   );
 }
-function Blocks({ blocks, boardAlign, boardTextAlign }) {
-  return /* @__PURE__ */ jsx48(AlignScope.Provider, { value: { board: boardAlign, text: boardTextAlign }, children: /* @__PURE__ */ jsx48("div", { className: "hb-blocks", children: /* @__PURE__ */ jsx48(FlowLightBoard, { children: drawAll(blocks) }) }) });
-=======
-function Blocks({ blocks, boardFollowUps }) {
-  return /* @__PURE__ */ jsxs45("div", { className: "hb-blocks", children: [
-    /* @__PURE__ */ jsx49(FlowLightBoard, { children: drawAll(blocks) }),
-    !!boardFollowUps?.length && /* @__PURE__ */ jsx49(FollowUps, { items: boardFollowUps })
+function ProvenanceFooter({ source, chartSources, asOf, live }) {
+  const parts2 = [];
+  const add = (key, node) => {
+    if (parts2.length) parts2.push(/* @__PURE__ */ jsx49("span", { className: "hb-provenance-dot", "aria-hidden": "true", children: "\xB7" }, `${key}-dot`));
+    parts2.push(/* @__PURE__ */ jsx49(Fragment14, { children: node }, key));
+  };
+  for (const [i, s] of (chartSources ?? []).entries()) {
+    add(`chart-${i}`, /* @__PURE__ */ jsx49("span", { className: "hb-provenance-source", children: s }));
+  }
+  if (asOf) add("as_of", /* @__PURE__ */ jsx49("span", { className: "hb-provenance-time", children: asOf }));
+  if (live !== void 0) {
+    add("live", /* @__PURE__ */ jsx49("span", { className: "hb-provenance-badge", "data-live": live ? "live" : "snapshot", children: live ? "Live" : "Snapshot" }));
+  }
+  return /* @__PURE__ */ jsxs45("div", { className: "hb-provenance", children: [
+    source && drawAll([source]),
+    /* @__PURE__ */ jsx49("div", { className: "hb-provenance-line", children: parts2 })
   ] });
->>>>>>> pr-74
+}
+function Blocks({ blocks, boardAlign, boardTextAlign, provenance, boardFollowUps }) {
+  const declared = provenance?.asOf !== void 0 || provenance?.live !== void 0;
+  let list = blocks;
+  let source;
+  const chartSources = [];
+  if (declared) {
+    const at2 = blocks.findIndex((b) => b.type === "source");
+    if (at2 >= 0) {
+      source = blocks[at2];
+      list = blocks.filter((_, i) => i !== at2);
+    }
+    const said = new Set(source?.text ? [source.text] : []);
+    for (const b of list) {
+      if (b.type !== "chart") continue;
+      const s = b.spec.source;
+      if (typeof s === "string" && s.trim() && !said.has(s)) {
+        said.add(s);
+        chartSources.push(s);
+      }
+    }
+  }
+  return /* @__PURE__ */ jsx49(AlignScope.Provider, { value: { board: boardAlign, text: boardTextAlign }, children: /* @__PURE__ */ jsxs45("div", { className: "hb-blocks", children: [
+    /* @__PURE__ */ jsx49(FlowLightBoard, { children: drawAll(list) }),
+    declared && /* @__PURE__ */ jsx49(
+      ProvenanceFooter,
+      {
+        source,
+        chartSources,
+        asOf: provenance?.asOf,
+        live: provenance?.live
+      }
+    ),
+    !!boardFollowUps?.length && /* @__PURE__ */ jsx49(FollowUps, { items: boardFollowUps })
+  ] }) });
 }
 
 // src/core/boardRoster.ts
@@ -7881,103 +8052,8 @@ function subscribe(id, cb) {
 }
 
 // src/core/LivingBoards.tsx
-<<<<<<< HEAD
-import { useContext as useContext12, useEffect as useEffect9, useState as useState26 } from "react";
-import { jsx as jsx49, jsxs as jsxs44 } from "react/jsx-runtime";
-=======
-import { useContext as useContext13, useEffect as useEffect9, useState as useState27 } from "react";
-
-// src/core/readBlocks.ts
-var BLOCK_TYPES = Object.keys(REGISTRY);
-function readBlocksNoted(data) {
-  let list = data;
-  let boardVersion;
-  let boardUpdatedAt;
-  let boardLinks;
-  let boardFollowUps;
-  const top = new Trail();
-  if (isObject2(list) && Array.isArray(list.blocks)) {
-    if (typeof list.type !== "string") {
-      boardVersion = version(list.version);
-      boardUpdatedAt = str(list.updated_at, 40);
-      boardLinks = readBoardLinks(list.links, top.at("links"));
-      boardFollowUps = readFollowUps(list.follow_ups, top.at("follow_ups"));
-    }
-    list = list.blocks;
-  }
-  if (isObject2(list) && typeof list.type === "string") list = [list];
-  const blocks = [];
-  if (Array.isArray(list)) {
-    list.forEach((raw, i) => {
-      blocks.push(...readOne(raw, top.at(i), 0));
-    });
-  }
-  const noted = { blocks, dropped: top.dropped };
-  if (boardVersion !== void 0) noted.version = boardVersion;
-  if (boardUpdatedAt !== void 0) noted.updatedAt = boardUpdatedAt;
-  if (boardLinks !== void 0) noted.links = boardLinks;
-  if (boardFollowUps !== void 0) noted.followUps = boardFollowUps;
-  return noted;
-}
-function readBlocks(data) {
-  return readBlocksNoted(data).blocks;
-}
-function isObject2(v) {
-  return v !== null && typeof v === "object" && !Array.isArray(v);
-}
-function readBoardLinks(value, here) {
-  if (!Array.isArray(value)) return void 0;
-  const items = [];
-  value.forEach((item, i) => {
-    const id = boardId(typeof item === "string" ? item : item?.id);
-    if (!id) {
-      here.at(i).drop("a link must name a board by its address");
-      return;
-    }
-    const note = typeof item === "object" && item !== null ? str(item.note, 80) : void 0;
-    items.push(note ? { id, note } : { id });
-  });
-  const kept = keepFirst(items, 3, here, "links");
-  return kept.length ? kept : void 0;
-}
-function readFollowUps(value, here) {
-  if (!Array.isArray(value)) return void 0;
-  const items = [];
-  value.forEach((item, i) => {
-    const label = firstText([item?.label, item?.text], Infinity);
-    const run = firstText([item?.run, item?.ask, item?.message], Infinity);
-    if (!label || !run) {
-      here.at(i).drop("button needs a label and a run message");
-      return;
-    }
-    if (actsBeforeTheModel(run)) {
-      here.at(i).drop(NO_SEND);
-      return;
-    }
-    items.push({ label, run });
-  });
-  const kept = keepFirst(items, 4, here, "follow-ups");
-  return kept.length ? kept : void 0;
-}
-function readOne(raw, here, depth) {
-  if (!isObject2(raw)) {
-    here.drop("not a block object");
-    return [];
-  }
-  const kind = raw.type;
-  const entry2 = Object.hasOwn(REGISTRY, kind) ? REGISTRY[kind] : void 0;
-  if (!entry2) {
-    here.drop(`unknown type "${kind}"`);
-    return [];
-  }
-  const read = entry2.read(raw, here, depth, readOne);
-  if (!read) return [];
-  return Array.isArray(read) ? read : [read];
-}
-
-// src/core/LivingBoards.tsx
+import { useContext as useContext14, useEffect as useEffect9, useState as useState27 } from "react";
 import { jsx as jsx50, jsxs as jsxs46 } from "react/jsx-runtime";
->>>>>>> pr-74
 var HISTORY_SHOWN = 4;
 function LiveRow({ id, version: version2, updatedAt, links, viewing, onShow, canReach }) {
   const older = version2 != null ? Array.from({ length: Math.min(version2 - 1, HISTORY_SHOWN) }, (_, i) => version2 - 1 - i) : [];
@@ -8031,7 +8107,7 @@ function LinkChip({ link }) {
   ] });
 }
 function LinkedBoard({ link }) {
-  const actions = useContext13(BlockActions);
+  const actions = useContext14(BlockActions);
   const rest = actions.rest;
   const [board, setBoard] = useState27("loading");
   useEffect9(() => {
@@ -8093,34 +8169,1880 @@ function LivePointer({ id, address }) {
   ] });
 }
 
+// src/host/ExportChrome.tsx
+import { useContext as useContext15, useEffect as useEffect10, useLayoutEffect as useLayoutEffect4, useRef as useRef17, useState as useState28 } from "react";
+
+// src/core/provenance.ts
+function provenanceOf(blocks) {
+  const at2 = blocks.findIndex((b) => b.type === "source");
+  const source = at2 >= 0 ? blocks[at2] : void 0;
+  const said = new Set(source?.text ? [source.text] : []);
+  const chartSources = [];
+  for (const b of blocks) {
+    if (b.type !== "chart") continue;
+    const s = b.spec?.source;
+    if (typeof s === "string" && s.trim() && !said.has(s)) {
+      said.add(s);
+      chartSources.push(s);
+    }
+  }
+  return source ? { source, chartSources } : { chartSources };
+}
+function provenanceLine(p) {
+  const parts2 = [];
+  if (p.source?.text) parts2.push(p.source.text);
+  parts2.push(...p.chartSources);
+  return parts2.join(" \xB7 ");
+}
+
+// src/lib/csv.ts
+function csvCell(value) {
+  return /[",\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
+}
+function csvOf(headers, rows) {
+  return [headers, ...rows].map((line) => line.map(csvCell).join(",") + "\r\n").join("");
+}
+
+// src/lib/export.ts
+var PNG_SCALE = 2;
+var PNG_PAD = 14;
+var LINE_RATIO = 1.4;
+var LINE_GAP = 6;
+var SWATCH = 12;
+var SWATCH_GAP = 6;
+var MINUS = "\u2013";
+function measureLine(line) {
+  return line.swatch ? SWATCH + SWATCH_GAP : 0;
+}
+function pngMetrics(lines, measure, svgWidth, svgHeight) {
+  const textWidth2 = lines.reduce((widest, l) => Math.max(widest, measure(l) + measureLine(l)), 0);
+  const textHeight = lines.length ? lines.reduce((h, l) => h + l.size * LINE_RATIO, 0) + (lines.length - 1) * LINE_GAP : 0;
+  return {
+    width: Math.round(Math.max(svgWidth, textWidth2)) + PNG_PAD * 2,
+    height: Math.round(svgHeight + textHeight) + PNG_PAD * 2
+  };
+}
+function fontOf(cs) {
+  const size = Number.parseFloat(cs.fontSize) || 14;
+  const parts2 = [cs.fontStyle !== "normal" ? cs.fontStyle : "", cs.fontWeight, `${size}px`, cs.fontFamily];
+  return { font: parts2.filter(Boolean).join(" "), size };
+}
+function captionLines(figure2, provenance = "") {
+  const out = [];
+  const line = (el, text, swatch) => {
+    if (!el || !text.trim()) return;
+    const cs = getComputedStyle(el);
+    const { font, size } = fontOf(cs);
+    out.push({ text, font, colour: cs.color, size, ...swatch ? { swatch } : {} });
+  };
+  const title = figure2.querySelector(".hb-chart-title");
+  line(title, title?.textContent?.trim() ?? "");
+  const figureEl = figure2.querySelector(".hb-chart-figure");
+  line(figureEl, (figureEl?.textContent ?? "").trim());
+  for (const item of figure2.querySelectorAll(".hb-legend-item")) {
+    const swatch = item.querySelector(".hb-legend-dot");
+    const words = [...item.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE || n.classList?.contains("hb-legend-value") || n.classList?.contains("hb-legend-note")).map((n) => (n.textContent ?? "").trim()).filter(Boolean).join(" ");
+    line(item, words, swatch ? getComputedStyle(swatch).backgroundColor : void 0);
+  }
+  for (const row of figure2.querySelectorAll(".hb-pie-legend tr")) {
+    if (!row.querySelector(".hb-pie-swatch")) continue;
+    const sw = row.querySelector(".hb-pie-swatch i");
+    const words = [...row.querySelectorAll("td")].filter((td) => !td.classList.contains("hb-pie-swatch")).map((td) => (td.textContent ?? "").trim()).filter(Boolean).join(" ");
+    line(row, words, sw ? getComputedStyle(sw).backgroundColor : void 0);
+  }
+  const source = figure2.querySelector(".hb-chart-source");
+  line(source, source?.textContent?.trim() ?? "");
+  if (provenance.trim() && provenance.trim() !== (source?.textContent?.trim() ?? "")) {
+    const styleEl = source ?? figure2;
+    const cs = getComputedStyle(styleEl);
+    const { font, size } = fontOf(cs);
+    out.push({ text: provenance.trim(), font, colour: cs.color, size });
+  }
+  return out;
+}
+var RGB = /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+))?\s*\)/;
+var TRANSPARENT = /^rgba?\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\)$/;
+function parseColour(value) {
+  const m = RGB.exec(value);
+  if (!m) return null;
+  return [Number(m[1]), Number(m[2]), Number(m[3]), m[4] === void 0 ? 1 : Number(m[4])];
+}
+function over(fg, bg) {
+  const a = fg[3];
+  return [
+    Math.round(fg[0] * a + bg[0] * (1 - a)),
+    Math.round(fg[1] * a + bg[1] * (1 - a)),
+    Math.round(fg[2] * a + bg[2] * (1 - a))
+  ];
+}
+function opaqueBackdrop(el) {
+  const layers = [];
+  let base = [255, 255, 255];
+  for (let node = el; node; node = node.parentElement) {
+    const cs = getComputedStyle(node);
+    const value = cs.backgroundColor;
+    if (value && value !== "transparent" && !TRANSPARENT.test(value)) {
+      const rgb = parseColour(value);
+      if (!rgb) continue;
+      if (rgb[3] >= 1) {
+        base = [rgb[0], rgb[1], rgb[2]];
+        break;
+      }
+      layers.push(rgb);
+    }
+  }
+  let out = base;
+  for (let i = layers.length - 1; i >= 0; i--) out = over(layers[i], out);
+  return out;
+}
+var SVG_NS = 'xmlns="http://www.w3.org/2000/svg"';
+function esc(text) {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function hbarSvg(figure2, spec) {
+  const box = figure2.querySelector(".hb-hbar-box");
+  const grid = box?.querySelector(".hb-hbar-grid");
+  if (!box || !grid) return null;
+  const rows = spec.x.map(String);
+  const labelEls = [...grid.querySelectorAll(".hb-hbar-label")];
+  const trackEls = [...grid.querySelectorAll(".hb-hbar-tracks")];
+  const valueEls = [...grid.querySelectorAll(".hb-hbar-values")];
+  if (!labelEls.length || labelEls.length !== rows.length || trackEls.length !== rows.length || valueEls.length !== rows.length) return null;
+  const base = box.getBoundingClientRect();
+  if (base.width < 2 || base.height < 2) return null;
+  const rel = (el) => {
+    const r = el.getBoundingClientRect();
+    return { x: r.left - base.left, y: r.top - base.top, w: r.width, h: r.height };
+  };
+  const TRANSPARENT_PAINT = /^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*0\s*\)$/;
+  const pictureW = Math.ceil(base.width);
+  const pictureH = Math.ceil(base.height);
+  const fit = (r) => {
+    const x = Math.max(r.x, 0);
+    const y = Math.max(r.y, 0);
+    return { x, y, w: Math.max(Math.min(r.x + r.w, pictureW) - x, 1), h: Math.max(Math.min(r.y + r.h, pictureH) - y, 1) };
+  };
+  const sample = (el) => {
+    if (!el) return "";
+    const value = getComputedStyle(el).backgroundColor;
+    return value && value !== "transparent" && !TRANSPARENT_PAINT.test(value) && !TRANSPARENT.test(value) ? value : "";
+  };
+  const look = (el, fallback) => {
+    const cs = getComputedStyle(el);
+    return {
+      family: (cs.fontFamily || "sans-serif").replaceAll('"', "'"),
+      size: cs.fontSize || "12px",
+      ink: cs.color || fallback
+    };
+  };
+  const parts2 = [];
+  rows.forEach((_row, i) => {
+    const lr = rel(labelEls[i]);
+    const lf = look(labelEls[i], "#222");
+    const labelWord = (labelEls[i].textContent ?? "").trim() || rows[i];
+    parts2.push(`<text data-label="${i}" x="${lr.x.toFixed(1)}" y="${(lr.y + lr.h / 2).toFixed(1)}" dominant-baseline="central" font-family="${esc(lf.family)}" font-size="${esc(lf.size)}" fill="${esc(lf.ink)}">${esc(labelWord)}</text>`);
+    const tracks = [...trackEls[i].querySelectorAll(".hb-hbar-track")];
+    tracks.forEach((track, k) => {
+      const zero = track.querySelector(".hb-hbar-zero");
+      if (zero) {
+        const zr = fit(rel(zero));
+        parts2.push(`<rect data-zero="${i}:${k}" x="${zr.x.toFixed(1)}" y="${zr.y.toFixed(1)}" width="${zr.w.toFixed(1)}" height="${zr.h.toFixed(1)}" fill="${esc(sample(zero) || "#999")}"/>`);
+      }
+      const bar = track.querySelector(".hb-hbar-bar");
+      if (!bar) return;
+      const br = fit(rel(bar));
+      parts2.push(`<rect data-bar="${i}:${k}" x="${br.x.toFixed(1)}" y="${br.y.toFixed(1)}" width="${br.w.toFixed(1)}" height="${br.h.toFixed(1)}" rx="3" fill="${esc(sample(bar) || "#888")}"/>`);
+    });
+    const spans = [...valueEls[i].querySelectorAll("span")];
+    spans.forEach((span, k) => {
+      const vr = rel(span);
+      const vf = look(span, "#222");
+      const word = (span.textContent ?? "").trim() || MINUS;
+      parts2.push(`<text data-word="${i}:${k}" x="${(vr.x + vr.w).toFixed(1)}" y="${(vr.y + vr.h / 2).toFixed(1)}" text-anchor="end" dominant-baseline="central" font-family="${esc(vf.family)}" font-size="${esc(vf.size)}" fill="${esc(vf.ink)}">${esc(word)}</text>`);
+    });
+  });
+  return { width: pictureW, height: pictureH, body: parts2.join("") };
+}
+var PAINT = [
+  "fill",
+  "stroke",
+  "stroke-width",
+  "stroke-linecap",
+  "stroke-linejoin",
+  "stroke-dasharray",
+  "stroke-dashoffset",
+  "fill-opacity",
+  "stroke-opacity",
+  "opacity",
+  "font-family",
+  "font-size",
+  "font-weight",
+  "font-style",
+  "text-anchor",
+  "dominant-baseline",
+  "letter-spacing",
+  "paint-order",
+  "vector-effect"
+];
+function serializeSvg(svg) {
+  const clone = svg.cloneNode(true);
+  const sources = [svg, ...svg.querySelectorAll("*")];
+  const copies = [clone, ...clone.querySelectorAll("*")];
+  const box = svg.getBoundingClientRect();
+  const px = (which, view) => {
+    if (view > 0) return String(Math.round(view));
+    const attr = (svg.getAttribute(which) ?? "").trim();
+    const stated = Number.parseFloat(attr);
+    if (attr && !attr.endsWith("%") && Number.isFinite(stated) && stated > 0) return String(Math.round(stated));
+    const vb = (svg.getAttribute("viewBox") ?? "").trim().split(/[\s,]+/).map(Number);
+    if (vb.length === 4) {
+      const side = vb[which === "width" ? 2 : 3];
+      if (Number.isFinite(side) && side > 0) return String(Math.round(side));
+    }
+    return "640";
+  };
+  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  clone.setAttribute("width", px("width", box.width));
+  clone.setAttribute("height", px("height", box.height));
+  for (const [i, src] of sources.entries()) {
+    const dst = copies[i];
+    if (!dst) continue;
+    const cs = getComputedStyle(src);
+    if (cs.display === "none" || cs.visibility === "hidden") {
+      dst.remove();
+      continue;
+    }
+    for (const prop of PAINT) {
+      const value = cs.getPropertyValue(prop);
+      if (value) dst.style.setProperty(prop, value);
+    }
+  }
+  return new XMLSerializer().serializeToString(clone);
+}
+async function loadImage(src) {
+  const url = URL.createObjectURL(new Blob([src], { type: "image/svg+xml;charset=utf-8" }));
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    return img;
+  } catch {
+    return null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+function canvasPng(canvas) {
+  return new Promise((done) => canvas.toBlob((blob) => done(blob), "image/png"));
+}
+async function chartPng(figure2, opts = {}) {
+  const svg = figure2.querySelector("svg");
+  let svgWidth = 0;
+  let svgHeight = 0;
+  let document_;
+  if (svg) {
+    const box = svg.getBoundingClientRect();
+    const stated = (which) => {
+      const raw = Number.parseFloat(svg.getAttribute(which) ?? "");
+      return Number.isFinite(raw) && raw > 0 ? raw : 640;
+    };
+    svgWidth = Math.round(box.width || stated("width"));
+    svgHeight = Math.round(box.height || stated("height"));
+    document_ = serializeSvg(svg);
+  } else if (opts.spec) {
+    const picture = hbarSvg(figure2, opts.spec);
+    if (!picture) return null;
+    svgWidth = Math.round(picture.width);
+    svgHeight = Math.round(picture.height);
+    document_ = `<svg ${SVG_NS} width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">` + picture.body + "</svg>";
+  } else {
+    return null;
+  }
+  const lines = captionLines(figure2, opts.provenance ?? "");
+  const probe = document.createElement("canvas").getContext("2d");
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!probe || !ctx) return null;
+  const measure = (l) => {
+    probe.font = l.font;
+    return probe.measureText(l.text).width;
+  };
+  const { width, height } = pngMetrics(lines, measure, svgWidth, svgHeight);
+  const img = await loadImage(document_);
+  if (!img) return null;
+  canvas.width = Math.round(width * PNG_SCALE);
+  canvas.height = Math.round(height * PNG_SCALE);
+  ctx.scale(PNG_SCALE, PNG_SCALE);
+  const [r, g, b] = opaqueBackdrop(figure2);
+  ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+  ctx.fillRect(0, 0, width, height);
+  const textHeight = lines.reduce((h, l) => h + l.size * LINE_RATIO, 0) + (lines.length ? (lines.length - 1) * LINE_GAP : 0);
+  let y = PNG_PAD;
+  ctx.textBaseline = "top";
+  for (const l of lines) {
+    if (l.swatch) {
+      ctx.fillStyle = l.swatch;
+      ctx.fillRect(PNG_PAD, y + Math.max(0, (l.size * LINE_RATIO - SWATCH) / 2), SWATCH, SWATCH);
+    }
+    ctx.font = l.font;
+    ctx.fillStyle = l.colour;
+    ctx.fillText(l.text, PNG_PAD + measureLine(l), y);
+    y += l.size * LINE_RATIO + LINE_GAP;
+  }
+  ctx.drawImage(img, PNG_PAD, PNG_PAD + textHeight, svgWidth, svgHeight);
+  return canvasPng(canvas);
+}
+function isStructuredTable(block) {
+  return "structured" in block && block.structured === true;
+}
+function tableWords(block) {
+  if (isStructuredTable(block)) {
+    const headers = block.columns.map((col) => col.label);
+    const numberFamily = /* @__PURE__ */ new Set(["number", "currency", "percent", "bar"]);
+    const rows = block.rows.map((row) => block.columns.map((col) => {
+      if (col.kind === "sources") return row.sources.map((s) => s.label).join(", ");
+      const cell = row.cells[col.id];
+      if (!cell) return "";
+      if (numberFamily.has(col.kind) && cell.value !== void 0 && cell.value !== null) return String(cell.value);
+      return cell.text;
+    }));
+    return { headers, rows };
+  }
+  return { headers: block.columns, rows: block.rows };
+}
+function tableCsvBlob(block, provenance = "") {
+  const { headers, rows } = tableWords(block);
+  const head = provenance.trim() ? `# ${provenance.trim()}\r
+` : "";
+  return new Blob([`\uFEFF${head}${csvOf(headers, rows)}`], { type: "text/csv;charset=utf-8" });
+}
+function markdownFile(body, provenance) {
+  const parts2 = [];
+  const head = body.trimEnd();
+  const footer = provenanceLine(provenance);
+  if (head) parts2.push(head);
+  if (footer) parts2.push(`---
+
+${footer}`);
+  return `${parts2.join("\n\n")}
+`;
+}
+function jsonFile(stored3) {
+  return `${JSON.stringify(stored3, null, 2)}
+`;
+}
+function fileBase(name, fallback) {
+  const slug2 = (name ?? "").trim().toLowerCase().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]+/g, "").replace(/-{2,}/g, "-").replace(/^-+|-+$/g, "").slice(0, 40).replace(/-+$/, "");
+  return slug2 || fallback;
+}
+function chartFileBase(figure2) {
+  return fileBase(figure2.querySelector(".hb-chart-title")?.textContent ?? "", "chart");
+}
+function saveBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 6e4);
+}
+
+// src/lib/markdown.ts
+var MAX_DEPTH2 = 6;
+var MAX_STRING = 300;
+var MAX_URL = 500;
+var MAX_CELL = 80;
+var CONTROL = new RegExp("[\\x00-\\x08\\x0b-\\x1f\\x7f-\\x9f\\u200b\\u200c\\u200e\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u2069\\ufeff]", "g");
+var LAYOUT_TYPES = ["row", "section", "grid", "columns", "tabs"];
+function isNum(v) {
+  return typeof v === "number";
+}
+function isStr(v) {
+  return typeof v === "string";
+}
+function isDict(v) {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+function isList(v) {
+  return Array.isArray(v);
+}
+function firstList2(block, ...keys) {
+  for (const k of keys) if (isList(block[k])) return block[k];
+  return [];
+}
+function firstOf(block, ...keys) {
+  for (const k of keys) {
+    const t = safeText(block[k]);
+    if (t) return t;
+  }
+  return "";
+}
+function orField(block, first, second) {
+  const v = block[first];
+  if (isPyFalsy(v)) return block[second];
+  return v;
+}
+function isPyFalsy(v) {
+  if (v === null || v === void 0 || v === false || v === "" || v === 0 || typeof v === "number" && Number.isNaN(v)) return true;
+  if (Array.isArray(v)) return v.length === 0;
+  if (isDict(v)) return Object.keys(v).length === 0;
+  return false;
+}
+function pick(block, key, dflt) {
+  return key in block ? block[key] : dflt;
+}
+function fmtNum(v) {
+  if (!Number.isFinite(v)) return "";
+  if (Number.isInteger(v) && Math.abs(v) < 1e15) return groupInt(v);
+  if (Math.abs(v) >= 1) return fixed2(v);
+  return g3(v);
+}
+function fixed2(v) {
+  const s = roundHalfEven(v, 2).toFixed(2);
+  const [intPart, fracPart] = s.split(".");
+  const sign = intPart.startsWith("-") ? "-" : "";
+  const digits = sign ? intPart.slice(1) : intPart;
+  let frac = fracPart;
+  while (frac.endsWith("0")) frac = frac.slice(0, -1);
+  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${sign}${grouped}${frac ? `.${frac}` : ""}`;
+}
+function g3(v) {
+  const sign = v < 0 ? "-" : "";
+  const a = Math.abs(v);
+  let e = Math.floor(Math.log10(a));
+  let m = a / 10 ** e;
+  if (m >= 10) {
+    m /= 10;
+    e += 1;
+  } else if (m < 1) {
+    m *= 10;
+    e -= 1;
+  }
+  let rm = roundHalfEven(m, 2);
+  if (rm >= 10) {
+    rm /= 10;
+    e += 1;
+  }
+  const digits = String(rm).replace(".", "").replace(/0+$/, "") || "0";
+  if (e < -4) {
+    const mant = digits.length > 1 ? `${digits[0]}.${digits.slice(1)}` : digits;
+    return `${sign}${mant}e-${String(-e).padStart(2, "0")}`;
+  }
+  if (e < 0) return `${sign}0.${"0".repeat(-e - 1)}${digits}`;
+  return `${sign}${digits}${"0".repeat(e)}`;
+}
+function groupInt(v) {
+  const sign = v < 0 ? "-" : "";
+  const digits = String(Math.abs(Math.trunc(v)));
+  return sign + digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+function roundHalfEven(x, digits) {
+  if (!Number.isFinite(x)) return x;
+  if (digits < 0) {
+    const shifted = roundHalfEven(x / 10 ** -digits, 0);
+    return shifted * 10 ** -digits;
+  }
+  if (Number.isInteger(x)) return x;
+  const buf = new ArrayBuffer(8);
+  new Float64Array(buf)[0] = Math.abs(x);
+  const bits = new DataView(buf).getBigUint64(0, true);
+  let m = Number(bits & 2n ** 52n - 1n);
+  let e = (Number(bits >> 52n) & 2047) - 1075;
+  if (bits >> 52n === 0n) e = -50;
+  else m += 2 ** 52;
+  const num2 = BigInt(m) * 10n ** BigInt(digits);
+  const den = 1n << BigInt(-e);
+  const floor = num2 / den;
+  const rem = num2 % den;
+  const half = den >> 1n;
+  const up = rem > half || rem === half && floor % 2n !== 0n;
+  const n = up ? floor + 1n : floor;
+  const v = Number(n) / 10 ** digits;
+  return x < 0 ? -v : v;
+}
+var MARKDOWN_MARKS = /([\\\[\]<>])/g;
+function mdEscape(text) {
+  return text.replace(MARKDOWN_MARKS, "\\$1");
+}
+function safeText(value, limit = MAX_STRING, inline = true) {
+  if (isNum(value)) return fmtNum(value);
+  if (!isStr(value)) return "";
+  let text = value.replace(CONTROL, "").replaceAll("	", " ");
+  if (inline) text = text.replaceAll("\n", " ");
+  text = text.trim();
+  return mdEscape(text.length <= limit ? text : `${text.slice(0, limit - 1)}\u2026`);
+}
+function safeUrl3(value, httpsOnly = false) {
+  if (!isStr(value)) return "";
+  let url = value.replace(CONTROL, "").trim();
+  if (url.length > MAX_URL) return "";
+  const lower = url.toLowerCase();
+  if (!(httpsOnly ? lower.startsWith("https://") : lower.startsWith("https://") || lower.startsWith("http://"))) return "";
+  for (const [raw, safe] of [[" ", "%20"], ["(", "%28"], [")", "%29"], ["<", "%3C"], [">", "%3E"], ["\n", ""]]) {
+    url = url.split(raw).join(safe);
+  }
+  return url;
+}
+function mdLink(text, url) {
+  return url ? `[${text}](${url})` : text;
+}
+function withUnit(value, unit) {
+  if (!unit) return value;
+  return unit === "%" ? `${value}${unit}` : `${value} ${unit}`;
+}
+function changeChip(change, unit = "%") {
+  if (!isNum(change)) return "";
+  const arrow = change < 0 ? "\u25BC" : "\u25B2";
+  return `(${arrow} ${fmtNum(Math.abs(change))}${safeText(unit, 8) || "%"})`;
+}
+function outOf(label, value, goal, unit) {
+  if (!label || !(isNum(value) || value === null || value === void 0) || !(isNum(goal) || goal === null || goal === void 0)) return "";
+  const unitText = safeText(unit, 20);
+  let shown2 = value === null || value === void 0 ? "no data" : fmtNum(value);
+  if (value !== null && value !== void 0 && (goal === null || goal === void 0)) {
+    shown2 = withUnit(shown2, unitText);
+  }
+  const target = goal === null || goal === void 0 ? "no data" : withUnit(fmtNum(goal), unitText);
+  return `${label}: ${shown2} / ${target}`;
+}
+function cellValue(value) {
+  return value === null ? "\u2013" : tableCell(value);
+}
+function tableCell(value) {
+  return safeText(value, MAX_CELL).replaceAll("|", "\\|");
+}
+function mdTable(header, rows) {
+  const width = header.length;
+  const lines = ["| " + header.join(" | ") + " |", "| " + Array(width).fill("---").join(" | ") + " |"];
+  for (const row of rows) {
+    lines.push("| " + [...row, ...Array(Math.max(0, width - row.length)).fill("")].slice(0, width).join(" | ") + " |");
+  }
+  return lines;
+}
+function childLists(block) {
+  if (!isDict(block)) return [];
+  if (isList(block.children)) return [block.children];
+  if (block.type !== "tabs" || !isList(block.tabs)) return [];
+  const out = [];
+  for (const tab of block.tabs) {
+    if (isDict(tab) && isList(tab.children)) out.push(tab.children);
+  }
+  return out;
+}
+function flowLabels(blocks, depth = 0) {
+  let found = {};
+  if (depth > MAX_DEPTH2) return found;
+  for (const block of blocks) {
+    if (!isDict(block)) continue;
+    if (block.type === "flow" && isStr(block.id) && isList(block.nodes)) {
+      const nodes = block.nodes.filter(isDict);
+      const map = {};
+      for (const n of nodes) if (isStr(n.id) && isStr(n.label)) map[n.id] = n.label;
+      found[block.id] = map;
+    }
+    for (const children of childLists(block)) {
+      const deeper = flowLabels(children, depth + 1);
+      found = { ...deeper, ...found };
+    }
+  }
+  return found;
+}
+var F = (v) => isDict(v) ? v : {};
+var IMAGE_URL_FIELDS = ["url", "src", "image"];
+function textHeading(block) {
+  const text = safeText(block.text);
+  return text ? `**${text}**` : "";
+}
+function textText(block) {
+  return safeText(block.text, MAX_STRING, false);
+}
+function textDivider() {
+  return "---";
+}
+function textBadge(block) {
+  const text = firstOf(block, "text", "label");
+  return text ? `[${text}]` : "";
+}
+function textLink(block) {
+  const text = firstOf(block, "text", "label");
+  const url = safeUrl3(orField(block, "url", "href"), true);
+  return mdLink(text || mdEscape(url), url);
+}
+function textImage(block) {
+  let url = "";
+  for (const k of IMAGE_URL_FIELDS) {
+    url = safeUrl3(block[k]);
+    if (url) break;
+  }
+  const caption2 = firstOf(block, "caption", "alt", "title");
+  if (!url) return caption2;
+  return `![${caption2 || "image"}](${url})`;
+}
+function textBar(block) {
+  return outOf(firstOf(block, "label", "title"), block.value, pick(block, "max", 100), block.unit);
+}
+function textCallout(block) {
+  const title = safeText(block.title);
+  const text = safeText(block.text, MAX_STRING, false);
+  const lines = (title ? [`**${title}**`] : []).concat(text.split("\n").filter((l) => l.trim()));
+  return lines.map((l) => `> ${l}`).join("\n");
+}
+var SOURCE_KINDS = ["web", "file", "tool", "derived"];
+function sourceItemLine(item) {
+  const label = safeText(item.label, 80);
+  const url = safeUrl3(item.url);
+  let line = url ? mdLink(label, url) : label;
+  const kind = safeText(item.kind, 12);
+  if (SOURCE_KINDS.includes(kind)) line += ` [${kind}]`;
+  const m = /^(\d{4}-\d{2}-\d{2})/.exec(safeText(item.accessed, 32));
+  if (m) line += ` \xB7 accessed ${m[1]}`;
+  const note = safeText(item.note, 160);
+  if (note) line += ` \xB7 ${note}`;
+  return line;
+}
+function keptSourceItems(block) {
+  const items = isList(block.items) ? block.items : [];
+  return items.slice(0, 32).filter((it) => isDict(it) && safeText(it.label, 80) !== "");
+}
+function textSource(block) {
+  const items = keptSourceItems(block);
+  if (items.length) {
+    const title = safeText(block.title, 80);
+    const prefix = title ? `**${title}**
+` : "";
+    return `${prefix}_Sources: ${items.map(sourceItemLine).join(" \xB7 ")}_`;
+  }
+  const text = safeText(block.text);
+  return text ? `_Source: ${mdLink(text, safeUrl3(block.url))}_` : "";
+}
+var MAX_TABLE_ROWS = 12;
+function isStructuredTable2(block) {
+  const columns = block.columns;
+  return isList(columns) && columns.some(isDict) || block.filterable === true || Object.hasOwn(block, "page") || isList(block.aggregates);
+}
+function iterated(v) {
+  const w = v === void 0 ? [] : v;
+  if (!w) return [];
+  if (isList(w)) return w;
+  if (isStr(w)) return [...w];
+  if (isDict(w)) return Object.keys(w);
+  throw new Error("iterated");
+}
+function structuredCell(row, column) {
+  const cid = safeText(column.id, 40);
+  if (column.kind === "sources") {
+    const sources = iterated(row.sources);
+    const labels2 = sources.map((s) => isDict(s) ? safeText(s.label, 40) : isStr(s) ? safeText(s, 40) : "").filter(Boolean);
+    return labels2.join(", ");
+  }
+  const cellsRaw = row.cells || {};
+  if (!isDict(cellsRaw)) throw new Error("cells");
+  const cell = cellsRaw[cid];
+  if (!isDict(cell)) return "";
+  const value = cell.value;
+  if (column.kind === "currency" && isNum(value)) return `${safeText(column.unit, 12)}${fmtNum(value)}`.trim();
+  if (column.kind === "percent" && isNum(value)) return `${fmtNum(value)}%`;
+  if (isNum(value)) return fmtNum(value);
+  return tableCell(cell.text);
+}
+function textStructured(block) {
+  const columns = (isList(block.columns) ? block.columns : []).filter(isDict);
+  const rows = (isList(block.rows) ? block.rows : []).filter(isDict);
+  if (!columns.length || !rows.length) return "";
+  const names = columns.map((c) => tableCell(c.label || c.id));
+  const cells = rows.slice(0, MAX_TABLE_ROWS).map((row) => columns.map((column) => structuredCell(row, column)));
+  const caption2 = safeText(block.caption || block.title);
+  const lines = (caption2 ? [`**${caption2}**`] : []).concat(mdTable(names, cells));
+  if (rows.length > MAX_TABLE_ROWS) lines.push(`_(${rows.length - MAX_TABLE_ROWS} more rows)_`);
+  for (const aggregate of isList(block.aggregates) ? block.aggregates : []) {
+    if (!isDict(aggregate)) continue;
+    const cid = safeText(aggregate.column, 40);
+    const values = [];
+    for (const r of rows) {
+      const cellsRaw = r.cells;
+      if (cellsRaw && !isDict(cellsRaw)) throw new Error("cells");
+      const cell = isDict(cellsRaw) ? cellsRaw[cid] : void 0;
+      if (isDict(cell) && isNum(cell.value)) values.push(cell.value);
+    }
+    if (!values.length) continue;
+    const op = aggregate.op;
+    let value;
+    if (op === "sum") value = values.reduce((s, v) => s + v, 0);
+    else if (op === "avg") value = values.reduce((s, v) => s + v, 0) / values.length;
+    else if (op === "min") value = Math.min(...values);
+    else if (op === "max") value = Math.max(...values);
+    else if (op === "count") value = values.length;
+    if (value !== void 0) {
+      const label = safeText(aggregate.label, 20) || String(op);
+      lines.push(`_${label}: ${fmtNum(value)}_`);
+    }
+  }
+  return lines.join("\n");
+}
+function textTable(block) {
+  if (isStructuredTable2(block)) return textStructured(block);
+  const names = block.columns, rows = block.rows;
+  if (!isList(names) || !names.length || !isList(rows) || !rows.length) return "";
+  const headerNames = names.slice(0, 8);
+  const columns = headerNames.map(tableCell);
+  const cells = [];
+  for (const row of rows.slice(0, MAX_TABLE_ROWS)) {
+    if (isDict(row)) {
+      cells.push(headerNames.map((name) => isStr(name) && Object.hasOwn(row, name) ? cellValue(row[name]) : ""));
+    } else if (isList(row)) {
+      cells.push(row.map(cellValue));
+    }
+  }
+  const caption2 = safeText(block.caption || block.title);
+  const lines = (caption2 ? [`**${caption2}**`] : []).concat(mdTable(columns, cells));
+  if (rows.length > MAX_TABLE_ROWS) lines.push(`_(${rows.length - MAX_TABLE_ROWS} more rows)_`);
+  return lines.join("\n");
+}
+var VALUE_FIELDS = ["value", "price", "rating", "score", "meta", "badge"];
+function valueOf3(row) {
+  for (const field of VALUE_FIELDS) {
+    if (!Object.hasOwn(row, field)) continue;
+    if (row[field] === null) return "\u2013";
+    const v = safeText(row[field], 40);
+    if (v) return v;
+  }
+  return "";
+}
+function textListBlock(block) {
+  const items = firstList2(block, "items", "rows");
+  const lines = [];
+  for (const item of items.slice(0, 12)) {
+    const row = isStr(item) ? { title: item } : item;
+    const name = isDict(row) ? firstOf(row, "title", "name", "label", "text") : "";
+    if (!name) continue;
+    const r = F(row);
+    const subtitle = safeText(r.subtitle);
+    let value = valueOf3(r);
+    const bar = r.bar;
+    if (!value && isNum(bar) && bar >= 0) value = fmtNum(bar);
+    const mark = block.ranked ? `${lines.length + 1}.` : "-";
+    lines.push(`${mark} ${name}${subtitle ? ` \u2014 ${subtitle}` : ""}${value ? ` \xB7 ${value}` : ""}`);
+  }
+  const title = safeText(block.title);
+  return (title && lines.length ? [`**${title}**`] : []).concat(lines).join("\n");
+}
+var STATE_ALIASES2 = {
+  pending: "pending",
+  todo: "pending",
+  "to do": "pending",
+  active: "active",
+  "in progress": "active",
+  doing: "active",
+  done: "done",
+  complete: "done",
+  completed: "done",
+  blocked: "blocked",
+  skipped: "skipped"
+};
+var STATE_WORDS2 = { pending: "not started", active: "in progress", blocked: "blocked", skipped: "skipped" };
+function readState2(v) {
+  if (!isStr(v)) return "";
+  return STATE_ALIASES2[v.trim().toLowerCase()] ?? "";
+}
+function checklistItemLine(item) {
+  let text, state, owner, note, done, sources;
+  if (isDict(item)) {
+    text = safeText(item.text);
+    state = readState2(item.state);
+    owner = safeText(item.owner).slice(0, 40);
+    note = safeText(item.note).slice(0, 120);
+    done = item.done === true || item.checked === true || state === "done";
+    const rawIds = isList(item.sourceIds) ? item.sourceIds : [];
+    const ids = rawIds.slice(0, 4).filter(isStr).map((i) => safeText(i).slice(0, 40)).slice(0, 4);
+    sources = ids.length ? `sources ${ids.join(", ")}` : "";
+  } else {
+    text = safeText(item);
+    state = "";
+    owner = "";
+    note = "";
+    done = false;
+    sources = "";
+  }
+  if (!text) return "";
+  const asideParts = [done ? "" : STATE_WORDS2[state] ?? "", owner, sources].filter(Boolean);
+  let aside = asideParts.join(", ");
+  if (note) aside = aside ? `${aside}: ${note}` : note;
+  return `- [${done ? "x" : " "}] ${text}` + (aside ? ` (${aside})` : "");
+}
+function textChecklist(block) {
+  const items = isList(block.items) ? block.items : [];
+  const lines = items.slice(0, 40).map(checklistItemLine).filter(Boolean);
+  const title = safeText(block.title);
+  return (title && lines.length ? [`**${title}**`] : []).concat(lines).join("\n");
+}
+function textTiles(block) {
+  const items = isList(block.items) ? block.items : [];
+  const lines = [];
+  for (const item of items.slice(0, 8)) {
+    const t = isDict(item) ? safeText(item.title) : "";
+    const subtitle = t ? safeText(F(item).subtitle) : "";
+    if (t) lines.push(subtitle ? `- ${t}: ${subtitle}` : `- ${t}`);
+  }
+  return lines.join("\n");
+}
+function textStreak(block) {
+  const count2 = block.count;
+  if (!isNum(count2)) return "";
+  const label = safeText(block.label) || "Current streak";
+  return `${label}: ${fmtNum(count2)} ${safeText(block.unit, 20) || "days"}`;
+}
+var TONE_ALIASES = {
+  good: "good",
+  success: "good",
+  positive: "good",
+  ok: "good",
+  warn: "warn",
+  warning: "warn",
+  caution: "warn",
+  bad: "bad",
+  danger: "bad",
+  negative: "bad",
+  error: "bad"
+};
+var MAX_THRESHOLDS = 6;
+var MAX_SEGMENTS = 5;
+var PROGRESS_LABEL = 28;
+function toneOf(v) {
+  return isStr(v) ? TONE_ALIASES[v.trim().toLowerCase()] ?? "" : "";
+}
+function progressMarks(block) {
+  const thresholds = isList(block.thresholds) ? block.thresholds : [];
+  const found = thresholds.filter((m) => isDict(m) && isNum(m.at));
+  return found.slice().sort((a, b) => a.at - b.at).slice(0, MAX_THRESHOLDS);
+}
+function bands(block) {
+  if (!Object.hasOwn(block, "goal")) throw new Error("goal");
+  const goal = block.goal;
+  if (goal === null || goal === void 0) return [];
+  const found = [];
+  let start = 0;
+  for (const mark of progressMarks(block)) {
+    const tone = toneOf(mark.tone);
+    if (!tone) continue;
+    const end = Math.max(start, Math.min(mark.at, goal));
+    if (end > start) found.push([start, end, tone]);
+    start = end;
+  }
+  return found;
+}
+function zoneTone2(block) {
+  const fallback = toneOf(block.tone) || "good";
+  const value = block.value;
+  if (value === null || value === void 0) return fallback;
+  const found = bands(block);
+  if (!found.length) return fallback;
+  for (const [, to, tone] of found) {
+    if (!isNum(value)) throw new Error("value");
+    if (value <= to) return tone;
+  }
+  return found[found.length - 1][2];
+}
+function percentOf2(value, goal) {
+  if (!isNum(goal) || goal <= 0) return 0;
+  return Math.trunc(Math.max(0, Math.min(1, value / goal)) * 100 + 0.5);
+}
+function labelText(label, unit) {
+  if (isNum(label)) return withUnit(fmtNum(label), safeText(unit, 20));
+  return safeText(label, PROGRESS_LABEL);
+}
+function textProgress(block) {
+  const base = outOf(firstOf(block, "title", "label"), block.value, block.goal, block.unit);
+  if (!base) return "";
+  const unit = block.unit;
+  let line = base;
+  if (block.show_percent === true && block.value !== null && block.value !== void 0 && safeText(unit, 20) !== "%") {
+    if (!isNum(block.value)) throw new Error("value");
+    line += ` (${percentOf2(block.value, block.goal)}%)`;
+  }
+  const tone = zoneTone2(block);
+  if (tone !== "good") line += ` (${tone})`;
+  const sentences = [];
+  const labelled = progressMarks(block).map((m) => labelText(m.label, unit)).filter(Boolean);
+  if (labelled.length) sentences.push("Marks: " + labelled.join(", "));
+  const parts2 = [];
+  for (const segment of (isList(block.segments) ? block.segments : []).slice(0, MAX_SEGMENTS)) {
+    if (!isDict(segment) || !isNum(segment.value) || segment.value < 0) continue;
+    const amount2 = withUnit(fmtNum(segment.value), safeText(unit, 20));
+    const label = safeText(segment.label, PROGRESS_LABEL);
+    parts2.push(label ? `${label} ${amount2}` : amount2);
+  }
+  if (parts2.length) sentences.push(parts2.join(", "));
+  if (!sentences.length) return line;
+  return [line, ...sentences].join(". ") + ".";
+}
+var CHANGE_UNITS = ["%", "pt"];
+var MAX_CHIP2 = 1e15;
+function isFiniteNumber(v) {
+  return isNum(v) && Math.abs(v) <= Number.MAX_VALUE;
+}
+function writtenUnit(item, fallback) {
+  const unit = item.change_unit;
+  return isStr(unit) && CHANGE_UNITS.includes(unit) ? unit : fallback;
+}
+function chipNumber(v, unit) {
+  return isFiniteNumber(v) && Math.abs(v) < MAX_CHIP2 ? [v, unit] : null;
+}
+function changeOf2(item) {
+  if (Object.hasOwn(item, "previous")) {
+    const unit = writtenUnit(item, item.unit === "%" ? "pt" : "%");
+    const before = item.previous, value = item.value;
+    if (!(isFiniteNumber(before) && isFiniteNumber(value))) return null;
+    if (unit === "pt") return chipNumber(value - before, "pt");
+    return chipNumber(before === 0 ? null : (value - before) / Math.abs(before) * 100, "%");
+  }
+  return chipNumber(item.change, writtenUnit(item, "%"));
+}
+function tenths(v) {
+  return Math.abs(v).toFixed(1);
+}
+function chip(item) {
+  const found = changeOf2(item);
+  if (found === null) return "";
+  const [change, unit] = found;
+  const arrow = change < 0 ? "\u25BC " : change > 0 ? "\u25B2 " : "";
+  return `(${arrow}${tenths(change)}${unit === "pt" ? " " : ""}${unit})`;
+}
+function figure(item) {
+  const label = firstOf(item, "label", "title");
+  if (!label) return "";
+  const raw = item.value;
+  const shown2 = raw === null || raw === void 0 ? "" : safeText(raw);
+  const value = shown2 ? withUnit(shown2, safeText(item.unit, 20)) : "no data";
+  const line = `${label}: ${value}`;
+  const c = chip(item);
+  return c ? `${line} ${c}` : line;
+}
+function textStat(block) {
+  return figure(block);
+}
+function textKpis(block) {
+  const items = isList(block.items) ? block.items : [];
+  return items.filter(isDict).map(figure).filter(Boolean).join("\n");
+}
+var CHART_KINDS2 = ["line", "bar", "area", "stacked", "hbar", "combo", "pie", "donut", "scatter", "waterfall"];
+var KIND_ALIASES2 = {
+  doughnut: "donut",
+  stackedbar: "stacked",
+  horizontalbar: "hbar",
+  barh: "hbar"
+};
+var MAX_LABEL2 = 40;
+function chartKind2(name) {
+  if (!isStr(name)) return "line";
+  const plain2 = name.toLowerCase().replace(/[ _-]/g, "");
+  return CHART_KINDS2.includes(plain2) ? plain2 : Object.hasOwn(KIND_ALIASES2, plain2) ? KIND_ALIASES2[plain2] : "line";
+}
+function seriesLine(series, labels2) {
+  const raw = dataOf(series);
+  const data = raw.filter(isNum);
+  if (!data.length) return "";
+  const name = safeText(series.name);
+  const first = data[0], last = data[data.length - 1];
+  let line = `${name} ${fmtNum(first)} \u2192 ${fmtNum(last)}`.trim();
+  if (first) line += " " + changeChip(roundHalfEven((last - first) / Math.abs(first) * 100, 1));
+  const n = Math.min(labels2.length, raw.length);
+  const missing = [];
+  for (let i = 0; i < n; i++) if (raw[i] === null) missing.push(safeText(labels2[i], 24));
+  if (missing.length) {
+    const shown2 = missing.filter(Boolean).slice(0, 3);
+    let named = shown2.length ? shown2.join(", ") : "unlabelled";
+    if (missing.length > shown2.length) named += ` and ${missing.length - shown2.length} more`;
+    line += `, ${missing.length} gap${missing.length === 1 ? "" : "s"} (${named})`;
+  }
+  return line;
+}
+function slices(x, series, top = 4) {
+  const data = dataOf(series);
+  const parts2 = [];
+  for (let i = 0; i < Math.min(x.length, data.length); i++) {
+    const v = data[i];
+    if (isNum(v) && v > 0) parts2.push([safeText(x[i]), v]);
+  }
+  const total = parts2.reduce((s, [, v]) => s + v, 0);
+  if (!total) return "";
+  parts2.sort((a, b) => b[1] - a[1]);
+  const shown2 = parts2.slice(0, top).map(([label, v]) => `${label} ${roundHalfEven(v / total * 100, 0)}`.trim() + "%");
+  if (parts2.length > top) shown2.push(`+${parts2.length - top} more`);
+  return shown2.join(", ");
+}
+function drawnPoints(series) {
+  return iterated(Object.hasOwn(series, "points") ? series.points : []).filter(
+    (p) => isDict(p) && isNum(p.x) && isNum(p.y)
+  );
+}
+var AGAINST2 = /^(.+?)\s+(?:against|by|vs\.?)\s+(.+)$/i;
+function axisWord2(text) {
+  return text.trim().toLowerCase().replace(/[\s:,.?!]+$/, "");
+}
+function axisNames2(title) {
+  const match = AGAINST2.exec(title.trim());
+  if (match === null) return ["x", "y"];
+  const across = axisWord2(match[2]), up = axisWord2(match[1]);
+  return across && up ? [across, up] : ["x", "y"];
+}
+function pointCount(n) {
+  return n === 1 ? "1 point" : `${n} points`;
+}
+function scatterLine(series, title) {
+  const [across, up] = axisNames2(title);
+  let groups = series.slice(0, 2).map((s) => [safeText(s.name, MAX_LABEL2), drawnPoints(s)]);
+  groups = groups.filter(([, points2]) => points2.length > 0);
+  if (!groups.length) return "";
+  if (groups.length > 1) {
+    return groups.map(([name, points2]) => {
+      const xs2 = points2.map((p) => p.x);
+      return `${name || "Series"} ${pointCount(points2.length)}, ${across} ${fmtNum(Math.min(...xs2))} to ${fmtNum(Math.max(...xs2))}`;
+    }).join("; ");
+  }
+  const points = groups[0][1];
+  const xs = points.map((p) => p.x), ys = points.map((p) => p.y);
+  let top = points[0];
+  for (const p of points) {
+    if (p.y > top.y || p.y === top.y && -p.x > -top.x) top = p;
+  }
+  const line = `${pointCount(points.length)}; ${across} ${fmtNum(Math.min(...xs))} to ${fmtNum(Math.max(...xs))}, ${up} ${fmtNum(Math.min(...ys))} to ${fmtNum(Math.max(...ys))}; highest ${fmtNum(top.y)} at ${fmtNum(top.x)}`;
+  const label = safeText(top.label, MAX_LABEL2);
+  return label ? `${line} (${label})` : line;
+}
+function signedValue(value) {
+  return value > 0 ? `+${fmtNum(value)}` : fmtNum(value);
+}
+function waterfallLine(series) {
+  const points = iterated(Object.hasOwn(series, "points") ? series.points : []).filter(isDict);
+  let balance2 = 0;
+  let moved = false;
+  let broken = false;
+  const parts2 = [];
+  for (const p of points) {
+    const label = safeText(p.label, MAX_LABEL2);
+    const total = p.total === true;
+    if (broken) {
+      if (total) parts2.push(label ? `${label} not stated` : "closing not stated");
+      continue;
+    }
+    if (total) {
+      const opening = p.value;
+      if (!moved && isNum(opening)) balance2 = opening;
+      parts2.push(`${label} ${fmtNum(balance2)}`.trim());
+      continue;
+    }
+    const value = p.value;
+    if (!isNum(value)) {
+      parts2.push(label ? `${label}, unknown` : "unknown");
+      broken = true;
+      continue;
+    }
+    balance2 += value;
+    moved = true;
+    parts2.push(`${signedValue(value)} ${label}`.trim());
+  }
+  return parts2.filter(Boolean).join(" \u2192 ");
+}
+function textChart(block) {
+  let series = (isList(block.series) ? block.series : []).filter(isDict);
+  let x = iterated(block.x);
+  if (block.sortDesc === true && ["bar", "hbar"].includes(chartKind2(block.kind)) && series.length) {
+    const values = dataOf(series[0]).map((v) => isNum(v) ? v : null);
+    const order = x.map((_, i) => i).sort((a, b) => {
+      const ka = [values[a] === null ? 1 : 0, -(values[a] ?? 0), a];
+      const kb = [values[b] === null ? 1 : 0, -(values[b] ?? 0), b];
+      return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2];
+    });
+    x = order.map((i) => x[i]);
+    series = series.map((s) => {
+      const d = dataOf(s);
+      return { ...s, data: order.map((i) => i < d.length ? d[i] : null) };
+    });
+  }
+  if (!series.length) return "";
+  const kind = chartKind2(block.kind);
+  const title = safeText(block.title, 80);
+  let body = "";
+  if (kind === "pie" || kind === "donut") {
+    body = slices(x, series[0]);
+  } else if (kind === "scatter") {
+    body = scatterLine(series, title);
+  } else if (kind === "waterfall") {
+    body = waterfallLine(series[0]);
+  } else {
+    body = series.slice(0, 6).map((s) => seriesLine(s, iterated(block.x))).filter(Boolean).join("; ");
+  }
+  if (!body) return "";
+  const unit = safeText(block.unit, 20);
+  const head = `**${title || "Chart"}**` + (unit ? ` (${unit})` : "");
+  const line = `${head}: ${body}`;
+  const caveat = safeText(block.caveat, 120);
+  return caveat ? `${line}
+_${caveat}_` : line;
+}
+function dataOf(series) {
+  return walkable(series, "data", true);
+}
+function walkable(block, key, missingDefault = false) {
+  const v = missingDefault ? pick(block, key, []) : block[key];
+  if (v === void 0 && missingDefault) return [];
+  if (isList(v)) return v;
+  if (isStr(v)) return [...v];
+  if (isDict(v)) return Object.keys(v);
+  if (v === void 0 && !missingDefault) return [];
+  throw new Error(key);
+}
+function textImages(block) {
+  const photos = isList(block.images) ? block.images : [];
+  const lines = [];
+  for (const photo of photos.slice(0, 12)) {
+    if (!isDict(photo)) continue;
+    const line = textImage(photo);
+    const source = safeText(photo.source);
+    if (line) lines.push(source ? `${line} [${source}]` : line);
+  }
+  const title = safeText(block.title);
+  return (title && lines.length ? [`**${title}**`] : []).concat(lines).join("\n");
+}
+function textInclude() {
+  return "";
+}
+function textFlip(block) {
+  const cards = isList(block.cards) ? block.cards : [];
+  const lines = [];
+  for (const card of cards.slice(0, 12)) {
+    if (!isDict(card)) continue;
+    const front = firstOf(card, "front", "question");
+    const back = firstOf(card, "back", "answer");
+    if (front && back) lines.push(`- Q: ${front} \u2014 A: ${back}`);
+  }
+  const title = safeText(block.title);
+  return (title && lines.length ? [`**${title}**`] : []).concat(lines).join("\n");
+}
+function nextSteps(labels2) {
+  const kept = labels2.filter(Boolean);
+  return kept.length ? "Next: " + kept.join(" \xB7 ") : "";
+}
+function textButton(block) {
+  const label = safeText(block.label);
+  return nextSteps([label ? mdLink(label, safeUrl3(block.url, true)) : ""]);
+}
+function textActions(block) {
+  const items = isList(block.items) ? block.items : [];
+  return nextSteps(items.filter(isDict).map((it) => safeText(F(it).label)));
+}
+var LAYERS_MAX = 12;
+var L_TITLE = 80;
+var L_CAPTION = 200;
+var L_LABEL = 24;
+var L_NOTE = 280;
+function textLayers(block) {
+  const layers = firstList2(block, "layers").slice(0, LAYERS_MAX).filter((x) => isDict(x) && safeText(x.label));
+  const lines = [];
+  layers.forEach((layer, i) => {
+    const l = F(layer);
+    const label = safeText(l.label, L_LABEL);
+    const note = safeText(l.note, L_NOTE);
+    lines.push(note ? `${i + 1}. ${label} \u2014 ${note}` : `${i + 1}. ${label}`);
+  });
+  if (!lines.length) return "";
+  const title = safeText(block.title, L_TITLE);
+  const caption2 = safeText(block.caption, L_CAPTION);
+  return (title ? [`**${title}**`] : []).concat(caption2 ? [caption2] : []).concat(lines).join("\n");
+}
+function stopsOf(block) {
+  if (isList(block.groups)) return block.groups;
+  const flat = firstList2(block, "items", "events", "stops", "steps");
+  return [{ items: flat }];
+}
+function textTimeline(block) {
+  const title = safeText(block.title);
+  const lines = title ? [`**${title}**`] : [];
+  for (const group of stopsOf(block).slice(0, 14)) {
+    if (!isDict(group) || !isList(group.items)) continue;
+    const label = safeText(group.label);
+    const stops = [];
+    for (const item of group.items.slice(0, 12)) {
+      const name = isDict(item) ? safeText(item.title) : "";
+      if (!name) continue;
+      const it = F(item);
+      const time = safeText(it.time, 40);
+      const place2 = safeText(it.place);
+      stops.push("- " + (time ? `${time} \xB7 ` : "") + name + (place2 ? ` (${place2})` : ""));
+    }
+    if (stops.length) {
+      if (label) lines.push(`**${label}**`);
+      lines.push(...stops);
+    }
+  }
+  return lines.length > (title ? 1 : 0) ? lines.join("\n") : "";
+}
+function textHeatmap(block) {
+  const rows = block.rows, cols = block.cols, values = block.values;
+  if (!isList(rows) || !rows.length || !isList(cols) || !cols.length || !isList(values) || !values.length) return "";
+  const columns = cols.slice(0, 12);
+  const body = [];
+  rows.slice(0, 12).forEach((label, i) => {
+    const line = isList(values[i]) ? values[i].slice(0, columns.length) : [];
+    body.push([tableCell(label), ...line.map(heatCell)]);
+  });
+  const title = safeText(block.title);
+  const unit = safeText(block.unit, 20);
+  const head = title || unit ? `**${title || "Heatmap"}**` + (unit ? ` (${unit})` : "") : "";
+  return (head ? [head] : []).concat(mdTable(["", ...columns.map(tableCell)], body)).join("\n");
+}
+var FL_TITLE = 80;
+var FL_LABEL = 40;
+var FL_NOTE = 280;
+var FL_GROUP = 40;
+var FL_MAX_NODES = 10;
+var FL_MAX_GROUPS = 3;
+var FL_MIN_COUNT = 2;
+var FL_MAX_COUNT = 100;
+var CHIP2 = 16;
+var MAX_CHIPS2 = 10;
+function chipsText(chips) {
+  if (!isList(chips)) return "";
+  return chips.slice(0, MAX_CHIPS2).map((c) => safeText(isDict(c) ? c.text : c, CHIP2)).filter(Boolean).join(", ");
+}
+function isCount(value, low, high) {
+  return isNum(value) && Number.isInteger(value) && value >= low && value <= high;
+}
+function textFlow(block) {
+  const nodes = firstList2(block, "nodes").slice(0, FL_MAX_NODES).filter((n) => isDict(n) && safeText(n.label));
+  const lines = [];
+  nodes.forEach((node, i) => {
+    const n = F(node);
+    const label = safeText(n.label, FL_LABEL);
+    const note = safeText(n.note, FL_NOTE);
+    const holds = chipsText(n.holds);
+    let line = note ? `${i + 1}. ${label} \u2014 ${note}` : `${i + 1}. ${label}`;
+    if (holds) line = `${line} (holds: ${holds})`;
+    lines.push(line);
+  });
+  if (!lines.length) return "";
+  const numbers = /* @__PURE__ */ new Map();
+  nodes.forEach((node, i) => {
+    const id = F(node).id;
+    if (isStr(id)) numbers.set(id, i + 1);
+  });
+  for (const group of firstList2(block, "groups").slice(0, FL_MAX_GROUPS)) {
+    const label = isDict(group) ? safeText(group.label, FL_GROUP) : "";
+    if (!label) continue;
+    const g = F(group);
+    const at2 = walkable(g, "nodes").filter((k) => isStr(k) && numbers.has(k)).map((k) => numbers.get(k));
+    if (!at2.length) continue;
+    const span = at2.length === 1 ? `step ${at2[0]}` : `steps ${Math.min(...at2)}-${Math.max(...at2)}`;
+    const times = isCount(g.count, FL_MIN_COUNT, FL_MAX_COUNT) ? ` \xD7 ${g.count}` : "";
+    lines.push(`_${label}${times}: ${span}_`);
+  }
+  const title = safeText(block.title, FL_TITLE);
+  return (title ? [`**${title}**`] : []).concat(lines).join("\n");
+}
+var S_TITLE = 80;
+var S_TEXT = 600;
+var S_MAX_ITEMS = 12;
+var S_MAX_TICK = 20;
+function changeLines(item, labels2) {
+  const holds = isDict(item.holds) ? item.holds : {};
+  const lines = [];
+  for (const [node, chips] of Object.entries(holds).slice(0, FL_MAX_NODES)) {
+    const named = Object.hasOwn(labels2, node) ? labels2[node] : void 0;
+    const name = safeText(named, S_TITLE) || safeText(node, 24);
+    const held = chipsText(chips);
+    if (name && held) lines.push(`${name} now holds: ${held}`);
+  }
+  if (isCount(item.tick, 1, S_MAX_TICK)) lines.push(`The repeated part runs ${item.tick} more times.`);
+  return lines;
+}
+function textSteps(block, labels2) {
+  const items = firstList2(block, "items").slice(0, S_MAX_ITEMS).filter((it) => isDict(it) && safeText(it.title));
+  const flowId = isStr(block.for) ? block.for : "";
+  const forLabels = labels2 && flowId && Object.hasOwn(labels2, flowId) ? labels2[flowId] : {};
+  const parts2 = [];
+  items.forEach((item, i) => {
+    const it = F(item);
+    const head = `**Step ${i + 1} of ${items.length} \xB7 ${safeText(it.title, S_TITLE)}**`;
+    const lines = [head, safeText(it.text, S_TEXT), ...changeLines(it, forLabels)].filter(Boolean);
+    parts2.push(lines.join("\n"));
+  });
+  if (!parts2.length) return "";
+  const title = safeText(block.title, S_TITLE);
+  return (title ? [`**${title}**`] : []).concat(parts2).join("\n\n");
+}
+var INPUT_ID = /^[A-Za-z_][A-Za-z0-9_]{0,23}$/;
+function arithmetic(formula, names, powers = false) {
+  if (!isStr(formula) || formula.length > MAX_STRING) return null;
+  let tree;
+  try {
+    tree = parseFormula(formula);
+  } catch {
+    return null;
+  }
+  if (!simpleTree(tree, powers)) return null;
+  return evaluate(tree, names);
+}
+function simpleTree(node, powers) {
+  switch (node.kind) {
+    case "number":
+    case "name":
+      return true;
+    case "negate":
+      return simpleTree(node.arg, powers);
+    case "binary": {
+      const ops = ["+", "-", "*", "/"];
+      if (node.op === "^") return powers;
+      if (!ops.includes(node.op)) return false;
+      return simpleTree(node.left, powers) && simpleTree(node.right, powers);
+    }
+    case "call":
+      return false;
+  }
+}
+function textCalculator(block) {
+  const inputs = walkable(block, "inputs").slice(0, 6).filter((it) => isDict(it) && isStr(it.id));
+  const names = /* @__PURE__ */ new Map();
+  const shown2 = [];
+  for (const item of inputs) {
+    const it = F(item);
+    const start = [it.value, it.min].find(isNum) ?? 0;
+    names.set(it.id, start);
+    const label = firstOf(it, "label", "id");
+    shown2.push(`${label} ${withUnit(fmtNum(start), safeText(it.unit, 20))}`);
+  }
+  const lines = [];
+  for (const out of walkable(block, "outputs").slice(0, 6)) {
+    const label = isDict(out) ? safeText(out.label) : "";
+    if (!label) continue;
+    const value = arithmetic(F(out).formula, names);
+    lines.push(value === null ? `- ${label}: open in Hermes Desktop for the live calculator` : `- ${label}: ${withUnit(fmtNum(value), safeText(F(out).unit, 20))}`);
+  }
+  if (!lines.length) return "";
+  return (shown2.length ? [`With ${shown2.join(", ")}:`] : []).concat(lines).join("\n");
+}
+var SIM_TITLE = 80;
+var SIM_UNIT = 12;
+var SIM_MAX_PILES = 3;
+var SIM_ROWS = 5;
+function isName(v) {
+  return isStr(v) && INPUT_ID.test(v);
+}
+function timesOf2(to, step) {
+  const out = [];
+  for (let k = 0; k < SIM_ROWS; k++) out.push(Math.floor(to * k / (SIM_ROWS - 1) / step + 0.5) * step);
+  return out;
+}
+function amount(v) {
+  if (Math.abs(v) >= 100) return fmtNum(roundHalfEven(v, 0));
+  if (Math.abs(v) >= 1) return fmtNum(roundHalfEven(v, 2));
+  return fmtNum(v);
+}
+function textSimulate(block) {
+  const t = block.t, view = block.view;
+  if (!isDict(t) || !isDict(view) || !isName(t.name)) return "";
+  const to = t.to, step = pick(t, "step", 1);
+  const pilesRaw = Object.hasOwn(view, "piles") ? view.piles : view.series;
+  if (!isNum(to) || !isNum(step) || to <= 0 || step <= 0 || !isList(pilesRaw)) return "";
+  const piles = pilesRaw.slice(0, SIM_MAX_PILES).filter((p) => isDict(p) && safeText(p.name));
+  if (!piles.length) return "";
+  const names = /* @__PURE__ */ new Map();
+  if (isDict(block.values)) {
+    for (const [k, v] of Object.entries(block.values)) if (isName(k) && isNum(v)) names.set(k, v);
+  }
+  const shown2 = [];
+  const inputs = isList(block.inputs) ? block.inputs : [];
+  for (const item of inputs) {
+    if (!isDict(item)) continue;
+    const it = F(item);
+    const key = pick(it, "name", it.id);
+    if (!isName(key)) continue;
+    const start = [it.value, it.min].find(isNum) ?? 0;
+    names.set(key, start);
+    const value = withUnit(fmtNum(start), safeText(it.unit, SIM_UNIT));
+    shown2.push(`${firstOf(it, "label", "name", "id")} ${value}`);
+  }
+  const unit = safeText(block.unit, SIM_UNIT);
+  const rows = [];
+  for (const when2 of timesOf2(to, step)) {
+    const withTime = new Map(names);
+    withTime.set(t.name, when2);
+    const cells = piles.map((p) => {
+      const v = arithmetic(F(p).formula, withTime, true);
+      return v === null ? "\u2013" : withUnit(amount(v), unit);
+    });
+    rows.push([fmtNum(when2), ...cells]);
+  }
+  const header = [tableCell(t.unit) || t.name, ...piles.map((p) => tableCell(F(p).name))];
+  const title = safeText(block.title, SIM_TITLE);
+  const lead = (title ? [`**${title}**`] : []).concat(shown2.length ? [`With ${shown2.join(", ")}:`] : []);
+  return lead.concat(mdTable(header, rows)).join("\n");
+}
+var FORM_NOTE = 80;
+var FORM_GROUP = 40;
+function choice(value) {
+  if (isList(value)) return value.slice(0, 12).map(choice).filter(Boolean).join(", ");
+  if (isDict(value)) return firstOf(value, "label", "value");
+  return safeText(value, 60);
+}
+function optionText(option) {
+  const name = choice(option);
+  const note = isDict(option) && name ? safeText(option.note, FORM_NOTE) : "";
+  return note ? `${name} \u2014 ${note}` : name;
+}
+function chosen(field, options) {
+  const value = field.value;
+  for (const option of options) {
+    if (isDict(option) && !Array.isArray(value) && option.value === value) return choice(option);
+  }
+  return choice(value);
+}
+function textForm(block) {
+  const fields = isList(block.fields) ? block.fields : [];
+  const lines = [];
+  let group = "";
+  for (const field of fields.slice(0, 12)) {
+    if (!isDict(field)) continue;
+    const f = F(field);
+    const label = firstOf(f, "label", "id");
+    if (!label) continue;
+    const heading = safeText(f.group, FORM_GROUP);
+    if (heading && heading !== group) lines.push(`${heading}:`);
+    group = heading;
+    const options = isList(f.options) ? f.options : [];
+    const picked = chosen(f, options);
+    const value = picked ? withUnit(picked, safeText(f.unit, 20)) : "";
+    const listed2 = options.slice(0, 12).map(optionText).filter(Boolean).join(" / ");
+    lines.push(`- ${label}${value ? `: ${value}` : ""}${listed2 ? ` (${listed2})` : ""}`);
+  }
+  if (!lines.length) return "";
+  const title = safeText(block.title);
+  return (title ? [`**${title}**`] : []).concat(lines, ["(answer in a message)"]).join("\n");
+}
+var DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+var MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+var CALENDAR_MAX_EVENTS = 12;
+var UPNEXT_MAX_ITEMS = 12;
+var UPNEXT_STATES = ["overdue", "today", "soon"];
+function calendarDay(text) {
+  if (!isStr(text)) return null;
+  const t = text.trim();
+  if (t.length !== 10) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+  if (!m) return null;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  if (mo < 1 || mo > 12 || d < 1) return null;
+  const date = new Date(Date.UTC(y, mo - 1, d));
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() + 1 !== mo || date.getUTCDate() !== d) return null;
+  return { weekday: (date.getUTCDay() + 6) % 7, day: d, month: mo };
+}
+function dayWords(day) {
+  return `${DAY_NAMES[day.weekday]} ${day.day} ${MONTH_NAMES[day.month - 1]}`;
+}
+function hourMinute(text) {
+  const value = safeText(text, 40);
+  return value.length >= 16 && value[10] === "T" ? value.slice(11, 16) : value.slice(0, 5);
+}
+function textCalendar(block) {
+  const day = calendarDay(block.date);
+  const head = day ? `**${dayWords(day)}**` : "";
+  const lines = [];
+  const events = block.events || [];
+  if (events && !isList(events)) throw new Error("events");
+  for (const event of (isList(events) ? events : []).slice(0, CALENDAR_MAX_EVENTS)) {
+    if (!isDict(event) || !safeText(event.title)) continue;
+    const when2 = hourMinute(event.start) + (event.end ? `\u2013${hourMinute(event.end)}` : "");
+    const place2 = safeText(event.place);
+    lines.push(`- ${when2} ${safeText(event.title)}` + (place2 ? ` \xB7 ${place2}` : ""));
+  }
+  return [head, ...lines.length ? lines : ["- Nothing planned"]].join("\n");
+}
+function deg3(value) {
+  return `${roundHalfEven(value, 0)}\xB0`;
+}
+function hasText(v) {
+  return isStr(v) && v.trim() !== "";
+}
+function textWeather(block) {
+  if (!(isNum(block.temp) && hasText(block.place))) return "";
+  const place2 = safeText(block.place), sky = safeText(block.condition);
+  const parts2 = [`**${deg3(block.temp)}** ` + (sky ? `${sky} in ${place2}` : place2)];
+  if (isNum(block.high)) parts2.push(`High ${deg3(block.high)}`);
+  if (isNum(block.low)) parts2.push(`${deg3(block.low)} tonight`);
+  return parts2.join(" \xB7 ");
+}
+function textUpnext(block) {
+  const lines = [];
+  const rawItems = block.items || [];
+  if (rawItems && !isList(rawItems)) throw new Error("items");
+  for (const item of (isList(rawItems) ? rawItems : []).slice(0, UPNEXT_MAX_ITEMS)) {
+    const day = isDict(item) ? calendarDay(item.date) : null;
+    const title = isDict(item) ? safeText(item.title) : "";
+    if (!(day && title)) continue;
+    const r = F(item);
+    const extra = [safeText(r.time) || safeText(r.amount)];
+    if (UPNEXT_STATES.includes(readStateWord(r.state))) extra.push(safeText(r.stateText));
+    const tail = extra.filter(Boolean).map((e) => ` \xB7 ${e}`).join("");
+    lines.push(`- ${dayWords(day)} \xB7 ${title}${tail}`);
+  }
+  if (!lines.length) return "";
+  const head = safeText(block.title) || "Up next";
+  return [`**${head}**`, ...lines].join("\n");
+}
+function readStateWord(v) {
+  return isStr(v) ? v : "";
+}
+function heatCell(value) {
+  return isNum(value) ? tableCell(value) : "\u2013";
+}
+var RENDERERS = {
+  heading: textHeading,
+  text: textText,
+  divider: () => textDivider(),
+  badge: textBadge,
+  link: textLink,
+  image: textImage,
+  bar: textBar,
+  callout: textCallout,
+  source: textSource,
+  table: textTable,
+  list: textListBlock,
+  checklist: textChecklist,
+  tiles: textTiles,
+  streak: textStreak,
+  progress: textProgress,
+  stat: textStat,
+  kpis: textKpis,
+  chart: textChart,
+  images: textImages,
+  include: textInclude,
+  flip: textFlip,
+  calendar: textCalendar,
+  upnext: textUpnext,
+  weather: textWeather,
+  button: textButton,
+  actions: textActions,
+  layers: textLayers,
+  timeline: textTimeline,
+  heatmap: textHeatmap,
+  flow: textFlow,
+  calculator: textCalculator,
+  simulate: textSimulate,
+  form: textForm,
+  steps: textSteps
+};
+var SIMPLE = {};
+for (const [kind, fn] of Object.entries(RENDERERS)) {
+  SIMPLE[kind] = (block, _depth, labels2) => fn(block, labels2);
+}
+function layoutPieces(block, depth, labels2) {
+  if (block.type === "tabs") {
+    const out = [];
+    for (const tab of isList(block.tabs) ? block.tabs : []) {
+      const children2 = isDict(tab) && isList(tab.children) ? tab.children : [];
+      const inside3 = pieces2(children2, depth + 1, labels2);
+      const label = inside3.length ? safeText(F(tab).label) : "";
+      if (label) out.push(`**${label}**`);
+      out.push(...inside3);
+    }
+    return out;
+  }
+  const children = isList(block.children) ? block.children : [];
+  const title = block.type === "section" ? safeText(block.title) : "";
+  const inside2 = pieces2(children, depth + 1, labels2);
+  return (title && inside2.length ? [`**${title}**`] : []).concat(inside2);
+}
+function renderBlock(block, depth, labels2) {
+  if (!isDict(block) || depth > MAX_DEPTH2) return [];
+  const kind = block.type;
+  if (LAYOUT_TYPES.includes(kind)) return layoutPieces(block, depth, labels2);
+  const renderer = isStr(kind) && Object.hasOwn(SIMPLE, kind) ? SIMPLE[kind] : void 0;
+  const text = renderer ? renderer(block, depth, labels2) : "";
+  return text ? [text] : [];
+}
+function renderSafely(block, depth, labels2) {
+  try {
+    return renderBlock(block, depth, labels2);
+  } catch {
+    return [];
+  }
+}
+function pieces2(blocks, depth, labels2) {
+  const out = [];
+  for (const block of blocks) out.push(...renderSafely(block, depth, labels2));
+  return out;
+}
+function blocksAsMarkdown(blocks) {
+  if (!isList(blocks)) return "";
+  let labels2 = {};
+  try {
+    labels2 = flowLabels(blocks);
+  } catch {
+    labels2 = {};
+  }
+  return pieces2(blocks, 0, labels2).join("\n\n");
+}
+
+// src/host/ExportChrome.tsx
+import { Fragment as Fragment15, jsx as jsx51, jsxs as jsxs47 } from "react/jsx-runtime";
+var CONTAINER = ["row", "section", "grid", "columns", "tabs"];
+function blocksOf(board) {
+  if (Array.isArray(board)) return board;
+  if (board && typeof board === "object" && Array.isArray(board.blocks)) {
+    return board.blocks;
+  }
+  return [];
+}
+function useExportChrome(args) {
+  const { blocks, stored: stored3, getBoard, getHost } = args;
+  const actions = useContext15(BlockActions);
+  const provenance = provenanceOf(blocks);
+  const line = provenanceLine(provenance);
+  const [found, setFound] = useState28([]);
+  const foundRef = useRef17([]);
+  const [lit, setLit] = useState28(null);
+  const [said, setSaid] = useState28(null);
+  const [open, setOpen] = useState28(false);
+  const [failed, setFailed] = useState28(null);
+  const menuButtonRef = useRef17(null);
+  const menuRef = useRef17(null);
+  function scan() {
+    const board = getBoard();
+    const host2 = getHost();
+    const commit = (out2) => {
+      const same = out2.length === foundRef.current.length && out2.every((c, i) => c.root === foundRef.current[i].root && c.block === foundRef.current[i].block && c.left === foundRef.current[i].left && c.top === foundRef.current[i].top);
+      if (same) return;
+      foundRef.current = out2;
+      setFound(out2);
+    };
+    if (!board || !host2) {
+      commit([]);
+      return;
+    }
+    const out = [];
+    const measure = (block, root, kind) => {
+      const r = root.getBoundingClientRect();
+      const t = host2.getBoundingClientRect();
+      const name = kind === "table" ? block.caption ?? "" : block.spec.title ?? block.spec.series[0]?.name ?? "Chart";
+      out.push({ block, root, kind, name, left: Math.round(r.right - t.left) - 34, top: Math.round(r.top - t.top) + 6 });
+    };
+    const walk = (list, els) => {
+      list.forEach((block, i) => {
+        const el = els[i];
+        if (!el) return;
+        if (block.type === "table" || block.type === "chart") {
+          measure(block, el, block.type);
+          return;
+        }
+        if (!CONTAINER.includes(block.type)) return;
+        const root = el;
+        const container = block;
+        if (block.type === "tabs") {
+          const tabs = [...root.querySelectorAll(":scope > .hb-tab-bar > .hb-tab")];
+          const at2 = tabs.findIndex((t) => t.getAttribute("aria-selected") === "true");
+          const panel = root.querySelector(":scope > .hb-tab-panel");
+          const children = container.tabs?.[at2 >= 0 ? at2 : 0]?.children ?? [];
+          if (panel) walk(children, [...panel.children]);
+          return;
+        }
+        if (block.type === "section") {
+          const body = root.querySelector(":scope > .hb-section-body");
+          if (body) walk(container.children ?? [], [...body.children]);
+          return;
+        }
+        const cellClass = block.type === "grid" ? ".hb-grid-cell" : block.type === "row" ? ".hb-row-cell" : ".hb-column";
+        const cells = [...root.querySelectorAll(`:scope > ${cellClass}`)];
+        walk(container.children ?? [], cells.map((c) => c.firstElementChild).filter((c) => !!c));
+      });
+    };
+    walk(blocks, [...board.children]);
+    commit(out);
+  }
+  const scanRef = useRef17(scan);
+  scanRef.current = scan;
+  useLayoutEffect4(() => {
+    scanRef.current();
+  }, [blocks, stored3]);
+  useEffect10(() => {
+    const board = getBoard();
+    if (!board) return;
+    const observer = new MutationObserver(() => scanRef.current());
+    observer.observe(board, { childList: true, subtree: true });
+    const onResize = () => scanRef.current();
+    window.addEventListener("resize", onResize);
+    const onScroll = () => scanRef.current();
+    window.addEventListener("scroll", onScroll, true);
+    let ro = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => scanRef.current());
+      ro.observe(board);
+    }
+    return () => {
+      observer.disconnect();
+      ro?.disconnect();
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onScroll, true);
+    };
+  }, [getBoard]);
+  useEffect10(() => {
+    if (!open) return;
+    const away = (e) => {
+      const node = e.target;
+      if (menuRef.current?.contains(node) || menuButtonRef.current?.contains(node)) return;
+      setOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      setOpen(false);
+      menuButtonRef.current?.focus();
+    };
+    document.addEventListener("pointerdown", away, true);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", away, true);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  function light(e) {
+    const node = e.target;
+    if (node?.closest?.(".hb-export-btn, .hb-export, .hb-export-menu")) return;
+    const at2 = found.findIndex((c) => c.root.contains(node));
+    setLit(at2 >= 0 ? at2 : null);
+  }
+  async function runBlock(c) {
+    if (c.block.type === "table") {
+      saveBlob(tableCsvBlob(c.block, line), `${fileBase(c.block.caption, "table")}.csv`);
+      return;
+    }
+    const blob = await chartPng(c.root, { spec: c.block.spec, provenance: line });
+    if (blob) saveBlob(blob, `${chartFileBase(c.root)}.png`);
+    else setSaid(found.indexOf(c));
+  }
+  function runBoard(kind) {
+    if (stored3 === null || stored3 === void 0) {
+      setFailed("Nothing was exported.");
+      return;
+    }
+    const base = `board-${actions.blockId ?? "board"}`;
+    if (kind === "markdown") {
+      saveBlob(new Blob([markdownFile(blocksAsMarkdown(blocksOf(stored3)), provenance)], {
+        type: "text/markdown;charset=utf-8"
+      }), `${base}.md`);
+    } else {
+      saveBlob(new Blob([jsonFile(stored3)], { type: "application/json" }), `${base}.json`);
+    }
+    setFailed(null);
+    setOpen(false);
+  }
+  const bind = {
+    onPointerMove: (e) => light(e),
+    onPointerLeave: () => setLit(null),
+    onFocus: (e) => light(e),
+    onBlur: (e) => {
+      const to = e.relatedTarget;
+      if (to?.closest?.(".hb-export-btn, .hb-export, .hb-export-menu")) return;
+      setLit(null);
+    }
+  };
+  const menu = /* @__PURE__ */ jsx51(
+    "button",
+    {
+      ref: menuButtonRef,
+      type: "button",
+      className: "hb-export",
+      "aria-label": "Export board",
+      "aria-haspopup": "menu",
+      "aria-expanded": open,
+      onClick: () => {
+        setOpen((o) => !o);
+        setFailed(null);
+      },
+      children: /* @__PURE__ */ jsx51(IconDownload, {})
+    }
+  );
+  const popover = open && /* @__PURE__ */ jsxs47("div", { ref: menuRef, className: "hb-export-menu", role: "menu", "aria-label": "Export the whole board", children: [
+    /* @__PURE__ */ jsx51("button", { type: "button", role: "menuitem", onClick: () => runBoard("markdown"), children: "Markdown" }),
+    /* @__PURE__ */ jsx51("button", { type: "button", role: "menuitem", onClick: () => runBoard("json"), children: "JSON" }),
+    failed && /* @__PURE__ */ jsx51("div", { className: "hb-export-failed", role: "status", "aria-live": "polite", children: failed })
+  ] });
+  const layer = /* @__PURE__ */ jsxs47("div", { className: "hb-export-layer", children: [
+    found.map((c, i) => /* @__PURE__ */ jsx51(
+      "button",
+      {
+        type: "button",
+        className: i === lit ? "hb-export-btn lit" : "hb-export-btn",
+        style: { left: `${c.left}px`, top: `${c.top}px` },
+        "aria-label": `Export ${c.kind === "table" ? "table" : "chart"}${c.name ? ` \u201C${c.name}\u201D` : ""} as ${c.kind === "table" ? "CSV" : "PNG"}`,
+        onClick: () => runBlock(c),
+        children: /* @__PURE__ */ jsx51(IconDownload, {})
+      },
+      i
+    )),
+    said !== null && found[said] && /* @__PURE__ */ jsx51(
+      "span",
+      {
+        className: "hb-export-said",
+        role: "status",
+        "aria-live": "polite",
+        style: { left: `${found[said].left}px`, top: `${found[said].top + 30}px` },
+        children: "No picture could be exported."
+      }
+    )
+  ] });
+  const whole2 = /* @__PURE__ */ jsxs47(Fragment15, { children: [
+    menu,
+    popover
+  ] });
+  return { bind, menu: whole2, layer };
+}
+function IconDownload() {
+  return /* @__PURE__ */ jsx51(
+    "svg",
+    {
+      width: "14",
+      height: "14",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      "aria-hidden": "true",
+      children: /* @__PURE__ */ jsx51("path", { d: "M12 4v10m0 0l-4-4m4 4l4-4M4 19h16" })
+    }
+  );
+}
+
 // src/host/BlockTag.tsx
-import { jsx as jsx51, jsxs as jsxs47 } from "react/jsx-runtime";
+import { jsx as jsx52, jsxs as jsxs48 } from "react/jsx-runtime";
 var ID_PATTERN = /^[0-9a-f]{8}$/;
+function isEnvelopeCarrying(data) {
+  return typeof data === "object" && data !== null && !Array.isArray(data) && "stored" in data;
+}
+var NO_BLOCKS = [];
 function BlockTag({ id, streaming, load }) {
   const validId = typeof id === "string" && ID_PATTERN.test(id);
-  const actions = useContext14(BlockActions);
+  const actions = useContext16(BlockActions);
   const address = validId ? `${actions.sessionScope ?? ""}|${id}` : "";
-<<<<<<< HEAD
-  const [state, setState] = useState27({ kind: "loading" });
-  const [viewing, setViewing] = useState27(null);
-  const [expanded, setExpanded] = useState27(false);
-  const hostRef = useRef15(null);
-  const expandRef = useRef15(null);
-  const closeRef = useRef15(null);
-  const drawn = useRef15(null);
-  const self = useRef15(null);
-=======
-  const [state, setState] = useState28({ kind: "loading" });
-  const [viewing, setViewing] = useState28(null);
-  const drawn = useRef16(null);
-  const self = useRef16(null);
->>>>>>> pr-74
+  const [state, setState] = useState29({ kind: "loading" });
+  const [viewing, setViewing] = useState29(null);
+  const [expanded, setExpanded] = useState29(false);
+  const hostRef = useRef18(null);
+  const expandRef = useRef18(null);
+  const closeRef = useRef18(null);
+  const drawn = useRef18(null);
+  const tagRef = useRef18(null);
+  const self = useRef18(null);
   if (self.current === null) self.current = { token: /* @__PURE__ */ Symbol("hb-tag") };
-  const [role, setRole] = useState28("unknown");
-  const [refresh, setRefresh] = useState28(0);
+  const [role, setRole] = useState29("unknown");
+  const [refresh, setRefresh] = useState29(0);
   const [, force] = useReducer((x) => x + 1, 0);
-  const [live, setLive] = useState28({});
-  useLayoutEffect4(() => {
+  const [live, setLive] = useState29({});
+  const [provenance, setProvenance] = useState29({});
+  useLayoutEffect5(() => {
     if (streaming || !validId) return;
     const token = self.current.token;
     const claim2 = claim(address, token);
@@ -8142,7 +10064,7 @@ function BlockTag({ id, streaming, load }) {
       if (release(address, token)) forgetBlock(id);
     };
   }, [address, id, streaming, validId]);
-  useEffect10(() => {
+  useEffect11(() => {
     if (streaming || !validId || role !== "home") return;
     let alive = true;
     const ask = viewing === null || !actions.rest ? load(id) : actions.rest(`/blocks/${id}?version=${viewing}`);
@@ -8152,15 +10074,15 @@ function BlockTag({ id, streaming, load }) {
         version: boardVersion,
         updatedAt: boardUpdatedAt,
         links: boardLinks,
-<<<<<<< HEAD
         align: boardAlign,
-        textAlign: boardTextAlign
-=======
+        textAlign: boardTextAlign,
+        asOf: boardAsOf,
+        live: boardLive,
         followUps: boardFollowUps
->>>>>>> pr-74
       } = readBlocksNoted(data);
       if (!alive) return;
       if (blocks.length) {
+        const envelope = isEnvelopeCarrying(data) ? data.stored : data;
         const headless = drawn.current === null && viewing === null && (boardVersion ?? 0) >= 2;
         const commitDraw = () => {
           if (!alive) return;
@@ -8168,11 +10090,16 @@ function BlockTag({ id, streaming, load }) {
           if (drawn.current && viewing === null) void promoteOnUpdate(actions.rest, id, drawn.current, blocks);
           if (viewing === null && (boardVersion ?? 0) >= 2) markLiving(id);
           drawn.current = blocks;
-<<<<<<< HEAD
-          setState({ kind: "drawn", blocks, align: boardAlign, textAlign: boardTextAlign });
-=======
-          setState({ kind: "drawn", blocks, followUps: boardFollowUps });
->>>>>>> pr-74
+          setState({
+            kind: "drawn",
+            blocks,
+            stored: envelope,
+            align: boardAlign,
+            textAlign: boardTextAlign,
+            followUps: boardFollowUps
+          });
+          const stale = viewing !== null && boardLive === true;
+          setProvenance({ asOf: boardAsOf, live: stale ? false : boardLive });
           if (viewing === null) {
             setLive({ version: boardVersion, updatedAt: boardUpdatedAt, links: boardLinks });
             setMeta(address, { version: boardVersion, updatedAt: boardUpdatedAt });
@@ -8212,10 +10139,10 @@ function BlockTag({ id, streaming, load }) {
     setExpanded(false);
     expandRef.current?.focus();
   };
-  useEffect10(() => {
+  useEffect11(() => {
     if (expanded) closeRef.current?.focus();
   }, [expanded]);
-  useEffect10(() => {
+  useEffect11(() => {
     if (!expanded) return;
     const onKey = (e) => {
       if (e.key === "Escape") {
@@ -8236,56 +10163,64 @@ function BlockTag({ id, streaming, load }) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [expanded]);
+  const chrome = useExportChrome({
+    blocks: state.kind === "drawn" ? state.blocks : NO_BLOCKS,
+    stored: state.kind === "drawn" ? state.stored : null,
+    getBoard: () => tagRef.current?.querySelector(".hb-blocks") ?? null,
+    getHost: () => tagRef.current
+  });
   if (!validId && !streaming) return null;
-  if (streaming || role === "unknown") return /* @__PURE__ */ jsx51(Note, { text: "drawing\u2026", pulse: true });
-  if (role === "pointer") return /* @__PURE__ */ jsx51(LivePointer, { id, address });
-  if (state.kind === "loading") return /* @__PURE__ */ jsx51(Note, { text: "drawing\u2026", pulse: true });
+  if (streaming || role === "unknown") return /* @__PURE__ */ jsx52(Note, { text: "drawing\u2026", pulse: true });
+  if (role === "pointer") return /* @__PURE__ */ jsx52(LivePointer, { id, address });
+  if (state.kind === "loading") return /* @__PURE__ */ jsx52(Note, { text: "drawing\u2026", pulse: true });
   if (state.kind === "failed") return null;
-<<<<<<< HEAD
-  return /* @__PURE__ */ jsxs45(BlockActions.Provider, { value: { ...actions, blockId: id }, children: [
-    /* @__PURE__ */ jsxs45("div", { className: "hb-tag", children: [
-      /* @__PURE__ */ jsx50(
-        "button",
-        {
-          ref: expandRef,
-          type: "button",
-          className: "hb-expand",
-          "aria-label": "Expand board",
-          "aria-haspopup": "dialog",
-          onClick: () => setExpanded(true),
-          children: /* @__PURE__ */ jsx50(IconExpand, {})
-        }
-      ),
-      /* @__PURE__ */ jsxs45(
-        "div",
-        {
-          ref: hostRef,
-          className: expanded ? "hb-board-host hb-board-overlay" : "hb-board-host",
-          ...expanded ? { role: "dialog", "aria-modal": "true", "aria-label": "Expanded board" } : {},
-          onClick: expanded ? (e) => e.target === e.currentTarget && close() : void 0,
-          children: [
-            expanded && /* @__PURE__ */ jsx50(
-              "button",
-              {
-                ref: closeRef,
-                type: "button",
-                className: "hb-overlay-close",
-                "aria-label": "Close expanded board",
-                onClick: close,
-                children: /* @__PURE__ */ jsx50(IconClose, {})
-              }
-            ),
-            /* @__PURE__ */ jsx50(Blocks, { blocks: state.blocks, boardAlign: state.align, boardTextAlign: state.textAlign })
-          ]
-        }
-      )
-    ] }),
-    (live.version != null || live.links) && /* @__PURE__ */ jsx50(
-=======
-  return /* @__PURE__ */ jsxs47(BlockActions.Provider, { value: { ...actions, blockId: id }, children: [
-    /* @__PURE__ */ jsx51(Blocks, { blocks: state.blocks, boardFollowUps: state.followUps }),
-    (live.version != null || live.links) && /* @__PURE__ */ jsx51(
->>>>>>> pr-74
+  return /* @__PURE__ */ jsx52(BlockActions.Provider, { value: { ...actions, blockId: id }, children: /* @__PURE__ */ jsxs48("div", { className: "hb-tag", ref: tagRef, ...chrome.bind, children: [
+    /* @__PURE__ */ jsx52(
+      "button",
+      {
+        ref: expandRef,
+        type: "button",
+        className: "hb-expand",
+        "aria-label": "Expand board",
+        "aria-haspopup": "dialog",
+        onClick: () => setExpanded(true),
+        children: /* @__PURE__ */ jsx52(IconExpand, {})
+      }
+    ),
+    chrome.menu,
+    /* @__PURE__ */ jsxs48(
+      "div",
+      {
+        ref: hostRef,
+        className: expanded ? "hb-board-host hb-board-overlay" : "hb-board-host",
+        ...expanded ? { role: "dialog", "aria-modal": "true", "aria-label": "Expanded board" } : {},
+        onClick: expanded ? (e) => e.target === e.currentTarget && close() : void 0,
+        children: [
+          expanded && /* @__PURE__ */ jsx52(
+            "button",
+            {
+              ref: closeRef,
+              type: "button",
+              className: "hb-overlay-close",
+              "aria-label": "Close expanded board",
+              onClick: close,
+              children: /* @__PURE__ */ jsx52(IconClose, {})
+            }
+          ),
+          /* @__PURE__ */ jsx52(
+            Blocks,
+            {
+              blocks: state.blocks,
+              boardAlign: state.align,
+              boardTextAlign: state.textAlign,
+              provenance,
+              boardFollowUps: state.followUps
+            }
+          )
+        ]
+      }
+    ),
+    (live.version != null || live.links) && /* @__PURE__ */ jsx52(
       LiveRow,
       {
         id,
@@ -8296,8 +10231,9 @@ function BlockTag({ id, streaming, load }) {
         onShow: setViewing,
         canReach: Boolean(actions.rest)
       }
-    )
-  ] });
+    ),
+    chrome.layer
+  ] }) });
 }
 function tabbableIn(root) {
   const laidOut = root.getClientRects().length > 0;
@@ -8306,10 +10242,10 @@ function tabbableIn(root) {
   );
 }
 function Note({ text, pulse = false }) {
-  return /* @__PURE__ */ jsx51("div", { className: pulse ? "hb-state hb-pulse" : "hb-state", children: text });
+  return /* @__PURE__ */ jsx52("div", { className: pulse ? "hb-state hb-pulse" : "hb-state", children: text });
 }
 function IconExpand() {
-  return /* @__PURE__ */ jsx50(
+  return /* @__PURE__ */ jsx52(
     "svg",
     {
       width: "15",
@@ -8320,12 +10256,12 @@ function IconExpand() {
       strokeWidth: "2",
       strokeLinecap: "round",
       "aria-hidden": "true",
-      children: /* @__PURE__ */ jsx50("path", { d: "M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" })
+      children: /* @__PURE__ */ jsx52("path", { d: "M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" })
     }
   );
 }
 function IconClose() {
-  return /* @__PURE__ */ jsx50(
+  return /* @__PURE__ */ jsx52(
     "svg",
     {
       width: "16",
@@ -8336,16 +10272,16 @@ function IconClose() {
       strokeWidth: "2",
       strokeLinecap: "round",
       "aria-hidden": "true",
-      children: /* @__PURE__ */ jsx50("path", { d: "M6 6l12 12M18 6L6 18" })
+      children: /* @__PURE__ */ jsx52("path", { d: "M6 6l12 12M18 6L6 18" })
     }
   );
 }
 
 // src/live/DashboardView.tsx
-import { useCallback as useCallback2, useEffect as useEffect11, useRef as useRef17, useState as useState29 } from "react";
+import { useCallback as useCallback2, useEffect as useEffect12, useRef as useRef19, useState as useState30 } from "react";
 
 // src/live/RefreshBar.tsx
-import { jsx as jsx52, jsxs as jsxs48 } from "react/jsx-runtime";
+import { jsx as jsx53, jsxs as jsxs49 } from "react/jsx-runtime";
 function when(iso, now = /* @__PURE__ */ new Date()) {
   const at2 = new Date(iso);
   const time = at2.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
@@ -8353,15 +10289,15 @@ function when(iso, now = /* @__PURE__ */ new Date()) {
   return `${at2.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}, ${time}`;
 }
 function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) {
-  return /* @__PURE__ */ jsxs48("div", { className: "hb-refresh", role: "status", children: [
-    /* @__PURE__ */ jsx52("span", { className: "hb-refresh-label", children: label }),
-    /* @__PURE__ */ jsx52("span", { className: "hb-refresh-when", children: at2 ? `updated ${when(at2)}` : "not filled yet" }),
-    schedule && /* @__PURE__ */ jsxs48("span", { className: "hb-refresh-when", children: [
+  return /* @__PURE__ */ jsxs49("div", { className: "hb-refresh", role: "status", children: [
+    /* @__PURE__ */ jsx53("span", { className: "hb-refresh-label", children: label }),
+    /* @__PURE__ */ jsx53("span", { className: "hb-refresh-when", children: at2 ? `updated ${when(at2)}` : "not filled yet" }),
+    schedule && /* @__PURE__ */ jsxs49("span", { className: "hb-refresh-when", children: [
       "\xB7 refreshes ",
       schedule
     ] }),
-    error && /* @__PURE__ */ jsx52("span", { className: "hb-refresh-error", children: error }),
-    /* @__PURE__ */ jsxs48(
+    error && /* @__PURE__ */ jsx53("span", { className: "hb-refresh-error", children: error }),
+    /* @__PURE__ */ jsxs49(
       "button",
       {
         type: "button",
@@ -8370,7 +10306,7 @@ function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) 
         onClick: onRefresh,
         "aria-label": refreshing ? "Refreshing" : `Refresh ${label}`,
         children: [
-          /* @__PURE__ */ jsx52("span", { "aria-hidden": "true", children: "\u21BB" }),
+          /* @__PURE__ */ jsx53("span", { "aria-hidden": "true", children: "\u21BB" }),
           " ",
           refreshing ? "Refreshing\u2026" : "Refresh"
         ]
@@ -8380,7 +10316,7 @@ function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) 
 }
 
 // src/live/DashboardView.tsx
-import { jsx as jsx53, jsxs as jsxs49 } from "react/jsx-runtime";
+import { jsx as jsx54, jsxs as jsxs50 } from "react/jsx-runtime";
 function snapshotOf(b) {
   if (b.snapshots) return b.snapshots;
   if (b.at !== void 0 || b.refreshing !== void 0) {
@@ -8409,10 +10345,10 @@ function signature(ids) {
   return (h >>> 0).toString(36);
 }
 function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, refreshLabel = "Snapshot" }) {
-  const [board, setBoard] = useState29(null);
-  const [missing, setMissing] = useState29(false);
-  const live = useRef17(false);
-  const lastTicks = useRef17({});
+  const [board, setBoard] = useState30(null);
+  const [missing, setMissing] = useState30(false);
+  const live = useRef19(false);
+  const lastTicks = useRef19({});
   const reload = useCallback2(async () => {
     try {
       const next = await load();
@@ -8432,10 +10368,10 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
       setMissing(true);
     }
   }, [load]);
-  useEffect11(() => {
+  useEffect12(() => {
     if (refreshNow) void reload();
   }, [refreshNow, reload]);
-  useEffect11(() => {
+  useEffect12(() => {
     let stop = false;
     let timer;
     const tick = async () => {
@@ -8449,7 +10385,7 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
     };
   }, [reload]);
   if (!board) {
-    return /* @__PURE__ */ jsx53("div", { className: "hb-blocks hb-dash", children: /* @__PURE__ */ jsx53("p", { className: "hb-dash-sub", children: missing ? "This page isn't in this profile. Switch back to the profile it was made in, or ask Hermes to make it here." : "Loading\u2026" }) });
+    return /* @__PURE__ */ jsx54("div", { className: "hb-blocks hb-dash", children: /* @__PURE__ */ jsx54("p", { className: "hb-dash-sub", children: missing ? "This page isn't in this profile. Switch back to the profile it was made in, or ask Hermes to make it here." : "Loading\u2026" }) });
   }
   const ids = checklistsByPath(board.blocks);
   const sig = signature(ids);
@@ -8476,12 +10412,12 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
     if (Object.keys(ticks).length) await saveTicks(ticks);
     return { ok: true };
   };
-  return /* @__PURE__ */ jsxs49("div", { className: "hb-blocks hb-dash", children: [
-    board.blocks[0]?.type !== "briefing" && /* @__PURE__ */ jsxs49("header", { className: "hb-dash-head", children: [
-      /* @__PURE__ */ jsx53("div", { className: "hb-dash-date", children: board.at.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }) }),
-      /* @__PURE__ */ jsx53("h1", { children: board.greeting ?? board.title ?? "Today" })
+  return /* @__PURE__ */ jsxs50("div", { className: "hb-blocks hb-dash", children: [
+    board.blocks[0]?.type !== "briefing" && /* @__PURE__ */ jsxs50("header", { className: "hb-dash-head", children: [
+      /* @__PURE__ */ jsx54("div", { className: "hb-dash-date", children: board.at.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }) }),
+      /* @__PURE__ */ jsx54("h1", { children: board.greeting ?? board.title ?? "Today" })
     ] }),
-    refresh && board.snapshot && /* @__PURE__ */ jsx53(RefreshBar, { label: refreshLabel, ...board.snapshot, onRefresh: async () => {
+    refresh && board.snapshot && /* @__PURE__ */ jsx54(RefreshBar, { label: refreshLabel, ...board.snapshot, onRefresh: async () => {
       setBoard((b) => b ? { ...b, snapshot: { ...b.snapshot, refreshing: true, error: null } } : b);
       try {
         await refresh();
@@ -8489,13 +10425,13 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
         void reload();
       }
     } }),
-    /* @__PURE__ */ jsx53(BlockActions.Provider, { value: {
+    /* @__PURE__ */ jsx54(BlockActions.Provider, { value: {
       // No submit on this surface: a tap's text goes to the composer, and send's word is that fill's own answer.
       send: async (text) => await Promise.resolve(fill(text)) ? "drafted" : "failed",
       fill,
       rest,
       blockId: `dashboard-${sig}`
-    }, children: /* @__PURE__ */ jsx53(Blocks, { blocks: board.blocks }, sig) })
+    }, children: /* @__PURE__ */ jsx54(Blocks, { blocks: board.blocks }, sig) })
   ] });
 }
 
@@ -8527,7 +10463,7 @@ function pageRoutes(register, view) {
 }
 
 // src/live/register.tsx
-import { jsx as jsx54 } from "react/jsx-runtime";
+import { jsx as jsx55 } from "react/jsx-runtime";
 var POLL_MS = 5e3;
 var TODAY_PATH = "/genui-today";
 function registerLive(ctx, fill) {
@@ -8538,7 +10474,7 @@ function registerLive(ctx, fill) {
     area: "routes",
     title: "Today",
     data: { path: TODAY_PATH },
-    render: () => /* @__PURE__ */ jsx54(
+    render: () => /* @__PURE__ */ jsx55(
       DashboardView,
       {
         fill,
@@ -8576,7 +10512,7 @@ function registerLive(ctx, fill) {
       sync();
     }
   };
-  const syncPages = pageRoutes(ctx.register, (slug2) => /* @__PURE__ */ jsx54(
+  const syncPages = pageRoutes(ctx.register, (slug2) => /* @__PURE__ */ jsx55(
     DashboardView,
     {
       fill,
@@ -8627,278 +10563,455 @@ async function openAndFill(text, host2, { waitMs = 2e3, stepMs = 100 } = {}) {
 }
 
 // src/styles/tokens.css
-<<<<<<< HEAD
-var tokens_default = "/* Hermes GenUI: every class starts with hb- so nothing leaks into the app.\n   Colours come from Hermes's own theme variables, so blocks follow light and dark mode. */\n.hb-blocks {\n  --hb-ink: var(--foreground, #1f2328);\n  --hb-ink-2: color-mix(in srgb, var(--hb-ink) 80%, transparent);\n  --hb-muted: var(--ui-text-tertiary, color-mix(in srgb, var(--hb-ink) 55%, transparent));\n  --hb-line: color-mix(in srgb, var(--hb-ink) 10%, transparent);\n  --hb-card: color-mix(in srgb, var(--hb-ink) 3%, transparent);\n  --hb-well: color-mix(in srgb, var(--hb-ink) 6%, transparent);\n  --hb-accent: var(--theme-primary, #2f6fed);\n  --hb-accent-soft: color-mix(in srgb, var(--hb-accent) 13%, transparent);\n  --hb-accent-ink: color-mix(in srgb, var(--hb-accent) 85%, var(--hb-ink));\n  --hb-good: var(--ui-success, #1a7f37);\n  --hb-warn: #c2410c;\n  /* The one tone the theme has no variable for: a red for a value in a bad band (a load over its limit). */\n  --hb-bad: var(--ui-danger, #b42318);\n  /* The page behind the blocks, for the few marks that must hide what's under them (a progress checkpoint). */\n  --hb-surface: var(--background, Canvas);\n  /* A raised card (a chart's hover card). */\n  --hb-shadow: 0 8px 28px rgba(15, 20, 30, 0.14), 0 1px 3px rgba(15, 20, 30, 0.1);\n  /* One curve for everything that moves: transform, opacity and entrance animations. A colour or border\n     fade keeps the browser's own ease, which is right for a tint. */\n  --hb-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);\n  /* Series colours in the order they are handed out, checked so neighbours stay apart for colour-blind readers:\n     blue, amber, green, violet, cyan, red, lime, pink. */\n  --hb-chart-1: #4f7cff;\n  --hb-chart-2: #f59e0b;\n  --hb-chart-3: #10b981;\n  --hb-chart-4: #8b5cf6;\n  --hb-chart-5: #06b6d4;\n  --hb-chart-6: #ef4444;\n  --hb-chart-7: #84cc16;\n  --hb-chart-8: #ec4899;\n\n  display: flex;\n  flex-direction: column;\n  gap: 10px;\n  margin: 8px 0;\n  /* A board stops at a comfortable reading width on a wide screen. */\n  max-width: 1100px;\n  color: var(--hb-ink);\n  font-family: var(--dt-font-sans, inherit);\n  font-size: 14px;\n  line-height: 1.45;\n}\n/* Dark mode (Hermes puts .dark on the page): the warning orange lightened to read on a dark background, a deeper\n   shadow. */\n.dark .hb-blocks {\n  --hb-warn: #f0883e;\n  --hb-bad: var(--ui-danger, #f0796c);\n  --hb-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);\n}\n/* A stronger line, for chart axes, checkboxes and inputs. */\n.hb-blocks { --hb-line-strong: color-mix(in srgb, var(--hb-ink) 18%, transparent); }\n.hb-blocks * { box-sizing: border-box; }\n/* The chat wraps text \"anywhere\", which lets a label in a flex row shrink to one letter per line. Blocks wrap only\n   between words (long words still break when they must). */\n.hb-blocks { overflow-wrap: break-word; }\n/* The chat's prose styles give images, figures and tables their own margins; blocks place their own. */\n.hb-blocks img, .hb-blocks figure, .hb-blocks table { margin: 0; }\n/* Block placement: a board puts a block off the left by drawing it inside a .hb-place box, which fills the column\n   or cell just as the block did and keeps a plain block layout inside. That is the point: a block in a plain block\n   context sizes exactly as it sized unwrapped (a capped card stays its cap, a fit-content table keeps hugging), and\n   the auto margin then shares out only the space the block left over. A block that fills the width (a long line, a\n   table card, prose) shifts by nothing. Never auto-margin a block in a flex column: the margin stops the stretch\n   and the block collapses to its content. Left is how blocks sit already, so a board with no ask anywhere grows no\n   .hb-place at all.\n   The two classes compound on purpose: a block's own root reset (.hb-chart { margin: 0 } in chart.css, the host's\n   figure margin in the line above) ties a single placement class on specificity and wins on load order alone \u2014\n   block css is joined after tokens. Compounded, the ask (0,2,0) outranks every root reset (0,1,0 and 0,1,1), so a\n   chart asked to center centers like every other card (measured in real Chrome: symmetric margins, never flush\n   left). Placed cards keep the width caps their own rules give them; those are duplicated through the wrapper in\n   each block's css. */\n.hb-place { display: flow-root; }\n.hb-place.hb-place-center > * { margin-inline: auto; }\n.hb-place.hb-place-right > * { margin-inline-start: auto; margin-inline-end: 0; }\n/* Text voice: how the words inside a block read (the model's `text_align`, the block's word or the board's\n   default). The voice is a class on the block's wrapper and reaches the words by inheritance; a text-align only\n   moves words that sit in a line box filling the available width, so where a block keeps its words in a\n   shrink-wrapped box, the voice first opens that box (below). The box stays exactly where placement put it, and\n   only blocks whose draw is words (heading, text, stat, callout) ever carry it. Left is how words read anyway,\n   so a board with no ask grows no class and no wrapper. */\n.hb-ta-center { text-align: center; }\n.hb-ta-right { text-align: right; }\n/* The line width a voice needs: text-align is no property of a shrink-wrapped flex item \u2014 a body that hugs its\n   words has no free line for the words to travel on. heading and text are block boxes that already fill their\n   column; a lone stat card fills its column and its label, value and change lines stretch across the card; only\n   the callout sets its words in a non-growing body beside the fixed icon, so where a voice asks, that body is\n   opened to the row beside the icon. Scoped to the voice classes on purpose: a callout nobody asked about keeps\n   every rect it always had. A new text-bearing kind joins TEXT_BEARING (core/Blocks.tsx) only once its words\n   measure at their voice in the Chrome probe (tests/test_layout_alignment.py). */\n.hb-ta-center .hb-callout-body, .hb-ta-right .hb-callout-body { flex: 1 1 auto; min-width: 0; }\n/* A placed kpis row (maintainer note 2): the cards are no ordinary card \u2014 the row is one grid whose auto-fill\n   tracks eat the whole column and park the cards left, so an auto margin on a box that wide never moves\n   (and the wrapper, display:flow-root, fills the width by design). Placed, the empty tracks collapse\n   (auto-fit) and the used ones gather where the ask put them; the grid's box keeps filling the column and a\n   card's own rects stay exactly as the unplaced row measured them. Left asks grow no wrapper at all, so the\n   shipped default row is untouched by these rules \u2014 every selector here sits under a placement class. */\n.hb-place.hb-place-center > .hb-kpis,\n.hb-place.hb-place-right > .hb-kpis { grid-template-columns: repeat(auto-fit, minmax(130px, 200px)); }\n.hb-place.hb-place-center > .hb-kpis { justify-content: center; }\n.hb-place.hb-place-right > .hb-kpis { justify-content: end; }\n";
-=======
-var tokens_default = `/* Hermes GenUI: every class starts with hb- so nothing leaks into the app.
-   Colours come from Hermes's own theme variables, so blocks follow light and dark mode. */
-.hb-blocks {
-  --hb-ink: var(--foreground, #1f2328);
-  --hb-ink-2: color-mix(in srgb, var(--hb-ink) 80%, transparent);
-  --hb-muted: var(--ui-text-tertiary, color-mix(in srgb, var(--hb-ink) 55%, transparent));
-  --hb-line: color-mix(in srgb, var(--hb-ink) 10%, transparent);
-  --hb-card: color-mix(in srgb, var(--hb-ink) 3%, transparent);
-  --hb-well: color-mix(in srgb, var(--hb-ink) 6%, transparent);
-  --hb-accent: var(--theme-primary, #2f6fed);
-  --hb-accent-soft: color-mix(in srgb, var(--hb-accent) 13%, transparent);
-  --hb-accent-ink: color-mix(in srgb, var(--hb-accent) 85%, var(--hb-ink));
-  --hb-good: var(--ui-success, #1a7f37);
-  --hb-warn: #c2410c;
-  /* The one tone the theme has no variable for: a red for a value in a bad band (a load over its limit). */
-  --hb-bad: var(--ui-danger, #b42318);
-  /* The page behind the blocks, for the few marks that must hide what's under them (a progress checkpoint). */
-  --hb-surface: var(--background, Canvas);
-  /* A raised card (a chart's hover card). */
-  --hb-shadow: 0 8px 28px rgba(15, 20, 30, 0.14), 0 1px 3px rgba(15, 20, 30, 0.1);
-  /* One curve for everything that moves: transform, opacity and entrance animations. A colour or border
-     fade keeps the browser's own ease, which is right for a tint. */
-  --hb-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-  /* Series colours in the order they are handed out, checked so neighbours stay apart for colour-blind readers:
-     blue, amber, green, violet, cyan, red, lime, pink. */
-  --hb-chart-1: #4f7cff;
-  --hb-chart-2: #f59e0b;
-  --hb-chart-3: #10b981;
-  --hb-chart-4: #8b5cf6;
-  --hb-chart-5: #06b6d4;
-  --hb-chart-6: #ef4444;
-  --hb-chart-7: #84cc16;
-  --hb-chart-8: #ec4899;
-
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 8px 0;
-  /* A board stops at a comfortable reading width on a wide screen. */
-  max-width: 1100px;
-  color: var(--hb-ink);
-  font-family: var(--dt-font-sans, inherit);
-  font-size: 14px;
-  line-height: 1.45;
-}
-/* Dark mode (Hermes puts .dark on the page): the warning orange lightened to read on a dark background, a deeper
-   shadow. */
-.dark .hb-blocks {
-  --hb-warn: #f0883e;
-  --hb-bad: var(--ui-danger, #f0796c);
-  --hb-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
-}
-/* A stronger line, for chart axes, checkboxes and inputs. */
-.hb-blocks { --hb-line-strong: color-mix(in srgb, var(--hb-ink) 18%, transparent); }
-.hb-blocks * { box-sizing: border-box; }
-/* The chat wraps text "anywhere", which lets a label in a flex row shrink to one letter per line. Blocks wrap only
-   between words (long words still break when they must). */
-.hb-blocks { overflow-wrap: break-word; }
-/* The chat's prose styles give images, figures and tables their own margins; blocks place their own. */
-.hb-blocks img, .hb-blocks figure, .hb-blocks table { margin: 0; }
-/* The follow-up strip: the quiet line of taps (core/FollowUps.tsx) a board grows when its envelope offers
-   follow-ups. The row is width:0 + min-width:100% on purpose \u2014 the same trick a shipped tools row uses:
-   it fills the board's column without ever contributing its own width to a fit-content hug, so the strip can
-   never widen a board that hugs. Pills WRAP their labels and the row WRAPS its pills: the whole message is the
-   point of the tap, so no board is too narrow to read one \u2014 height may grow, width never, nothing clips, no
-   nowrap and no ellipsis. Pinned in real Chrome by tests/test_follow_ups_chrome.py. */
-.hb-followups {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 6px 8px;
-  width: 0;
-  min-width: 100%;
-  box-sizing: border-box;
-  padding: 2px 0 0;
-}
-.hb-followups .hb-pill {
-  flex: 0 1 auto;
-  min-width: 0;
-  min-height: 28px;
-  padding: 4px 12px;
-  font-size: 12px;
-}
-.hb-followups .hb-followup-label { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
-/* The word the strip says is only ever the host's own answer to the LAST tap (core/FollowUps.tsx), and it
-   follows the row's rule: WRAP, never clip \u2014 height may grow, width never. At rest it carries no text and
-   costs the board nothing. */
-.hb-followups-said {
-  flex: 0 1 auto;
-  min-width: 0;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  font-size: 12px;
-  color: var(--hb-muted);
-}
+var tokens_default = `/* Hermes GenUI: every class starts with hb- so nothing leaks into the app.\r
+   Colours come from Hermes's own theme variables, so blocks follow light and dark mode. */\r
+.hb-blocks {\r
+  --hb-ink: var(--foreground, #1f2328);\r
+  --hb-ink-2: color-mix(in srgb, var(--hb-ink) 80%, transparent);\r
+  --hb-muted: var(--ui-text-tertiary, color-mix(in srgb, var(--hb-ink) 55%, transparent));\r
+  --hb-line: color-mix(in srgb, var(--hb-ink) 10%, transparent);\r
+  --hb-card: color-mix(in srgb, var(--hb-ink) 3%, transparent);\r
+  --hb-well: color-mix(in srgb, var(--hb-ink) 6%, transparent);\r
+  --hb-accent: var(--theme-primary, #2f6fed);\r
+  --hb-accent-soft: color-mix(in srgb, var(--hb-accent) 13%, transparent);\r
+  --hb-accent-ink: color-mix(in srgb, var(--hb-accent) 85%, var(--hb-ink));\r
+  --hb-good: var(--ui-success, #1a7f37);\r
+  --hb-warn: #c2410c;\r
+  /* The one tone the theme has no variable for: a red for a value in a bad band (a load over its limit). */\r
+  --hb-bad: var(--ui-danger, #b42318);\r
+  /* The page behind the blocks, for the few marks that must hide what's under them (a progress checkpoint). */\r
+  --hb-surface: var(--background, Canvas);\r
+  /* A raised card (a chart's hover card). */\r
+  --hb-shadow: 0 8px 28px rgba(15, 20, 30, 0.14), 0 1px 3px rgba(15, 20, 30, 0.1);\r
+  /* One curve for everything that moves: transform, opacity and entrance animations. A colour or border\r
+     fade keeps the browser's own ease, which is right for a tint. */\r
+  --hb-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);\r
+  /* Series colours in the order they are handed out, checked so neighbours stay apart for colour-blind readers:\r
+     blue, amber, green, violet, cyan, red, lime, pink. */\r
+  --hb-chart-1: #4f7cff;\r
+  --hb-chart-2: #f59e0b;\r
+  --hb-chart-3: #10b981;\r
+  --hb-chart-4: #8b5cf6;\r
+  --hb-chart-5: #06b6d4;\r
+  --hb-chart-6: #ef4444;\r
+  --hb-chart-7: #84cc16;\r
+  --hb-chart-8: #ec4899;\r
+\r
+  display: flex;\r
+  flex-direction: column;\r
+  gap: 10px;\r
+  margin: 8px 0;\r
+  /* A board stops at a comfortable reading width on a wide screen. */\r
+  max-width: 1100px;\r
+  color: var(--hb-ink);\r
+  font-family: var(--dt-font-sans, inherit);\r
+  font-size: 14px;\r
+  line-height: 1.45;\r
+}\r
+/* Dark mode (Hermes puts .dark on the page): the warning orange lightened to read on a dark background, a deeper\r
+   shadow. */\r
+.dark .hb-blocks {\r
+  --hb-warn: #f0883e;\r
+  --hb-bad: var(--ui-danger, #f0796c);\r
+  --hb-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);\r
+}\r
+/* A stronger line, for chart axes, checkboxes and inputs. */\r
+.hb-blocks { --hb-line-strong: color-mix(in srgb, var(--hb-ink) 18%, transparent); }\r
+.hb-blocks * { box-sizing: border-box; }\r
+/* The chat wraps text "anywhere", which lets a label in a flex row shrink to one letter per line. Blocks wrap only\r
+   between words (long words still break when they must). */\r
+.hb-blocks { overflow-wrap: break-word; }\r
+/* The chat's prose styles give images, figures and tables their own margins; blocks place their own. */\r
+.hb-blocks img, .hb-blocks figure, .hb-blocks table { margin: 0; }\r
+/* Block placement: a board puts a block off the left by drawing it inside a .hb-place box, which fills the column\r
+   or cell just as the block did and keeps a plain block layout inside. That is the point: a block in a plain block\r
+   context sizes exactly as it sized unwrapped (a capped card stays its cap, a fit-content table keeps hugging), and\r
+   the auto margin then shares out only the space the block left over. A block that fills the width (a long line, a\r
+   table card, prose) shifts by nothing. Never auto-margin a block in a flex column: the margin stops the stretch\r
+   and the block collapses to its content. Left is how blocks sit already, so a board with no ask anywhere grows no\r
+   .hb-place at all.\r
+   The two classes compound on purpose: a block's own root reset (.hb-chart { margin: 0 } in chart.css, the host's\r
+   figure margin in the line above) ties a single placement class on specificity and wins on load order alone \u2014\r
+   block css is joined after tokens. Compounded, the ask (0,2,0) outranks every root reset (0,1,0 and 0,1,1), so a\r
+   chart asked to center centers like every other card (measured in real Chrome: symmetric margins, never flush\r
+   left). Placed cards keep the width caps their own rules give them; those are duplicated through the wrapper in\r
+   each block's css. */\r
+.hb-place { display: flow-root; }\r
+.hb-place.hb-place-center > * { margin-inline: auto; }\r
+.hb-place.hb-place-right > * { margin-inline-start: auto; margin-inline-end: 0; }\r
+/* Text voice: how the words inside a block read (the model's \`text_align\`, the block's word or the board's\r
+   default). The voice is a class on the block's wrapper and reaches the words by inheritance; a text-align only\r
+   moves words that sit in a line box filling the available width, so where a block keeps its words in a\r
+   shrink-wrapped box, the voice first opens that box (below). The box stays exactly where placement put it, and\r
+   only blocks whose draw is words (heading, text, stat, callout) ever carry it. Left is how words read anyway,\r
+   so a board with no ask grows no class and no wrapper. */\r
+.hb-ta-center { text-align: center; }\r
+.hb-ta-right { text-align: right; }\r
+/* The line width a voice needs: text-align is no property of a shrink-wrapped flex item \u2014 a body that hugs its\r
+   words has no free line for the words to travel on. heading and text are block boxes that already fill their\r
+   column; a lone stat card fills its column and its label, value and change lines stretch across the card; only\r
+   the callout sets its words in a non-growing body beside the fixed icon, so where a voice asks, that body is\r
+   opened to the row beside the icon. Scoped to the voice classes on purpose: a callout nobody asked about keeps\r
+   every rect it always had. A new text-bearing kind joins TEXT_BEARING (core/Blocks.tsx) only once its words\r
+   measure at their voice in the Chrome probe (tests/test_layout_alignment.py). */\r
+.hb-ta-center .hb-callout-body, .hb-ta-right .hb-callout-body { flex: 1 1 auto; min-width: 0; }\r
+/* A placed kpis row (maintainer note 2): the cards are no ordinary card \u2014 the row is one grid whose auto-fill\r
+   tracks eat the whole column and park the cards left, so an auto margin on a box that wide never moves\r
+   (and the wrapper, display:flow-root, fills the width by design). Placed, the empty tracks collapse\r
+   (auto-fit) and the used ones gather where the ask put them; the grid's box keeps filling the column and a\r
+   card's own rects stay exactly as the unplaced row measured them. Left asks grow no wrapper at all, so the\r
+   shipped default row is untouched by these rules \u2014 every selector here sits under a placement class. */\r
+.hb-place.hb-place-center > .hb-kpis,\r
+.hb-place.hb-place-right > .hb-kpis { grid-template-columns: repeat(auto-fit, minmax(130px, 200px)); }\r
+.hb-place.hb-place-center > .hb-kpis { justify-content: center; }\r
+.hb-place.hb-place-right > .hb-kpis { justify-content: end; }\r
+/* The provenance footer: the quiet lines a board grows when its envelope says as_of or live \u2014 the source on its\r
+   own row, then the joined line: each chart's own source, the date \xB7 the word Live or Snapshot. The source keeps\r
+   its own row (a flex child of the join line would shrink-wrap it to its content; as a row of the footer's column\r
+   it fills the width exactly like a block of the board). The joins on the line are plain text\r
+   (.hb-provenance-source needs no rule of its own \u2014 the line's voice already fits them). The badge always carries\r
+   its word; colour (the existing good green for Live) only sits beside it. */\r
+.hb-provenance {\r
+  display: flex;\r
+  flex-direction: column;\r
+  gap: 4px;\r
+  margin-top: 2px;\r
+  font-size: 11.5px;\r
+  color: var(--hb-muted);\r
+}\r
+.hb-provenance-line {\r
+  display: flex;\r
+  flex-wrap: wrap;\r
+  align-items: baseline;\r
+  gap: 6px;\r
+}\r
+.hb-provenance .hb-source { font-size: inherit; }\r
+.hb-provenance-dot { opacity: 0.7; }\r
+.hb-provenance-badge {\r
+  padding: 0 7px;\r
+  border: 1px solid var(--hb-line-strong);\r
+  border-radius: 999px;\r
+  font-size: 10.5px;\r
+  color: var(--hb-ink-2);\r
+}\r
+.hb-provenance-badge[data-live="live"] {\r
+  color: var(--hb-good);\r
+  border-color: color-mix(in srgb, var(--hb-good) 45%, transparent);\r
+}\r
+/* The follow-up strip: the quiet line of taps (core/FollowUps.tsx) a board grows when its envelope offers\r
+   follow-ups. The row is width:0 + min-width:100% on purpose \u2014 the same trick a shipped tools row uses:\r
+   it fills the board's column without ever contributing its own width to a fit-content hug, so the strip can\r
+   never widen a board that hugs. Pills WRAP their labels and the row WRAPS its pills: the whole message is the\r
+   point of the tap, so no board is too narrow to read one \u2014 height may grow, width never, nothing clips, no\r
+   nowrap and no ellipsis. Pinned in real Chrome by tests/test_follow_ups_chrome.py. */\r
+.hb-followups {\r
+  display: flex;\r
+  flex-wrap: wrap;\r
+  align-items: baseline;\r
+  gap: 6px 8px;\r
+  width: 0;\r
+  min-width: 100%;\r
+  box-sizing: border-box;\r
+  padding: 2px 0 0;\r
+}\r
+.hb-followups .hb-pill {\r
+  flex: 0 1 auto;\r
+  min-width: 0;\r
+  min-height: 28px;\r
+  padding: 4px 12px;\r
+  font-size: 12px;\r
+}\r
+.hb-followups .hb-followup-label { min-width: 0; white-space: normal; overflow-wrap: anywhere; }\r
+/* The word the strip says is only ever the host's own answer to the LAST tap (core/FollowUps.tsx), and it\r
+   follows the row's rule: WRAP, never clip \u2014 height may grow, width never. At rest it carries no text and\r
+   costs the board nothing. */\r
+.hb-followups-said {\r
+  flex: 0 1 auto;\r
+  min-width: 0;\r
+  white-space: normal;\r
+  overflow-wrap: anywhere;\r
+  font-size: 12px;\r
+  color: var(--hb-muted);\r
+}\r
 `;
->>>>>>> pr-74
 
 // src/styles/shared.css
 var shared_default = "/* Pieces several blocks share: cards, chips, pill buttons and the motion they use. */\n/* A block that threw while drawing: a quiet one-line note in its place (core/Blocks.tsx). */\n.hb-block-failed {\n  margin: 0;\n  font-size: 12px;\n  line-height: 18px;\n  color: var(--hb-muted);\n}\n/* Cards */\n.hb-card {\n  background: var(--hb-card);\n  border: 1px solid var(--hb-line);\n  border-radius: 16px;\n  padding: 14px 16px;\n}\n.hb-card-title {\n  font-size: 16px;\n  line-height: 22px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n}\n/* Chips */\n.hb-chip {\n  display: inline-flex;\n  align-items: center;\n  align-self: flex-start;\n  gap: 4px;\n  padding: 2px 9px;\n  border-radius: 999px;\n  font-size: 12px;\n  font-weight: 600;\n  line-height: 18px;\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-chip-soft { background: var(--hb-accent-soft); color: var(--hb-accent-ink); }\n.hb-chip-good { background: color-mix(in srgb, var(--hb-good) 14%, transparent); color: var(--hb-good); }\n.hb-chip-warn { background: color-mix(in srgb, var(--hb-warn) 13%, transparent); color: var(--hb-warn); }\n.hb-chip-plain { background: var(--hb-well); color: var(--hb-ink-2); }\n/* Pill buttons that act (actions, button, a form's Send): soft for buttons in a reply, solid for a form's Send. */\n.hb-pill {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  min-height: 36px;\n  max-width: 100%;\n  padding: 7px 14px;\n  border: 0;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n  font: inherit;\n  font-size: 13.5px;\n  font-weight: 600;\n  line-height: 18px;\n  text-align: left;\n  text-decoration: none;\n  cursor: pointer;\n  transition: background 0.15s ease, transform 0.1s var(--hb-ease-out);\n}\n.hb-pill svg { flex: none; }\n.hb-pill:hover { background: color-mix(in srgb, var(--hb-accent) 22%, transparent); }\n.hb-pill:active { transform: scale(0.97); }\n.hb-pill:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-pill-solid { background: var(--hb-accent); color: #fff; }\n.hb-pill-solid:hover { background: color-mix(in srgb, var(--hb-accent) 86%, #000); }\n.hb-pill:disabled { opacity: 0.45; cursor: default; transform: none; }\n.hb-pill-solid:disabled:hover { background: var(--hb-accent); }\n/* Motion: a panel appearing (section, tabs, photo overlay) and a bar growing (bar, progress). */\n.hb-appear { animation: hb-appear 0.22s var(--hb-ease-out); }\n@keyframes hb-appear { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }\n@keyframes hb-grow { from { transform: scaleX(0); } }\n@media (prefers-reduced-motion: reduce) {\n  .hb-pill { transition: none; }\n  .hb-appear { animation: none; }\n}\n";
 
 // src/host/blockTag.css
-var blockTag_default = `/* The block tag's own states */
-.hb-state {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 8px 0;
-  padding: 10px 14px;
-  max-width: 100%;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--foreground, #1f2328) 5%, transparent);
-  color: var(--ui-text-tertiary, #6b7280);
-  font-size: 13px;
-}
-.hb-pulse { animation: hb-pulse 1.2s ease-in-out infinite; }
-@keyframes hb-pulse { 50% { opacity: 0.45; } }
-@media (prefers-reduced-motion: reduce) {
-  .hb-pulse { animation: none; }
-}
-
-/* --- Living Boards ---------------------------------------------------------------------------
-   The quiet row a live board says under itself, and the pointer a later tag of the same address
-   draws instead of a second board. Both sit OUTSIDE .hb-blocks (the board's own DOM is untouched)
-   and animate nothing: with no motion of their own there is nothing for prefers-reduced-motion
-   to still. Colors ride the app's own variables with fallbacks, as the chrome row's do. */
-.hb-live {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  align-items: center;
-  margin-top: 10px;
-  padding: 6px 10px;
-  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 10%, transparent);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--background, #ffffff) 60%, transparent);
-  color: var(--ui-text-tertiary, #6b7280);
-  font-size: 12px;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
-}
-.hb-live-line { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.hb-live-mark { color: var(--ui-success, #1a7f37); }
-.hb-live-version { font-weight: 600; color: var(--foreground, #1f2328); }
-.hb-live-addr {
-  font-family: ui-monospace, monospace;
-  font-size: 11px;
-  padding: 1px 6px;
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--foreground, #1f2328) 7%, transparent);
-}
-.hb-live-history, .hb-live-back, .hb-link-chip {
-  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
-  border-radius: 999px;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  padding: 1px 10px;
-  cursor: pointer;
-}
-.hb-live-history[aria-pressed="true"], .hb-link-chip[aria-expanded="true"] {
-  border-color: var(--theme-primary, #e0a83c);
-  color: var(--foreground, #1f2328);
-}
-.hb-links { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.hb-links-label { font-style: italic; }
-.hb-link { display: contents; }
-.hb-linked {
-  width: 100%;
-  margin-top: 4px;
-  padding: 10px 12px;
-  border: 1px dashed color-mix(in srgb, var(--foreground, #1f2328) 22%, transparent);
-  border-radius: 10px;
-}
-.hb-linked-head {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 8px;
-  color: var(--ui-text-tertiary, #6b7280);
-  font-size: 12px;
-  overflow-wrap: anywhere;
-}
-.hb-linked-gone { color: var(--ui-text-tertiary, #6b7280); font-style: italic; }
-.hb-live-pointer {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin: 6px 0;
-  color: var(--ui-text-tertiary, #6b7280);
-  font-size: 13px;
-  overflow-wrap: anywhere;
-}
-/* Expand / full-screen board (host/BlockTag.tsx): the images strip's full-size overlay pattern, raised to a
-   whole board \u2014 the photo scrim's own numbers (fixed, same z, same appear animation) and the same way of
-   closing (Escape, the scrim, a close control). One honest correction: a stateless photo may be re-drawn at
-   full size, a board may not \u2014 its blocks carry live state. So the host wrapper (.hb-board-host) is a plain
-   block container at rest, costing the inline board nothing, and IS the dialog while expanded: the ONE drawn
-   .hb-blocks is lifted into it, not duplicated, and settles back into flow on close. The control lives
-   OUTSIDE .hb-blocks and out of flow (absolute); it stays quiet until the pointer is on the board or the key
-   reaches it. Inside the dialog the board's 1100px reading cap lifts, so full-width blocks ride the wider
-   container, while every .hb-blocks > X cap (the 720px cards, the fit-content table) is the board's own rule
-   and keeps its number in both views. Chrome measures exactly that (tests/test_expand_fullscreen.py). */
-.hb-tag { position: relative; }
-.hb-expand {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--background, #ffffff) 85%, transparent);
-  color: var(--ui-text-tertiary, #6b7280);
-  cursor: pointer;
-  opacity: 0;
-}
-.hb-tag:hover .hb-expand, .hb-expand:focus-visible { opacity: 1; }
-@media (prefers-reduced-motion: reduce) {
-  .hb-expand { transition: none; }
-}
-.hb-board-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 32px;
-  background: rgba(0, 0, 0, 0.82);
-  animation: hb-appear 0.18s ease-out;
-}
-/* The wider container, in the ONE shipped rule: the expanded board box is a single element \u2014 it sheds the
-   reading cap and its margin (folded into the panel's own padding) and carries the paper of its own accord.
-   The caps are .hb-blocks > X rules, scoped to the blocks themselves \u2014 this selector reaches none of them. */
-.hb-board-overlay .hb-blocks {
-  box-sizing: border-box;
-  width: min(1600px, 100%);
-  max-width: none;
-  max-height: 100%;
-  overflow: auto;
-  margin: 0;
-  padding: 24px;
-  border-radius: 16px;
-  background: var(--background, Canvas);
-}
-.hb-overlay-close {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  border-radius: 9px;
-  background: rgba(0, 0, 0, 0.45);
-  color: #fff;
-  cursor: pointer;
-}
-.hb-overlay-close:hover { background: rgba(0, 0, 0, 0.65); }
+var blockTag_default = `/* The block tag's own states */\r
+.hb-state {\r
+  display: flex;\r
+  align-items: center;\r
+  gap: 8px;\r
+  margin: 8px 0;\r
+  padding: 10px 14px;\r
+  max-width: 100%;\r
+  border-radius: 14px;\r
+  background: color-mix(in srgb, var(--foreground, #1f2328) 5%, transparent);\r
+  color: var(--ui-text-tertiary, #6b7280);\r
+  font-size: 13px;\r
+}\r
+.hb-pulse { animation: hb-pulse 1.2s ease-in-out infinite; }\r
+@keyframes hb-pulse { 50% { opacity: 0.45; } }\r
+@media (prefers-reduced-motion: reduce) {\r
+  .hb-pulse { animation: none; }\r
+}\r
+\r
+/* --- Living Boards ---------------------------------------------------------------------------\r
+   The quiet row a live board says under itself, and the pointer a later tag of the same address\r
+   draws instead of a second board. Both sit OUTSIDE .hb-blocks (the board's own DOM is untouched)\r
+   and animate nothing: with no motion of their own there is nothing for prefers-reduced-motion\r
+   to still. Colors ride the app's own variables with fallbacks, as the chrome row's do. */\r
+.hb-live {\r
+  display: flex;\r
+  flex-wrap: wrap;\r
+  gap: 6px 14px;\r
+  align-items: center;\r
+  margin-top: 10px;\r
+  padding: 6px 10px;\r
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 10%, transparent);\r
+  border-radius: 10px;\r
+  background: color-mix(in srgb, var(--background, #ffffff) 60%, transparent);\r
+  color: var(--ui-text-tertiary, #6b7280);\r
+  font-size: 12px;\r
+  line-height: 1.5;\r
+  overflow-wrap: anywhere;\r
+}\r
+.hb-live-line { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }\r
+.hb-live-mark { color: var(--ui-success, #1a7f37); }\r
+.hb-live-version { font-weight: 600; color: var(--foreground, #1f2328); }\r
+.hb-live-addr {\r
+  font-family: ui-monospace, monospace;\r
+  font-size: 11px;\r
+  padding: 1px 6px;\r
+  border-radius: 6px;\r
+  background: color-mix(in srgb, var(--foreground, #1f2328) 7%, transparent);\r
+}\r
+.hb-live-history, .hb-live-back, .hb-link-chip {\r
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);\r
+  border-radius: 999px;\r
+  background: transparent;\r
+  color: inherit;\r
+  font: inherit;\r
+  padding: 1px 10px;\r
+  cursor: pointer;\r
+}\r
+.hb-live-history[aria-pressed="true"], .hb-link-chip[aria-expanded="true"] {\r
+  border-color: var(--theme-primary, #e0a83c);\r
+  color: var(--foreground, #1f2328);\r
+}\r
+.hb-links { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }\r
+.hb-links-label { font-style: italic; }\r
+.hb-link { display: contents; }\r
+.hb-linked {\r
+  width: 100%;\r
+  margin-top: 4px;\r
+  padding: 10px 12px;\r
+  border: 1px dashed color-mix(in srgb, var(--foreground, #1f2328) 22%, transparent);\r
+  border-radius: 10px;\r
+}\r
+.hb-linked-head {\r
+  display: flex;\r
+  gap: 8px;\r
+  align-items: center;\r
+  margin-bottom: 8px;\r
+  color: var(--ui-text-tertiary, #6b7280);\r
+  font-size: 12px;\r
+  overflow-wrap: anywhere;\r
+}\r
+.hb-linked-gone { color: var(--ui-text-tertiary, #6b7280); font-style: italic; }\r
+.hb-live-pointer {\r
+  display: flex;\r
+  gap: 8px;\r
+  align-items: center;\r
+  flex-wrap: wrap;\r
+  margin: 6px 0;\r
+  color: var(--ui-text-tertiary, #6b7280);\r
+  font-size: 13px;\r
+  overflow-wrap: anywhere;\r
+}\r
+/* Expand / full-screen board (host/BlockTag.tsx): the images strip's full-size overlay pattern, raised to a\r
+   whole board \xE2\u20AC\u201D the photo scrim's own numbers (fixed, same z, same appear animation) and the same way of\r
+   closing (Escape, the scrim, a close control). One honest correction: a stateless photo may be re-drawn at\r
+   full size, a board may not \xE2\u20AC\u201D its blocks carry live state. So the host wrapper (.hb-board-host) is a plain\r
+   block container at rest, costing the inline board nothing, and IS the dialog while expanded: the ONE drawn\r
+   .hb-blocks is lifted into it, not duplicated, and settles back into flow on close. The control lives\r
+   OUTSIDE .hb-blocks and out of flow (absolute); it stays quiet until the pointer is on the board or the key\r
+   reaches it. Inside the dialog the board's 1100px reading cap lifts, so full-width blocks ride the wider\r
+   container, while every .hb-blocks > X cap (the 720px cards, the fit-content table) is the board's own rule\r
+   and keeps its number in both views. Chrome measures exactly that (tests/test_expand_fullscreen.py). */\r
+.hb-tag { position: relative; }\r
+.hb-expand {\r
+  position: absolute;\r
+  top: 6px;\r
+  right: 6px;\r
+  z-index: 1;\r
+  display: inline-flex;\r
+  align-items: center;\r
+  justify-content: center;\r
+  width: 28px;\r
+  height: 28px;\r
+  padding: 0;\r
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);\r
+  border-radius: 8px;\r
+  background: color-mix(in srgb, var(--background, #ffffff) 85%, transparent);\r
+  color: var(--ui-text-tertiary, #6b7280);\r
+  cursor: pointer;\r
+  opacity: 0;\r
+}\r
+.hb-tag:hover .hb-expand, .hb-expand:focus-visible { opacity: 1; }\r
+@media (prefers-reduced-motion: reduce) {\r
+  .hb-expand { transition: none; }\r
+}\r
+.hb-board-overlay {\r
+  position: fixed;\r
+  inset: 0;\r
+  z-index: 2147483000;\r
+  display: flex;\r
+  align-items: center;\r
+  justify-content: center;\r
+  padding: 32px;\r
+  background: rgba(0, 0, 0, 0.82);\r
+  animation: hb-appear 0.18s ease-out;\r
+}\r
+/* The wider container, in the ONE shipped rule: the expanded board box is a single element \xE2\u20AC\u201D it sheds the\r
+   reading cap and its margin (folded into the panel's own padding) and carries the paper of its own accord.\r
+   The caps are .hb-blocks > X rules, scoped to the blocks themselves \xE2\u20AC\u201D this selector reaches none of them. */\r
+.hb-board-overlay .hb-blocks {\r
+  box-sizing: border-box;\r
+  width: min(1600px, 100%);\r
+  max-width: none;\r
+  max-height: 100%;\r
+  overflow: auto;\r
+  margin: 0;\r
+  padding: 24px;\r
+  border-radius: 16px;\r
+  background: var(--background, Canvas);\r
+}\r
+.hb-overlay-close {\r
+  position: absolute;\r
+  top: 14px;\r
+  right: 14px;\r
+  display: inline-flex;\r
+  align-items: center;\r
+  justify-content: center;\r
+  width: 32px;\r
+  height: 32px;\r
+  padding: 0;\r
+  border: 1px solid rgba(255, 255, 255, 0.35);\r
+  border-radius: 9px;\r
+  background: rgba(0, 0, 0, 0.45);\r
+  color: #fff;\r
+  cursor: pointer;\r
+}\r
+.hb-overlay-close:hover { background: rgba(0, 0, 0, 0.65); }\r
+\r
+/* Export affordance (host/ExportChrome.tsx): deterministic host acts, zero requests \xE2\u20AC\u201D a chart's PNG (the SVG\r
+   kinds and the DOM-drawn bars alike), a table's CSV, the whole board's Markdown or JSON from the envelope the\r
+   page already holds. The board menu sits in the tag's top corner: quiet until the pointer is on the board or\r
+   the key reaches it, and visible while its own menu is open. The per-block corner buttons live in a layer\r
+   OUTSIDE .hb-blocks: the board's drawing stays exactly what it always was, the one mounted instance is never\r
+   re-rendered by the chrome, and the walk pairs data with the elements the reader is looking at. Every\r
+   exportable block's button is ALWAYS in the DOM and in the tab order (keyboard readers reach it without a\r
+   mouse); at rest it is merely invisible and unreachable to the pointer (opacity 0, pointer-events none \xE2\u20AC\u201D\r
+   neither keeps focus away), and the pointer lights its corner while any focus, especially a keyboard one,\r
+   shows it whole. The menu's word (a failure) and the corner's word (no 2D painting here) WRAP: they may grow\r
+   taller, never wider than their box, the rule every status word here keeps. Controls sit outside .hb-blocks,\r
+   so --hb-* tokens are undefined here: the app tokens, with fallbacks. The tag itself takes position:relative\r
+   and no part in layout beyond what it had \xE2\u20AC\u201D it only anchors the layer and the menu. */\r
+.hb-export {\r
+  position: absolute;\r
+  top: 6px;\r
+  right: 6px;\r
+  z-index: 1;\r
+  display: inline-flex;\r
+  align-items: center;\r
+  justify-content: center;\r
+  width: 28px;\r
+  height: 28px;\r
+  padding: 0;\r
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);\r
+  border-radius: 8px;\r
+  background: color-mix(in srgb, var(--background, #ffffff) 85%, transparent);\r
+  color: var(--ui-text-tertiary, #6b7280);\r
+  cursor: pointer;\r
+  opacity: 0;\r
+}\r
+.hb-tag:hover .hb-export, .hb-export:focus-visible, .hb-export[aria-expanded="true"] { opacity: 1; }\r
+.hb-export-menu {\r
+  position: absolute;\r
+  top: 38px;\r
+  right: 6px;\r
+  z-index: 3;\r
+  display: flex;\r
+  flex-direction: column;\r
+  gap: 2px;\r
+  min-width: 150px;\r
+  max-width: 240px;\r
+  padding: 4px;\r
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);\r
+  border-radius: 10px;\r
+  background: var(--background, #ffffff);\r
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);\r
+}\r
+.hb-export-menu > button {\r
+  display: block;\r
+  width: 100%;\r
+  padding: 6px 10px;\r
+  border: 0;\r
+  border-radius: 7px;\r
+  background: none;\r
+  color: var(--foreground, #1f2328);\r
+  font: inherit;\r
+  font-size: 13px;\r
+  text-align: left;\r
+  cursor: pointer;\r
+}\r
+.hb-export-menu > button:hover, .hb-export-menu > button:focus-visible {\r
+  background: color-mix(in srgb, var(--foreground, #1f2328) 7%, transparent);\r
+}\r
+.hb-export-failed {\r
+  padding: 4px 10px 6px;\r
+  color: var(--ui-text-tertiary, #6b7280);\r
+  font-size: 12px;\r
+  white-space: normal;\r
+  overflow-wrap: anywhere;\r
+}\r
+.hb-export-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; }\r
+.hb-export-btn {\r
+  position: absolute;\r
+  display: inline-flex;\r
+  align-items: center;\r
+  justify-content: center;\r
+  width: 26px;\r
+  height: 26px;\r
+  padding: 0;\r
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);\r
+  border-radius: 8px;\r
+  background: color-mix(in srgb, var(--background, #ffffff) 88%, transparent);\r
+  color: var(--ui-text-tertiary, #6b7280);\r
+  cursor: pointer;\r
+  opacity: 0;              /* invisible at rest, never in the pointer's way \xE2\u20AC\u201D and still in the tab order */\r
+  pointer-events: none;\r
+}\r
+.hb-export-btn.lit, .hb-export-btn:hover, .hb-export-btn:focus-visible {\r
+  opacity: 1;\r
+  pointer-events: auto;\r
+  color: var(--foreground, #1f2328);\r
+  background: var(--background, #ffffff);\r
+}\r
+.hb-export-said {\r
+  position: absolute;\r
+  max-width: 220px;\r
+  padding: 4px 8px;\r
+  border-radius: 8px;\r
+  background: color-mix(in srgb, var(--background, #ffffff) 90%, transparent);\r
+  color: var(--ui-text-tertiary, #6b7280);\r
+  font-size: 12px;\r
+  white-space: normal;\r
+  overflow-wrap: anywhere;\r
+}\r
 `;
 
 // src/blocks/atoms/atoms.css
@@ -8926,7 +11039,153 @@ var chart_default = "/* Charts are drawn at their real width and fill their plac
 var images_default = "/* Photos */\n.hb-photos { margin: 0; display: flex; flex-direction: column; gap: 8px; }\n.hb-photo-strip {\n  display: flex;\n  gap: 10px;\n  overflow-x: auto;\n  padding-bottom: 6px;\n  scroll-snap-type: x mandatory;\n  scrollbar-width: thin;\n}\n.hb-photo {\n  position: relative;\n  flex: 0 0 220px;\n  min-width: 0;\n  height: auto;\n  margin: 0;\n  overflow: hidden;\n  border: 1px solid var(--hb-line);\n  border-radius: 14px;\n  background: var(--hb-card);\n  color: inherit;\n  font: inherit;\n  scroll-snap-align: start;\n}\n.hb-photo-open {\n  display: flex;\n  flex-direction: column;\n  justify-content: flex-start;\n  align-items: stretch;\n  width: 100%;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: zoom-in;\n}\n.hb-photo-open:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; }\n.hb-photo-download {\n  position: absolute;\n  right: 8px;\n  bottom: 8px;\n  z-index: 1;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 28px;\n  height: 28px;\n  border-radius: 8px;\n  background: rgba(0, 0, 0, 0.6);\n  color: #fff;\n  font: inherit;\n  font-size: 16px;\n  line-height: 1;\n  text-decoration: none;\n  opacity: 0;\n  transition: opacity 0.12s var(--hb-ease-out);\n}\n.hb-photo:hover .hb-photo-download,\n.hb-photo:focus-within .hb-photo-download { opacity: 1; }\n.hb-photo-label {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  min-width: 0;\n  flex: 1;\n  padding: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: zoom-in;\n}\n.hb-photo-label:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-photo-download:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n@media (hover: none) { .hb-photo-download { opacity: 1; } }\n@media (prefers-reduced-motion: reduce) { .hb-photo-download { transition: none; } }\n/* Four or more pictures read better as a grid: same cards and tokens, no sideways scroll. No model-written field. */\n.hb-photos-grid .hb-photo-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); overflow: visible; }\n.hb-photos-grid .hb-photo { flex: initial; width: auto; }\n/* In the full gallery the control sits on the right of the caption row, centred with it; the strip keeps it on the image. */\n.hb-photos-grid .hb-photo-text { flex-direction: row; align-items: center; gap: 8px; }\n.hb-photos-grid .hb-photo-download { position: static; flex: 0 0 28px; opacity: 1; }\n@media (max-width: 520px) { .hb-photos-grid .hb-photo-strip { grid-template-columns: 1fr; } }\n.hb-photo img { display: block; width: 100%; height: 150px; object-fit: cover; background: var(--hb-well); }\n/* In the gallery each photo keeps the shape of a photo: the width sets the height, so a wide window adds columns. */\n.hb-photos-grid .hb-photo img { height: auto; aspect-ratio: 4 / 3; }\n.hb-photo-text { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px 10px; }\n.hb-photo-caption {\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  font-size: 13px;\n  line-height: 17px;\n  font-weight: 600;\n}\n.hb-photo-source { font-size: 11.5px; color: var(--hb-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.hb-photo-overlay {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483000;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 12px;\n  padding: 32px;\n  background: rgba(0, 0, 0, 0.82);\n  cursor: zoom-out;\n  animation: hb-appear 0.18s var(--hb-ease-out);\n}\n.hb-photo-overlay img { margin: 0; max-width: 100%; max-height: calc(100% - 48px); border-radius: 10px; object-fit: contain; }\n.hb-photo-overlay-text { max-width: 720px; text-align: center; font-size: 14px; color: rgba(255, 255, 255, 0.92); }\n.hb-photo-overlay-text span { color: rgba(255, 255, 255, 0.6); }\n";
 
 // src/blocks/table/table.css
-var table_default = "/* Tables */\n/* A table keeps its natural width (columns close together); the card hugs it. It scrolls inside the card: sideways\n   when wider than the chat, down past 520px with the header kept in view. */\n.hb-table-card { width: fit-content; max-width: 100%; padding: 4px 0 0; overflow: hidden; }\n.hb-table-caption { padding: 10px 16px 2px; }\n.hb-table-scroll { max-height: 520px; overflow: auto; }\n.hb-table {\n  border-collapse: separate;\n  border-spacing: 0;\n  font-size: 13.5px;\n  line-height: 20px;\n  font-variant-numeric: tabular-nums;\n}\n/* With 3 or more columns, a narrow chat scrolls the table rather than squeezing every column. */\n.hb-table-wide { min-width: 420px; }\n.hb-table th, .hb-table td {\n  height: 36px;\n  padding: 8px 12px;\n  border: 0;\n  border-bottom: 1px solid var(--hb-line);\n  background: none;\n  text-align: left;\n  vertical-align: middle;\n  white-space: nowrap;\n}\n/* The header stays in view as the rows scroll; it is painted like the card so rows don't show through. */\n.hb-table th {\n  position: sticky;\n  top: 0;\n  z-index: 1;\n  height: 34px;\n  padding: 0;\n  border-bottom-color: var(--hb-line-strong);\n  background: linear-gradient(var(--hb-card), var(--hb-card)), var(--hb-surface);\n}\n.hb-table th button {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  width: 100%;\n  height: 34px;\n  padding: 0 12px;\n  border: 0;\n  background: none;\n  color: var(--hb-muted);\n  font: inherit;\n  font-size: 11.5px;\n  font-weight: 600;\n  letter-spacing: 0.04em;\n  text-transform: uppercase;\n  white-space: nowrap;\n  cursor: pointer;\n}\n.hb-table th.hb-num button { justify-content: flex-end; }\n.hb-table .hb-first, .hb-table th.hb-first button { padding-left: 16px; }\n.hb-table td:last-child, .hb-table th:last-child button { padding-right: 16px; }\n.hb-table tbody tr:last-child td { border-bottom: 0; }\n.hb-table td.hb-first { font-weight: 600; }\n.hb-table td.hb-num { text-align: right; }\n.hb-table td.hb-wrap { min-width: 180px; white-space: normal; }\n/* Sorting: a faint \u2195 on the header under the pointer, \u2191 or \u2193 on the sorted one. */\n.hb-sort { opacity: 0; font-weight: 400; letter-spacing: 0; transition: opacity 0.12s var(--hb-ease-out); }\n.hb-table th:hover .hb-sort, .hb-table th button:focus-visible .hb-sort { opacity: 0.6; }\n.hb-table th.hb-sorted .hb-sort { opacity: 1; color: var(--hb-ink-2); }\n/* The best row: an accent edge on its first cell and a chip; the best column: an accent line under its header. */\n.hb-table tr.hb-best td.hb-first { box-shadow: inset 3px 0 0 var(--hb-accent); }\n.hb-table th.hb-best-col { box-shadow: inset 0 -2px 0 var(--hb-accent); }\n.hb-table .hb-chip { margin-left: 8px; vertical-align: 1px; padding: 0 7px; font-size: 11px; line-height: 16px; letter-spacing: 0; text-transform: none; }\n.hb-table th .hb-chip { margin-left: 4px; }\n/* Changes: green for a rise, orange for a fall, with a small bar growing from the middle. */\n.hb-table td.hb-up { color: var(--hb-good); }\n.hb-table td.hb-down { color: var(--hb-warn); }\n.hb-mini { display: inline-block; position: relative; width: 56px; height: 8px; margin-right: 8px; vertical-align: 0; }\n.hb-mini-zero { position: absolute; top: -3px; bottom: -3px; left: 50%; width: 1px; background: var(--hb-line-strong); }\n.hb-mini-bar { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: currentColor; }\n.hb-table td.hb-table-empty { color: var(--hb-muted); font-weight: 400; text-align: center; }\n@media (prefers-reduced-motion: reduce) { .hb-sort { transition: none; } }\n.hb-section .hb-table-card { background: none; border: 0; }\n/* Structured tables: typed columns, local filter, pages, aggregates and source chips. */\n.hb-table-structured .hb-table-grid { width: 100%; border-collapse: collapse; font-size: 13px; }\n.hb-table-structured th, .hb-table-structured td { padding: 7px 10px; border-bottom: 1px solid var(--hb-line); text-align: left; vertical-align: top; }\n.hb-table-structured th { color: var(--hb-ink-2); font-size: 11.5px; font-weight: 700; }\n.hb-table-structured .hb-align-right { text-align: right; font-variant-numeric: tabular-nums; }\n.hb-table-structured .hb-align-center { text-align: center; }\n.hb-table-structured tfoot td { color: var(--hb-ink-2); font-weight: 600; border-top: 1px solid var(--hb-line-strong); }\n.hb-table-aggregate-label { color: var(--hb-muted); font-size: 11px; font-weight: 400; }\n.hb-table-sources { display: flex; flex-wrap: wrap; gap: 3px 8px; }\n.hb-table-sources a { color: var(--hb-accent-ink); text-decoration: underline; text-underline-offset: 2px; }\n.hb-table-source-hint { margin-left: 4px; color: var(--hb-muted); }\n.hb-table-bar { display: flex; align-items: center; gap: 6px; min-width: 90px; }\n.hb-table-bar-fill { display: block; flex: 1 1 auto; height: 6px; border-radius: 999px; background: var(--hb-accent); }\n.hb-table-bar-value { flex: none; font-variant-numeric: tabular-nums; }\n.hb-table-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; }\n.hb-table-tools input { min-width: 140px; max-width: 240px; padding: 5px 9px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); font: inherit; font-size: 12px; }\n.hb-table-tools input:focus-visible, .hb-table-pages button:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-table-pages { display: flex; align-items: center; gap: 8px; color: var(--hb-muted); font-size: 11.5px; }\n.hb-table-pages button { min-width: 26px; min-height: 26px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); cursor: pointer; }\n.hb-table-pages button:disabled { opacity: 0.4; cursor: default; }\n";
+var table_default = `/* Tables */
+/* A table keeps its natural width (columns close together); the card hugs it. It scrolls inside the card: sideways
+   when wider than the chat, down past 520px with the header kept in view. */
+.hb-table-card { width: fit-content; max-width: 100%; padding: 4px 0 0; overflow: hidden; }
+.hb-table-caption { padding: 10px 16px 2px; }
+.hb-table-scroll { max-height: 520px; overflow: auto; }
+.hb-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13.5px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+/* With 3 or more columns, a narrow chat scrolls the table rather than squeezing every column. */
+.hb-table-wide { min-width: 420px; }
+.hb-table th, .hb-table td {
+  height: 36px;
+  padding: 8px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--hb-line);
+  background: none;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+/* The header stays in view as the rows scroll; it is painted like the card so rows don't show through. */
+.hb-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 34px;
+  padding: 0;
+  border-bottom-color: var(--hb-line-strong);
+  background: linear-gradient(var(--hb-card), var(--hb-card)), var(--hb-surface);
+}
+.hb-table th button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  height: 34px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  color: var(--hb-muted);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.hb-table th.hb-num button { justify-content: flex-end; }
+.hb-table .hb-first, .hb-table th.hb-first button { padding-left: 16px; }
+.hb-table td:last-child, .hb-table th:last-child button { padding-right: 16px; }
+.hb-table tbody tr:last-child td { border-bottom: 0; }
+.hb-table td.hb-first { font-weight: 600; }
+.hb-table td.hb-num { text-align: right; }
+.hb-table td.hb-wrap { min-width: 180px; white-space: normal; }
+/* Sorting: a faint \u2195 on the header under the pointer, \u2191 or \u2193 on the sorted one. */
+.hb-sort { opacity: 0; font-weight: 400; letter-spacing: 0; transition: opacity 0.12s var(--hb-ease-out); }
+.hb-table th:hover .hb-sort, .hb-table th button:focus-visible .hb-sort { opacity: 0.6; }
+.hb-table th.hb-sorted .hb-sort { opacity: 1; color: var(--hb-ink-2); }
+/* The best row: an accent edge on its first cell and a chip; the best column: an accent line under its header. */
+.hb-table tr.hb-best td.hb-first { box-shadow: inset 3px 0 0 var(--hb-accent); }
+.hb-table th.hb-best-col { box-shadow: inset 0 -2px 0 var(--hb-accent); }
+.hb-table .hb-chip { margin-left: 8px; vertical-align: 1px; padding: 0 7px; font-size: 11px; line-height: 16px; letter-spacing: 0; text-transform: none; }
+.hb-table th .hb-chip { margin-left: 4px; }
+/* Changes: green for a rise, orange for a fall, with a small bar growing from the middle. */
+.hb-table td.hb-up { color: var(--hb-good); }
+.hb-table td.hb-down { color: var(--hb-warn); }
+.hb-mini { display: inline-block; position: relative; width: 56px; height: 8px; margin-right: 8px; vertical-align: 0; }
+.hb-mini-zero { position: absolute; top: -3px; bottom: -3px; left: 50%; width: 1px; background: var(--hb-line-strong); }
+.hb-mini-bar { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: currentColor; }
+.hb-table td.hb-table-empty { color: var(--hb-muted); font-weight: 400; text-align: center; }
+/* Interactive tables (interactive: true): a quiet search line above the rows and a tick on each row.
+   The tools row is width:0 + min-width:100% on purpose: it fills the card without ever contributing its
+   own width to the fit-content hug \u2014 the card keeps hugging the columns, not the controls. EVERY rule
+   below is scoped under .hb-table-interactive (the class the interactive card carries and nothing else
+   does): structured tables draw the same .hb-table-tools class name, and an unscoped rule here would
+   change their already-shipped layout \u2014 the real-Chrome probe pins that they compute as at base. */
+.hb-table-interactive .hb-table-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 0;
+  min-width: 100%;
+  box-sizing: border-box;
+  padding: 4px 16px 8px;
+}
+.hb-table-filter {
+  flex: 1 1 90px;
+  min-width: 0;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--hb-line-strong);
+  border-radius: 999px;
+  background: var(--hb-surface);
+  color: var(--hb-ink);
+  font: inherit;
+  font-size: 12.5px;
+}
+.hb-table-filter::placeholder { color: var(--hb-muted); }
+.hb-table-filter:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 1px; }
+.hb-table-interactive .hb-table-tools .hb-pill { flex: 0 1 auto; min-width: 0; height: 28px; font-size: 12px; }
+/* A card that hugs a narrow table gives the pill less room than its words; they wrap inside the pill \u2014
+   the button never clips them, and its accessible name and title carry them whole regardless. */
+.hb-table-interactive .hb-table-tools .hb-pill-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Where the last tap went. The tools row is width:0 inside a fit-content card, so these words can never
+   widen the table they talk about \u2014 and they WRAP rather than clip: the recovery instructions are the whole
+   point of the word, so no card is too narrow to read it. A narrow hug grows the card TALLER, never wider. */
+.hb-table-sent { flex: 0 1 auto; min-width: 0; white-space: normal; overflow-wrap: anywhere;
+  font-size: 12px; color: var(--hb-muted); }
+/* The tick column hugs its checkbox and carries the left indent; the data columns keep their own padding,
+   so the whole cost of opting in is exactly the width of this one column \u2014 never anything from the tools. */
+.hb-table th.hb-pick, .hb-table td.hb-pick { width: 1%; padding: 0 2px 0 16px; }
+.hb-table .hb-pick input[type="checkbox"] { margin: 0; width: 15px; height: 15px; accent-color: var(--hb-accent); }
+@media (prefers-reduced-motion: reduce) { .hb-sort { transition: none; } }
+.hb-section .hb-table-card { background: none; border: 0; }
+/* Structured tables: typed columns, local filter, pages, aggregates and source chips. */
+.hb-table-structured .hb-table-grid { width: 100%; border-collapse: collapse; font-size: 13px; }
+.hb-table-structured th, .hb-table-structured td { padding: 7px 10px; border-bottom: 1px solid var(--hb-line); text-align: left; vertical-align: top; }
+.hb-table-structured th { color: var(--hb-ink-2); font-size: 11.5px; font-weight: 700; }
+.hb-table-structured .hb-align-right { text-align: right; font-variant-numeric: tabular-nums; }
+.hb-table-structured .hb-align-center { text-align: center; }
+.hb-table-structured tfoot td { color: var(--hb-ink-2); font-weight: 600; border-top: 1px solid var(--hb-line-strong); }
+.hb-table-aggregate-label { color: var(--hb-muted); font-size: 11px; font-weight: 400; }
+.hb-table-sources { display: flex; flex-wrap: wrap; gap: 3px 8px; }
+.hb-table-sources a { color: var(--hb-accent-ink); text-decoration: underline; text-underline-offset: 2px; }
+.hb-table-source-hint { margin-left: 4px; color: var(--hb-muted); }
+.hb-table-bar { display: flex; align-items: center; gap: 6px; min-width: 90px; }
+.hb-table-bar-fill { display: block; flex: 1 1 auto; height: 6px; border-radius: 999px; background: var(--hb-accent); }
+.hb-table-bar-value { flex: none; font-variant-numeric: tabular-nums; }
+/* Structured tables' own tools row, scoped under .hb-table-structured; the interactive rules above are
+   scoped under .hb-table-interactive. The two families share the .hb-table-tools class name but never the
+   card: each family's rules reach only its own root, so a structured table computes exactly as it did at
+   the base commit (pinned property-for-property by a real-Chrome probe) and the interactive row inherits
+   nothing from structured's spacing. */
+.hb-table-structured .hb-table-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; }
+.hb-table-structured .hb-table-tools input { min-width: 140px; max-width: 240px; padding: 5px 9px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); font: inherit; font-size: 12px; }
+.hb-table-structured .hb-table-tools input:focus-visible, .hb-table-pages button:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }
+.hb-table-pages { display: flex; align-items: center; gap: 8px; color: var(--hb-muted); font-size: 11.5px; }
+.hb-table-pages button { min-width: 26px; min-height: 26px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); cursor: pointer; }
+.hb-table-pages button:disabled { opacity: 0.4; cursor: default; }
+`;
 
 // src/blocks/list/list.css
 var list_default = "/* List */\n.hb-list { padding: 4px 0; overflow: hidden; }\n.hb-list-heading { padding: 8px 16px 2px; font-size: 13px; font-weight: 700; color: var(--hb-muted); }\n.hb-list-row {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  padding: 10px 16px;\n  border-top: 1px solid var(--hb-line);\n  color: inherit;\n  text-decoration: none;\n}\n.hb-list > .hb-list-row:first-child, .hb-list-heading + .hb-list-row { border-top: 0; }\n.hb-list-link { cursor: pointer; transition: background 0.15s; }\n.hb-list-link:hover { background: var(--hb-well); }\n.hb-list-rank {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 28px;\n  height: 28px;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n  font-size: 13px;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n}\n.hb-list-photo { flex: none; width: 44px; height: 44px; border-radius: 12px; object-fit: cover; background: var(--hb-well); }\n.hb-list-icon {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border-radius: 12px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n}\n.hb-list-initial {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border-radius: 999px;\n  color: #fff;\n  font-size: 15px;\n  font-weight: 700;\n}\n.hb-list-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }\n.hb-list-title { font-size: 14.5px; line-height: 20px; font-weight: 600; overflow-wrap: anywhere; }\n.hb-list-subtitle {\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  margin-top: 1px;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--hb-muted);\n}\n.hb-list-value { flex: none; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }\n/* The bar and the value share one right-hand block, so every track starts at the same x. In a list with bars the value\n   column has a fixed width; a list without bars keeps the value at its natural width, as before. */\n.hb-list-tail { flex: none; display: flex; align-items: center; gap: 8px; }\n.hb-list-bars .hb-list-value { width: 6.5rem; text-align: right; overflow: hidden; text-overflow: ellipsis; }\n.hb-list-bar { flex: none; width: 64px; height: 6px; border-radius: 999px; background: var(--hb-accent-soft); overflow: hidden; }\n.hb-list-bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-accent); }\n.hb-list-chevron { flex: none; color: var(--hb-muted); }\n.hb-section .hb-list { padding: 0; }\n\n/* List rows that send a message when tapped */\n.hb-list-button {\n  width: 100%;\n  margin: 0;\n  border: 0;\n  border-top: 1px solid var(--hb-line);\n  background: none;\n  font: inherit;\n  text-align: left;\n}\n.hb-list-button:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; }\n";
@@ -9223,7 +11482,7 @@ var STYLE_PARTS = [
 var styles_default = STYLE_PARTS.join("\n");
 
 // src/plugin.tsx
-import { jsx as jsx55 } from "react/jsx-runtime";
+import { jsx as jsx56 } from "react/jsx-runtime";
 var ID4 = "hermes-genui";
 var STYLE_ID = "hermes-genui-css";
 function injectStyles() {
@@ -9249,7 +11508,7 @@ var plugin_default = {
       area: TRANSCRIPT_DIRECTIVE_AREA,
       data: {
         name: "blocks",
-        render: ({ attrs, sessionId, streaming }) => /* @__PURE__ */ jsx55(BlockActions.Provider, { value: { send, fill, rest, blockId: attrs?.id, sessionScope: sessionId }, children: /* @__PURE__ */ jsx55(BlockTag, { id: attrs?.id, streaming: Boolean(streaming), load }) })
+        render: ({ attrs, sessionId, streaming }) => /* @__PURE__ */ jsx56(BlockActions.Provider, { value: { send, fill, rest, blockId: attrs?.id, sessionScope: sessionId }, children: /* @__PURE__ */ jsx56(BlockTag, { id: attrs?.id, streaming: Boolean(streaming), load }) })
       }
     });
     const open = (text) => openAndFill(text, host ?? {});
