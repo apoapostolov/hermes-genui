@@ -74,6 +74,49 @@
 .hb-mini-zero { position: absolute; top: -3px; bottom: -3px; left: 50%; width: 1px; background: var(--hb-line-strong); }
 .hb-mini-bar { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: currentColor; }
 .hb-table td.hb-table-empty { color: var(--hb-muted); font-weight: 400; text-align: center; }
+/* Interactive tables (interactive: true): a quiet search line above the rows and a tick on each row.
+   The tools row is width:0 + min-width:100% on purpose: it fills the card without ever contributing its
+   own width to the fit-content hug — the card keeps hugging the columns, not the controls. EVERY rule
+   below is scoped under .hb-table-interactive (the class the interactive card carries and nothing else
+   does): structured tables draw the same .hb-table-tools class name, and an unscoped rule here would
+   change their already-shipped layout — the real-Chrome probe pins that they compute as at base. */
+.hb-table-interactive .hb-table-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 0;
+  min-width: 100%;
+  box-sizing: border-box;
+  padding: 4px 16px 8px;
+}
+.hb-table-filter {
+  flex: 1 1 90px;
+  min-width: 0;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--hb-line-strong);
+  border-radius: 999px;
+  background: var(--hb-surface);
+  color: var(--hb-ink);
+  font: inherit;
+  font-size: 12.5px;
+}
+.hb-table-filter::placeholder { color: var(--hb-muted); }
+.hb-table-filter:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 1px; }
+.hb-table-interactive .hb-table-tools .hb-pill { flex: 0 1 auto; min-width: 0; height: 28px; font-size: 12px; }
+/* A card that hugs a narrow table gives the pill less room than its words; they wrap inside the pill —
+   the button never clips them, and its accessible name and title carry them whole regardless. */
+.hb-table-interactive .hb-table-tools .hb-pill-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* Where the last tap went. The tools row is width:0 inside a fit-content card, so these words can never
+   widen the table they talk about — and they WRAP rather than clip: the recovery instructions are the whole
+   point of the word, so no card is too narrow to read it. A narrow hug grows the card TALLER, never wider. */
+.hb-table-sent { flex: 0 1 auto; min-width: 0; white-space: normal; overflow-wrap: anywhere;
+  font-size: 12px; color: var(--hb-muted); }
+/* The tick column hugs its checkbox and carries the left indent; the data columns keep their own padding,
+   so the whole cost of opting in is exactly the width of this one column — never anything from the tools. */
+.hb-table th.hb-pick, .hb-table td.hb-pick { width: 1%; padding: 0 2px 0 16px; }
+.hb-table .hb-pick input[type="checkbox"] { margin: 0; width: 15px; height: 15px; accent-color: var(--hb-accent); }
 @media (prefers-reduced-motion: reduce) { .hb-sort { transition: none; } }
 .hb-section .hb-table-card { background: none; border: 0; }
 /* Structured tables: typed columns, local filter, pages, aggregates and source chips. */
@@ -90,9 +133,14 @@
 .hb-table-bar { display: flex; align-items: center; gap: 6px; min-width: 90px; }
 .hb-table-bar-fill { display: block; flex: 1 1 auto; height: 6px; border-radius: 999px; background: var(--hb-accent); }
 .hb-table-bar-value { flex: none; font-variant-numeric: tabular-nums; }
-.hb-table-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; }
-.hb-table-tools input { min-width: 140px; max-width: 240px; padding: 5px 9px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); font: inherit; font-size: 12px; }
-.hb-table-tools input:focus-visible, .hb-table-pages button:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }
+/* Structured tables' own tools row, scoped under .hb-table-structured; the interactive rules above are
+   scoped under .hb-table-interactive. The two families share the .hb-table-tools class name but never the
+   card: each family's rules reach only its own root, so a structured table computes exactly as it did at
+   the base commit (pinned property-for-property by a real-Chrome probe) and the interactive row inherits
+   nothing from structured's spacing. */
+.hb-table-structured .hb-table-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; }
+.hb-table-structured .hb-table-tools input { min-width: 140px; max-width: 240px; padding: 5px 9px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); font: inherit; font-size: 12px; }
+.hb-table-structured .hb-table-tools input:focus-visible, .hb-table-pages button:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }
 .hb-table-pages { display: flex; align-items: center; gap: 8px; color: var(--hb-muted); font-size: 11.5px; }
 .hb-table-pages button { min-width: 26px; min-height: 26px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); cursor: pointer; }
 .hb-table-pages button:disabled { opacity: 0.4; cursor: default; }

@@ -1,7 +1,11 @@
 import { clean, firstList, firstText, keepFirst, num, str, textOrNumber, type Trail } from "../../core/fields";
 
 export type Highlight = { row: number } | { column: number };
-export type LegacyTable = { type: "table"; columns: string[]; rows: string[][]; highlight?: Highlight; caption?: string };
+export type LegacyTable = {
+  type: "table"; columns: string[]; rows: string[][]; highlight?: Highlight; caption?: string;
+  /** true lets the reader search the rows, tick them and send the picked ones to the chat. */
+  interactive?: true;
+};
 
 export type TableColumnKind = "text" | "number" | "currency" | "percent" | "date" | "badge" | "link" | "bar" | "sources";
 export type TableColumn = {
@@ -154,6 +158,8 @@ function readStructuredTable(raw: any, here: Trail, caption: string | undefined)
  * - highlight: {row: n} or {column: n}, counting from 0; a bare number means a row, and text matching a row's first cell
  *   or a column name picks that one. Out of range: ignored, with a note.
  * - caption: optional (also `title`).
+ * - interactive: true lets the reader search the rows, tick rows and send the picked ones to the chat. Any other
+ *   word (or none) leaves the table exactly as it draws today.
  *   {type: "table", headers: ["Phone", "Price"], data: [["Pixel", 44999], {Phone: "Galaxy", Price: "₹42,999"}], highlight: 0}
  *   → {type: "table", columns: ["Phone", "Price"], rows: [["Pixel", "44999"], ["Galaxy", "₹42,999"]], highlight: {row: 0}}
  * Dropped: no columns. With columns but no usable row it is kept with rows: [] (noted), and draws an empty state.
@@ -193,7 +199,8 @@ export function readTable(raw: any, here: Trail): TableBlock | null {
   const kept = keepFirst(rows, MAX_ROWS, here.at("rows"), "rows");
 
   const highlight = readHighlight(raw.highlight, columns, kept, here.at("highlight"));
-  return clean({ type: "table" as const, columns, rows: kept, highlight, caption });
+  const interactive = raw.interactive === true ? (true as const) : undefined;
+  return clean({ type: "table" as const, columns, rows: kept, highlight, caption, interactive });
 }
 
 /** Column names as text: ["Phone", {label: "Price"}, 3] → ["Phone", "Price", "3"]. */

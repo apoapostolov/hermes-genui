@@ -341,7 +341,9 @@ def schema(guide: str = "full") -> dict:
                     "type": "array",
                     "items": {"type": "object"},
                     "description": "The blocks to draw, in order. Each has a `type`, and may ask for its place "
-                    "with `align`: left | center | right (its words with `text_align`).",
+                    "with `align`: left | center | right (its words with `text_align`). A table may also carry "
+                    "`interactive`: true, which lets the reader search its rows, tick the rows that matter "
+                    "and send the picked ones back to the chat; without it a table draws static.",
                 },
                 "target": {
                     "type": "string",

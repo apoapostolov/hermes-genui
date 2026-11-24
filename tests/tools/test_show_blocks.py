@@ -67,6 +67,18 @@ def test_schema_description_carries_the_catalog():
     assert "timeline" in description and "Paste the returned tag on its own line exactly as returned." in description
 
 
+def test_the_interactive_word_is_documented_where_the_model_reads_the_blocks(store_dir):
+    # The catalog budget pins describe(); the table's new word rides the blocks parameter instead.
+    desc = tools.SHOW_BLOCKS_SCHEMA["parameters"]["properties"]["blocks"]["description"]
+    assert "`interactive`: true" in desc
+
+
+def test_the_interactive_word_is_stored_verbatim(store_dir):
+    table = {"type": "table", "caption": "Phones", "columns": ["A"], "rows": [["x"]], "interactive": True}
+    result = tools.show_blocks({"blocks": [table]})
+    assert plugin_store.load(stored_id(result), root=store_dir) == [table]
+
+
 PHOTO = {"type": "images", "title": "Lisbon", "images": [{"url": "https://a.example/alfama.jpg", "caption": "Alfama"}]}
 
 
