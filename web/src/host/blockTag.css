@@ -179,9 +179,12 @@
    taller, never wider than their box, the rule every status word here keeps. Controls sit outside .hb-blocks,
    so --hb-* tokens are undefined here: the app tokens, with fallbacks. The tag itself takes position:relative
    and no part in layout beyond what it had â€” it only anchors the layer and the menu. */
+/* The tag's corner is a STACK, not a shared spot: the expand control owns the very top (6px) and the board
+   menu sits below it (42px), so the two view acts never sit on each other. A block's own corner control
+   (host/ExportChrome.tsx cornerOf) is told this stack's width and height and slides left of it. */
 .hb-export {
   position: absolute;
-  top: 6px;
+  top: 42px;
   right: 6px;
   z-index: 1;
   display: inline-flex;
@@ -200,7 +203,7 @@
 .hb-tag:hover .hb-export, .hb-export:focus-visible, .hb-export[aria-expanded="true"] { opacity: 1; }
 .hb-export-menu {
   position: absolute;
-  top: 38px;
+  top: 74px;
   right: 6px;
   z-index: 3;
   display: flex;

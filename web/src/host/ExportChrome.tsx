@@ -43,6 +43,46 @@ export type ExportChrome = {
   layer: ReactNode;                 // the per-block corner layer: a child of the tag, never of .hb-blocks
 };
 
+/** A box in the browser's own coordinates: the four edges of a measured element. */
+export type Box = { left: number; top: number; right: number; bottom: number };
+
+/** The corner control's box and the inset it keeps from the block it belongs to. Exported so the unit tests and
+ *  the real-Chrome suite assert against the SAME numbers the act uses, never a copy of them. */
+export const EXPORT_BTN = 26;
+export const EXPORT_INSET = 8;
+
+/** The tag's own corner stack — the expand control and the board menu, one above the other — as the width and
+ *  height it occupies at the tag's top-right, and the gap a block's corner keeps from it. */
+export const GLOBAL_GUTTER = 40;
+export const GLOBAL_BAND = 80;
+export const GLOBAL_GAP = 6;
+
+/** Where one block's corner control sits, in the TAG's coordinates (the layer it draws in).
+ *
+ *  The control belongs to the block it exports: it sits in that block's own top-right corner, inset by
+ *  EXPORT_INSET, so a wide or scrolling widget can never push it out of the widget or off the board. The tag's
+ *  top-right corner is the global controls' (expand, board menu), so a corner that would land under them slides
+ *  left of the stack instead of sitting on it. It is then clamped inside its block: a narrow chart, a hugged
+ *  table, a horizontally scrolled one all keep their own control within their own box.
+ *
+ *    block 40..640 x 100..400, tag 0..640 x 0..500  ->  { left: 606, top: 108 }   (its own corner)
+ *    the same block at the tag's top-right          ->  { left: 574, top: 8 }     (clear of the stack)
+ */
+export function cornerOf(block: Box, tag: Box): { left: number; top: number } {
+  const b = { left: block.left - tag.left, top: block.top - tag.top, right: block.right - tag.left };
+  const tagW = Math.round(tag.right - tag.left);
+  let left = Math.round(b.right) - EXPORT_INSET - EXPORT_BTN;
+  const top = Math.round(b.top) + EXPORT_INSET;
+  // The global stack owns the tag's top-right corner: slide left of it rather than under it.
+  const bandLeft = tagW - GLOBAL_GUTTER;
+  if (left + EXPORT_BTN > bandLeft && top < GLOBAL_BAND) left = bandLeft - EXPORT_BTN - GLOBAL_GAP;
+  // ...and never outside the block it belongs to.
+  const minLeft = Math.round(b.left) + 2;
+  const maxLeft = Math.round(b.right) - EXPORT_BTN - 2;
+  left = maxLeft >= minLeft ? Math.min(Math.max(left, minLeft), maxLeft) : minLeft;
+  return { left: Math.max(left, 0), top: Math.max(top, 0) };
+}
+
 /** The walk's container kinds, in the shape the READER guarantees (layout/read.ts flattens what it cannot draw). */
 const CONTAINER = ["row", "section", "grid", "columns", "tabs"];
 
@@ -107,10 +147,11 @@ export function useExportChrome(args: {
     const measure = (block: Block, root: HTMLElement, kind: "chart" | "table"): void => {
       const r = root.getBoundingClientRect();
       const t = host.getBoundingClientRect();
+      const at = cornerOf(r, t);   // the block's OWN corner, clear of the tag's global stack
       const name = kind === "table"
         ? (block as { caption?: string }).caption ?? ""
         : ((block as { spec: ChartSpec }).spec.title ?? (block as { spec: ChartSpec }).spec.series[0]?.name ?? "Chart");
-      out.push({ block, root, kind, name, left: Math.round(r.right - t.left) - 34, top: Math.round(r.top - t.top) + 6 });
+      out.push({ block, root, kind, name, left: at.left, top: at.top });
     };
     const walk = (list: Block[], els: Element[]): void => {
       list.forEach((block, i) => {
@@ -277,7 +318,7 @@ export function useExportChrome(args: {
       ))}
       {said !== null && found[said] && (
         <span className="hb-export-said" role="status" aria-live="polite"
-          style={{ left: `${found[said].left}px`, top: `${found[said].top + 30}px` }}>
+          style={{ left: `${found[said].left}px`, top: `${found[said].top + EXPORT_BTN + 4}px` }}>
           No picture could be exported.
         </span>
       )}
