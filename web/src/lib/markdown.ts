@@ -62,12 +62,16 @@ function firstOf(block: Record<string, unknown>, ...keys: string[]): string {
   return "";
 }
 
+/** A value read out of a stored board: whatever JSON.parse hands back. Naming it keeps the two Python-semantics
+ *  accessors below honest — they hand back a value's real shape, never a promise it is a string or a number. */
+type JsonValue = string | number | boolean | null | undefined | JsonValue[] | { [key: string]: JsonValue };
+
 /** Python's `a or b` on two block fields: the second answers when the first is falsy THE PYTHON WAY — and in
  *  Python that includes {} and []. JS would take a truthy empty object; this is what .get() or .get() means. */
-function orField(block: Record<string, unknown>, first: string, second: string): unknown {
+function orField(block: Record<string, unknown>, first: string, second: string): JsonValue {
   const v = block[first];
-  if (isPyFalsy(v)) return block[second];
-  return v;
+  if (isPyFalsy(v)) return block[second] as JsonValue;
+  return v as JsonValue;
 }
 
 function isPyFalsy(v: unknown): boolean {
@@ -79,8 +83,8 @@ function isPyFalsy(v: unknown): boolean {
 
 /** Python's `block.get(key, default)`: the default answers only when the KEY IS ABSENT — a stored null is the
  *  block's own word (and null then fails the number check downstream), not a missing one. */
-function pick(block: Record<string, unknown>, key: string, dflt: unknown): unknown {
-  return key in block ? block[key] : dflt;
+function pick(block: Record<string, unknown>, key: string, dflt: unknown): JsonValue {
+  return (key in block ? block[key] : dflt) as JsonValue;
 }
 
 /**
@@ -728,9 +732,13 @@ function textKpis(block: Record<string, unknown>): string {
 
 // chart.py — kinds, the series line with its gap words (#36), the scatter's ranges and highest point, the
 // waterfall's bridge (#34), the sorted-descending bar read (#29), and the written caveat line.
-const CHART_KINDS = ["line", "bar", "area", "stacked", "hbar", "combo", "pie", "donut", "scatter", "waterfall"];
+const CHART_KINDS = [
+  "line", "bar", "area", "stacked", "hbar", "combo", "pie", "donut", "scatter", "waterfall",
+  "histogram", "range",
+];
 const KIND_ALIASES: Record<string, string> = {
   doughnut: "donut", stackedbar: "stacked", horizontalbar: "hbar", barh: "hbar",
+  hist: "histogram", rangebar: "range", floatingbar: "range",
 };
 const MAX_LABEL = 40;   // a point's name, as the web reader keeps it
 
@@ -866,6 +874,52 @@ function waterfallLine(series: Record<string, unknown>): string {
   return parts.filter(Boolean).join(" → ");
 }
 
+/** chart._bins_line: how many a histogram counted, then the bins with their counts (up to eight), or for a long
+ *  one just where the most fell. A bin with no count is not counted and is not named. A histogram with no bin
+ *  labels yields nothing at all — the block then says nothing, exactly as the Python serializer does. */
+function binsLine(labels: unknown[], series: Record<string, unknown>, top = 8): string {
+  const pairs: [string, number][] = [];
+  const data = iterated(series.data);
+  labels.forEach((label, i) => {
+    const v = data[i];
+    if (isNum(v) && v >= 0) pairs.push([safeText(label), v]);
+  });
+  if (!pairs.length) return "";
+  const total = pairs.reduce((sum, [, v]) => sum + v, 0);
+  const head = `${fmtNum(total)} counted in ${pairs.length} bin${pairs.length === 1 ? "" : "s"}`;
+  if (pairs.length > top) {
+    const [name, most] = pairs.reduce((best, part) => (part[1] > best[1] ? part : best));
+    return `${head}, most in ${name} (${fmtNum(most)})`;
+  }
+  return `${head}: ` + pairs.map(([label, v]) => `${label} ${fmtNum(v)}`.trim()).join(", ");
+}
+
+/** chart._windows_line: each x's window, its dot, and where the dot sits when it falls outside the band. An x
+ *  with no window says so; nothing usable says nothing. */
+function windowsLine(labels: unknown[], series: Record<string, unknown>): string {
+  const lows = iterated(series.low);
+  const highs = iterated(series.high);
+  const nows = iterated(series.now);
+  const parts: string[] = [];
+  labels.forEach((label, i) => {
+    const low = lows[i];
+    const high = highs[i];
+    const now = nows[i];
+    const name = safeText(label);
+    if (!(isNum(low) && isNum(high))) {
+      parts.push(`${name} no window`.trim());
+      return;
+    }
+    let part = `${name} ${fmtNum(low)}-${fmtNum(high)}`.trim();
+    if (isNum(now)) {
+      part += `, now ${fmtNum(now)}`;
+      part += now > high ? " (above the band)" : now < low ? " (below the band)" : "";
+    }
+    parts.push(part);
+  });
+  return parts.filter(Boolean).join("; ");
+}
+
 function textChart(block: Record<string, unknown>): string {
   let series = (isList(block.series) ? block.series : []).filter(isDict) as Record<string, unknown>[];
   let x = iterated(block.x);                       // list(block.get("x") or []): a stored number raises there
@@ -888,6 +942,10 @@ function textChart(block: Record<string, unknown>): string {
   let body = "";
   if (kind === "pie" || kind === "donut") {
     body = slices(x, series[0]);
+  } else if (kind === "histogram") {
+    body = binsLine(x, series[0]);
+  } else if (kind === "range") {
+    body = windowsLine(x, series[0]);
   } else if (kind === "scatter") {
     body = scatterLine(series, title);
   } else if (kind === "waterfall") {

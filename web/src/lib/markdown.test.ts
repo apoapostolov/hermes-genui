@@ -89,7 +89,9 @@ describe("chart_kind: the same lenient word", () => {
     expect(chartKind("Donut")).toBe("donut");
     expect(chartKind("stacked_bar")).toBe("stacked");
     expect(chartKind("waterfall")).toBe("waterfall");     // #34's kind
-    expect(chartKind("hist")).toBe("line");               // histogram is not a kind on this base: it reads as a line
+    expect(chartKind("hist")).toBe("histogram");          // #35's kind, aliased exactly as chart.py does
+    expect(chartKind("rangebar")).toBe("range");          // #35's other kind and its aliases
+    expect(chartKind("floatingbar")).toBe("range");
     expect(chartKind("constructor")).toBe("line");   // a prototype name is still not a kind
     expect(chartKind(null)).toBe("line");
   });
