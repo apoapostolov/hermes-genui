@@ -111,6 +111,9 @@ describe("placement words", () => {
     ]);
     expect(alignOf(r.blocks[0])).toBe("center");
     expect(alignOf(r.blocks[1])).toBe("right");
+  });
+});
+
 describe("follow-ups read", () => {
   // The envelope's `follow_ups`: quiet tappable prompts under the board, each {label, run}. Read like every
   // board word — only the envelope may say it (a block that spells its children `blocks` is not one) — and
