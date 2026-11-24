@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit gives every PR a first-pass review. Final calls and merges stay with the maintainer.
+reviews:
+  auto_review:
+    enabled: true
+    # main is always reviewed; also review PRs aimed at the newer-work branches.
+    base_branches: ["^release/.*$", "^next$"]
+  path_filters:
+    - "!desktop/plugin.js"        # generated bundle: maintainers rebuild it from web/src before merging
+    - "!**/*.corpus.json"         # large generated test data
+    - "!web/package-lock.json"
+  # The points maintainers keep raising in review, so contributors hear them first.
+  path_instructions:
+    - path: "**"
+      instructions: |
+        - Flag UPSTREAM.md, evidence or "witness" scripts, and screenshots committed to the repo: that material
+          belongs in the PR description, not the tree.
+        - Flag a PR that mixes several features; ask for one feature per PR.
+        - A new feature should have been agreed in a GitHub Discussion first; if the description links none, ask.
+    - path: "blocks/**/*.py"
+      instructions: |
+        - The Python check must accept exactly what the block's web reader (web/src/blocks/<block>/read.ts) accepts:
+          flag any field or shape one side accepts and the other refuses, ignores or clamps.
+        - A new or changed field must also appear in that block's core/catalog.json entry (fields line and example)
+          and in its text_<type> output, so the model is told the same shape the checker enforces.
+    - path: "web/src/blocks/**/read.ts"
+      instructions: |
+        - Check the reader against the Python check in blocks/<block>.py and the catalog entry in core/catalog.json:
+          the field names, nesting and allowed values must match all three.
+    - path: "core/catalog.json"
+      instructions: |
+        - The "fields" line and the example are what the model is taught: check that they describe the exact shape the
+          Python check accepts (where a list goes, which level a field sits on), not a looser or different one.
+    - path: "core/menu.txt"
+      instructions: |
+        - The menu is sent with every request and has a hard cap of 3,000 characters; flag additions that push it
+          over or that add a line for something an existing block already covers.
+    - path: "tools/show_blocks.py"
+      instructions: |
+        - Every new show_blocks parameter or model-facing word is sent with every request. Ask whether the same result
+          can be reached without a new model word (from data the board already has, or decided by the plugin).
