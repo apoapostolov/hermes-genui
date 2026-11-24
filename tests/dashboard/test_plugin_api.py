@@ -1,17 +1,23 @@
 import importlib.util
 
 import pytest
+from conftest import ROOT
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from conftest import ROOT
+
+def _load_api():
+    """The plugin's own dashboard module, loaded from the checkout: one place, so both fixtures read the same way."""
+    spec = importlib.util.spec_from_file_location("hb_plugin_api", ROOT / "dashboard" / "plugin_api.py")
+    assert spec is not None and spec.loader is not None
+    api = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(api)
+    return api
 
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    spec = importlib.util.spec_from_file_location("hb_plugin_api", ROOT / "dashboard" / "plugin_api.py")
-    api = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(api)
+    api = _load_api()
     monkeypatch.setattr(api.store, "default_root", lambda: tmp_path)
     app = FastAPI()
     app.include_router(api.router)
@@ -122,9 +128,7 @@ def test_a_board_from_another_profile_draws_and_keeps_its_ticks_there(client, tm
 def own(tmp_path, monkeypatch):
     """Like client, but the blocks folder is tmp_path/blocks: the assistant and the dashboard keep their files beside
     it, which must stay inside this test's folder."""
-    spec = importlib.util.spec_from_file_location("hb_plugin_api", ROOT / "dashboard" / "plugin_api.py")
-    api = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(api)
+    api = _load_api()
     blocks = tmp_path / "blocks"
     blocks.mkdir()
     monkeypatch.setattr(api.store, "default_root", lambda: blocks)
@@ -297,3 +301,29 @@ def test_a_page_on_a_schedule_says_so(client, tmp_path):
     assert http.get("/pages/executive").json()["schedule"] == "every day at 8am"
     _page(api, tmp_path)
     assert http.get("/pages/executive").json()["schedule"] is None
+
+
+def test_api_passes_the_boards_own_provenance(client, tmp_path):
+    http, api = client
+    board = {"as_of": "2026-11-18", "live": True, "blocks": [{"type": "text", "text": "hi"}]}
+    block_id = api.store.save(board, root=tmp_path)
+    assert http.get(f"/blocks/{block_id}").json() == {"blocks": board["blocks"], "as_of": "2026-11-18", "live": True}
+
+
+def test_api_keeps_live_false_and_skips_junk(client, tmp_path):
+    http, api = client
+    board = {"as_of": 5, "live": False, "blocks": [{"type": "text", "text": "hi"}]}
+    block_id = api.store.save(board, root=tmp_path)
+    # an as_of that was never a string is not served; a live false is.
+    assert http.get(f"/blocks/{block_id}").json() == {"blocks": board["blocks"], "live": False}
+
+
+def test_api_answers_provenance_and_living_words_from_one_envelope(client, tmp_path):
+    http, api = client
+    board = {"version": 3, "updated_at": "2026-11-18T10:00:00+00:00", "as_of": "Nov 18, 09:55 UTC",
+             "live": True, "blocks": [{"type": "text", "text": "hi"}]}
+    block_id = api.store.save(board, root=tmp_path)
+    assert http.get(f"/blocks/{block_id}").json() == {
+        "blocks": board["blocks"], "version": 3, "updated_at": board["updated_at"],
+        "as_of": "Nov 18, 09:55 UTC", "live": True,
+    }

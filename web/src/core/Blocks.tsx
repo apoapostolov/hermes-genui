@@ -15,8 +15,14 @@
 // callout): `text_align` per block, `boardTextAlign` for every block that didn't ask, left when neither says.
 // A block wrapped for placement, for its text voice, or for both, gets the one wrapper; a board with no ask
 // anywhere draws the same DOM it always did.
-import { Component as ReactComponent, createContext, useContext, type ErrorInfo, type ReactNode } from "react";
-import { FlowLightBoard } from "../blocks/flow/highlight";
+// A board whose envelope declares provenance (asOf or live) also grows a quiet footer — its source, when its data
+// is from, and the word Live or Snapshot. The source part joins both attributions the board says: its first
+// top-level source block — drawn there rather than twice on the board — and the `source` each chart block carries,
+// deduped in draw order (the chart keeps its inline line). The absorbed source sits on its own row of the footer
+// column, beside the join line of everything else. A board that declares nothing draws exactly what it always
+// drew: no footer, no new nodes.
+import { Component as ReactComponent, createContext, Fragment, useContext, type ErrorInfo, type ReactNode } from "react";import { FlowLightBoard } from "../blocks/flow/highlight";
+import type { SourceBlock } from "../blocks/source/read";
 import { REGISTRY, type Block } from "../registry";
 import type { BlockEntry } from "./types";
 import { BlockSlot } from "./blockState";
@@ -114,13 +120,67 @@ function Placed({ block }: { block: Block }) {
   );
 }
 
-export function Blocks({ blocks, boardAlign, boardTextAlign }: {
-  blocks: Block[]; boardAlign?: Align; boardTextAlign?: Align;
+/** What a board declares about its data: asOf — one quiet date line, live — whether the figures move. */
+export type Provenance = { asOf?: string; live?: boolean };
+
+/** The quiet footer of a board that declares where its data came from and when. Only the parts the board
+ *  gave are shown: the first top-level source block (absorbed here, drawn not twice on the board), each
+ *  chart's own `source` once in draw order, the date, and the badge — Live or Snapshot, always its word,
+ *  never colour alone. A board that declares nothing never reaches this component. */
+function ProvenanceFooter({ source, chartSources, asOf, live }: {
+  source?: SourceBlock; chartSources?: string[]; asOf?: string; live?: boolean;
 }) {
+  const parts: ReactNode[] = [];
+  const add = (key: string, node: ReactNode) => {
+    if (parts.length) parts.push(<span key={`${key}-dot`} className="hb-provenance-dot" aria-hidden="true">·</span>);
+    parts.push(<Fragment key={key}>{node}</Fragment>);
+  };
+  for (const [i, s] of (chartSources ?? []).entries()) {
+    add(`chart-${i}`, <span className="hb-provenance-source">{s}</span>);
+  }
+  if (asOf) add("as_of", <span className="hb-provenance-time">{asOf}</span>);
+  if (live !== undefined) {
+    add("live", <span className="hb-provenance-badge" data-live={live ? "live" : "snapshot"}>{live ? "Live" : "Snapshot"}</span>);
+  }
+  return (
+    <div className="hb-provenance">
+      {source && drawAll([source])}
+      <div className="hb-provenance-line">{parts}</div>
+    </div>
+  );
+}
+
+export function Blocks({ blocks, boardAlign, boardTextAlign, provenance }: {
+  blocks: Block[]; boardAlign?: Align; boardTextAlign?: Align; provenance?: Provenance;
+}) {
+  const declared = provenance?.asOf !== undefined || provenance?.live !== undefined;
+  let list = blocks;
+  let source: SourceBlock | undefined;
+  const chartSources: string[] = [];
+  if (declared) {  // the first top-level source line belongs to the footer, not twice on the board
+    const at = blocks.findIndex((b) => b.type === "source");
+    if (at >= 0) {
+      source = blocks[at] as SourceBlock;
+      list = blocks.filter((_, i) => i !== at);
+    }
+    const said = new Set<string>(source?.text ? [source.text] : []);
+    for (const b of list) {  // charts say their own source; the line joins each once, in draw order
+      if (b.type !== "chart") continue;
+      const s = b.spec.source;
+      if (typeof s === "string" && s.trim() && !said.has(s)) {
+        said.add(s);
+        chartSources.push(s);
+      }
+    }
+  }
   return (
     <AlignScope.Provider value={{ board: boardAlign, text: boardTextAlign }}>
       <div className="hb-blocks">
-        <FlowLightBoard>{drawAll(blocks)}</FlowLightBoard>
+        <FlowLightBoard>{drawAll(list)}</FlowLightBoard>
+        {declared && (
+          <ProvenanceFooter source={source} chartSources={chartSources}
+            asOf={provenance?.asOf} live={provenance?.live} />
+        )}
       </div>
     </AlignScope.Provider>
   );

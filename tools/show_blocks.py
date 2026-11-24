@@ -4,7 +4,7 @@ import json
 import math
 
 from ..blocks.chart import CHART_KINDS
-from ..blocks.common import align_word, board_address, link_problems, link_words
+from ..blocks.common import align_word, as_of_line, board_address, link_problems, link_words, live_flag
 from ..core import drawn, store, surface
 from ..core.catalog_text import describe, icons_line, spec
 from ..core.catalog_text import menu as core_menu
@@ -286,7 +286,8 @@ def show_blocks(params: dict, **kwargs) -> str:
         problems = [deep] if (deep := too_deep(blocks)) else []
     if problems:
         return _not_drawn(problems)
-    # The board's own placement words ride beside its blocks; said or not, a block can override either one.
+    # The board's own words ride beside its blocks: placement, links, and the provenance of its data. Said or not,
+    # a block can override either placement word.
     word, text_word = align_word(params.get("align")), align_word(params.get("text_align"))
     envelope: dict = {}
     if word is not None:
@@ -295,6 +296,10 @@ def show_blocks(params: dict, **kwargs) -> str:
         envelope["text_align"] = text_word
     if links:
         envelope["links"] = links
+    if (as_of := as_of_line(params.get("as_of"))) is not None:
+        envelope["as_of"] = as_of
+    if (live := live_flag(params.get("live"))) is not None:
+        envelope["live"] = live
     board: list | dict = {**envelope, "blocks": blocks} if envelope else blocks
     refusal = too_big(board)
     if refusal:
@@ -371,6 +376,17 @@ def schema(guide: str = "full") -> dict:
                     "doesn't ask for itself: left (the default) | center | right. A board word: it moves the whole "
                     "board — to re-read one block, give that block its own text_align. It changes how words read, "
                     "never where cards sit.",
+                },
+                "as_of": {
+                    "type": "string",
+                    "description": "Optional. When the board's data is from, as one line people read rather than a "
+                    "format you must get exactly right: \"2026-11-18\", \"Nov 18, 14:05 UTC\". The board's footer "
+                    "shows it beside its source line.",
+                },
+                "live": {
+                    "type": "boolean",
+                    "description": "Optional. true: the figures update live; false: this is a snapshot taken at "
+                    "as_of. The board's footer shows the word Live or Snapshot. Only give it when you really know.",
                 },
             },
             "required": ["blocks"],

@@ -8,7 +8,9 @@
 // through). A board that speaks a living word (a version, links) says it in a quiet row under itself; a board
 // that speaks nothing draws the DOM and the note it always drew. The stored answer may also carry the board's
 // own placement words (align, text_align) beside its blocks; they ride through to the drawing, which resolves
-// them for every block that didn't ask for itself.
+// them for every block that didn't ask for itself. A board that declares provenance (when its data is from,
+// live or snapshot) grows its footer; a version reached back into keeps its own date and source but never says
+// "Live" — a frozen drawing cannot update.
 //
 // The reader gets exactly one view, not an ask: a quiet expand control on every drawn board, the images strip's
 // full-size overlay pattern (blocks/images/Images.tsx) raised to the whole board — with one honest correction.
@@ -25,7 +27,7 @@
 // pointer a later tag draws has no board to move, so it grows no control; the living row stays beside the
 // live view (the dialog is the board itself).
 import { useContext, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
-import { Blocks } from "../core/Blocks";
+import { Blocks, type Provenance } from "../core/Blocks";
 import * as boards from "../core/boardRoster";
 import { carryBlocks } from "../core/living-identity";
 import { forgetBlock, markLiving, migrateArchived, promoteOnUpdate } from "../blocks/checklist/savedState";
@@ -74,6 +76,7 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
   const [refresh, setRefresh] = useState(0);  // the owner's answer to a poke: the address said something newer
   const [, force] = useReducer((x: number) => x + 1, 0);  // repaint on any roster word about this address
   const [live, setLive] = useState<{ version?: number; updatedAt?: string; links?: BoardLink[] }>({});
+  const [provenance, setProvenance] = useState<Provenance>({});  // what the drawn answer said about its own data
 
   useLayoutEffect(() => {
     if (streaming || !validId) return;
@@ -114,7 +117,7 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
     Promise.resolve(ask)
       .then((data) => {
         const { blocks, version: boardVersion, updatedAt: boardUpdatedAt, links: boardLinks,
-          align: boardAlign, textAlign: boardTextAlign } = readBlocksNoted(data);
+          align: boardAlign, textAlign: boardTextAlign, asOf: boardAsOf, live: boardLive } = readBlocksNoted(data);
         if (!alive) return;
         if (blocks.length) {
           // Drawing the answer is a function of the board and the door; the ONE thing that may precede it
@@ -138,6 +141,15 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
             if (viewing === null && (boardVersion ?? 0) >= 2) markLiving(id);
             drawn.current = blocks;
             setState({ kind: "drawn", blocks, align: boardAlign, textAlign: boardTextAlign });
+            // The footer speaks only what the answer being drawn carries for itself: a live view stamps its own
+            // as_of and live, and a version reached back into is stamped with whatever that version said —
+            // an older drawing never borrows the current version's freshness, and a board that says nothing
+            // clears the footer. One truth stands on top of that per-version stamping: a historical view is a
+            // FROZEN drawing — it can no longer move — so a stored live:true must never wear the word "Live"
+            // there. It wears the word that fits instead, Snapshot, and keeps its own date and source. The
+            // latest version is untouched: whatever the current board declared is exactly what its live view says.
+            const stale = viewing !== null && boardLive === true;
+            setProvenance({ asOf: boardAsOf, live: stale ? false : boardLive });
             // Only the LIVE answer says what this address IS now: the live row and the roster's word about
             // the address speak of the current version, whatever older one is being looked at.
             if (viewing === null) {
@@ -229,7 +241,8 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
               <IconClose />
             </button>
           )}
-          <Blocks blocks={state.blocks} boardAlign={state.align} boardTextAlign={state.textAlign} />
+          <Blocks blocks={state.blocks} boardAlign={state.align} boardTextAlign={state.textAlign}
+            provenance={provenance} />
         </div>
       </div>
       {(live.version != null || live.links) && (

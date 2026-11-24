@@ -13,17 +13,20 @@ export const BLOCK_TYPES: string[] = Object.keys(REGISTRY);
 export type BoardLink = { id: string; note?: string };
 
 /**
+/**
  * Stored JSON → its blocks, notes on what was dropped, and — for a board that speaks them — the words its
  * stored envelope carries: the living words (which version this is, when an update wrote it, what it links
- * to) and the placement defaults (where the cards sit, how the words inside them read). A lone block object
- * is a list of one, and the store's {blocks: [...]} envelope is unwrapped. Anything else gives no blocks.
+ * to), the placement defaults (where the cards sit, how the words inside them read), and its provenance:
+ * asOf (when the data is from, one short line) and live (true: the figures update; false: a snapshot;
+ * undefined: the board didn't say). A lone block object is a list of one, and the store's {blocks: [...]}
+ * envelope is unwrapped. Anything else gives no blocks.
  *   [{type: "heading", text: "Day 1"}, {type: "weather"}]
  *   → {blocks: [{type: "heading", text: "Day 1"}], dropped: [{path: "1", why: 'unknown type "weather"'}]}
  */
 export function readBlocksNoted(data: unknown): {
   blocks: Block[]; dropped: Diagnostic[];
   version?: number; updatedAt?: string; links?: BoardLink[];
-  align?: Align; textAlign?: Align;
+  align?: Align; textAlign?: Align; asOf?: string; live?: boolean;
 } {
   let list: unknown = data;
   let boardVersion: number | undefined;
@@ -31,18 +34,23 @@ export function readBlocksNoted(data: unknown): {
   let boardLinks: BoardLink[] | undefined;
   let boardAlign: Align | undefined;
   let boardTextAlign: Align | undefined;
+  let boardAsOf: string | undefined;
+  let boardLive: boolean | undefined;
   const top = new Trail();
   if (isObject(list) && Array.isArray((list as any).blocks)) {
     if (typeof (list as any).type !== "string") {
       // The envelope's own words: the living words (which version the address is on, when it was written,
-      // what it connects to) and the placement defaults (align sits the cards, text_align reads the words —
-      // the same three words for both asks). A block that merely spells its children `blocks` is not an
-      // envelope and says nothing here — its type names a block, not a board.
+      // what it connects to), the placement defaults (align sits the cards, text_align reads the words —
+      // the same three words for both asks), and — if the board says it — where its data came from and
+      // when. A block that merely spells its children `blocks` is not an envelope and says nothing here —
+      // its type names a block, not a board.
       boardVersion = version((list as any).version);
       boardUpdatedAt = str((list as any).updated_at, 40);
       boardLinks = readBoardLinks((list as any).links, top.at("links"));
       boardAlign = align((list as any).align);
       boardTextAlign = align((list as any).text_align);
+      boardAsOf = str((list as any).as_of, 80);  // cut the way every shown string is; junk gives nothing
+      boardLive = typeof (list as any).live === "boolean" ? (list as any).live : undefined;
     }
     list = (list as any).blocks;
   }
@@ -56,12 +64,15 @@ export function readBlocksNoted(data: unknown): {
   const noted: {
     blocks: Block[]; dropped: Diagnostic[];
     version?: number; updatedAt?: string; links?: BoardLink[]; align?: Align; textAlign?: Align;
+    asOf?: string; live?: boolean;
   } = { blocks, dropped: top.dropped };
   if (boardVersion !== undefined) noted.version = boardVersion;
   if (boardUpdatedAt !== undefined) noted.updatedAt = boardUpdatedAt;
   if (boardLinks !== undefined) noted.links = boardLinks;
   if (boardAlign !== undefined) noted.align = boardAlign;
   if (boardTextAlign !== undefined) noted.textAlign = boardTextAlign;
+  if (boardAsOf !== undefined) noted.asOf = boardAsOf;
+  if (boardLive !== undefined) noted.live = boardLive;
   return noted;
 }
 

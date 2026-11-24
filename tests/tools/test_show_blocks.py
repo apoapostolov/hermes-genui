@@ -340,3 +340,44 @@ def test_the_envelope_words_count_in_the_boards_size(store_dir, monkeypatch):
     assert plain.startswith("Drawn.")
     big = tools.show_blocks({"blocks": [TIMELINE], "align": "center", "text_align": "center"})
     assert big.startswith("Not drawn: board too big (")
+# --- provenance: as_of and live ride in the same envelope the living words use -----------------------------------
+
+def test_board_provenance_is_stored_beside_the_blocks(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE], "as_of": "2026-11-18", "live": True})
+    assert plugin_store.load(stored_id(result), root=store_dir) == {"as_of": "2026-11-18", "live": True,
+                                                                    "blocks": [TIMELINE]}
+
+
+def test_provenance_and_links_share_one_envelope(store_dir):
+    other = plugin_store.save([TIMELINE], root=store_dir)
+    result = tools.show_blocks({"blocks": [TIMELINE], "links": [other],
+                                "as_of": " Nov 18 ", "live": False})
+    assert plugin_store.load(stored_id(result), root=store_dir) == {"links": [{"id": other}],
+                                                                   "as_of": "Nov 18", "live": False,
+                                                                   "blocks": [TIMELINE]}
+
+
+def test_live_false_is_kept_as_a_word(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE], "live": False})
+    assert plugin_store.load(stored_id(result), root=store_dir) == {"live": False, "blocks": [TIMELINE]}
+
+
+def test_unknown_provenance_is_ignored(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE], "as_of": 5, "live": "yes"})
+    assert plugin_store.load(stored_id(result), root=store_dir) == [TIMELINE]
+
+
+def test_a_blank_as_of_is_ignored(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE], "as_of": "   "})
+    assert plugin_store.load(stored_id(result), root=store_dir) == [TIMELINE]
+
+
+def test_a_long_as_of_is_cut_to_the_footer_line(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE], "as_of": "x" * 200})
+    assert plugin_store.load(stored_id(result), root=store_dir) == {"as_of": "x" * 80, "blocks": [TIMELINE]}
+
+
+def test_including_a_board_keeps_its_blocks_and_not_its_provenance(store_dir):
+    board_id = plugin_store.save({"as_of": "2026-11-18", "live": True, "blocks": [TIMELINE]}, root=store_dir)
+    result = tools.show_blocks({"blocks": [{"type": "include", "id": board_id}]})
+    assert plugin_store.load(stored_id(result), root=store_dir) == [TIMELINE]

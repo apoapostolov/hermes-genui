@@ -229,6 +229,24 @@ def text_align_of(board: object) -> str | None:
     """
     word = board.get("text_align") if isinstance(board, dict) else None
     return word if isinstance(word, str) else None
+def as_of_of(board: object) -> str | None:
+    """The date line a stored envelope carries for the whole board, or None. Like the updated_at stamp it is
+    checked where it is drawn; here only what was never text (or is empty) is refused.
+
+    as_of_of({"as_of": "2026-11-18", "blocks": [x]}) → "2026-11-18";  as_of_of({"as_of": 5, ...}) → None
+    """
+    line = board.get("as_of") if isinstance(board, dict) else None
+    return line if isinstance(line, str) and line else None
+
+
+def live_of(board: object) -> bool | None:
+    """Whether a stored envelope says its figures are live: True or False when it carries a real bool (False is a
+    word of its own — a snapshot — and not an absence), None when it says nothing or says it any other way.
+
+    live_of({"live": false, "blocks": [x]}) → False;  live_of({"live": "yes", ...}) → None
+    """
+    flag = board.get("live") if isinstance(board, dict) else None
+    return flag if isinstance(flag, bool) else None
 
 
 def history_path(block_id: str, root: Path) -> Path:
