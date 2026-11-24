@@ -104,6 +104,24 @@ describe("structured table reader", () => {
       .toBe("Phone");
     expect(read([{ id: "SKU", label: "Product" }], [{ Product: "Phone" }]).rows[0].cells.sku.text).toBe("Phone");
   });
+  it("reads past a null cell to the next key, instead of dropping the row", () => {
+    const read = (columns: unknown[], rows: unknown[]) =>
+      readBlocksNoted([{ type: "table", columns, rows }]).blocks[0] as any;
+    // an explicit null under the id falls through to the label, as it did before the id lookup widened
+    const byLabel = read([{ id: "sku", label: "Product" }], [{ cells: { sku: null, Product: { text: "Phone" } } }]);
+    expect(byLabel.rows[0].cells.sku.text).toBe("Phone");
+    // the same with the id as the model wrote it: the normalized key is null too, the label still answers
+    const written = read([{ id: "SKU", label: "Product" }], [{ cells: { SKU: null, Product: { text: "Phone" } } }]);
+    expect(written.rows[0].cells.sku.text).toBe("Phone");
+    // a null under the label does not shadow a key that normalizes to the id
+    const byKey = read([{ id: "sku", label: "Product" }], [{ cells: { Product: null, SKU: { text: "Phone" } } }]);
+    expect(byKey.rows[0].cells.sku.text).toBe("Phone");
+    // a row whose only cell is null everywhere is still no row, so the table drops as it did before
+    const empty = readBlocksNoted([{ type: "table", columns: [{ id: "sku", label: "Product" }],
+      rows: [{ cells: { sku: null, Product: null } }] }]);
+    expect(empty.blocks).toEqual([]);
+    expect(empty.dropped.map((d) => d.why)).toEqual(["table needs at least one row"]);
+  });
   it("refuses interactive on bare column names, the way the Python check does", () => {
     const bare = (extra: Record<string, unknown>) => readBlocksNoted([{ type: "table", filterable: true, ...extra }]);
     const refused = bare({ interactive: true, columns: ["A", "B"], rows: [["1", "2"]] });

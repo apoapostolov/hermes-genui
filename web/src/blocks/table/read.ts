@@ -28,7 +28,7 @@ const KINDS: TableColumnKind[] = ["text", "number", "currency", "percent", "date
 const OPS: AggregateOp[] = ["sum", "avg", "min", "max", "count"];
 const TONES = ["accent", "good", "warn", "neutral"];
 
-function isObject(v: unknown): v is Record<string, any> {
+function isObject(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
 }
 
@@ -110,16 +110,14 @@ function asColumnId(key: string): string {
   return key.replace(/[^A-Za-z0-9_-]+/g, "-").toLowerCase();
 }
 
-/** One cell of an object row: by the column's id, by its label, then by any key that normalizes to the id, so an id
- *  written in another case or with a space still reads. Without this a row keyed "SKU" for a column whose id became
- *  "sku" was silently skipped, and a table of such rows was dropped. */
-function cellAt(values: Record<string, unknown>, column: TableColumn): unknown {
-  if (column.id in values) return values[column.id];
-  if (column.label in values) return values[column.label];
-  for (const [key, value] of Object.entries(values)) {
-    if (asColumnId(key) === column.id) return value;
-  }
-  return undefined;
+/** The key a column's cell is written under: the column's id, its label, then any key that normalizes to the id, so
+ *  an id written in another case or with a space still reads. Every step falls through a nullish value, so an
+ *  explicit null in one key hands the cell to the next candidate instead of ending the read. Without the last step a
+ *  row keyed "SKU" for a column whose id became "sku" was silently skipped, and a table of such rows was dropped. */
+function keyAt(values: Record<string, unknown>, column: TableColumn): string | undefined {
+  if (values[column.id] != null) return column.id;
+  if (values[column.label] != null) return column.label;
+  return Object.keys(values).find((key) => values[key] != null && asColumnId(key) === column.id);
 }
 
 function readAggregates(raw: unknown, columns: TableColumn[]): Aggregate[] {
@@ -157,8 +155,10 @@ function readStructuredTable(raw: any, here: Trail, caption: string | undefined)
     const sources = readSources(isObject(row) ? row.sources ?? row.sourceIds : undefined);
     columns.forEach((column, ci) => {
       const values = isObject(row) && isObject(row.cells) ? row.cells : row;
-      const value = isObject(values)
-        ? cellAt(values, column)
+      const written = isObject(values) ? values : null;
+      const key = written ? keyAt(written, column) : undefined;
+      const value: unknown = written && key !== undefined
+        ? written[key]
         : Array.isArray(values) ? values[ci] : undefined;
       if (column.kind === "sources") {
         sources.push(...readSources(Array.isArray(value) ? value : value ? [value] : []));
