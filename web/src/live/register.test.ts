@@ -27,7 +27,7 @@ const settle = () => new Promise((r) => setTimeout(r, 0));
 describe("registerLive", () => {
   it("adds nothing visible while there is no dashboard; the page's address is known from the start", async () => {
     const { ctx, live } = fakeCtx();
-    registerLive(ctx, () => {});
+    registerLive(ctx, () => false);
     expect([...live.values()].map((c) => c.area)).toEqual(["routes"]); // before any answer: a reload on the page works
     await settle();
     expect(ctx.rest).toHaveBeenCalledWith("/dashboard/head");
@@ -38,7 +38,7 @@ describe("registerLive", () => {
   it("asks only whether Today and kept pages exist: nothing in the status bar, no tracked items fetched", async () => {
     head = { title: "Today" };
     const { ctx, live, tick } = fakeCtx();
-    registerLive(ctx, () => {});
+    registerLive(ctx, () => false);
     await settle();
     tick();
     await settle();
@@ -50,7 +50,7 @@ describe("registerLive", () => {
   it("gives each designed dashboard a sidebar row and a page, and takes them away when it goes", async () => {
     pagesList = { pages: [{ slug: "executive", title: "Executive", kind: "dashboard" }] };
     const { ctx, live, tick } = fakeCtx();
-    registerLive(ctx, () => {});
+    registerLive(ctx, () => false);
     await settle();
     expect(live.get("hermes-genui-page-executive")?.data).toEqual({ path: "/genui-board/executive" });
     expect(live.get("hermes-genui-page-executive-nav")?.data).toEqual(
@@ -66,7 +66,7 @@ describe("registerLive", () => {
     pagesList = { pages: [{ slug: "executive", title: "Executive", kind: "dashboard" }] };
     head = { title: "Today" };
     const { ctx, live, tick } = fakeCtx();
-    registerLive(ctx, () => {});
+    registerLive(ctx, () => false);
     await settle();
     expect(live.has("hermes-genui-page-executive-nav")).toBe(true);
     expect(live.has("hermes-genui-today-nav")).toBe(true);
@@ -83,7 +83,7 @@ describe("registerLive", () => {
   it("adds the sidebar row once a dashboard exists, and the page draws it", async () => {
     head = { title: "Today" };
     const { ctx, live } = fakeCtx();
-    registerLive(ctx, () => {});
+    registerLive(ctx, () => false);
     await settle();
     expect(ctx.rest).toHaveBeenCalledWith("/dashboard/head");
     expect([...live.values()].map((c) => c.area).sort()).toEqual(["routes", "sidebar.nav"]);
@@ -94,7 +94,7 @@ describe("registerLive", () => {
 
   it("doesn't ask while the window is hidden", async () => {
     const { ctx, tick } = fakeCtx();
-    registerLive(ctx, () => {});
+    registerLive(ctx, () => false);
     await settle();
     Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
     tick();

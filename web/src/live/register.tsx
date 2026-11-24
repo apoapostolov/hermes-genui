@@ -16,7 +16,7 @@ export type LiveCtx = {
   register: (c: Contribution) => () => void;
 };
 
-export function registerLive(ctx: LiveCtx, fill: (text: string) => void): void {
+export function registerLive(ctx: LiveCtx, fill: (text: string) => boolean | Promise<boolean>): void {
   let hasDashboard = false;
   let nav: (() => void) | null = null;
   // The page's address is known from the start, so a reload on it works; without the sidebar row nobody sees it.

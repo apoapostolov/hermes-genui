@@ -61,7 +61,7 @@ const loadFor = (d: Door) => async (id: string) => {
 function mountTag(id: string, d: Door, scope = "s1") {
   const rest = restFor(d);
   return render(
-    <BlockActions.Provider value={{ send: () => {}, fill: () => {}, rest, sessionScope: scope }}>
+    <BlockActions.Provider value={{ send: async () => "nowhere", fill: () => {}, rest, sessionScope: scope }}>
       <BlockTag id={id} streaming={false} load={loadFor(d)} />
     </BlockActions.Provider>,
   );

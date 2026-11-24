@@ -51,7 +51,7 @@ function signature(ids: Record<string, (string | undefined)[]>): string {
 }
 
 export function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, refreshLabel = "Snapshot" }: {
-  load: () => Promise<Board | undefined>; fill: (text: string) => void;
+  load: () => Promise<Board | undefined>; fill: (text: string) => boolean | Promise<boolean>;
   saveTicks: (ticks: Record<string, boolean>) => Promise<void>;
   /** A block's POST to the plugin (the tracker's Reopen); the board reloads after it. */
   post?: Rest;
@@ -141,7 +141,11 @@ export function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, ref
       )}
       {/* Keyed by its checklists' items: when they change, the board remounts and ticks start from what's open now,
           so a tick never stays on a list whose items have moved. Same items, same board: tabs and scroll stay. */}
-      <BlockActions.Provider value={{ send: fill, fill, rest, blockId: `dashboard-${sig}` }}>
+      <BlockActions.Provider value={{
+        // No submit on this surface: a tap's text goes to the composer, and send's word is that fill's own answer.
+        send: async (text: string) => (await Promise.resolve(fill(text)) ? ("drafted" as const) : ("failed" as const)),
+        fill, rest, blockId: `dashboard-${sig}`,
+      }}>
         <Blocks key={sig} blocks={board.blocks} />
       </BlockActions.Provider>
     </div>

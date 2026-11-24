@@ -325,7 +325,9 @@ def schema(guide: str = "full") -> dict:
                 "blocks": {
                     "type": "array",
                     "items": {"type": "object"},
-                    "description": "The blocks to draw, in order. Each has a `type`.",
+                    "description": "The blocks to draw, in order. Each has a `type`. A table may also carry "
+                    "`interactive`: true, which lets the reader search its rows, tick the rows that matter "
+                    "and send the picked ones back to the chat; without it a table draws static.",
                 },
                 "target": {
                     "type": "string",
