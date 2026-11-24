@@ -9120,12 +9120,28 @@ function textKpis(block) {
   const items = isList(block.items) ? block.items : [];
   return items.filter(isDict).map(figure).filter(Boolean).join("\n");
 }
-var CHART_KINDS2 = ["line", "bar", "area", "stacked", "hbar", "combo", "pie", "donut", "scatter", "waterfall"];
+var CHART_KINDS2 = [
+  "line",
+  "bar",
+  "area",
+  "stacked",
+  "hbar",
+  "combo",
+  "pie",
+  "donut",
+  "scatter",
+  "waterfall",
+  "histogram",
+  "range"
+];
 var KIND_ALIASES2 = {
   doughnut: "donut",
   stackedbar: "stacked",
   horizontalbar: "hbar",
-  barh: "hbar"
+  barh: "hbar",
+  hist: "histogram",
+  rangebar: "range",
+  floatingbar: "range"
 };
 var MAX_LABEL2 = 40;
 function chartKind2(name) {
@@ -9239,6 +9255,45 @@ function waterfallLine(series) {
   }
   return parts2.filter(Boolean).join(" \u2192 ");
 }
+function binsLine(labels2, series, top = 8) {
+  const pairs = [];
+  const data = iterated(series.data);
+  labels2.forEach((label, i) => {
+    const v = data[i];
+    if (isNum(v) && v >= 0) pairs.push([safeText(label), v]);
+  });
+  if (!pairs.length) return "";
+  const total = pairs.reduce((sum, [, v]) => sum + v, 0);
+  const head = `${fmtNum(total)} counted in ${pairs.length} bin${pairs.length === 1 ? "" : "s"}`;
+  if (pairs.length > top) {
+    const [name, most] = pairs.reduce((best, part) => part[1] > best[1] ? part : best);
+    return `${head}, most in ${name} (${fmtNum(most)})`;
+  }
+  return `${head}: ` + pairs.map(([label, v]) => `${label} ${fmtNum(v)}`.trim()).join(", ");
+}
+function windowsLine(labels2, series) {
+  const lows = iterated(series.low);
+  const highs = iterated(series.high);
+  const nows = iterated(series.now);
+  const parts2 = [];
+  labels2.forEach((label, i) => {
+    const low = lows[i];
+    const high = highs[i];
+    const now = nows[i];
+    const name = safeText(label);
+    if (!(isNum(low) && isNum(high))) {
+      parts2.push(`${name} no window`.trim());
+      return;
+    }
+    let part = `${name} ${fmtNum(low)}-${fmtNum(high)}`.trim();
+    if (isNum(now)) {
+      part += `, now ${fmtNum(now)}`;
+      part += now > high ? " (above the band)" : now < low ? " (below the band)" : "";
+    }
+    parts2.push(part);
+  });
+  return parts2.filter(Boolean).join("; ");
+}
 function textChart(block) {
   let series = (isList(block.series) ? block.series : []).filter(isDict);
   let x = iterated(block.x);
@@ -9261,6 +9316,10 @@ function textChart(block) {
   let body = "";
   if (kind === "pie" || kind === "donut") {
     body = slices(x, series[0]);
+  } else if (kind === "histogram") {
+    body = binsLine(x, series[0]);
+  } else if (kind === "range") {
+    body = windowsLine(x, series[0]);
   } else if (kind === "scatter") {
     body = scatterLine(series, title);
   } else if (kind === "waterfall") {
@@ -10556,455 +10615,455 @@ async function openAndFill(text, host2, { waitMs = 2e3, stepMs = 100 } = {}) {
 }
 
 // src/styles/tokens.css
-var tokens_default = `/* Hermes GenUI: every class starts with hb- so nothing leaks into the app.\r
-   Colours come from Hermes's own theme variables, so blocks follow light and dark mode. */\r
-.hb-blocks {\r
-  --hb-ink: var(--foreground, #1f2328);\r
-  --hb-ink-2: color-mix(in srgb, var(--hb-ink) 80%, transparent);\r
-  --hb-muted: var(--ui-text-tertiary, color-mix(in srgb, var(--hb-ink) 55%, transparent));\r
-  --hb-line: color-mix(in srgb, var(--hb-ink) 10%, transparent);\r
-  --hb-card: color-mix(in srgb, var(--hb-ink) 3%, transparent);\r
-  --hb-well: color-mix(in srgb, var(--hb-ink) 6%, transparent);\r
-  --hb-accent: var(--theme-primary, #2f6fed);\r
-  --hb-accent-soft: color-mix(in srgb, var(--hb-accent) 13%, transparent);\r
-  --hb-accent-ink: color-mix(in srgb, var(--hb-accent) 85%, var(--hb-ink));\r
-  --hb-good: var(--ui-success, #1a7f37);\r
-  --hb-warn: #c2410c;\r
-  /* The one tone the theme has no variable for: a red for a value in a bad band (a load over its limit). */\r
-  --hb-bad: var(--ui-danger, #b42318);\r
-  /* The page behind the blocks, for the few marks that must hide what's under them (a progress checkpoint). */\r
-  --hb-surface: var(--background, Canvas);\r
-  /* A raised card (a chart's hover card). */\r
-  --hb-shadow: 0 8px 28px rgba(15, 20, 30, 0.14), 0 1px 3px rgba(15, 20, 30, 0.1);\r
-  /* One curve for everything that moves: transform, opacity and entrance animations. A colour or border\r
-     fade keeps the browser's own ease, which is right for a tint. */\r
-  --hb-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);\r
-  /* Series colours in the order they are handed out, checked so neighbours stay apart for colour-blind readers:\r
-     blue, amber, green, violet, cyan, red, lime, pink. */\r
-  --hb-chart-1: #4f7cff;\r
-  --hb-chart-2: #f59e0b;\r
-  --hb-chart-3: #10b981;\r
-  --hb-chart-4: #8b5cf6;\r
-  --hb-chart-5: #06b6d4;\r
-  --hb-chart-6: #ef4444;\r
-  --hb-chart-7: #84cc16;\r
-  --hb-chart-8: #ec4899;\r
-\r
-  display: flex;\r
-  flex-direction: column;\r
-  gap: 10px;\r
-  margin: 8px 0;\r
-  /* A board stops at a comfortable reading width on a wide screen. */\r
-  max-width: 1100px;\r
-  color: var(--hb-ink);\r
-  font-family: var(--dt-font-sans, inherit);\r
-  font-size: 14px;\r
-  line-height: 1.45;\r
-}\r
-/* Dark mode (Hermes puts .dark on the page): the warning orange lightened to read on a dark background, a deeper\r
-   shadow. */\r
-.dark .hb-blocks {\r
-  --hb-warn: #f0883e;\r
-  --hb-bad: var(--ui-danger, #f0796c);\r
-  --hb-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);\r
-}\r
-/* A stronger line, for chart axes, checkboxes and inputs. */\r
-.hb-blocks { --hb-line-strong: color-mix(in srgb, var(--hb-ink) 18%, transparent); }\r
-.hb-blocks * { box-sizing: border-box; }\r
-/* The chat wraps text "anywhere", which lets a label in a flex row shrink to one letter per line. Blocks wrap only\r
-   between words (long words still break when they must). */\r
-.hb-blocks { overflow-wrap: break-word; }\r
-/* The chat's prose styles give images, figures and tables their own margins; blocks place their own. */\r
-.hb-blocks img, .hb-blocks figure, .hb-blocks table { margin: 0; }\r
-/* Block placement: a board puts a block off the left by drawing it inside a .hb-place box, which fills the column\r
-   or cell just as the block did and keeps a plain block layout inside. That is the point: a block in a plain block\r
-   context sizes exactly as it sized unwrapped (a capped card stays its cap, a fit-content table keeps hugging), and\r
-   the auto margin then shares out only the space the block left over. A block that fills the width (a long line, a\r
-   table card, prose) shifts by nothing. Never auto-margin a block in a flex column: the margin stops the stretch\r
-   and the block collapses to its content. Left is how blocks sit already, so a board with no ask anywhere grows no\r
-   .hb-place at all.\r
-   The two classes compound on purpose: a block's own root reset (.hb-chart { margin: 0 } in chart.css, the host's\r
-   figure margin in the line above) ties a single placement class on specificity and wins on load order alone \u2014\r
-   block css is joined after tokens. Compounded, the ask (0,2,0) outranks every root reset (0,1,0 and 0,1,1), so a\r
-   chart asked to center centers like every other card (measured in real Chrome: symmetric margins, never flush\r
-   left). Placed cards keep the width caps their own rules give them; those are duplicated through the wrapper in\r
-   each block's css. */\r
-.hb-place { display: flow-root; }\r
-.hb-place.hb-place-center > * { margin-inline: auto; }\r
-.hb-place.hb-place-right > * { margin-inline-start: auto; margin-inline-end: 0; }\r
-/* Text voice: how the words inside a block read (the model's \`text_align\`, the block's word or the board's\r
-   default). The voice is a class on the block's wrapper and reaches the words by inheritance; a text-align only\r
-   moves words that sit in a line box filling the available width, so where a block keeps its words in a\r
-   shrink-wrapped box, the voice first opens that box (below). The box stays exactly where placement put it, and\r
-   only blocks whose draw is words (heading, text, stat, callout) ever carry it. Left is how words read anyway,\r
-   so a board with no ask grows no class and no wrapper. */\r
-.hb-ta-center { text-align: center; }\r
-.hb-ta-right { text-align: right; }\r
-/* The line width a voice needs: text-align is no property of a shrink-wrapped flex item \u2014 a body that hugs its\r
-   words has no free line for the words to travel on. heading and text are block boxes that already fill their\r
-   column; a lone stat card fills its column and its label, value and change lines stretch across the card; only\r
-   the callout sets its words in a non-growing body beside the fixed icon, so where a voice asks, that body is\r
-   opened to the row beside the icon. Scoped to the voice classes on purpose: a callout nobody asked about keeps\r
-   every rect it always had. A new text-bearing kind joins TEXT_BEARING (core/Blocks.tsx) only once its words\r
-   measure at their voice in the Chrome probe (tests/test_layout_alignment.py). */\r
-.hb-ta-center .hb-callout-body, .hb-ta-right .hb-callout-body { flex: 1 1 auto; min-width: 0; }\r
-/* A placed kpis row (maintainer note 2): the cards are no ordinary card \u2014 the row is one grid whose auto-fill\r
-   tracks eat the whole column and park the cards left, so an auto margin on a box that wide never moves\r
-   (and the wrapper, display:flow-root, fills the width by design). Placed, the empty tracks collapse\r
-   (auto-fit) and the used ones gather where the ask put them; the grid's box keeps filling the column and a\r
-   card's own rects stay exactly as the unplaced row measured them. Left asks grow no wrapper at all, so the\r
-   shipped default row is untouched by these rules \u2014 every selector here sits under a placement class. */\r
-.hb-place.hb-place-center > .hb-kpis,\r
-.hb-place.hb-place-right > .hb-kpis { grid-template-columns: repeat(auto-fit, minmax(130px, 200px)); }\r
-.hb-place.hb-place-center > .hb-kpis { justify-content: center; }\r
-.hb-place.hb-place-right > .hb-kpis { justify-content: end; }\r
-/* The provenance footer: the quiet lines a board grows when its envelope says as_of or live \u2014 the source on its\r
-   own row, then the joined line: each chart's own source, the date \xB7 the word Live or Snapshot. The source keeps\r
-   its own row (a flex child of the join line would shrink-wrap it to its content; as a row of the footer's column\r
-   it fills the width exactly like a block of the board). The joins on the line are plain text\r
-   (.hb-provenance-source needs no rule of its own \u2014 the line's voice already fits them). The badge always carries\r
-   its word; colour (the existing good green for Live) only sits beside it. */\r
-.hb-provenance {\r
-  display: flex;\r
-  flex-direction: column;\r
-  gap: 4px;\r
-  margin-top: 2px;\r
-  font-size: 11.5px;\r
-  color: var(--hb-muted);\r
-}\r
-.hb-provenance-line {\r
-  display: flex;\r
-  flex-wrap: wrap;\r
-  align-items: baseline;\r
-  gap: 6px;\r
-}\r
-.hb-provenance .hb-source { font-size: inherit; }\r
-.hb-provenance-dot { opacity: 0.7; }\r
-.hb-provenance-badge {\r
-  padding: 0 7px;\r
-  border: 1px solid var(--hb-line-strong);\r
-  border-radius: 999px;\r
-  font-size: 10.5px;\r
-  color: var(--hb-ink-2);\r
-}\r
-.hb-provenance-badge[data-live="live"] {\r
-  color: var(--hb-good);\r
-  border-color: color-mix(in srgb, var(--hb-good) 45%, transparent);\r
-}\r
-/* The follow-up strip: the quiet line of taps (core/FollowUps.tsx) a board grows when its envelope offers\r
-   follow-ups. The row is width:0 + min-width:100% on purpose \u2014 the same trick a shipped tools row uses:\r
-   it fills the board's column without ever contributing its own width to a fit-content hug, so the strip can\r
-   never widen a board that hugs. Pills WRAP their labels and the row WRAPS its pills: the whole message is the\r
-   point of the tap, so no board is too narrow to read one \u2014 height may grow, width never, nothing clips, no\r
-   nowrap and no ellipsis. Pinned in real Chrome by tests/test_follow_ups_chrome.py. */\r
-.hb-followups {\r
-  display: flex;\r
-  flex-wrap: wrap;\r
-  align-items: baseline;\r
-  gap: 6px 8px;\r
-  width: 0;\r
-  min-width: 100%;\r
-  box-sizing: border-box;\r
-  padding: 2px 0 0;\r
-}\r
-.hb-followups .hb-pill {\r
-  flex: 0 1 auto;\r
-  min-width: 0;\r
-  min-height: 28px;\r
-  padding: 4px 12px;\r
-  font-size: 12px;\r
-}\r
-.hb-followups .hb-followup-label { min-width: 0; white-space: normal; overflow-wrap: anywhere; }\r
-/* The word the strip says is only ever the host's own answer to the LAST tap (core/FollowUps.tsx), and it\r
-   follows the row's rule: WRAP, never clip \u2014 height may grow, width never. At rest it carries no text and\r
-   costs the board nothing. */\r
-.hb-followups-said {\r
-  flex: 0 1 auto;\r
-  min-width: 0;\r
-  white-space: normal;\r
-  overflow-wrap: anywhere;\r
-  font-size: 12px;\r
-  color: var(--hb-muted);\r
-}\r
+var tokens_default = `/* Hermes GenUI: every class starts with hb- so nothing leaks into the app.
+   Colours come from Hermes's own theme variables, so blocks follow light and dark mode. */
+.hb-blocks {
+  --hb-ink: var(--foreground, #1f2328);
+  --hb-ink-2: color-mix(in srgb, var(--hb-ink) 80%, transparent);
+  --hb-muted: var(--ui-text-tertiary, color-mix(in srgb, var(--hb-ink) 55%, transparent));
+  --hb-line: color-mix(in srgb, var(--hb-ink) 10%, transparent);
+  --hb-card: color-mix(in srgb, var(--hb-ink) 3%, transparent);
+  --hb-well: color-mix(in srgb, var(--hb-ink) 6%, transparent);
+  --hb-accent: var(--theme-primary, #2f6fed);
+  --hb-accent-soft: color-mix(in srgb, var(--hb-accent) 13%, transparent);
+  --hb-accent-ink: color-mix(in srgb, var(--hb-accent) 85%, var(--hb-ink));
+  --hb-good: var(--ui-success, #1a7f37);
+  --hb-warn: #c2410c;
+  /* The one tone the theme has no variable for: a red for a value in a bad band (a load over its limit). */
+  --hb-bad: var(--ui-danger, #b42318);
+  /* The page behind the blocks, for the few marks that must hide what's under them (a progress checkpoint). */
+  --hb-surface: var(--background, Canvas);
+  /* A raised card (a chart's hover card). */
+  --hb-shadow: 0 8px 28px rgba(15, 20, 30, 0.14), 0 1px 3px rgba(15, 20, 30, 0.1);
+  /* One curve for everything that moves: transform, opacity and entrance animations. A colour or border
+     fade keeps the browser's own ease, which is right for a tint. */
+  --hb-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  /* Series colours in the order they are handed out, checked so neighbours stay apart for colour-blind readers:
+     blue, amber, green, violet, cyan, red, lime, pink. */
+  --hb-chart-1: #4f7cff;
+  --hb-chart-2: #f59e0b;
+  --hb-chart-3: #10b981;
+  --hb-chart-4: #8b5cf6;
+  --hb-chart-5: #06b6d4;
+  --hb-chart-6: #ef4444;
+  --hb-chart-7: #84cc16;
+  --hb-chart-8: #ec4899;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 8px 0;
+  /* A board stops at a comfortable reading width on a wide screen. */
+  max-width: 1100px;
+  color: var(--hb-ink);
+  font-family: var(--dt-font-sans, inherit);
+  font-size: 14px;
+  line-height: 1.45;
+}
+/* Dark mode (Hermes puts .dark on the page): the warning orange lightened to read on a dark background, a deeper
+   shadow. */
+.dark .hb-blocks {
+  --hb-warn: #f0883e;
+  --hb-bad: var(--ui-danger, #f0796c);
+  --hb-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+/* A stronger line, for chart axes, checkboxes and inputs. */
+.hb-blocks { --hb-line-strong: color-mix(in srgb, var(--hb-ink) 18%, transparent); }
+.hb-blocks * { box-sizing: border-box; }
+/* The chat wraps text "anywhere", which lets a label in a flex row shrink to one letter per line. Blocks wrap only
+   between words (long words still break when they must). */
+.hb-blocks { overflow-wrap: break-word; }
+/* The chat's prose styles give images, figures and tables their own margins; blocks place their own. */
+.hb-blocks img, .hb-blocks figure, .hb-blocks table { margin: 0; }
+/* Block placement: a board puts a block off the left by drawing it inside a .hb-place box, which fills the column
+   or cell just as the block did and keeps a plain block layout inside. That is the point: a block in a plain block
+   context sizes exactly as it sized unwrapped (a capped card stays its cap, a fit-content table keeps hugging), and
+   the auto margin then shares out only the space the block left over. A block that fills the width (a long line, a
+   table card, prose) shifts by nothing. Never auto-margin a block in a flex column: the margin stops the stretch
+   and the block collapses to its content. Left is how blocks sit already, so a board with no ask anywhere grows no
+   .hb-place at all.
+   The two classes compound on purpose: a block's own root reset (.hb-chart { margin: 0 } in chart.css, the host's
+   figure margin in the line above) ties a single placement class on specificity and wins on load order alone \u2014
+   block css is joined after tokens. Compounded, the ask (0,2,0) outranks every root reset (0,1,0 and 0,1,1), so a
+   chart asked to center centers like every other card (measured in real Chrome: symmetric margins, never flush
+   left). Placed cards keep the width caps their own rules give them; those are duplicated through the wrapper in
+   each block's css. */
+.hb-place { display: flow-root; }
+.hb-place.hb-place-center > * { margin-inline: auto; }
+.hb-place.hb-place-right > * { margin-inline-start: auto; margin-inline-end: 0; }
+/* Text voice: how the words inside a block read (the model's \`text_align\`, the block's word or the board's
+   default). The voice is a class on the block's wrapper and reaches the words by inheritance; a text-align only
+   moves words that sit in a line box filling the available width, so where a block keeps its words in a
+   shrink-wrapped box, the voice first opens that box (below). The box stays exactly where placement put it, and
+   only blocks whose draw is words (heading, text, stat, callout) ever carry it. Left is how words read anyway,
+   so a board with no ask grows no class and no wrapper. */
+.hb-ta-center { text-align: center; }
+.hb-ta-right { text-align: right; }
+/* The line width a voice needs: text-align is no property of a shrink-wrapped flex item \u2014 a body that hugs its
+   words has no free line for the words to travel on. heading and text are block boxes that already fill their
+   column; a lone stat card fills its column and its label, value and change lines stretch across the card; only
+   the callout sets its words in a non-growing body beside the fixed icon, so where a voice asks, that body is
+   opened to the row beside the icon. Scoped to the voice classes on purpose: a callout nobody asked about keeps
+   every rect it always had. A new text-bearing kind joins TEXT_BEARING (core/Blocks.tsx) only once its words
+   measure at their voice in the Chrome probe (tests/test_layout_alignment.py). */
+.hb-ta-center .hb-callout-body, .hb-ta-right .hb-callout-body { flex: 1 1 auto; min-width: 0; }
+/* A placed kpis row (maintainer note 2): the cards are no ordinary card \u2014 the row is one grid whose auto-fill
+   tracks eat the whole column and park the cards left, so an auto margin on a box that wide never moves
+   (and the wrapper, display:flow-root, fills the width by design). Placed, the empty tracks collapse
+   (auto-fit) and the used ones gather where the ask put them; the grid's box keeps filling the column and a
+   card's own rects stay exactly as the unplaced row measured them. Left asks grow no wrapper at all, so the
+   shipped default row is untouched by these rules \u2014 every selector here sits under a placement class. */
+.hb-place.hb-place-center > .hb-kpis,
+.hb-place.hb-place-right > .hb-kpis { grid-template-columns: repeat(auto-fit, minmax(130px, 200px)); }
+.hb-place.hb-place-center > .hb-kpis { justify-content: center; }
+.hb-place.hb-place-right > .hb-kpis { justify-content: end; }
+/* The provenance footer: the quiet lines a board grows when its envelope says as_of or live \u2014 the source on its
+   own row, then the joined line: each chart's own source, the date \xB7 the word Live or Snapshot. The source keeps
+   its own row (a flex child of the join line would shrink-wrap it to its content; as a row of the footer's column
+   it fills the width exactly like a block of the board). The joins on the line are plain text
+   (.hb-provenance-source needs no rule of its own \u2014 the line's voice already fits them). The badge always carries
+   its word; colour (the existing good green for Live) only sits beside it. */
+.hb-provenance {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--hb-muted);
+}
+.hb-provenance-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+.hb-provenance .hb-source { font-size: inherit; }
+.hb-provenance-dot { opacity: 0.7; }
+.hb-provenance-badge {
+  padding: 0 7px;
+  border: 1px solid var(--hb-line-strong);
+  border-radius: 999px;
+  font-size: 10.5px;
+  color: var(--hb-ink-2);
+}
+.hb-provenance-badge[data-live="live"] {
+  color: var(--hb-good);
+  border-color: color-mix(in srgb, var(--hb-good) 45%, transparent);
+}
+/* The follow-up strip: the quiet line of taps (core/FollowUps.tsx) a board grows when its envelope offers
+   follow-ups. The row is width:0 + min-width:100% on purpose \u2014 the same trick a shipped tools row uses:
+   it fills the board's column without ever contributing its own width to a fit-content hug, so the strip can
+   never widen a board that hugs. Pills WRAP their labels and the row WRAPS its pills: the whole message is the
+   point of the tap, so no board is too narrow to read one \u2014 height may grow, width never, nothing clips, no
+   nowrap and no ellipsis. Pinned in real Chrome by tests/test_follow_ups_chrome.py. */
+.hb-followups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+  width: 0;
+  min-width: 100%;
+  box-sizing: border-box;
+  padding: 2px 0 0;
+}
+.hb-followups .hb-pill {
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 28px;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+.hb-followups .hb-followup-label { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+/* The word the strip says is only ever the host's own answer to the LAST tap (core/FollowUps.tsx), and it
+   follows the row's rule: WRAP, never clip \u2014 height may grow, width never. At rest it carries no text and
+   costs the board nothing. */
+.hb-followups-said {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  color: var(--hb-muted);
+}
 `;
 
 // src/styles/shared.css
 var shared_default = "/* Pieces several blocks share: cards, chips, pill buttons and the motion they use. */\n/* A block that threw while drawing: a quiet one-line note in its place (core/Blocks.tsx). */\n.hb-block-failed {\n  margin: 0;\n  font-size: 12px;\n  line-height: 18px;\n  color: var(--hb-muted);\n}\n/* Cards */\n.hb-card {\n  background: var(--hb-card);\n  border: 1px solid var(--hb-line);\n  border-radius: 16px;\n  padding: 14px 16px;\n}\n.hb-card-title {\n  font-size: 16px;\n  line-height: 22px;\n  font-weight: 700;\n  letter-spacing: -0.01em;\n}\n/* Chips */\n.hb-chip {\n  display: inline-flex;\n  align-items: center;\n  align-self: flex-start;\n  gap: 4px;\n  padding: 2px 9px;\n  border-radius: 999px;\n  font-size: 12px;\n  font-weight: 600;\n  line-height: 18px;\n  font-variant-numeric: tabular-nums;\n  white-space: nowrap;\n}\n.hb-chip-soft { background: var(--hb-accent-soft); color: var(--hb-accent-ink); }\n.hb-chip-good { background: color-mix(in srgb, var(--hb-good) 14%, transparent); color: var(--hb-good); }\n.hb-chip-warn { background: color-mix(in srgb, var(--hb-warn) 13%, transparent); color: var(--hb-warn); }\n.hb-chip-plain { background: var(--hb-well); color: var(--hb-ink-2); }\n/* Pill buttons that act (actions, button, a form's Send): soft for buttons in a reply, solid for a form's Send. */\n.hb-pill {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  min-height: 36px;\n  max-width: 100%;\n  padding: 7px 14px;\n  border: 0;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n  font: inherit;\n  font-size: 13.5px;\n  font-weight: 600;\n  line-height: 18px;\n  text-align: left;\n  text-decoration: none;\n  cursor: pointer;\n  transition: background 0.15s ease, transform 0.1s var(--hb-ease-out);\n}\n.hb-pill svg { flex: none; }\n.hb-pill:hover { background: color-mix(in srgb, var(--hb-accent) 22%, transparent); }\n.hb-pill:active { transform: scale(0.97); }\n.hb-pill:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-pill-solid { background: var(--hb-accent); color: #fff; }\n.hb-pill-solid:hover { background: color-mix(in srgb, var(--hb-accent) 86%, #000); }\n.hb-pill:disabled { opacity: 0.45; cursor: default; transform: none; }\n.hb-pill-solid:disabled:hover { background: var(--hb-accent); }\n/* Motion: a panel appearing (section, tabs, photo overlay) and a bar growing (bar, progress). */\n.hb-appear { animation: hb-appear 0.22s var(--hb-ease-out); }\n@keyframes hb-appear { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }\n@keyframes hb-grow { from { transform: scaleX(0); } }\n@media (prefers-reduced-motion: reduce) {\n  .hb-pill { transition: none; }\n  .hb-appear { animation: none; }\n}\n";
 
 // src/host/blockTag.css
-var blockTag_default = `/* The block tag's own states */\r
-.hb-state {\r
-  display: flex;\r
-  align-items: center;\r
-  gap: 8px;\r
-  margin: 8px 0;\r
-  padding: 10px 14px;\r
-  max-width: 100%;\r
-  border-radius: 14px;\r
-  background: color-mix(in srgb, var(--foreground, #1f2328) 5%, transparent);\r
-  color: var(--ui-text-tertiary, #6b7280);\r
-  font-size: 13px;\r
-}\r
-.hb-pulse { animation: hb-pulse 1.2s ease-in-out infinite; }\r
-@keyframes hb-pulse { 50% { opacity: 0.45; } }\r
-@media (prefers-reduced-motion: reduce) {\r
-  .hb-pulse { animation: none; }\r
-}\r
-\r
-/* --- Living Boards ---------------------------------------------------------------------------\r
-   The quiet row a live board says under itself, and the pointer a later tag of the same address\r
-   draws instead of a second board. Both sit OUTSIDE .hb-blocks (the board's own DOM is untouched)\r
-   and animate nothing: with no motion of their own there is nothing for prefers-reduced-motion\r
-   to still. Colors ride the app's own variables with fallbacks, as the chrome row's do. */\r
-.hb-live {\r
-  display: flex;\r
-  flex-wrap: wrap;\r
-  gap: 6px 14px;\r
-  align-items: center;\r
-  margin-top: 10px;\r
-  padding: 6px 10px;\r
-  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 10%, transparent);\r
-  border-radius: 10px;\r
-  background: color-mix(in srgb, var(--background, #ffffff) 60%, transparent);\r
-  color: var(--ui-text-tertiary, #6b7280);\r
-  font-size: 12px;\r
-  line-height: 1.5;\r
-  overflow-wrap: anywhere;\r
-}\r
-.hb-live-line { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }\r
-.hb-live-mark { color: var(--ui-success, #1a7f37); }\r
-.hb-live-version { font-weight: 600; color: var(--foreground, #1f2328); }\r
-.hb-live-addr {\r
-  font-family: ui-monospace, monospace;\r
-  font-size: 11px;\r
-  padding: 1px 6px;\r
-  border-radius: 6px;\r
-  background: color-mix(in srgb, var(--foreground, #1f2328) 7%, transparent);\r
-}\r
-.hb-live-history, .hb-live-back, .hb-link-chip {\r
-  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);\r
-  border-radius: 999px;\r
-  background: transparent;\r
-  color: inherit;\r
-  font: inherit;\r
-  padding: 1px 10px;\r
-  cursor: pointer;\r
-}\r
-.hb-live-history[aria-pressed="true"], .hb-link-chip[aria-expanded="true"] {\r
-  border-color: var(--theme-primary, #e0a83c);\r
-  color: var(--foreground, #1f2328);\r
-}\r
-.hb-links { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }\r
-.hb-links-label { font-style: italic; }\r
-.hb-link { display: contents; }\r
-.hb-linked {\r
-  width: 100%;\r
-  margin-top: 4px;\r
-  padding: 10px 12px;\r
-  border: 1px dashed color-mix(in srgb, var(--foreground, #1f2328) 22%, transparent);\r
-  border-radius: 10px;\r
-}\r
-.hb-linked-head {\r
-  display: flex;\r
-  gap: 8px;\r
-  align-items: center;\r
-  margin-bottom: 8px;\r
-  color: var(--ui-text-tertiary, #6b7280);\r
-  font-size: 12px;\r
-  overflow-wrap: anywhere;\r
-}\r
-.hb-linked-gone { color: var(--ui-text-tertiary, #6b7280); font-style: italic; }\r
-.hb-live-pointer {\r
-  display: flex;\r
-  gap: 8px;\r
-  align-items: center;\r
-  flex-wrap: wrap;\r
-  margin: 6px 0;\r
-  color: var(--ui-text-tertiary, #6b7280);\r
-  font-size: 13px;\r
-  overflow-wrap: anywhere;\r
-}\r
-/* Expand / full-screen board (host/BlockTag.tsx): the images strip's full-size overlay pattern, raised to a\r
-   whole board \xE2\u20AC\u201D the photo scrim's own numbers (fixed, same z, same appear animation) and the same way of\r
-   closing (Escape, the scrim, a close control). One honest correction: a stateless photo may be re-drawn at\r
-   full size, a board may not \xE2\u20AC\u201D its blocks carry live state. So the host wrapper (.hb-board-host) is a plain\r
-   block container at rest, costing the inline board nothing, and IS the dialog while expanded: the ONE drawn\r
-   .hb-blocks is lifted into it, not duplicated, and settles back into flow on close. The control lives\r
-   OUTSIDE .hb-blocks and out of flow (absolute); it stays quiet until the pointer is on the board or the key\r
-   reaches it. Inside the dialog the board's 1100px reading cap lifts, so full-width blocks ride the wider\r
-   container, while every .hb-blocks > X cap (the 720px cards, the fit-content table) is the board's own rule\r
-   and keeps its number in both views. Chrome measures exactly that (tests/test_expand_fullscreen.py). */\r
-.hb-tag { position: relative; }\r
-.hb-expand {\r
-  position: absolute;\r
-  top: 6px;\r
-  right: 6px;\r
-  z-index: 1;\r
-  display: inline-flex;\r
-  align-items: center;\r
-  justify-content: center;\r
-  width: 28px;\r
-  height: 28px;\r
-  padding: 0;\r
-  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);\r
-  border-radius: 8px;\r
-  background: color-mix(in srgb, var(--background, #ffffff) 85%, transparent);\r
-  color: var(--ui-text-tertiary, #6b7280);\r
-  cursor: pointer;\r
-  opacity: 0;\r
-}\r
-.hb-tag:hover .hb-expand, .hb-expand:focus-visible { opacity: 1; }\r
-@media (prefers-reduced-motion: reduce) {\r
-  .hb-expand { transition: none; }\r
-}\r
-.hb-board-overlay {\r
-  position: fixed;\r
-  inset: 0;\r
-  z-index: 2147483000;\r
-  display: flex;\r
-  align-items: center;\r
-  justify-content: center;\r
-  padding: 32px;\r
-  background: rgba(0, 0, 0, 0.82);\r
-  animation: hb-appear 0.18s ease-out;\r
-}\r
-/* The wider container, in the ONE shipped rule: the expanded board box is a single element \xE2\u20AC\u201D it sheds the\r
-   reading cap and its margin (folded into the panel's own padding) and carries the paper of its own accord.\r
-   The caps are .hb-blocks > X rules, scoped to the blocks themselves \xE2\u20AC\u201D this selector reaches none of them. */\r
-.hb-board-overlay .hb-blocks {\r
-  box-sizing: border-box;\r
-  width: min(1600px, 100%);\r
-  max-width: none;\r
-  max-height: 100%;\r
-  overflow: auto;\r
-  margin: 0;\r
-  padding: 24px;\r
-  border-radius: 16px;\r
-  background: var(--background, Canvas);\r
-}\r
-.hb-overlay-close {\r
-  position: absolute;\r
-  top: 14px;\r
-  right: 14px;\r
-  display: inline-flex;\r
-  align-items: center;\r
-  justify-content: center;\r
-  width: 32px;\r
-  height: 32px;\r
-  padding: 0;\r
-  border: 1px solid rgba(255, 255, 255, 0.35);\r
-  border-radius: 9px;\r
-  background: rgba(0, 0, 0, 0.45);\r
-  color: #fff;\r
-  cursor: pointer;\r
-}\r
-.hb-overlay-close:hover { background: rgba(0, 0, 0, 0.65); }\r
-\r
-/* Export affordance (host/ExportChrome.tsx): deterministic host acts, zero requests \xE2\u20AC\u201D a chart's PNG (the SVG\r
-   kinds and the DOM-drawn bars alike), a table's CSV, the whole board's Markdown or JSON from the envelope the\r
-   page already holds. The board menu sits in the tag's top corner: quiet until the pointer is on the board or\r
-   the key reaches it, and visible while its own menu is open. The per-block corner buttons live in a layer\r
-   OUTSIDE .hb-blocks: the board's drawing stays exactly what it always was, the one mounted instance is never\r
-   re-rendered by the chrome, and the walk pairs data with the elements the reader is looking at. Every\r
-   exportable block's button is ALWAYS in the DOM and in the tab order (keyboard readers reach it without a\r
-   mouse); at rest it is merely invisible and unreachable to the pointer (opacity 0, pointer-events none \xE2\u20AC\u201D\r
-   neither keeps focus away), and the pointer lights its corner while any focus, especially a keyboard one,\r
-   shows it whole. The menu's word (a failure) and the corner's word (no 2D painting here) WRAP: they may grow\r
-   taller, never wider than their box, the rule every status word here keeps. Controls sit outside .hb-blocks,\r
-   so --hb-* tokens are undefined here: the app tokens, with fallbacks. The tag itself takes position:relative\r
-   and no part in layout beyond what it had \xE2\u20AC\u201D it only anchors the layer and the menu. */\r
-.hb-export {\r
-  position: absolute;\r
-  top: 6px;\r
-  right: 6px;\r
-  z-index: 1;\r
-  display: inline-flex;\r
-  align-items: center;\r
-  justify-content: center;\r
-  width: 28px;\r
-  height: 28px;\r
-  padding: 0;\r
-  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);\r
-  border-radius: 8px;\r
-  background: color-mix(in srgb, var(--background, #ffffff) 85%, transparent);\r
-  color: var(--ui-text-tertiary, #6b7280);\r
-  cursor: pointer;\r
-  opacity: 0;\r
-}\r
-.hb-tag:hover .hb-export, .hb-export:focus-visible, .hb-export[aria-expanded="true"] { opacity: 1; }\r
-.hb-export-menu {\r
-  position: absolute;\r
-  top: 38px;\r
-  right: 6px;\r
-  z-index: 3;\r
-  display: flex;\r
-  flex-direction: column;\r
-  gap: 2px;\r
-  min-width: 150px;\r
-  max-width: 240px;\r
-  padding: 4px;\r
-  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);\r
-  border-radius: 10px;\r
-  background: var(--background, #ffffff);\r
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);\r
-}\r
-.hb-export-menu > button {\r
-  display: block;\r
-  width: 100%;\r
-  padding: 6px 10px;\r
-  border: 0;\r
-  border-radius: 7px;\r
-  background: none;\r
-  color: var(--foreground, #1f2328);\r
-  font: inherit;\r
-  font-size: 13px;\r
-  text-align: left;\r
-  cursor: pointer;\r
-}\r
-.hb-export-menu > button:hover, .hb-export-menu > button:focus-visible {\r
-  background: color-mix(in srgb, var(--foreground, #1f2328) 7%, transparent);\r
-}\r
-.hb-export-failed {\r
-  padding: 4px 10px 6px;\r
-  color: var(--ui-text-tertiary, #6b7280);\r
-  font-size: 12px;\r
-  white-space: normal;\r
-  overflow-wrap: anywhere;\r
-}\r
-.hb-export-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; }\r
-.hb-export-btn {\r
-  position: absolute;\r
-  display: inline-flex;\r
-  align-items: center;\r
-  justify-content: center;\r
-  width: 26px;\r
-  height: 26px;\r
-  padding: 0;\r
-  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);\r
-  border-radius: 8px;\r
-  background: color-mix(in srgb, var(--background, #ffffff) 88%, transparent);\r
-  color: var(--ui-text-tertiary, #6b7280);\r
-  cursor: pointer;\r
-  opacity: 0;              /* invisible at rest, never in the pointer's way \xE2\u20AC\u201D and still in the tab order */\r
-  pointer-events: none;\r
-}\r
-.hb-export-btn.lit, .hb-export-btn:hover, .hb-export-btn:focus-visible {\r
-  opacity: 1;\r
-  pointer-events: auto;\r
-  color: var(--foreground, #1f2328);\r
-  background: var(--background, #ffffff);\r
-}\r
-.hb-export-said {\r
-  position: absolute;\r
-  max-width: 220px;\r
-  padding: 4px 8px;\r
-  border-radius: 8px;\r
-  background: color-mix(in srgb, var(--background, #ffffff) 90%, transparent);\r
-  color: var(--ui-text-tertiary, #6b7280);\r
-  font-size: 12px;\r
-  white-space: normal;\r
-  overflow-wrap: anywhere;\r
-}\r
+var blockTag_default = `/* The block tag's own states */
+.hb-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 10px 14px;
+  max-width: 100%;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--foreground, #1f2328) 5%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 13px;
+}
+.hb-pulse { animation: hb-pulse 1.2s ease-in-out infinite; }
+@keyframes hb-pulse { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) {
+  .hb-pulse { animation: none; }
+}
+
+/* --- Living Boards ---------------------------------------------------------------------------
+   The quiet row a live board says under itself, and the pointer a later tag of the same address
+   draws instead of a second board. Both sit OUTSIDE .hb-blocks (the board's own DOM is untouched)
+   and animate nothing: with no motion of their own there is nothing for prefers-reduced-motion
+   to still. Colors ride the app's own variables with fallbacks, as the chrome row's do. */
+.hb-live {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 10%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--background, #ffffff) 60%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.hb-live-line { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hb-live-mark { color: var(--ui-success, #1a7f37); }
+.hb-live-version { font-weight: 600; color: var(--foreground, #1f2328); }
+.hb-live-addr {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--foreground, #1f2328) 7%, transparent);
+}
+.hb-live-history, .hb-live-back, .hb-link-chip {
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 1px 10px;
+  cursor: pointer;
+}
+.hb-live-history[aria-pressed="true"], .hb-link-chip[aria-expanded="true"] {
+  border-color: var(--theme-primary, #e0a83c);
+  color: var(--foreground, #1f2328);
+}
+.hb-links { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hb-links-label { font-style: italic; }
+.hb-link { display: contents; }
+.hb-linked {
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px dashed color-mix(in srgb, var(--foreground, #1f2328) 22%, transparent);
+  border-radius: 10px;
+}
+.hb-linked-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.hb-linked-gone { color: var(--ui-text-tertiary, #6b7280); font-style: italic; }
+.hb-live-pointer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 6px 0;
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+/* Expand / full-screen board (host/BlockTag.tsx): the images strip's full-size overlay pattern, raised to a
+   whole board \xE2\u20AC\u201D the photo scrim's own numbers (fixed, same z, same appear animation) and the same way of
+   closing (Escape, the scrim, a close control). One honest correction: a stateless photo may be re-drawn at
+   full size, a board may not \xE2\u20AC\u201D its blocks carry live state. So the host wrapper (.hb-board-host) is a plain
+   block container at rest, costing the inline board nothing, and IS the dialog while expanded: the ONE drawn
+   .hb-blocks is lifted into it, not duplicated, and settles back into flow on close. The control lives
+   OUTSIDE .hb-blocks and out of flow (absolute); it stays quiet until the pointer is on the board or the key
+   reaches it. Inside the dialog the board's 1100px reading cap lifts, so full-width blocks ride the wider
+   container, while every .hb-blocks > X cap (the 720px cards, the fit-content table) is the board's own rule
+   and keeps its number in both views. Chrome measures exactly that (tests/test_expand_fullscreen.py). */
+.hb-tag { position: relative; }
+.hb-expand {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background, #ffffff) 85%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  cursor: pointer;
+  opacity: 0;
+}
+.hb-tag:hover .hb-expand, .hb-expand:focus-visible { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .hb-expand { transition: none; }
+}
+.hb-board-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: rgba(0, 0, 0, 0.82);
+  animation: hb-appear 0.18s ease-out;
+}
+/* The wider container, in the ONE shipped rule: the expanded board box is a single element \xE2\u20AC\u201D it sheds the
+   reading cap and its margin (folded into the panel's own padding) and carries the paper of its own accord.
+   The caps are .hb-blocks > X rules, scoped to the blocks themselves \xE2\u20AC\u201D this selector reaches none of them. */
+.hb-board-overlay .hb-blocks {
+  box-sizing: border-box;
+  width: min(1600px, 100%);
+  max-width: none;
+  max-height: 100%;
+  overflow: auto;
+  margin: 0;
+  padding: 24px;
+  border-radius: 16px;
+  background: var(--background, Canvas);
+}
+.hb-overlay-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  cursor: pointer;
+}
+.hb-overlay-close:hover { background: rgba(0, 0, 0, 0.65); }
+
+/* Export affordance (host/ExportChrome.tsx): deterministic host acts, zero requests \xE2\u20AC\u201D a chart's PNG (the SVG
+   kinds and the DOM-drawn bars alike), a table's CSV, the whole board's Markdown or JSON from the envelope the
+   page already holds. The board menu sits in the tag's top corner: quiet until the pointer is on the board or
+   the key reaches it, and visible while its own menu is open. The per-block corner buttons live in a layer
+   OUTSIDE .hb-blocks: the board's drawing stays exactly what it always was, the one mounted instance is never
+   re-rendered by the chrome, and the walk pairs data with the elements the reader is looking at. Every
+   exportable block's button is ALWAYS in the DOM and in the tab order (keyboard readers reach it without a
+   mouse); at rest it is merely invisible and unreachable to the pointer (opacity 0, pointer-events none \xE2\u20AC\u201D
+   neither keeps focus away), and the pointer lights its corner while any focus, especially a keyboard one,
+   shows it whole. The menu's word (a failure) and the corner's word (no 2D painting here) WRAP: they may grow
+   taller, never wider than their box, the rule every status word here keeps. Controls sit outside .hb-blocks,
+   so --hb-* tokens are undefined here: the app tokens, with fallbacks. The tag itself takes position:relative
+   and no part in layout beyond what it had \xE2\u20AC\u201D it only anchors the layer and the menu. */
+.hb-export {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background, #ffffff) 85%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  cursor: pointer;
+  opacity: 0;
+}
+.hb-tag:hover .hb-export, .hb-export:focus-visible, .hb-export[aria-expanded="true"] { opacity: 1; }
+.hb-export-menu {
+  position: absolute;
+  top: 38px;
+  right: 6px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+  max-width: 240px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
+  border-radius: 10px;
+  background: var(--background, #ffffff);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.hb-export-menu > button {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--foreground, #1f2328);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.hb-export-menu > button:hover, .hb-export-menu > button:focus-visible {
+  background: color-mix(in srgb, var(--foreground, #1f2328) 7%, transparent);
+}
+.hb-export-failed {
+  padding: 4px 10px 6px;
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 12px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.hb-export-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.hb-export-btn {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background, #ffffff) 88%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  cursor: pointer;
+  opacity: 0;              /* invisible at rest, never in the pointer's way \xE2\u20AC\u201D and still in the tab order */
+  pointer-events: none;
+}
+.hb-export-btn.lit, .hb-export-btn:hover, .hb-export-btn:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  color: var(--foreground, #1f2328);
+  background: var(--background, #ffffff);
+}
+.hb-export-said {
+  position: absolute;
+  max-width: 220px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background, #ffffff) 90%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 12px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 `;
 
 // src/blocks/atoms/atoms.css
