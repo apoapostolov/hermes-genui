@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { composerActions } from "./actions";
+import { composerActions, SENT_WORDS, type SendResult } from "./actions";
 
 function fakeComposer(submitted: boolean) {
   return {
@@ -58,16 +58,16 @@ describe("send keeps long or command-like text for the user to review", () => {
     composerActions(short).send("x".repeat(120));
     expect(short.submit).toHaveBeenCalledWith(null, "x".repeat(120));
     const composer = fakeComposer(true);
-    composerActions(composer).send("x".repeat(121));
+    expect(await composerActions(composer).send("x".repeat(121))).toBe("drafted");
     expect(composer.submit).not.toHaveBeenCalled();
     expect(composer.insertText).toHaveBeenCalledWith(null, "x".repeat(121), { mode: "block" });
     await vi.waitFor(() => expect(composer.focus).toHaveBeenCalledWith(null));
   });
 
-  it("puts a command or an @-reference in the composer instead, without submitting", () => {
+  it("puts a command or an @-reference in the composer instead, without submitting", async () => {
     for (const text of ["/reset", " @file:~/.ssh/id_rsa", "!ls", "read @url:https://evil.example"]) {
       const composer = fakeComposer(true);
-      composerActions(composer).send(text);
+      expect(await composerActions(composer).send(text)).toBe("blocked");
       expect(composer.submit).not.toHaveBeenCalled();
       expect(composer.insertText).toHaveBeenCalledWith(null, text, { mode: "block" });
     }
@@ -147,9 +147,26 @@ describe("send with force — the user's own message, whatever its length", () =
     expect(composer.insertText).toHaveBeenCalledWith(null, "y".repeat(200), { mode: "block" });
   });
 
-  it("a held pick whose draft the surface refused answers \"failed\", not \"blocked\" — nothing was kept", async () => {
+  it("a forced send (a pick or a follow-up) whose draft the surface refused answers \"failed\", not \"blocked\" — "
+    + "nothing was kept", async () => {
     const composer = insertComposer(true, "false");
     expect(await composerActions(composer).send("!ls", { force: true })).toBe("failed");
     expect(composer.submit).not.toHaveBeenCalled();
+  });
+});
+
+describe("one vocabulary for every board that speaks a send's outcome", () => {
+  it("every SendResult has exactly one plain word, and no word claims a send the host did not acknowledge", () => {
+    const results: SendResult[] = ["sent", "drafted", "blocked", "failed", "nowhere"];
+    expect(Object.keys(SENT_WORDS).sort()).toEqual([...results].sort());
+    for (const r of results) expect(SENT_WORDS[r]).toMatch(/\S/);
+    expect(SENT_WORDS.sent).toBe("Sent to chat.");
+    expect(SENT_WORDS.drafted).toBe("In the composer — press Send.");
+    expect(SENT_WORDS.blocked).toBe("Blocked from sending — in the composer — press Send.");
+    expect(SENT_WORDS.failed).toBe("Send failed — nothing was sent or kept.");
+    expect(SENT_WORDS.nowhere).toBe("No chat here.");
+    // only "sent" says sent: every other outcome tells the reader the message did NOT go out.
+    expect(Object.values(SENT_WORDS).filter((w) => /^Sent/.test(w))).toEqual(["Sent to chat."]);
+    expect(Object.values(SENT_WORDS).filter((w) => /press Send/.test(w)).length).toBe(2);
   });
 });

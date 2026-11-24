@@ -229,3 +229,19 @@ def test_provenance_words_coexist_with_the_living_words(tmp_path):
     assert store.as_of_of(back) == "2026-11-18"
     assert store.live_of(back) is True
     assert store.version_of(back) is None
+def test_follow_ups_of_reads_the_envelope_word(tmp_path):
+    plain = [{"type": "text", "text": "hi"}]
+    ups = [{"label": "Go", "run": "Tell me more"}]
+    assert store.follow_ups_of({"follow_ups": ups, "blocks": plain}) == ups
+    assert store.follow_ups_of(plain) is None
+    assert store.follow_ups_of({"blocks": plain}) is None
+    assert store.follow_ups_of({"follow_ups": "not a list", "blocks": plain}) is None
+    assert store.follow_ups_of({"follow_ups": [], "blocks": plain}) is None
+    assert store.follow_ups_of(None) is None
+
+
+def test_save_and_load_round_trip_a_follow_ups_envelope(tmp_path):
+    ups = [{"label": "Go", "run": "Tell me more"}]
+    board = {"links": [{"id": "7f3a09bc"}], "follow_ups": ups, "blocks": [{"type": "text", "text": "hi"}]}
+    block_id = store.save(board, root=tmp_path)
+    assert store.load(block_id, root=tmp_path) == board

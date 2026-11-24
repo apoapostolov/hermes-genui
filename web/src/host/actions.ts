@@ -15,8 +15,9 @@ export type Rest = (path: string, init?: { method?: string; body?: unknown }) =>
 export type SendResult = "sent" | "drafted" | "blocked" | "failed" | "nowhere";
 
 export type SendOptions = {
-  /** The text IS the user's own message — a selection they ticked, not a suggestion they tapped. Length no longer
-   *  holds it back; the command/file guard still does, because that one is about trust, not about who typed it. */
+  /** The text IS the user's own message: a selection they ticked, or a follow-up they tapped with its whole
+   *  message already shown on the pill (title and all). Length no longer holds it back; the command/file guard
+   *  still does, because that one is about trust, not about who typed it. */
   force?: boolean;
 };
 
@@ -47,8 +48,21 @@ export type Composer = {
 };
 
 // The longest message a tap sends at once. A longer one is put in the composer for the user to read and send.
-// A send the user composed themselves (a ticked table selection) says so with force and may be any length.
+// A send the user composed themselves — a ticked table selection, a tapped follow-up — says so with force and
+// may be any length.
 export const MAX_SENT = 120;
+
+// Where the last tap went, told plainly — and only once the host has said so. A word never claims more than the
+// host acknowledged: no draft without an ack, no send without a yes, and a refusal that saved nothing says so.
+// Every board that speaks a send's outcome says it with these words — the follow-up strip under a board today,
+// and any future one — one answer, one vocabulary.
+export const SENT_WORDS: Record<SendResult, string> = {
+  sent: "Sent to chat.",
+  drafted: "In the composer — press Send.",
+  blocked: "Blocked from sending — in the composer — press Send.",
+  failed: "Send failed — nothing was sent or kept.",
+  nowhere: "No chat here.",
+};
 
 /**
  * send and fill on the composer the user is typing in (sessionId null). Every call is guarded: an app build without
@@ -61,9 +75,10 @@ export const MAX_SENT = 120;
  *   user sees it and decides — "drafted" once the insert acknowledges (or "blocked", when the guard rather than
  *   mere length held an explicit send back), and "failed" if the insert was refused: the text is nowhere (the
  *   block readers drop such buttons already; this is the last guard)
- *   send(a picked table selection, { force: true }): length does not hold it back — the user wrote this by picking
- *   it — but command and file text is still only drafted, and it answers "blocked" once the composer acknowledges
- *   the hold; a refused submit falls back to a draft the same way; nothing is ever claimed before the host agrees
+ *   send(a selection the reader ticked, or a follow-up they tapped, { force: true }): length does not hold it
+ *   back — the reader chose this whole message, and the pill or the pick showed it — but command and file text is
+ *   still only drafted, and it answers "blocked" once the composer acknowledges the hold; a refused submit falls
+ *   back to a draft the same way; nothing is ever claimed before the host agrees
  *   fill("Add Gion"): the text is put in the composer as its own block, then the caret goes there
  */
 export function composerActions(composer: Composer | undefined): Pick<Actions, "send" | "fill"> {

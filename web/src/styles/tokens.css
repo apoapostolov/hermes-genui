@@ -133,3 +133,38 @@
   color: var(--hb-good);
   border-color: color-mix(in srgb, var(--hb-good) 45%, transparent);
 }
+/* The follow-up strip: the quiet line of taps (core/FollowUps.tsx) a board grows when its envelope offers
+   follow-ups. The row is width:0 + min-width:100% on purpose — the same trick a shipped tools row uses:
+   it fills the board's column without ever contributing its own width to a fit-content hug, so the strip can
+   never widen a board that hugs. Pills WRAP their labels and the row WRAPS its pills: the whole message is the
+   point of the tap, so no board is too narrow to read one — height may grow, width never, nothing clips, no
+   nowrap and no ellipsis. Pinned in real Chrome by tests/test_follow_ups_chrome.py. */
+.hb-followups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+  width: 0;
+  min-width: 100%;
+  box-sizing: border-box;
+  padding: 2px 0 0;
+}
+.hb-followups .hb-pill {
+  flex: 0 1 auto;
+  min-width: 0;
+  min-height: 28px;
+  padding: 4px 12px;
+  font-size: 12px;
+}
+.hb-followups .hb-followup-label { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+/* The word the strip says is only ever the host's own answer to the LAST tap (core/FollowUps.tsx), and it
+   follows the row's rule: WRAP, never clip — height may grow, width never. At rest it carries no text and
+   costs the board nothing. */
+.hb-followups-said {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  color: var(--hb-muted);
+}

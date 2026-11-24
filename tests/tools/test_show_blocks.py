@@ -391,5 +391,108 @@ def test_a_long_as_of_is_cut_to_the_footer_line(store_dir):
 
 def test_including_a_board_keeps_its_blocks_and_not_its_provenance(store_dir):
     board_id = plugin_store.save({"as_of": "2026-11-18", "live": True, "blocks": [TIMELINE]}, root=store_dir)
+# --- follow-ups: the board's tappable continuations ride the same envelope (enhancement #5) ----------------------
+
+def test_follow_ups_are_stored_beside_the_blocks(store_dir):
+    ups = [{"label": "Plan day 2", "run": "Plan the second day of my Kyoto itinerary"},
+           {"label": "Find trains", "run": "Compare trains between Kyoto and Osaka"}]
+    result = tools.show_blocks({"blocks": [TIMELINE], "follow_ups": ups})
+    assert plugin_store.load(stored_id(result), root=store_dir) == {"follow_ups": ups, "blocks": [TIMELINE]}
+
+
+def test_a_board_that_says_no_follow_ups_stores_what_it_always_stored(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE]})
+    assert plugin_store.load(stored_id(result), root=store_dir) == [TIMELINE]
+
+
+def test_follow_up_text_is_trimmed(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE],
+                                "follow_ups": [{"label": "  Plan day 2 ", "run": "  Plan it  "}]})
+    assert plugin_store.load(stored_id(result), root=store_dir) == {
+        "follow_ups": [{"label": "Plan day 2", "run": "Plan it"}], "blocks": [TIMELINE]}
+
+
+def test_control_characters_never_reach_a_follow_up(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE],
+                                "follow_ups": [{"label": "Plan\x1b day", "run": "Plan\x07 day 2"}]})
+    assert plugin_store.load(stored_id(result), root=store_dir)["follow_ups"] == [
+        {"label": "Plan day", "run": "Plan day 2"}]
+
+
+def test_a_long_follow_up_message_is_kept_whole(store_dir):
+    run = "Expand every line of this board into a careful plan" + " for the rest of the trip" * 10
+    assert len(run) > 120  # the host's own length convention then drafts it whole; nothing is ever cut
+    result = tools.show_blocks({"blocks": [TIMELINE], "follow_ups": [{"label": "Go deeper", "run": run}]})
+    assert plugin_store.load(stored_id(result), root=store_dir)["follow_ups"][0]["run"] == run
+
+
+def test_a_follow_up_may_carry_a_new_line(store_dir):
+    run = "Plan day 2\nwith early starts"
+    result = tools.show_blocks({"blocks": [TIMELINE], "follow_ups": [{"label": "Both days", "run": run}]})
+    assert plugin_store.load(stored_id(result), root=store_dir)["follow_ups"][0]["run"] == run
+
+
+def test_a_follow_up_that_sends_a_command_is_refused(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE], "follow_ups": [{"label": "Reset", "run": "/reset"}]})
+    assert result.startswith("Not drawn.")
+    assert "follow_ups.0" in result and "can't start with / @ or !" in result
+    assert list(store_dir.glob("*.json")) == []
+
+
+def test_a_follow_up_that_pulls_a_file_is_refused(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE],
+                                "follow_ups": [{"label": "Notes", "run": "Summarise @file:notes.md"}]})
+    assert result.startswith("Not drawn.")
+    assert "follow_ups.0" in result and "@-references" in result
+    assert list(store_dir.glob("*.json")) == []
+
+
+def test_a_follow_up_needs_a_label_and_a_message(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE], "follow_ups": [{"label": "Only a label"}]})
+    assert "follow_ups.0: button needs a label and a run message" in result
+
+
+def test_too_many_follow_ups_is_a_problem(store_dir):
+    five = [{"label": f"Go {i}", "run": f"Continue number {i}"} for i in range(5)]
+    result = tools.show_blocks({"blocks": [TIMELINE], "follow_ups": five})
+    assert "follow_ups: needs 1-4 buttons" in result
+
+
+def test_an_empty_follow_ups_list_is_a_problem(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE], "follow_ups": []})
+    assert "follow_ups: needs 1-4 buttons" in result
+
+
+def test_follow_ups_must_be_a_list(store_dir):
+    result = tools.show_blocks({"blocks": [TIMELINE], "follow_ups": "just keep going"})
+    assert "follow_ups: needs a list of buttons" in result
+
+
+def test_follow_ups_ride_with_the_other_board_words(store_dir):
+    other = plugin_store.save([TIMELINE], root=store_dir)
+    ups = [{"label": "Go", "run": "Tell me more"}]
+    result = tools.show_blocks({"blocks": [TIMELINE], "links": [other], "follow_ups": ups})
+    assert plugin_store.load(stored_id(result), root=store_dir) == {
+        "links": [{"id": other}], "follow_ups": ups, "blocks": [TIMELINE]}
+
+
+def test_follow_ups_survive_an_update_in_place(store_dir):
+    first = tools.show_blocks({"blocks": [TIMELINE]})
+    addr = stored_id(first)
+    ups = [{"label": "Go deeper", "run": "Tell me more about day 2"}]
+    result = tools.show_blocks({"blocks": [TIMELINE], "target": addr, "follow_ups": ups})
+    assert stored_id(result) == addr  # the same address, in place
+    board = plugin_store.load(addr, root=store_dir)  # update stamps version/updated_at itself
+    assert board["follow_ups"] == ups and board["blocks"] == [TIMELINE]
+
+
+def test_follow_ups_are_documented_where_the_model_reads_the_params(store_dir):
+    desc = tools.SHOW_BLOCKS_SCHEMA["parameters"]["properties"]["follow_ups"]["description"]
+    assert "label" in desc and "run" in desc and "tap" in desc
+
+
+def test_including_a_board_takes_its_blocks_and_not_its_follow_ups(store_dir):
+    ups = [{"label": "Go", "run": "Tell me more"}]
+    board_id = plugin_store.save({"follow_ups": ups, "blocks": [TIMELINE]}, root=store_dir)
     result = tools.show_blocks({"blocks": [{"type": "include", "id": board_id}]})
     assert plugin_store.load(stored_id(result), root=store_dir) == [TIMELINE]

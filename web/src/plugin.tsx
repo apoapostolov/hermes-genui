@@ -29,7 +29,8 @@ export default {
     const load = (blockId: string) => ctx.rest(`/blocks/${blockId}`);
     const rest: Rest = (path, init) => ctx.rest(path, init);
     // host.composer is looked up on each tap, not once here, so a composer the app sets up later is still found.
-    // opts rides along: a block that forces its own message (a ticked table selection) must not lose that at this seam.
+    // opts rides along: a block that forces its own message (a ticked table selection, a tapped follow-up)
+    // must not lose that at this seam.
     const send = (text: string, opts?: SendOptions) => composerActions(host?.composer).send(text, opts);
     const fill = (text: string) => composerActions(host?.composer).fill(text);
     ctx.register({

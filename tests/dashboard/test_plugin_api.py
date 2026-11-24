@@ -327,3 +327,27 @@ def test_api_answers_provenance_and_living_words_from_one_envelope(client, tmp_p
         "blocks": board["blocks"], "version": 3, "updated_at": board["updated_at"],
         "as_of": "Nov 18, 09:55 UTC", "live": True,
     }
+def test_api_passes_the_boards_own_follow_ups(client, tmp_path):
+    http, api = client
+    ups = [{"label": "Go", "run": "Tell me more"}]
+    board = {"follow_ups": ups, "blocks": [{"type": "text", "text": "hi"}]}
+    block_id = api.store.save(board, root=tmp_path)
+    assert http.get(f"/blocks/{block_id}").json() == {"blocks": board["blocks"], "follow_ups": ups}
+
+
+def test_api_skips_follow_ups_that_were_never_a_list(client, tmp_path):
+    http, api = client
+    board = {"follow_ups": "just keep going", "blocks": [{"type": "text", "text": "hi"}]}
+    block_id = api.store.save(board, root=tmp_path)
+    assert http.get(f"/blocks/{block_id}").json() == {"blocks": board["blocks"]}
+
+
+def test_api_serves_follow_ups_the_version_it_belong_to(client, tmp_path):
+    http, api = client
+    ups1 = [{"label": "Go", "run": "Tell me more"}]
+    block_id = api.store.save({"follow_ups": ups1, "blocks": [{"type": "text", "text": "v1"}]}, root=tmp_path)
+    api.store.update(block_id, [{"type": "text", "text": "v2"}])
+    # the live answer says nothing follow-ups; the archived one still speaks its own, in the same shape.
+    assert "follow_ups" not in http.get(f"/blocks/{block_id}").json()
+    archived = http.get(f"/blocks/{block_id}?version=1").json()
+    assert archived["blocks"] == [{"type": "text", "text": "v1"}] and archived["follow_ups"] == ups1

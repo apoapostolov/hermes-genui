@@ -4,7 +4,9 @@ import json
 import math
 
 from ..blocks.chart import CHART_KINDS
-from ..blocks.common import align_word, as_of_line, board_address, link_problems, link_words, live_flag
+from ..blocks.common import (
+    align_word, as_of_line, board_address, follow_up_problems, follow_up_words, link_problems, link_words, live_flag,
+)
 from ..core import drawn, store, surface
 from ..core.catalog_text import describe, icons_line, spec
 from ..core.catalog_text import menu as core_menu
@@ -274,7 +276,7 @@ def show_blocks(params: dict, **kwargs) -> str:
         return _not_drawn(["blocks: not valid JSON"])
     if not blocks:
         return _not_drawn(["blocks: give at least one block"])
-    problems = check_blocks(blocks)
+    problems = check_blocks(blocks) + follow_up_problems(params.get("follow_ups"))
     if problems:  # the check's problems come with how to write the blocks they're about
         return _not_drawn(problems, blocks)
     target = _target_address(params.get("target"), problems)
@@ -286,9 +288,10 @@ def show_blocks(params: dict, **kwargs) -> str:
         problems = [deep] if (deep := too_deep(blocks)) else []
     if problems:
         return _not_drawn(problems)
-    # The board's own words ride beside its blocks: placement, links, and the provenance of its data. Said or not,
-    # a block can override either placement word.
+    # The board's own words ride beside its blocks: placement, links, the provenance of its data, and the
+    # follow-ups it offers. Said or not, a block can override either placement word.
     word, text_word = align_word(params.get("align")), align_word(params.get("text_align"))
+    ups = follow_up_words(params.get("follow_ups"))  # its shape was answered by follow_up_problems above
     envelope: dict = {}
     if word is not None:
         envelope["align"] = word
@@ -300,6 +303,8 @@ def show_blocks(params: dict, **kwargs) -> str:
         envelope["as_of"] = as_of
     if (live := live_flag(params.get("live"))) is not None:
         envelope["live"] = live
+    if ups:
+        envelope["follow_ups"] = ups
     board: list | dict = {**envelope, "blocks": blocks} if envelope else blocks
     refusal = too_big(board)
     if refusal:
@@ -389,6 +394,16 @@ def schema(guide: str = "full") -> dict:
                     "type": "boolean",
                     "description": "Optional. true: the figures update live; false: this is a snapshot taken at "
                     "as_of. The board's footer shows the word Live or Snapshot. Only give it when you really know.",
+                },
+                "follow_ups": {
+                    "type": "array",
+                    "items": {"type": "object"},
+                    "description": "Optional. One line of quiet tappable prompts (1-4) drawn under the board, each "
+                    "{\"label\": \"Plan day 2\", \"run\": \"Plan the second day of my Kyoto itinerary\"}. A tap sends "
+                    "the run message to the chat as the reader's own — you choose the prompts; the reader gets no "
+                    "controls. Offer them when one more exchange would genuinely help (a next step, a deeper cut, a "
+                    "fix to a flaw the board itself shows); skip them when the answer is finished. A message Hermes "
+                    "acts on before the model (starting / @ or !, or carrying an @-reference) is refused.",
                 },
             },
             "required": ["blocks"],

@@ -21,10 +21,17 @@
 // deduped in draw order (the chart keeps its inline line). The absorbed source sits on its own row of the footer
 // column, beside the join line of everything else. A board that declares nothing draws exactly what it always
 // drew: no footer, no new nodes.
-import { Component as ReactComponent, createContext, Fragment, useContext, type ErrorInfo, type ReactNode } from "react";import { FlowLightBoard } from "../blocks/flow/highlight";
+// A board whose envelope offers follow-ups (boardFollowUps, readBlocks.ts) also grows a quiet strip beneath
+// its blocks: up to four tappable prompts the AI chose so the reader can continue the conversation in one tap.
+// Their drawing is core/FollowUps.tsx; the row costs a fit-content hug zero width and wraps long labels rather
+// than clipping them. Nothing offered, no strip: the same DOM as always.
+import { Component as ReactComponent, createContext, Fragment, useContext, type ErrorInfo, type ReactNode } from "react";
+import { FlowLightBoard } from "../blocks/flow/highlight";
 import type { SourceBlock } from "../blocks/source/read";
 import { REGISTRY, type Block } from "../registry";
 import type { BlockEntry } from "./types";
+import type { FollowUp } from "./readBlocks";
+import { FollowUps } from "./FollowUps";
 import { BlockSlot } from "./blockState";
 import { carriedKey, identityOf, mintKey, noteMounted } from "./living-identity";
 import type { Align } from "./fields";
@@ -150,8 +157,9 @@ function ProvenanceFooter({ source, chartSources, asOf, live }: {
   );
 }
 
-export function Blocks({ blocks, boardAlign, boardTextAlign, provenance }: {
-  blocks: Block[]; boardAlign?: Align; boardTextAlign?: Align; provenance?: Provenance;
+export function Blocks({ blocks, boardAlign, boardTextAlign, provenance, boardFollowUps }: {
+  blocks: Block[]; boardAlign?: Align; boardTextAlign?: Align;
+  provenance?: Provenance; boardFollowUps?: FollowUp[];
 }) {
   const declared = provenance?.asOf !== undefined || provenance?.live !== undefined;
   let list = blocks;
@@ -181,6 +189,7 @@ export function Blocks({ blocks, boardAlign, boardTextAlign, provenance }: {
           <ProvenanceFooter source={source} chartSources={chartSources}
             asOf={provenance?.asOf} live={provenance?.live} />
         )}
+        {!!boardFollowUps?.length && <FollowUps items={boardFollowUps} />}
       </div>
     </AlignScope.Provider>
   );
