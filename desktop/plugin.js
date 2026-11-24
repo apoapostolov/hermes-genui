@@ -9839,6 +9839,23 @@ function blocksAsMarkdown(blocks) {
 
 // src/host/ExportChrome.tsx
 import { Fragment as Fragment15, jsx as jsx51, jsxs as jsxs47 } from "react/jsx-runtime";
+var EXPORT_BTN = 26;
+var EXPORT_INSET = 8;
+var GLOBAL_GUTTER = 40;
+var GLOBAL_BAND = 80;
+var GLOBAL_GAP = 6;
+function cornerOf(block, tag) {
+  const b = { left: block.left - tag.left, top: block.top - tag.top, right: block.right - tag.left };
+  const tagW = Math.round(tag.right - tag.left);
+  let left = Math.round(b.right) - EXPORT_INSET - EXPORT_BTN;
+  const top = Math.round(b.top) + EXPORT_INSET;
+  const bandLeft = tagW - GLOBAL_GUTTER;
+  if (left + EXPORT_BTN > bandLeft && top < GLOBAL_BAND) left = bandLeft - EXPORT_BTN - GLOBAL_GAP;
+  const minLeft = Math.round(b.left) + 2;
+  const maxLeft = Math.round(b.right) - EXPORT_BTN - 2;
+  left = maxLeft >= minLeft ? Math.min(Math.max(left, minLeft), maxLeft) : minLeft;
+  return { left: Math.max(left, 0), top: Math.max(top, 0) };
+}
 var CONTAINER = ["row", "section", "grid", "columns", "tabs"];
 function blocksOf(board) {
   if (Array.isArray(board)) return board;
@@ -9877,8 +9894,9 @@ function useExportChrome(args) {
     const measure = (block, root, kind) => {
       const r = root.getBoundingClientRect();
       const t = host2.getBoundingClientRect();
+      const at2 = cornerOf(r, t);
       const name = kind === "table" ? block.caption ?? "" : block.spec.title ?? block.spec.series[0]?.name ?? "Chart";
-      out.push({ block, root, kind, name, left: Math.round(r.right - t.left) - 34, top: Math.round(r.top - t.top) + 6 });
+      out.push({ block, root, kind, name, left: at2.left, top: at2.top });
     };
     const walk = (list, els) => {
       list.forEach((block, i) => {
@@ -10039,7 +10057,7 @@ function useExportChrome(args) {
         className: "hb-export-said",
         role: "status",
         "aria-live": "polite",
-        style: { left: `${found[said].left}px`, top: `${found[said].top + 30}px` },
+        style: { left: `${found[said].left}px`, top: `${found[said].top + EXPORT_BTN + 4}px` },
         children: "No picture could be exported."
       }
     )
@@ -10972,9 +10990,12 @@ var blockTag_default = `/* The block tag's own states */
    taller, never wider than their box, the rule every status word here keeps. Controls sit outside .hb-blocks,
    so --hb-* tokens are undefined here: the app tokens, with fallbacks. The tag itself takes position:relative
    and no part in layout beyond what it had \xE2\u20AC\u201D it only anchors the layer and the menu. */
+/* The tag's corner is a STACK, not a shared spot: the expand control owns the very top (6px) and the board
+   menu sits below it (42px), so the two view acts never sit on each other. A block's own corner control
+   (host/ExportChrome.tsx cornerOf) is told this stack's width and height and slides left of it. */
 .hb-export {
   position: absolute;
-  top: 6px;
+  top: 42px;
   right: 6px;
   z-index: 1;
   display: inline-flex;
@@ -10993,7 +11014,7 @@ var blockTag_default = `/* The block tag's own states */
 .hb-tag:hover .hb-export, .hb-export:focus-visible, .hb-export[aria-expanded="true"] { opacity: 1; }
 .hb-export-menu {
   position: absolute;
-  top: 38px;
+  top: 74px;
   right: 6px;
   z-index: 3;
   display: flex;
