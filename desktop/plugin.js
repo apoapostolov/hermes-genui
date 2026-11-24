@@ -166,7 +166,7 @@ function composerActions(composer) {
 }
 
 // src/host/BlockTag.tsx
-import { useContext as useContext13, useEffect as useEffect10, useLayoutEffect as useLayoutEffect4, useReducer, useRef as useRef15, useState as useState27 } from "react";
+import { useContext as useContext14, useEffect as useEffect11, useLayoutEffect as useLayoutEffect5, useReducer, useRef as useRef16, useState as useState28 } from "react";
 
 // src/core/Blocks.tsx
 import { Component as ReactComponent, useContext as useContext11 } from "react";
@@ -413,8 +413,8 @@ function barAmount(value, max, unit) {
   if (max === 100 && !unit) return `${value}%`;
   const money = formatAmount(value, unit);
   if (money !== null) return `${money} / ${formatAmount(max, unit)}`;
-  const amount = `${formatNumber(value, { digits: 3 })} / ${formatNumber(max, { digits: 3 })}`;
-  return unit ? `${amount} ${unit}` : amount;
+  const amount2 = `${formatNumber(value, { digits: 3 })} / ${formatNumber(max, { digits: 3 })}`;
+  return unit ? `${amount2} ${unit}` : amount2;
 }
 function Bar({ label, value, max, unit }) {
   const share = value === null ? 0 : Math.max(0, Math.min(1, value / max));
@@ -1131,36 +1131,36 @@ function changePct(data) {
 }
 var MAX_SLICES = 8;
 function pieSlices(x, data) {
-  const slices = [];
+  const slices2 = [];
   data.forEach((v, i) => {
-    if (v !== null && v > 0 && i < x.length) slices.push({ label: x[i], value: v });
+    if (v !== null && v > 0 && i < x.length) slices2.push({ label: x[i], value: v });
   });
-  if (slices.length <= MAX_SLICES) return { x: slices.map((s) => s.label), data: slices.map((s) => s.value) };
-  const biggestFirst = [...slices].sort((a, b) => b.value - a.value);
+  if (slices2.length <= MAX_SLICES) return { x: slices2.map((s) => s.label), data: slices2.map((s) => s.value) };
+  const biggestFirst = [...slices2].sort((a, b) => b.value - a.value);
   const kept = new Set(biggestFirst.slice(0, MAX_SLICES - 1));
-  const shown2 = slices.filter((s) => kept.has(s));
+  const shown2 = slices2.filter((s) => kept.has(s));
   let other = 0;
-  for (const s of slices) if (!kept.has(s)) other += s.value;
+  for (const s of slices2) if (!kept.has(s)) other += s.value;
   return { x: [...shown2.map((s) => s.label), "Other"], data: [...shown2.map((s) => s.value), other] };
 }
 function stackSeries(series, n) {
   const up = new Array(n).fill(0);
   const down = new Array(n).fill(0);
   return series.map((s) => {
-    const bands = [];
+    const bands2 = [];
     for (let i = 0; i < n; i++) {
       const v = s.data[i] ?? null;
       if (v === null) {
-        bands.push(null);
+        bands2.push(null);
       } else if (v >= 0) {
-        bands.push({ from: up[i], to: up[i] + v });
+        bands2.push({ from: up[i], to: up[i] + v });
         up[i] += v;
       } else {
-        bands.push({ from: down[i], to: down[i] + v });
+        bands2.push({ from: down[i], to: down[i] + v });
         down[i] += v;
       }
     }
-    return bands;
+    return bands2;
   });
 }
 function totalAt(series, i) {
@@ -1244,7 +1244,7 @@ function seriesName(series, k) {
 function missingLabels(spec) {
   return spec.x.filter((_, i) => spec.series.every((s) => s.data[i] === null || s.data[i] === void 0)).map(String);
 }
-function chartScales(spec, bands) {
+function chartScales(spec, bands2) {
   if (spec.type === "scatter") {
     const drawn = scatterPoints(spec.series);
     return {
@@ -1253,8 +1253,8 @@ function chartScales(spec, bands) {
       x: scaleFor(drawn.map((p) => p.x), false)
     };
   }
-  if (bands) {
-    const ends = bands.flat().flatMap((b) => b === null ? [] : [b.from, b.to]);
+  if (bands2) {
+    const ends = bands2.flat().flatMap((b) => b === null ? [] : [b.from, b.to]);
     return { left: scaleFor(ends, true), right: null };
   }
   const leftValues = spec.series.filter((s) => !s.right).flatMap((s) => numbersOf(s.data));
@@ -2001,16 +2001,16 @@ function stepPick(at2, key, n, rows = false) {
   if (back) return at2 === null ? n - 1 : Math.max(0, at2 - 1);
   return void 0;
 }
-function pickKeys(n, at2, pick, rows = false) {
+function pickKeys(n, at2, pick2, rows = false) {
   return {
     tabIndex: 0,
     onKeyDown: (e) => {
       const next = stepPick(at2, e.key, n, rows);
       if (next === void 0) return;
       e.preventDefault();
-      pick(next);
+      pick2(next);
     },
-    onBlur: () => pick(null)
+    onBlur: () => pick2(null)
   };
 }
 
@@ -2178,10 +2178,10 @@ function BarMarks({ spec, layout, hover }) {
     /* @__PURE__ */ jsx9(Baseline, { layout })
   ] });
 }
-function StackMarks({ bands, layout, hover }) {
+function StackMarks({ bands: bands2, layout, hover }) {
   const { xAt, yAt, bar } = layout;
   return /* @__PURE__ */ jsxs6("g", { children: [
-    bands.map((partBands, k) => partBands.map((b, i) => b === null || b.from === b.to ? null : /* @__PURE__ */ jsx9(
+    bands2.map((partBands, k) => partBands.map((b, i) => b === null || b.from === b.to ? null : /* @__PURE__ */ jsx9(
       "rect",
       {
         x: xAt(i) - bar / 2,
@@ -2219,16 +2219,16 @@ function ComboMarks({ spec, layout, hover }) {
 
 // src/blocks/chart/AreaMarks.tsx
 import { jsx as jsx10, jsxs as jsxs7 } from "react/jsx-runtime";
-function AreaMarks({ bands, layout }) {
+function AreaMarks({ bands: bands2, layout }) {
   return /* @__PURE__ */ jsxs7("g", { children: [
     /* @__PURE__ */ jsx10("line", { x1: layout.left, x2: layout.right, y1: layout.base, y2: layout.base, className: "hb-chart-rule" }),
-    bands.map((partBands, k) => /* @__PURE__ */ jsx10(Area, { bands: partBands, layout, colour: partColour(k) }, k))
+    bands2.map((partBands, k) => /* @__PURE__ */ jsx10(Area, { bands: partBands, layout, colour: partColour(k) }, k))
   ] });
 }
-function Area({ bands, layout, colour }) {
-  const tops = bands.map((b, i) => b === null ? null : [layout.xAt(i), layout.yAt(b.to)]);
+function Area({ bands: bands2, layout, colour }) {
+  const tops = bands2.map((b, i) => b === null ? null : [layout.xAt(i), layout.yAt(b.to)]);
   return /* @__PURE__ */ jsx10("g", { children: lineRuns(tops).filter((run) => run.pts.length > 1).map((run, j) => {
-    const bottoms = run.pts.map((_, k) => layout.yAt(bands[run.from + k].from));
+    const bottoms = run.pts.map((_, k) => layout.yAt(bands2[run.from + k].from));
     const backAlongBottom = linePath(run.pts.map(([x], k) => [x, bottoms[k]]).reverse()).replace(/^M/, "L");
     const topEdge = linePath(run.pts);
     return /* @__PURE__ */ jsxs7("g", { children: [
@@ -2240,17 +2240,28 @@ function Area({ bands, layout, colour }) {
 
 // src/blocks/chart/HBarChart.tsx
 import { Fragment as Fragment3, useRef as useRef3, useState as useState6 } from "react";
+
+// src/blocks/chart/hbarLayout.ts
+function hbarSpan(spec) {
+  const values = spec.series.flatMap((s) => s.data.filter((v) => v !== null));
+  const lo = Math.min(0, ...values);
+  const hi = Math.max(0, ...values);
+  const span = hi - lo || 1;
+  return { lo, hi, span, zeroAt: -lo / span * 100 };
+}
+function hbarBarOf(v, span, zeroAt) {
+  const width = Math.max(Math.abs(v) / span * 100, 1.5);
+  return { left: v < 0 ? zeroAt - width : zeroAt, width };
+}
+
+// src/blocks/chart/HBarChart.tsx
 import { jsx as jsx11, jsxs as jsxs8 } from "react/jsx-runtime";
 function HBarChart({ spec }) {
   const [tip, setTip] = useState6(null);
   const [picked, setPicked] = useState6(null);
   const box = useRef3(null);
   const tracks = useRef3([]);
-  const values = spec.series.flatMap((s) => s.data.filter((v) => v !== null));
-  const lo = Math.min(0, ...values);
-  const hi = Math.max(0, ...values);
-  const span = hi - lo || 1;
-  const zeroAt = -lo / span * 100;
+  const { lo, span, zeroAt } = hbarSpan(spec);
   const single = spec.series.length === 1;
   const signed = lo < 0;
   const colourOf3 = (k, v) => {
@@ -2258,11 +2269,8 @@ function HBarChart({ spec }) {
     return v >= 0 ? "var(--hb-good)" : "var(--hb-warn)";
   };
   const unitOf2 = (k) => spec.series[k].unit ?? spec.unit;
-  const barOf = (v) => {
-    const width = Math.max(Math.abs(v) / span * 100, 1.5);
-    return { left: v < 0 ? zeroAt - width : zeroAt, width };
-  };
-  function pick(i) {
+  const barOf = (v) => hbarBarOf(v, span, zeroAt);
+  function pick2(i) {
     setPicked(i);
     const track = i === null ? null : tracks.current[i];
     if (i === null || !track || !box.current) return setTip(null);
@@ -2280,7 +2288,7 @@ function HBarChart({ spec }) {
     setTip({ x: t.left - b.left + t.width * end / 100, y: t.top - b.top, title: String(spec.x[i]), rows });
   }
   const shade2 = (i) => picked === null || picked === i ? 1 : 0.55;
-  const rowEvents = (i) => ({ onPointerEnter: () => pick(i), onPointerDown: () => pick(i) });
+  const rowEvents = (i) => ({ onPointerEnter: () => pick2(i), onPointerDown: () => pick2(i) });
   return /* @__PURE__ */ jsxs8("figure", { className: "hb-card hb-chart", children: [
     /* @__PURE__ */ jsx11("figcaption", { className: "hb-chart-title", children: spec.title ?? spec.series[0].name ?? "Chart" }),
     !single && /* @__PURE__ */ jsx11(ChartLegend, { series: spec.series }),
@@ -2292,8 +2300,8 @@ function HBarChart({ spec }) {
           role: "img",
           "aria-label": chartLabel(spec),
           style: spec.height ? { minHeight: spec.height } : void 0,
-          ...pickKeys(spec.x.length, picked, pick, true),
-          onPointerLeave: () => pick(null),
+          ...pickKeys(spec.x.length, picked, pick2, true),
+          onPointerLeave: () => pick2(null),
           children: spec.x.map((label, i) => /* @__PURE__ */ jsxs8(Fragment3, { children: [
             /* @__PURE__ */ jsx11("div", { className: "hb-hbar-label", ...rowEvents(i), children: label }),
             /* @__PURE__ */ jsx11("div", { className: "hb-hbar-tracks", ref: (el) => {
@@ -2367,21 +2375,21 @@ function PieChart({ spec }) {
   const unit = spec.series[0].unit ?? spec.unit;
   const donut = spec.type === "donut";
   const hole = donut ? HOLE : 0;
-  const slices = [];
+  const slices2 = [];
   let start = 0;
   for (const v of values) {
-    slices.push({ start, end: start + v / total });
+    slices2.push({ start, end: start + v / total });
     start += v / total;
   }
   const valuesAreShares = unit === "%";
   const biggest = values.indexOf(Math.max(...values));
   const headline = valuesAreShares ? { value: sharePct(values[biggest] / total), label: String(spec.x[biggest]) } : { value: fmt(total, unit), label: "Total" };
-  function pick(i) {
+  function pick2(i) {
     setPicked(i);
     const el = svg.current;
     const body = el?.parentElement;
     if (i === null || !el || !body) return setTip(null);
-    const [x, y] = at((slices[i].start + slices[i].end) / 2, donut ? (OUTER + HOLE) / 2 : OUTER * 0.6);
+    const [x, y] = at((slices2[i].start + slices2[i].end) / 2, donut ? (OUTER + HOLE) / 2 : OUTER * 0.6);
     const drawing = el.getBoundingClientRect();
     const around = body.getBoundingClientRect();
     const label = String(spec.x[i]);
@@ -2393,9 +2401,9 @@ function PieChart({ spec }) {
       note: valuesAreShares ? void 0 : shareNote(values, values[i])
     });
   }
-  const toggle = (i) => pick(picked === i ? null : i);
+  const toggle = (i) => pick2(picked === i ? null : i);
   const faded = (i) => picked === null || picked === i ? 1 : 0.5;
-  const mouse = (i) => (e) => e.pointerType === "mouse" && pick(i);
+  const mouse = (i) => (e) => e.pointerType === "mouse" && pick2(i);
   return /* @__PURE__ */ jsxs9("figure", { className: "hb-card hb-chart hb-pie", children: [
     /* @__PURE__ */ jsx12("figcaption", { className: "hb-chart-title", children: spec.title ?? spec.series[0].name ?? "Chart" }),
     !donut && /* @__PURE__ */ jsxs9("div", { className: "hb-chart-figure", children: [
@@ -2413,9 +2421,9 @@ function PieChart({ spec }) {
           className: "hb-pie-svg",
           role: "img",
           "aria-label": chartLabel(spec),
-          ...pickKeys(values.length, picked, pick),
+          ...pickKeys(values.length, picked, pick2),
           children: [
-            slices.map((s, i) => /* @__PURE__ */ jsx12(
+            slices2.map((s, i) => /* @__PURE__ */ jsx12(
               "path",
               {
                 d: slicePath(s.start, s.end, hole),
@@ -2686,8 +2694,8 @@ function XYChart({ spec }) {
   const gid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const n = spec.x.length;
   const piled = spec.type === "stacked" || spec.type === "area";
-  const bands = useMemo4(() => piled ? stackSeries(spec.series, n) : null, [spec, n, piled]);
-  const scales = useMemo4(() => chartScales(spec, bands), [spec, bands]);
+  const bands2 = useMemo4(() => piled ? stackSeries(spec.series, n) : null, [spec, n, piled]);
+  const scales = useMemo4(() => chartScales(spec, bands2), [spec, bands2]);
   const layout = useMemo4(() => xyLayout(spec, width, scales), [spec, width, scales]);
   const tip = useMemo4(() => hover === null ? null : xyTip(spec, hover, layout), [spec, hover, layout]);
   function pickAt(e) {
@@ -2722,8 +2730,8 @@ function XYChart({ spec }) {
             /* @__PURE__ */ jsx15(AxisTitles, { spec, layout }),
             spec.type === "line" && /* @__PURE__ */ jsx15(LineMarks, { spec, layout, gid, hover }),
             spec.type === "bar" && /* @__PURE__ */ jsx15(BarMarks, { spec, layout, hover }),
-            spec.type === "stacked" && bands && /* @__PURE__ */ jsx15(StackMarks, { bands, layout, hover }),
-            spec.type === "area" && bands && /* @__PURE__ */ jsx15(AreaMarks, { bands, layout }),
+            spec.type === "stacked" && bands2 && /* @__PURE__ */ jsx15(StackMarks, { bands: bands2, layout, hover }),
+            spec.type === "area" && bands2 && /* @__PURE__ */ jsx15(AreaMarks, { bands: bands2, layout }),
             spec.type === "combo" && /* @__PURE__ */ jsx15(ComboMarks, { spec, layout, hover }),
             (spec.type === "area" || spec.type === "combo") && hover !== null && /* @__PURE__ */ jsx15(Crosshair, { layout, at: hover })
           ]
@@ -3447,10 +3455,10 @@ function readSpec(d) {
   let series = d.series.filter((s) => s && Array.isArray(s.data)).slice(0, maxSeries(type)).map((s, k) => readSeries(s, k, type, unit));
   if (!series.length || series.every((s) => s.data.every((v) => v === null))) return null;
   if (type === "pie" || type === "donut") {
-    const slices = pieSlices(x, series[0].data);
-    if (!slices.x.length) return null;
-    x = slices.x;
-    series = [{ ...series[0], data: slices.data }];
+    const slices2 = pieSlices(x, series[0].data);
+    if (!slices2.x.length) return null;
+    x = slices2.x;
+    series = [{ ...series[0], data: slices2.data }];
   }
   return specOf(d, type, x, series, unit);
 }
@@ -4485,14 +4493,14 @@ function FieldView({ field, value, onChange }) {
     ] });
   }
   if (field.kind === "select") {
-    const chosen = field.options.find((o) => o.value === value);
+    const chosen2 = field.options.find((o) => o.value === value);
     return /* @__PURE__ */ jsxs22("label", { className: "hb-form-field", children: [
       /* @__PURE__ */ jsx25("span", { className: "hb-form-label", children: /* @__PURE__ */ jsx25(InlineText, { text: field.label }) }),
-      /* @__PURE__ */ jsxs22("select", { className: "hb-input", value: chosen ? chosen.value : "", onChange: (e) => onChange(e.target.value), children: [
-        !chosen && /* @__PURE__ */ jsx25("option", { value: "", disabled: true, children: "Choose\u2026" }),
+      /* @__PURE__ */ jsxs22("select", { className: "hb-input", value: chosen2 ? chosen2.value : "", onChange: (e) => onChange(e.target.value), children: [
+        !chosen2 && /* @__PURE__ */ jsx25("option", { value: "", disabled: true, children: "Choose\u2026" }),
         field.options.map((o) => /* @__PURE__ */ jsx25("option", { value: o.value, children: o.label }, o.value))
       ] }),
-      chosen?.note && /* @__PURE__ */ jsx25("span", { className: "hb-form-note", children: chosen.note })
+      chosen2?.note && /* @__PURE__ */ jsx25("span", { className: "hb-form-note", children: chosen2.note })
     ] });
   }
   return /* @__PURE__ */ jsx25(Pills, { field, value, onChange });
@@ -5050,7 +5058,7 @@ function tabAfterKey(current, count2, key) {
   return current;
 }
 function Tabs({ labels: labels2, badges = [], panel }) {
-  const [answer, pick] = useStoredValue({
+  const [answer, pick2] = useStoredValue({
     door: "identity",
     initial: () => 0,
     revive: (saved) => Number.isInteger(saved) && saved >= 0 ? saved : null,
@@ -5063,7 +5071,7 @@ function Tabs({ labels: labels2, badges = [], panel }) {
     const next = tabAfterKey(picked, labels2.length, e.key);
     if (next === picked) return;
     e.preventDefault();
-    pick(next);
+    pick2(next);
     buttons.current[next]?.focus();
   };
   return /* @__PURE__ */ jsxs27("div", { className: "hb-tabs", children: [
@@ -5080,7 +5088,7 @@ function Tabs({ labels: labels2, badges = [], panel }) {
         ref: (el) => {
           buttons.current[i] = el;
         },
-        onClick: () => pick(i),
+        onClick: () => pick2(i),
         "aria-label": badges[i] ? `${label}, ${badges[i]} open` : void 0,
         children: [
           /* @__PURE__ */ jsx30(InlineText, { text: label }),
@@ -5283,7 +5291,7 @@ var TONE_TOKEN = {
   accent: "--hb-accent",
   grey: "--hb-muted"
 };
-var rad = (deg3) => deg3 * Math.PI / 180;
+var rad = (deg4) => deg4 * Math.PI / 180;
 function Layers({ title, caption: caption2, layers }) {
   const canvas = useRef10(null);
   const shapes = useRef10([]);
@@ -5555,15 +5563,15 @@ function zoneTone(value, thresholds, fallback = "good", goal = Infinity) {
 var place = (at2, goal) => at2 === null || goal === null ? 0 : Math.max(0, Math.min(1, at2 / goal));
 var pctOf = (share) => `${Math.round(share * 1e4) / 100}%`;
 function bandsOf(thresholds, goal) {
-  const bands = [];
+  const bands2 = [];
   let from = 0;
   for (const t of [...thresholds].sort((a, b) => a.at - b.at)) {
     if (!t.tone) continue;
     const to = Math.max(from, place(t.at, goal));
-    if (to > from) bands.push({ from, to, tone: t.tone });
+    if (to > from) bands2.push({ from, to, tone: t.tone });
     from = to;
   }
-  return bands;
+  return bands2;
 }
 function Progress({ title, value, goal, unit, steps, shape = "line", show_percent, tone, thresholds = [], segments = [] }) {
   const marks = thresholds.length ? thresholds : [];
@@ -5589,11 +5597,11 @@ function Progress({ title, value, goal, unit, steps, shape = "line", show_percen
   ] });
 }
 function Bar2({ share, marks, goal, unit }) {
-  const bands = bandsOf(marks, goal);
+  const bands2 = bandsOf(marks, goal);
   const track = `hb-progress-track${marks.length ? " hb-progress-track-zoned" : ""}`;
   const body = /* @__PURE__ */ jsxs30(Fragment9, { children: [
     /* @__PURE__ */ jsxs30("div", { className: track, children: [
-      bands.map((b, k) => /* @__PURE__ */ jsx33(
+      bands2.map((b, k) => /* @__PURE__ */ jsx33(
         "span",
         {
           className: `hb-progress-band hb-progress-band-${b.tone}`,
@@ -5932,8 +5940,8 @@ function dotPer(per, most) {
   return niceAbove(most / (per === void 0 ? DEFAULT_DOTS : MAX_DOTS));
 }
 function dotColour(n, start, counts, k) {
-  const bands = [start, ...counts.slice(0, k + 1)];
-  const band = bands.findIndex((limit) => n < limit);
+  const bands2 = [start, ...counts.slice(0, k + 1)];
+  const band = bands2.findIndex((limit) => n < limit);
   return band < 0 ? k + 1 : band;
 }
 
@@ -5972,7 +5980,7 @@ function Piles({ piles, amounts, start, per, most, playing, unit, label }) {
     ] })
   ] });
 }
-function Pile({ k, name, amount, counts, startDots, tallest, playing, unit }) {
+function Pile({ k, name, amount: amount2, counts, startDots, tallest, playing, unit }) {
   const canvas = useRef11(null);
   const born = useRef11([]);
   const width = useWidth(canvas);
@@ -5981,7 +5989,7 @@ function Pile({ k, name, amount, counts, startDots, tallest, playing, unit }) {
   const cols = Math.max(20, Math.floor(width / DOT));
   const size = width / cols;
   const height = Math.ceil(tallest / cols) * size;
-  const shown2 = amount === null ? "\u2013" : fmt(amount, unit, { full: true });
+  const shown2 = amount2 === null ? "\u2013" : fmt(amount2, unit, { full: true });
   useEffect5(() => {
     const el = canvas.current;
     if (!el) return;
@@ -7689,23 +7697,1875 @@ function LivePointer({ id, address }) {
   ] });
 }
 
+// src/host/ExportChrome.tsx
+import { useContext as useContext13, useEffect as useEffect10, useLayoutEffect as useLayoutEffect4, useRef as useRef15, useState as useState27 } from "react";
+
+// src/core/provenance.ts
+function provenanceOf(blocks) {
+  const at2 = blocks.findIndex((b) => b.type === "source");
+  const source = at2 >= 0 ? blocks[at2] : void 0;
+  const said = new Set(source?.text ? [source.text] : []);
+  const chartSources = [];
+  for (const b of blocks) {
+    if (b.type !== "chart") continue;
+    const s = b.spec?.source;
+    if (typeof s === "string" && s.trim() && !said.has(s)) {
+      said.add(s);
+      chartSources.push(s);
+    }
+  }
+  return source ? { source, chartSources } : { chartSources };
+}
+function provenanceLine(p) {
+  const parts2 = [];
+  if (p.source?.text) parts2.push(p.source.text);
+  parts2.push(...p.chartSources);
+  return parts2.join(" \xB7 ");
+}
+
+// src/lib/csv.ts
+function csvCell(value) {
+  return /[",\r\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
+}
+function csvOf(headers, rows) {
+  return [headers, ...rows].map((line) => line.map(csvCell).join(",") + "\r\n").join("");
+}
+
+// src/lib/export.ts
+var PNG_SCALE = 2;
+var PNG_PAD = 14;
+var LINE_RATIO = 1.4;
+var LINE_GAP = 6;
+var SWATCH = 12;
+var SWATCH_GAP = 6;
+var MINUS = "\u2013";
+function measureLine(line) {
+  return line.swatch ? SWATCH + SWATCH_GAP : 0;
+}
+function pngMetrics(lines, measure, svgWidth, svgHeight) {
+  const textWidth2 = lines.reduce((widest, l) => Math.max(widest, measure(l) + measureLine(l)), 0);
+  const textHeight = lines.length ? lines.reduce((h, l) => h + l.size * LINE_RATIO, 0) + (lines.length - 1) * LINE_GAP : 0;
+  return {
+    width: Math.round(Math.max(svgWidth, textWidth2)) + PNG_PAD * 2,
+    height: Math.round(svgHeight + textHeight) + PNG_PAD * 2
+  };
+}
+function fontOf(cs) {
+  const size = Number.parseFloat(cs.fontSize) || 14;
+  const parts2 = [cs.fontStyle !== "normal" ? cs.fontStyle : "", cs.fontWeight, `${size}px`, cs.fontFamily];
+  return { font: parts2.filter(Boolean).join(" "), size };
+}
+function captionLines(figure2, provenance = "") {
+  const out = [];
+  const line = (el, text, swatch) => {
+    if (!el || !text.trim()) return;
+    const cs = getComputedStyle(el);
+    const { font, size } = fontOf(cs);
+    out.push({ text, font, colour: cs.color, size, ...swatch ? { swatch } : {} });
+  };
+  const title = figure2.querySelector(".hb-chart-title");
+  line(title, title?.textContent?.trim() ?? "");
+  const figureEl = figure2.querySelector(".hb-chart-figure");
+  line(figureEl, (figureEl?.textContent ?? "").trim());
+  for (const item of figure2.querySelectorAll(".hb-legend-item")) {
+    const swatch = item.querySelector(".hb-legend-dot");
+    const words = [...item.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE || n.classList?.contains("hb-legend-value") || n.classList?.contains("hb-legend-note")).map((n) => (n.textContent ?? "").trim()).filter(Boolean).join(" ");
+    line(item, words, swatch ? getComputedStyle(swatch).backgroundColor : void 0);
+  }
+  for (const row of figure2.querySelectorAll(".hb-pie-legend tr")) {
+    if (!row.querySelector(".hb-pie-swatch")) continue;
+    const sw = row.querySelector(".hb-pie-swatch i");
+    const words = [...row.querySelectorAll("td")].filter((td) => !td.classList.contains("hb-pie-swatch")).map((td) => (td.textContent ?? "").trim()).filter(Boolean).join(" ");
+    line(row, words, sw ? getComputedStyle(sw).backgroundColor : void 0);
+  }
+  const source = figure2.querySelector(".hb-chart-source");
+  line(source, source?.textContent?.trim() ?? "");
+  if (provenance.trim() && provenance.trim() !== (source?.textContent?.trim() ?? "")) {
+    const styleEl = source ?? figure2;
+    const cs = getComputedStyle(styleEl);
+    const { font, size } = fontOf(cs);
+    out.push({ text: provenance.trim(), font, colour: cs.color, size });
+  }
+  return out;
+}
+var RGB = /rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+))?\s*\)/;
+var TRANSPARENT = /^rgba?\(\s*0\s*,\s*0\s*,\s*0\s*,\s*0\s*\)$/;
+function parseColour(value) {
+  const m = RGB.exec(value);
+  if (!m) return null;
+  return [Number(m[1]), Number(m[2]), Number(m[3]), m[4] === void 0 ? 1 : Number(m[4])];
+}
+function over(fg, bg) {
+  const a = fg[3];
+  return [
+    Math.round(fg[0] * a + bg[0] * (1 - a)),
+    Math.round(fg[1] * a + bg[1] * (1 - a)),
+    Math.round(fg[2] * a + bg[2] * (1 - a))
+  ];
+}
+function opaqueBackdrop(el) {
+  const layers = [];
+  let base = [255, 255, 255];
+  for (let node = el; node; node = node.parentElement) {
+    const cs = getComputedStyle(node);
+    const value = cs.backgroundColor;
+    if (value && value !== "transparent" && !TRANSPARENT.test(value)) {
+      const rgb = parseColour(value);
+      if (!rgb) continue;
+      if (rgb[3] >= 1) {
+        base = [rgb[0], rgb[1], rgb[2]];
+        break;
+      }
+      layers.push(rgb);
+    }
+  }
+  let out = base;
+  for (let i = layers.length - 1; i >= 0; i--) out = over(layers[i], out);
+  return out;
+}
+var SVG_NS = 'xmlns="http://www.w3.org/2000/svg"';
+function esc(text) {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function hbarSvg(figure2, spec) {
+  const box = figure2.querySelector(".hb-hbar-box");
+  const grid = box?.querySelector(".hb-hbar-grid");
+  if (!box || !grid) return null;
+  const rows = spec.x.map(String);
+  const labelEls = [...grid.querySelectorAll(".hb-hbar-label")];
+  const trackEls = [...grid.querySelectorAll(".hb-hbar-tracks")];
+  const valueEls = [...grid.querySelectorAll(".hb-hbar-values")];
+  if (!labelEls.length || labelEls.length !== rows.length || trackEls.length !== rows.length || valueEls.length !== rows.length) return null;
+  const base = box.getBoundingClientRect();
+  if (base.width < 2 || base.height < 2) return null;
+  const rel = (el) => {
+    const r = el.getBoundingClientRect();
+    return { x: r.left - base.left, y: r.top - base.top, w: r.width, h: r.height };
+  };
+  const TRANSPARENT_PAINT = /^rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*0\s*\)$/;
+  const pictureW = Math.ceil(base.width);
+  const pictureH = Math.ceil(base.height);
+  const fit = (r) => {
+    const x = Math.max(r.x, 0);
+    const y = Math.max(r.y, 0);
+    return { x, y, w: Math.max(Math.min(r.x + r.w, pictureW) - x, 1), h: Math.max(Math.min(r.y + r.h, pictureH) - y, 1) };
+  };
+  const sample = (el) => {
+    if (!el) return "";
+    const value = getComputedStyle(el).backgroundColor;
+    return value && value !== "transparent" && !TRANSPARENT_PAINT.test(value) && !TRANSPARENT.test(value) ? value : "";
+  };
+  const look = (el, fallback) => {
+    const cs = getComputedStyle(el);
+    return {
+      family: (cs.fontFamily || "sans-serif").replaceAll('"', "'"),
+      size: cs.fontSize || "12px",
+      ink: cs.color || fallback
+    };
+  };
+  const parts2 = [];
+  rows.forEach((_row, i) => {
+    const lr = rel(labelEls[i]);
+    const lf = look(labelEls[i], "#222");
+    const labelWord = (labelEls[i].textContent ?? "").trim() || rows[i];
+    parts2.push(`<text data-label="${i}" x="${lr.x.toFixed(1)}" y="${(lr.y + lr.h / 2).toFixed(1)}" dominant-baseline="central" font-family="${esc(lf.family)}" font-size="${esc(lf.size)}" fill="${esc(lf.ink)}">${esc(labelWord)}</text>`);
+    const tracks = [...trackEls[i].querySelectorAll(".hb-hbar-track")];
+    tracks.forEach((track, k) => {
+      const zero = track.querySelector(".hb-hbar-zero");
+      if (zero) {
+        const zr = fit(rel(zero));
+        parts2.push(`<rect data-zero="${i}:${k}" x="${zr.x.toFixed(1)}" y="${zr.y.toFixed(1)}" width="${zr.w.toFixed(1)}" height="${zr.h.toFixed(1)}" fill="${esc(sample(zero) || "#999")}"/>`);
+      }
+      const bar = track.querySelector(".hb-hbar-bar");
+      if (!bar) return;
+      const br = fit(rel(bar));
+      parts2.push(`<rect data-bar="${i}:${k}" x="${br.x.toFixed(1)}" y="${br.y.toFixed(1)}" width="${br.w.toFixed(1)}" height="${br.h.toFixed(1)}" rx="3" fill="${esc(sample(bar) || "#888")}"/>`);
+    });
+    const spans = [...valueEls[i].querySelectorAll("span")];
+    spans.forEach((span, k) => {
+      const vr = rel(span);
+      const vf = look(span, "#222");
+      const word = (span.textContent ?? "").trim() || MINUS;
+      parts2.push(`<text data-word="${i}:${k}" x="${(vr.x + vr.w).toFixed(1)}" y="${(vr.y + vr.h / 2).toFixed(1)}" text-anchor="end" dominant-baseline="central" font-family="${esc(vf.family)}" font-size="${esc(vf.size)}" fill="${esc(vf.ink)}">${esc(word)}</text>`);
+    });
+  });
+  return { width: pictureW, height: pictureH, body: parts2.join("") };
+}
+var PAINT = [
+  "fill",
+  "stroke",
+  "stroke-width",
+  "stroke-linecap",
+  "stroke-linejoin",
+  "stroke-dasharray",
+  "stroke-dashoffset",
+  "fill-opacity",
+  "stroke-opacity",
+  "opacity",
+  "font-family",
+  "font-size",
+  "font-weight",
+  "font-style",
+  "text-anchor",
+  "dominant-baseline",
+  "letter-spacing",
+  "paint-order",
+  "vector-effect"
+];
+function serializeSvg(svg) {
+  const clone = svg.cloneNode(true);
+  const sources = [svg, ...svg.querySelectorAll("*")];
+  const copies = [clone, ...clone.querySelectorAll("*")];
+  const box = svg.getBoundingClientRect();
+  const px = (which, view) => {
+    if (view > 0) return String(Math.round(view));
+    const attr = (svg.getAttribute(which) ?? "").trim();
+    const stated = Number.parseFloat(attr);
+    if (attr && !attr.endsWith("%") && Number.isFinite(stated) && stated > 0) return String(Math.round(stated));
+    const vb = (svg.getAttribute("viewBox") ?? "").trim().split(/[\s,]+/).map(Number);
+    if (vb.length === 4) {
+      const side = vb[which === "width" ? 2 : 3];
+      if (Number.isFinite(side) && side > 0) return String(Math.round(side));
+    }
+    return "640";
+  };
+  clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  clone.setAttribute("width", px("width", box.width));
+  clone.setAttribute("height", px("height", box.height));
+  for (const [i, src] of sources.entries()) {
+    const dst = copies[i];
+    if (!dst) continue;
+    const cs = getComputedStyle(src);
+    if (cs.display === "none" || cs.visibility === "hidden") {
+      dst.remove();
+      continue;
+    }
+    for (const prop of PAINT) {
+      const value = cs.getPropertyValue(prop);
+      if (value) dst.style.setProperty(prop, value);
+    }
+  }
+  return new XMLSerializer().serializeToString(clone);
+}
+async function loadImage(src) {
+  const url = URL.createObjectURL(new Blob([src], { type: "image/svg+xml;charset=utf-8" }));
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    return img;
+  } catch {
+    return null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+function canvasPng(canvas) {
+  return new Promise((done) => canvas.toBlob((blob) => done(blob), "image/png"));
+}
+async function chartPng(figure2, opts = {}) {
+  const svg = figure2.querySelector("svg");
+  let svgWidth = 0;
+  let svgHeight = 0;
+  let document_;
+  if (svg) {
+    const box = svg.getBoundingClientRect();
+    const stated = (which) => {
+      const raw = Number.parseFloat(svg.getAttribute(which) ?? "");
+      return Number.isFinite(raw) && raw > 0 ? raw : 640;
+    };
+    svgWidth = Math.round(box.width || stated("width"));
+    svgHeight = Math.round(box.height || stated("height"));
+    document_ = serializeSvg(svg);
+  } else if (opts.spec) {
+    const picture = hbarSvg(figure2, opts.spec);
+    if (!picture) return null;
+    svgWidth = Math.round(picture.width);
+    svgHeight = Math.round(picture.height);
+    document_ = `<svg ${SVG_NS} width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">` + picture.body + "</svg>";
+  } else {
+    return null;
+  }
+  const lines = captionLines(figure2, opts.provenance ?? "");
+  const probe = document.createElement("canvas").getContext("2d");
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!probe || !ctx) return null;
+  const measure = (l) => {
+    probe.font = l.font;
+    return probe.measureText(l.text).width;
+  };
+  const { width, height } = pngMetrics(lines, measure, svgWidth, svgHeight);
+  const img = await loadImage(document_);
+  if (!img) return null;
+  canvas.width = Math.round(width * PNG_SCALE);
+  canvas.height = Math.round(height * PNG_SCALE);
+  ctx.scale(PNG_SCALE, PNG_SCALE);
+  const [r, g, b] = opaqueBackdrop(figure2);
+  ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+  ctx.fillRect(0, 0, width, height);
+  const textHeight = lines.reduce((h, l) => h + l.size * LINE_RATIO, 0) + (lines.length ? (lines.length - 1) * LINE_GAP : 0);
+  let y = PNG_PAD;
+  ctx.textBaseline = "top";
+  for (const l of lines) {
+    if (l.swatch) {
+      ctx.fillStyle = l.swatch;
+      ctx.fillRect(PNG_PAD, y + Math.max(0, (l.size * LINE_RATIO - SWATCH) / 2), SWATCH, SWATCH);
+    }
+    ctx.font = l.font;
+    ctx.fillStyle = l.colour;
+    ctx.fillText(l.text, PNG_PAD + measureLine(l), y);
+    y += l.size * LINE_RATIO + LINE_GAP;
+  }
+  ctx.drawImage(img, PNG_PAD, PNG_PAD + textHeight, svgWidth, svgHeight);
+  return canvasPng(canvas);
+}
+function isStructuredTable(block) {
+  return "structured" in block && block.structured === true;
+}
+function tableWords(block) {
+  if (isStructuredTable(block)) {
+    const headers = block.columns.map((col) => col.label);
+    const numberFamily = /* @__PURE__ */ new Set(["number", "currency", "percent", "bar"]);
+    const rows = block.rows.map((row) => block.columns.map((col) => {
+      if (col.kind === "sources") return row.sources.map((s) => s.label).join(", ");
+      const cell = row.cells[col.id];
+      if (!cell) return "";
+      if (numberFamily.has(col.kind) && cell.value !== void 0 && cell.value !== null) return String(cell.value);
+      return cell.text;
+    }));
+    return { headers, rows };
+  }
+  return { headers: block.columns, rows: block.rows };
+}
+function tableCsvBlob(block, provenance = "") {
+  const { headers, rows } = tableWords(block);
+  const head = provenance.trim() ? `# ${provenance.trim()}\r
+` : "";
+  return new Blob([`\uFEFF${head}${csvOf(headers, rows)}`], { type: "text/csv;charset=utf-8" });
+}
+function markdownFile(body, provenance) {
+  const parts2 = [];
+  const head = body.trimEnd();
+  const footer = provenanceLine(provenance);
+  if (head) parts2.push(head);
+  if (footer) parts2.push(`---
+
+${footer}`);
+  return `${parts2.join("\n\n")}
+`;
+}
+function jsonFile(stored3) {
+  return `${JSON.stringify(stored3, null, 2)}
+`;
+}
+function fileBase(name, fallback) {
+  const slug2 = (name ?? "").trim().toLowerCase().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]+/g, "").replace(/-{2,}/g, "-").replace(/^-+|-+$/g, "").slice(0, 40).replace(/-+$/, "");
+  return slug2 || fallback;
+}
+function chartFileBase(figure2) {
+  return fileBase(figure2.querySelector(".hb-chart-title")?.textContent ?? "", "chart");
+}
+function saveBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 6e4);
+}
+
+// src/lib/markdown.ts
+var MAX_DEPTH2 = 6;
+var MAX_STRING = 300;
+var MAX_URL = 500;
+var MAX_CELL = 80;
+var CONTROL = new RegExp("[\\x00-\\x08\\x0b-\\x1f\\x7f-\\x9f\\u200b\\u200c\\u200e\\u200f\\u202a-\\u202e\\u2060-\\u2064\\u2066-\\u2069\\ufeff]", "g");
+var LAYOUT_TYPES = ["row", "section", "grid", "columns", "tabs"];
+function isNum(v) {
+  return typeof v === "number";
+}
+function isStr(v) {
+  return typeof v === "string";
+}
+function isDict(v) {
+  return typeof v === "object" && v !== null && !Array.isArray(v);
+}
+function isList(v) {
+  return Array.isArray(v);
+}
+function firstList2(block, ...keys) {
+  for (const k of keys) if (isList(block[k])) return block[k];
+  return [];
+}
+function firstOf(block, ...keys) {
+  for (const k of keys) {
+    const t = safeText(block[k]);
+    if (t) return t;
+  }
+  return "";
+}
+function orField(block, first, second) {
+  const v = block[first];
+  if (isPyFalsy(v)) return block[second];
+  return v;
+}
+function isPyFalsy(v) {
+  if (v === null || v === void 0 || v === false || v === "" || v === 0 || typeof v === "number" && Number.isNaN(v)) return true;
+  if (Array.isArray(v)) return v.length === 0;
+  if (isDict(v)) return Object.keys(v).length === 0;
+  return false;
+}
+function pick(block, key, dflt) {
+  return key in block ? block[key] : dflt;
+}
+function fmtNum(v) {
+  if (!Number.isFinite(v)) return "";
+  if (Number.isInteger(v) && Math.abs(v) < 1e15) return groupInt(v);
+  if (Math.abs(v) >= 1) return fixed2(v);
+  return g3(v);
+}
+function fixed2(v) {
+  const s = roundHalfEven(v, 2).toFixed(2);
+  const [intPart, fracPart] = s.split(".");
+  const sign = intPart.startsWith("-") ? "-" : "";
+  const digits = sign ? intPart.slice(1) : intPart;
+  let frac = fracPart;
+  while (frac.endsWith("0")) frac = frac.slice(0, -1);
+  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${sign}${grouped}${frac ? `.${frac}` : ""}`;
+}
+function g3(v) {
+  const sign = v < 0 ? "-" : "";
+  const a = Math.abs(v);
+  let e = Math.floor(Math.log10(a));
+  let m = a / 10 ** e;
+  if (m >= 10) {
+    m /= 10;
+    e += 1;
+  } else if (m < 1) {
+    m *= 10;
+    e -= 1;
+  }
+  let rm = roundHalfEven(m, 2);
+  if (rm >= 10) {
+    rm /= 10;
+    e += 1;
+  }
+  const digits = String(rm).replace(".", "").replace(/0+$/, "") || "0";
+  if (e < -4) {
+    const mant = digits.length > 1 ? `${digits[0]}.${digits.slice(1)}` : digits;
+    return `${sign}${mant}e-${String(-e).padStart(2, "0")}`;
+  }
+  if (e < 0) return `${sign}0.${"0".repeat(-e - 1)}${digits}`;
+  return `${sign}${digits}${"0".repeat(e)}`;
+}
+function groupInt(v) {
+  const sign = v < 0 ? "-" : "";
+  const digits = String(Math.abs(Math.trunc(v)));
+  return sign + digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+function roundHalfEven(x, digits) {
+  if (!Number.isFinite(x)) return x;
+  if (digits < 0) {
+    const shifted = roundHalfEven(x / 10 ** -digits, 0);
+    return shifted * 10 ** -digits;
+  }
+  if (Number.isInteger(x)) return x;
+  const buf = new ArrayBuffer(8);
+  new Float64Array(buf)[0] = Math.abs(x);
+  const bits = new DataView(buf).getBigUint64(0, true);
+  let m = Number(bits & 2n ** 52n - 1n);
+  let e = (Number(bits >> 52n) & 2047) - 1075;
+  if (bits >> 52n === 0n) e = -50;
+  else m += 2 ** 52;
+  const num2 = BigInt(m) * 10n ** BigInt(digits);
+  const den = 1n << BigInt(-e);
+  const floor = num2 / den;
+  const rem = num2 % den;
+  const half = den >> 1n;
+  const up = rem > half || rem === half && floor % 2n !== 0n;
+  const n = up ? floor + 1n : floor;
+  const v = Number(n) / 10 ** digits;
+  return x < 0 ? -v : v;
+}
+var MARKDOWN_MARKS = /([\\\[\]<>])/g;
+function mdEscape(text) {
+  return text.replace(MARKDOWN_MARKS, "\\$1");
+}
+function safeText(value, limit = MAX_STRING, inline = true) {
+  if (isNum(value)) return fmtNum(value);
+  if (!isStr(value)) return "";
+  let text = value.replace(CONTROL, "").replaceAll("	", " ");
+  if (inline) text = text.replaceAll("\n", " ");
+  text = text.trim();
+  return mdEscape(text.length <= limit ? text : `${text.slice(0, limit - 1)}\u2026`);
+}
+function safeUrl3(value, httpsOnly = false) {
+  if (!isStr(value)) return "";
+  let url = value.replace(CONTROL, "").trim();
+  if (url.length > MAX_URL) return "";
+  const lower = url.toLowerCase();
+  if (!(httpsOnly ? lower.startsWith("https://") : lower.startsWith("https://") || lower.startsWith("http://"))) return "";
+  for (const [raw, safe] of [[" ", "%20"], ["(", "%28"], [")", "%29"], ["<", "%3C"], [">", "%3E"], ["\n", ""]]) {
+    url = url.split(raw).join(safe);
+  }
+  return url;
+}
+function mdLink(text, url) {
+  return url ? `[${text}](${url})` : text;
+}
+function withUnit(value, unit) {
+  if (!unit) return value;
+  return unit === "%" ? `${value}${unit}` : `${value} ${unit}`;
+}
+function changeChip(change, unit = "%") {
+  if (!isNum(change)) return "";
+  const arrow = change < 0 ? "\u25BC" : "\u25B2";
+  return `(${arrow} ${fmtNum(Math.abs(change))}${safeText(unit, 8) || "%"})`;
+}
+function outOf(label, value, goal, unit) {
+  if (!label || !(isNum(value) || value === null || value === void 0) || !(isNum(goal) || goal === null || goal === void 0)) return "";
+  const unitText = safeText(unit, 20);
+  let shown2 = value === null || value === void 0 ? "no data" : fmtNum(value);
+  if (value !== null && value !== void 0 && (goal === null || goal === void 0)) {
+    shown2 = withUnit(shown2, unitText);
+  }
+  const target = goal === null || goal === void 0 ? "no data" : withUnit(fmtNum(goal), unitText);
+  return `${label}: ${shown2} / ${target}`;
+}
+function cellValue(value) {
+  return value === null ? "\u2013" : tableCell(value);
+}
+function tableCell(value) {
+  return safeText(value, MAX_CELL).replaceAll("|", "\\|");
+}
+function mdTable(header, rows) {
+  const width = header.length;
+  const lines = ["| " + header.join(" | ") + " |", "| " + Array(width).fill("---").join(" | ") + " |"];
+  for (const row of rows) {
+    lines.push("| " + [...row, ...Array(Math.max(0, width - row.length)).fill("")].slice(0, width).join(" | ") + " |");
+  }
+  return lines;
+}
+function childLists(block) {
+  if (!isDict(block)) return [];
+  if (isList(block.children)) return [block.children];
+  if (block.type !== "tabs" || !isList(block.tabs)) return [];
+  const out = [];
+  for (const tab of block.tabs) {
+    if (isDict(tab) && isList(tab.children)) out.push(tab.children);
+  }
+  return out;
+}
+function flowLabels(blocks, depth = 0) {
+  let found = {};
+  if (depth > MAX_DEPTH2) return found;
+  for (const block of blocks) {
+    if (!isDict(block)) continue;
+    if (block.type === "flow" && isStr(block.id) && isList(block.nodes)) {
+      const nodes = block.nodes.filter(isDict);
+      const map = {};
+      for (const n of nodes) if (isStr(n.id) && isStr(n.label)) map[n.id] = n.label;
+      found[block.id] = map;
+    }
+    for (const children of childLists(block)) {
+      const deeper = flowLabels(children, depth + 1);
+      found = { ...deeper, ...found };
+    }
+  }
+  return found;
+}
+var F = (v) => isDict(v) ? v : {};
+var IMAGE_URL_FIELDS = ["url", "src", "image"];
+function textHeading(block) {
+  const text = safeText(block.text);
+  return text ? `**${text}**` : "";
+}
+function textText(block) {
+  return safeText(block.text, MAX_STRING, false);
+}
+function textDivider() {
+  return "---";
+}
+function textBadge(block) {
+  const text = firstOf(block, "text", "label");
+  return text ? `[${text}]` : "";
+}
+function textLink(block) {
+  const text = firstOf(block, "text", "label");
+  const url = safeUrl3(orField(block, "url", "href"), true);
+  return mdLink(text || mdEscape(url), url);
+}
+function textImage(block) {
+  let url = "";
+  for (const k of IMAGE_URL_FIELDS) {
+    url = safeUrl3(block[k]);
+    if (url) break;
+  }
+  const caption2 = firstOf(block, "caption", "alt", "title");
+  if (!url) return caption2;
+  return `![${caption2 || "image"}](${url})`;
+}
+function textBar(block) {
+  return outOf(firstOf(block, "label", "title"), block.value, pick(block, "max", 100), block.unit);
+}
+function textCallout(block) {
+  const title = safeText(block.title);
+  const text = safeText(block.text, MAX_STRING, false);
+  const lines = (title ? [`**${title}**`] : []).concat(text.split("\n").filter((l) => l.trim()));
+  return lines.map((l) => `> ${l}`).join("\n");
+}
+var SOURCE_KINDS = ["web", "file", "tool", "derived"];
+function sourceItemLine(item) {
+  const label = safeText(item.label, 80);
+  const url = safeUrl3(item.url);
+  let line = url ? mdLink(label, url) : label;
+  const kind = safeText(item.kind, 12);
+  if (SOURCE_KINDS.includes(kind)) line += ` [${kind}]`;
+  const m = /^(\d{4}-\d{2}-\d{2})/.exec(safeText(item.accessed, 32));
+  if (m) line += ` \xB7 accessed ${m[1]}`;
+  const note = safeText(item.note, 160);
+  if (note) line += ` \xB7 ${note}`;
+  return line;
+}
+function keptSourceItems(block) {
+  const items = isList(block.items) ? block.items : [];
+  return items.slice(0, 32).filter((it) => isDict(it) && safeText(it.label, 80) !== "");
+}
+function textSource(block) {
+  const items = keptSourceItems(block);
+  if (items.length) {
+    const title = safeText(block.title, 80);
+    const prefix = title ? `**${title}**
+` : "";
+    return `${prefix}_Sources: ${items.map(sourceItemLine).join(" \xB7 ")}_`;
+  }
+  const text = safeText(block.text);
+  return text ? `_Source: ${mdLink(text, safeUrl3(block.url))}_` : "";
+}
+var MAX_TABLE_ROWS = 12;
+function isStructuredTable2(block) {
+  const columns = block.columns;
+  return isList(columns) && columns.some(isDict) || block.filterable === true || Object.hasOwn(block, "page") || isList(block.aggregates);
+}
+function iterated(v) {
+  const w = v === void 0 ? [] : v;
+  if (!w) return [];
+  if (isList(w)) return w;
+  if (isStr(w)) return [...w];
+  if (isDict(w)) return Object.keys(w);
+  throw new Error("iterated");
+}
+function structuredCell(row, column) {
+  const cid = safeText(column.id, 40);
+  if (column.kind === "sources") {
+    const sources = iterated(row.sources);
+    const labels2 = sources.map((s) => isDict(s) ? safeText(s.label, 40) : isStr(s) ? safeText(s, 40) : "").filter(Boolean);
+    return labels2.join(", ");
+  }
+  const cellsRaw = row.cells || {};
+  if (!isDict(cellsRaw)) throw new Error("cells");
+  const cell = cellsRaw[cid];
+  if (!isDict(cell)) return "";
+  const value = cell.value;
+  if (column.kind === "currency" && isNum(value)) return `${safeText(column.unit, 12)}${fmtNum(value)}`.trim();
+  if (column.kind === "percent" && isNum(value)) return `${fmtNum(value)}%`;
+  if (isNum(value)) return fmtNum(value);
+  return tableCell(cell.text);
+}
+function textStructured(block) {
+  const columns = (isList(block.columns) ? block.columns : []).filter(isDict);
+  const rows = (isList(block.rows) ? block.rows : []).filter(isDict);
+  if (!columns.length || !rows.length) return "";
+  const names = columns.map((c) => tableCell(c.label || c.id));
+  const cells = rows.slice(0, MAX_TABLE_ROWS).map((row) => columns.map((column) => structuredCell(row, column)));
+  const caption2 = safeText(block.caption || block.title);
+  const lines = (caption2 ? [`**${caption2}**`] : []).concat(mdTable(names, cells));
+  if (rows.length > MAX_TABLE_ROWS) lines.push(`_(${rows.length - MAX_TABLE_ROWS} more rows)_`);
+  for (const aggregate of isList(block.aggregates) ? block.aggregates : []) {
+    if (!isDict(aggregate)) continue;
+    const cid = safeText(aggregate.column, 40);
+    const values = [];
+    for (const r of rows) {
+      const cellsRaw = r.cells;
+      if (cellsRaw && !isDict(cellsRaw)) throw new Error("cells");
+      const cell = isDict(cellsRaw) ? cellsRaw[cid] : void 0;
+      if (isDict(cell) && isNum(cell.value)) values.push(cell.value);
+    }
+    if (!values.length) continue;
+    const op = aggregate.op;
+    let value;
+    if (op === "sum") value = values.reduce((s, v) => s + v, 0);
+    else if (op === "avg") value = values.reduce((s, v) => s + v, 0) / values.length;
+    else if (op === "min") value = Math.min(...values);
+    else if (op === "max") value = Math.max(...values);
+    else if (op === "count") value = values.length;
+    if (value !== void 0) {
+      const label = safeText(aggregate.label, 20) || String(op);
+      lines.push(`_${label}: ${fmtNum(value)}_`);
+    }
+  }
+  return lines.join("\n");
+}
+function textTable(block) {
+  if (isStructuredTable2(block)) return textStructured(block);
+  const names = block.columns, rows = block.rows;
+  if (!isList(names) || !names.length || !isList(rows) || !rows.length) return "";
+  const headerNames = names.slice(0, 8);
+  const columns = headerNames.map(tableCell);
+  const cells = [];
+  for (const row of rows.slice(0, MAX_TABLE_ROWS)) {
+    if (isDict(row)) {
+      cells.push(headerNames.map((name) => isStr(name) && Object.hasOwn(row, name) ? cellValue(row[name]) : ""));
+    } else if (isList(row)) {
+      cells.push(row.map(cellValue));
+    }
+  }
+  const caption2 = safeText(block.caption || block.title);
+  const lines = (caption2 ? [`**${caption2}**`] : []).concat(mdTable(columns, cells));
+  if (rows.length > MAX_TABLE_ROWS) lines.push(`_(${rows.length - MAX_TABLE_ROWS} more rows)_`);
+  return lines.join("\n");
+}
+var VALUE_FIELDS = ["value", "price", "rating", "score", "meta", "badge"];
+function valueOf3(row) {
+  for (const field of VALUE_FIELDS) {
+    if (!Object.hasOwn(row, field)) continue;
+    if (row[field] === null) return "\u2013";
+    const v = safeText(row[field], 40);
+    if (v) return v;
+  }
+  return "";
+}
+function textListBlock(block) {
+  const items = firstList2(block, "items", "rows");
+  const lines = [];
+  for (const item of items.slice(0, 12)) {
+    const row = isStr(item) ? { title: item } : item;
+    const name = isDict(row) ? firstOf(row, "title", "name", "label", "text") : "";
+    if (!name) continue;
+    const r = F(row);
+    const subtitle = safeText(r.subtitle);
+    let value = valueOf3(r);
+    const bar = r.bar;
+    if (!value && isNum(bar) && bar >= 0) value = fmtNum(bar);
+    const mark = block.ranked ? `${lines.length + 1}.` : "-";
+    lines.push(`${mark} ${name}${subtitle ? ` \u2014 ${subtitle}` : ""}${value ? ` \xB7 ${value}` : ""}`);
+  }
+  const title = safeText(block.title);
+  return (title && lines.length ? [`**${title}**`] : []).concat(lines).join("\n");
+}
+var STATE_ALIASES2 = {
+  pending: "pending",
+  todo: "pending",
+  "to do": "pending",
+  active: "active",
+  "in progress": "active",
+  doing: "active",
+  done: "done",
+  complete: "done",
+  completed: "done",
+  blocked: "blocked",
+  skipped: "skipped"
+};
+var STATE_WORDS2 = { pending: "not started", active: "in progress", blocked: "blocked", skipped: "skipped" };
+function readState2(v) {
+  if (!isStr(v)) return "";
+  return STATE_ALIASES2[v.trim().toLowerCase()] ?? "";
+}
+function checklistItemLine(item) {
+  let text, state, owner, note, done, sources;
+  if (isDict(item)) {
+    text = safeText(item.text);
+    state = readState2(item.state);
+    owner = safeText(item.owner).slice(0, 40);
+    note = safeText(item.note).slice(0, 120);
+    done = item.done === true || item.checked === true || state === "done";
+    const rawIds = isList(item.sourceIds) ? item.sourceIds : [];
+    const ids = rawIds.slice(0, 4).filter(isStr).map((i) => safeText(i).slice(0, 40)).slice(0, 4);
+    sources = ids.length ? `sources ${ids.join(", ")}` : "";
+  } else {
+    text = safeText(item);
+    state = "";
+    owner = "";
+    note = "";
+    done = false;
+    sources = "";
+  }
+  if (!text) return "";
+  const asideParts = [done ? "" : STATE_WORDS2[state] ?? "", owner, sources].filter(Boolean);
+  let aside = asideParts.join(", ");
+  if (note) aside = aside ? `${aside}: ${note}` : note;
+  return `- [${done ? "x" : " "}] ${text}` + (aside ? ` (${aside})` : "");
+}
+function textChecklist(block) {
+  const items = isList(block.items) ? block.items : [];
+  const lines = items.slice(0, 40).map(checklistItemLine).filter(Boolean);
+  const title = safeText(block.title);
+  return (title && lines.length ? [`**${title}**`] : []).concat(lines).join("\n");
+}
+function textTiles(block) {
+  const items = isList(block.items) ? block.items : [];
+  const lines = [];
+  for (const item of items.slice(0, 8)) {
+    const t = isDict(item) ? safeText(item.title) : "";
+    const subtitle = t ? safeText(F(item).subtitle) : "";
+    if (t) lines.push(subtitle ? `- ${t}: ${subtitle}` : `- ${t}`);
+  }
+  return lines.join("\n");
+}
+function textStreak(block) {
+  const count2 = block.count;
+  if (!isNum(count2)) return "";
+  const label = safeText(block.label) || "Current streak";
+  return `${label}: ${fmtNum(count2)} ${safeText(block.unit, 20) || "days"}`;
+}
+var TONE_ALIASES = {
+  good: "good",
+  success: "good",
+  positive: "good",
+  ok: "good",
+  warn: "warn",
+  warning: "warn",
+  caution: "warn",
+  bad: "bad",
+  danger: "bad",
+  negative: "bad",
+  error: "bad"
+};
+var MAX_THRESHOLDS = 6;
+var MAX_SEGMENTS = 5;
+var PROGRESS_LABEL = 28;
+function toneOf(v) {
+  return isStr(v) ? TONE_ALIASES[v.trim().toLowerCase()] ?? "" : "";
+}
+function progressMarks(block) {
+  const thresholds = isList(block.thresholds) ? block.thresholds : [];
+  const found = thresholds.filter((m) => isDict(m) && isNum(m.at));
+  return found.slice().sort((a, b) => a.at - b.at).slice(0, MAX_THRESHOLDS);
+}
+function bands(block) {
+  if (!Object.hasOwn(block, "goal")) throw new Error("goal");
+  const goal = block.goal;
+  if (goal === null || goal === void 0) return [];
+  const found = [];
+  let start = 0;
+  for (const mark of progressMarks(block)) {
+    const tone = toneOf(mark.tone);
+    if (!tone) continue;
+    const end = Math.max(start, Math.min(mark.at, goal));
+    if (end > start) found.push([start, end, tone]);
+    start = end;
+  }
+  return found;
+}
+function zoneTone2(block) {
+  const fallback = toneOf(block.tone) || "good";
+  const value = block.value;
+  if (value === null || value === void 0) return fallback;
+  const found = bands(block);
+  if (!found.length) return fallback;
+  for (const [, to, tone] of found) {
+    if (!isNum(value)) throw new Error("value");
+    if (value <= to) return tone;
+  }
+  return found[found.length - 1][2];
+}
+function percentOf2(value, goal) {
+  if (!isNum(goal) || goal <= 0) return 0;
+  return Math.trunc(Math.max(0, Math.min(1, value / goal)) * 100 + 0.5);
+}
+function labelText(label, unit) {
+  if (isNum(label)) return withUnit(fmtNum(label), safeText(unit, 20));
+  return safeText(label, PROGRESS_LABEL);
+}
+function textProgress(block) {
+  const base = outOf(firstOf(block, "title", "label"), block.value, block.goal, block.unit);
+  if (!base) return "";
+  const unit = block.unit;
+  let line = base;
+  if (block.show_percent === true && block.value !== null && block.value !== void 0 && safeText(unit, 20) !== "%") {
+    if (!isNum(block.value)) throw new Error("value");
+    line += ` (${percentOf2(block.value, block.goal)}%)`;
+  }
+  const tone = zoneTone2(block);
+  if (tone !== "good") line += ` (${tone})`;
+  const sentences = [];
+  const labelled = progressMarks(block).map((m) => labelText(m.label, unit)).filter(Boolean);
+  if (labelled.length) sentences.push("Marks: " + labelled.join(", "));
+  const parts2 = [];
+  for (const segment of (isList(block.segments) ? block.segments : []).slice(0, MAX_SEGMENTS)) {
+    if (!isDict(segment) || !isNum(segment.value) || segment.value < 0) continue;
+    const amount2 = withUnit(fmtNum(segment.value), safeText(unit, 20));
+    const label = safeText(segment.label, PROGRESS_LABEL);
+    parts2.push(label ? `${label} ${amount2}` : amount2);
+  }
+  if (parts2.length) sentences.push(parts2.join(", "));
+  if (!sentences.length) return line;
+  return [line, ...sentences].join(". ") + ".";
+}
+var CHANGE_UNITS = ["%", "pt"];
+var MAX_CHIP2 = 1e15;
+function isFiniteNumber(v) {
+  return isNum(v) && Math.abs(v) <= Number.MAX_VALUE;
+}
+function writtenUnit(item, fallback) {
+  const unit = item.change_unit;
+  return isStr(unit) && CHANGE_UNITS.includes(unit) ? unit : fallback;
+}
+function chipNumber(v, unit) {
+  return isFiniteNumber(v) && Math.abs(v) < MAX_CHIP2 ? [v, unit] : null;
+}
+function changeOf2(item) {
+  if (Object.hasOwn(item, "previous")) {
+    const unit = writtenUnit(item, item.unit === "%" ? "pt" : "%");
+    const before = item.previous, value = item.value;
+    if (!(isFiniteNumber(before) && isFiniteNumber(value))) return null;
+    if (unit === "pt") return chipNumber(value - before, "pt");
+    return chipNumber(before === 0 ? null : (value - before) / Math.abs(before) * 100, "%");
+  }
+  return chipNumber(item.change, writtenUnit(item, "%"));
+}
+function tenths(v) {
+  return Math.abs(v).toFixed(1);
+}
+function chip(item) {
+  const found = changeOf2(item);
+  if (found === null) return "";
+  const [change, unit] = found;
+  const arrow = change < 0 ? "\u25BC " : change > 0 ? "\u25B2 " : "";
+  return `(${arrow}${tenths(change)}${unit === "pt" ? " " : ""}${unit})`;
+}
+function figure(item) {
+  const label = firstOf(item, "label", "title");
+  if (!label) return "";
+  const raw = item.value;
+  const shown2 = raw === null || raw === void 0 ? "" : safeText(raw);
+  const value = shown2 ? withUnit(shown2, safeText(item.unit, 20)) : "no data";
+  const line = `${label}: ${value}`;
+  const c = chip(item);
+  return c ? `${line} ${c}` : line;
+}
+function textStat(block) {
+  return figure(block);
+}
+function textKpis(block) {
+  const items = isList(block.items) ? block.items : [];
+  return items.filter(isDict).map(figure).filter(Boolean).join("\n");
+}
+var CHART_KINDS2 = ["line", "bar", "area", "stacked", "hbar", "combo", "pie", "donut", "scatter", "waterfall"];
+var KIND_ALIASES2 = {
+  doughnut: "donut",
+  stackedbar: "stacked",
+  horizontalbar: "hbar",
+  barh: "hbar"
+};
+var MAX_LABEL2 = 40;
+function chartKind2(name) {
+  if (!isStr(name)) return "line";
+  const plain2 = name.toLowerCase().replace(/[ _-]/g, "");
+  return CHART_KINDS2.includes(plain2) ? plain2 : Object.hasOwn(KIND_ALIASES2, plain2) ? KIND_ALIASES2[plain2] : "line";
+}
+function seriesLine(series, labels2) {
+  const raw = dataOf(series);
+  const data = raw.filter(isNum);
+  if (!data.length) return "";
+  const name = safeText(series.name);
+  const first = data[0], last = data[data.length - 1];
+  let line = `${name} ${fmtNum(first)} \u2192 ${fmtNum(last)}`.trim();
+  if (first) line += " " + changeChip(roundHalfEven((last - first) / Math.abs(first) * 100, 1));
+  const n = Math.min(labels2.length, raw.length);
+  const missing = [];
+  for (let i = 0; i < n; i++) if (raw[i] === null) missing.push(safeText(labels2[i], 24));
+  if (missing.length) {
+    const shown2 = missing.filter(Boolean).slice(0, 3);
+    let named = shown2.length ? shown2.join(", ") : "unlabelled";
+    if (missing.length > shown2.length) named += ` and ${missing.length - shown2.length} more`;
+    line += `, ${missing.length} gap${missing.length === 1 ? "" : "s"} (${named})`;
+  }
+  return line;
+}
+function slices(x, series, top = 4) {
+  const data = dataOf(series);
+  const parts2 = [];
+  for (let i = 0; i < Math.min(x.length, data.length); i++) {
+    const v = data[i];
+    if (isNum(v) && v > 0) parts2.push([safeText(x[i]), v]);
+  }
+  const total = parts2.reduce((s, [, v]) => s + v, 0);
+  if (!total) return "";
+  parts2.sort((a, b) => b[1] - a[1]);
+  const shown2 = parts2.slice(0, top).map(([label, v]) => `${label} ${roundHalfEven(v / total * 100, 0)}`.trim() + "%");
+  if (parts2.length > top) shown2.push(`+${parts2.length - top} more`);
+  return shown2.join(", ");
+}
+function drawnPoints(series) {
+  return iterated(Object.hasOwn(series, "points") ? series.points : []).filter(
+    (p) => isDict(p) && isNum(p.x) && isNum(p.y)
+  );
+}
+var AGAINST2 = /^(.+?)\s+(?:against|by|vs\.?)\s+(.+)$/i;
+function axisWord2(text) {
+  return text.trim().toLowerCase().replace(/[\s:,.?!]+$/, "");
+}
+function axisNames2(title) {
+  const match = AGAINST2.exec(title.trim());
+  if (match === null) return ["x", "y"];
+  const across = axisWord2(match[2]), up = axisWord2(match[1]);
+  return across && up ? [across, up] : ["x", "y"];
+}
+function pointCount(n) {
+  return n === 1 ? "1 point" : `${n} points`;
+}
+function scatterLine(series, title) {
+  const [across, up] = axisNames2(title);
+  let groups = series.slice(0, 2).map((s) => [safeText(s.name, MAX_LABEL2), drawnPoints(s)]);
+  groups = groups.filter(([, points2]) => points2.length > 0);
+  if (!groups.length) return "";
+  if (groups.length > 1) {
+    return groups.map(([name, points2]) => {
+      const xs2 = points2.map((p) => p.x);
+      return `${name || "Series"} ${pointCount(points2.length)}, ${across} ${fmtNum(Math.min(...xs2))} to ${fmtNum(Math.max(...xs2))}`;
+    }).join("; ");
+  }
+  const points = groups[0][1];
+  const xs = points.map((p) => p.x), ys = points.map((p) => p.y);
+  let top = points[0];
+  for (const p of points) {
+    if (p.y > top.y || p.y === top.y && -p.x > -top.x) top = p;
+  }
+  const line = `${pointCount(points.length)}; ${across} ${fmtNum(Math.min(...xs))} to ${fmtNum(Math.max(...xs))}, ${up} ${fmtNum(Math.min(...ys))} to ${fmtNum(Math.max(...ys))}; highest ${fmtNum(top.y)} at ${fmtNum(top.x)}`;
+  const label = safeText(top.label, MAX_LABEL2);
+  return label ? `${line} (${label})` : line;
+}
+function signedValue(value) {
+  return value > 0 ? `+${fmtNum(value)}` : fmtNum(value);
+}
+function waterfallLine(series) {
+  const points = iterated(Object.hasOwn(series, "points") ? series.points : []).filter(isDict);
+  let balance2 = 0;
+  let moved = false;
+  let broken = false;
+  const parts2 = [];
+  for (const p of points) {
+    const label = safeText(p.label, MAX_LABEL2);
+    const total = p.total === true;
+    if (broken) {
+      if (total) parts2.push(label ? `${label} not stated` : "closing not stated");
+      continue;
+    }
+    if (total) {
+      const opening = p.value;
+      if (!moved && isNum(opening)) balance2 = opening;
+      parts2.push(`${label} ${fmtNum(balance2)}`.trim());
+      continue;
+    }
+    const value = p.value;
+    if (!isNum(value)) {
+      parts2.push(label ? `${label}, unknown` : "unknown");
+      broken = true;
+      continue;
+    }
+    balance2 += value;
+    moved = true;
+    parts2.push(`${signedValue(value)} ${label}`.trim());
+  }
+  return parts2.filter(Boolean).join(" \u2192 ");
+}
+function textChart(block) {
+  let series = (isList(block.series) ? block.series : []).filter(isDict);
+  let x = iterated(block.x);
+  if (block.sortDesc === true && ["bar", "hbar"].includes(chartKind2(block.kind)) && series.length) {
+    const values = dataOf(series[0]).map((v) => isNum(v) ? v : null);
+    const order = x.map((_, i) => i).sort((a, b) => {
+      const ka = [values[a] === null ? 1 : 0, -(values[a] ?? 0), a];
+      const kb = [values[b] === null ? 1 : 0, -(values[b] ?? 0), b];
+      return ka[0] - kb[0] || ka[1] - kb[1] || ka[2] - kb[2];
+    });
+    x = order.map((i) => x[i]);
+    series = series.map((s) => {
+      const d = dataOf(s);
+      return { ...s, data: order.map((i) => i < d.length ? d[i] : null) };
+    });
+  }
+  if (!series.length) return "";
+  const kind = chartKind2(block.kind);
+  const title = safeText(block.title, 80);
+  let body = "";
+  if (kind === "pie" || kind === "donut") {
+    body = slices(x, series[0]);
+  } else if (kind === "scatter") {
+    body = scatterLine(series, title);
+  } else if (kind === "waterfall") {
+    body = waterfallLine(series[0]);
+  } else {
+    body = series.slice(0, 6).map((s) => seriesLine(s, iterated(block.x))).filter(Boolean).join("; ");
+  }
+  if (!body) return "";
+  const unit = safeText(block.unit, 20);
+  const head = `**${title || "Chart"}**` + (unit ? ` (${unit})` : "");
+  const line = `${head}: ${body}`;
+  const caveat = safeText(block.caveat, 120);
+  return caveat ? `${line}
+_${caveat}_` : line;
+}
+function dataOf(series) {
+  return walkable(series, "data", true);
+}
+function walkable(block, key, missingDefault = false) {
+  const v = missingDefault ? pick(block, key, []) : block[key];
+  if (v === void 0 && missingDefault) return [];
+  if (isList(v)) return v;
+  if (isStr(v)) return [...v];
+  if (isDict(v)) return Object.keys(v);
+  if (v === void 0 && !missingDefault) return [];
+  throw new Error(key);
+}
+function textImages(block) {
+  const photos = isList(block.images) ? block.images : [];
+  const lines = [];
+  for (const photo of photos.slice(0, 12)) {
+    if (!isDict(photo)) continue;
+    const line = textImage(photo);
+    const source = safeText(photo.source);
+    if (line) lines.push(source ? `${line} [${source}]` : line);
+  }
+  const title = safeText(block.title);
+  return (title && lines.length ? [`**${title}**`] : []).concat(lines).join("\n");
+}
+function textInclude() {
+  return "";
+}
+function textFlip(block) {
+  const cards = isList(block.cards) ? block.cards : [];
+  const lines = [];
+  for (const card of cards.slice(0, 12)) {
+    if (!isDict(card)) continue;
+    const front = firstOf(card, "front", "question");
+    const back = firstOf(card, "back", "answer");
+    if (front && back) lines.push(`- Q: ${front} \u2014 A: ${back}`);
+  }
+  const title = safeText(block.title);
+  return (title && lines.length ? [`**${title}**`] : []).concat(lines).join("\n");
+}
+function nextSteps(labels2) {
+  const kept = labels2.filter(Boolean);
+  return kept.length ? "Next: " + kept.join(" \xB7 ") : "";
+}
+function textButton(block) {
+  const label = safeText(block.label);
+  return nextSteps([label ? mdLink(label, safeUrl3(block.url, true)) : ""]);
+}
+function textActions(block) {
+  const items = isList(block.items) ? block.items : [];
+  return nextSteps(items.filter(isDict).map((it) => safeText(F(it).label)));
+}
+var LAYERS_MAX = 12;
+var L_TITLE = 80;
+var L_CAPTION = 200;
+var L_LABEL = 24;
+var L_NOTE = 280;
+function textLayers(block) {
+  const layers = firstList2(block, "layers").slice(0, LAYERS_MAX).filter((x) => isDict(x) && safeText(x.label));
+  const lines = [];
+  layers.forEach((layer, i) => {
+    const l = F(layer);
+    const label = safeText(l.label, L_LABEL);
+    const note = safeText(l.note, L_NOTE);
+    lines.push(note ? `${i + 1}. ${label} \u2014 ${note}` : `${i + 1}. ${label}`);
+  });
+  if (!lines.length) return "";
+  const title = safeText(block.title, L_TITLE);
+  const caption2 = safeText(block.caption, L_CAPTION);
+  return (title ? [`**${title}**`] : []).concat(caption2 ? [caption2] : []).concat(lines).join("\n");
+}
+function stopsOf(block) {
+  if (isList(block.groups)) return block.groups;
+  const flat = firstList2(block, "items", "events", "stops", "steps");
+  return [{ items: flat }];
+}
+function textTimeline(block) {
+  const title = safeText(block.title);
+  const lines = title ? [`**${title}**`] : [];
+  for (const group of stopsOf(block).slice(0, 14)) {
+    if (!isDict(group) || !isList(group.items)) continue;
+    const label = safeText(group.label);
+    const stops = [];
+    for (const item of group.items.slice(0, 12)) {
+      const name = isDict(item) ? safeText(item.title) : "";
+      if (!name) continue;
+      const it = F(item);
+      const time = safeText(it.time, 40);
+      const place2 = safeText(it.place);
+      stops.push("- " + (time ? `${time} \xB7 ` : "") + name + (place2 ? ` (${place2})` : ""));
+    }
+    if (stops.length) {
+      if (label) lines.push(`**${label}**`);
+      lines.push(...stops);
+    }
+  }
+  return lines.length > (title ? 1 : 0) ? lines.join("\n") : "";
+}
+function textHeatmap(block) {
+  const rows = block.rows, cols = block.cols, values = block.values;
+  if (!isList(rows) || !rows.length || !isList(cols) || !cols.length || !isList(values) || !values.length) return "";
+  const columns = cols.slice(0, 12);
+  const body = [];
+  rows.slice(0, 12).forEach((label, i) => {
+    const line = isList(values[i]) ? values[i].slice(0, columns.length) : [];
+    body.push([tableCell(label), ...line.map(heatCell)]);
+  });
+  const title = safeText(block.title);
+  const unit = safeText(block.unit, 20);
+  const head = title || unit ? `**${title || "Heatmap"}**` + (unit ? ` (${unit})` : "") : "";
+  return (head ? [head] : []).concat(mdTable(["", ...columns.map(tableCell)], body)).join("\n");
+}
+var FL_TITLE = 80;
+var FL_LABEL = 40;
+var FL_NOTE = 280;
+var FL_GROUP = 40;
+var FL_MAX_NODES = 10;
+var FL_MAX_GROUPS = 3;
+var FL_MIN_COUNT = 2;
+var FL_MAX_COUNT = 100;
+var CHIP2 = 16;
+var MAX_CHIPS2 = 10;
+function chipsText(chips) {
+  if (!isList(chips)) return "";
+  return chips.slice(0, MAX_CHIPS2).map((c) => safeText(isDict(c) ? c.text : c, CHIP2)).filter(Boolean).join(", ");
+}
+function isCount(value, low, high) {
+  return isNum(value) && Number.isInteger(value) && value >= low && value <= high;
+}
+function textFlow(block) {
+  const nodes = firstList2(block, "nodes").slice(0, FL_MAX_NODES).filter((n) => isDict(n) && safeText(n.label));
+  const lines = [];
+  nodes.forEach((node, i) => {
+    const n = F(node);
+    const label = safeText(n.label, FL_LABEL);
+    const note = safeText(n.note, FL_NOTE);
+    const holds = chipsText(n.holds);
+    let line = note ? `${i + 1}. ${label} \u2014 ${note}` : `${i + 1}. ${label}`;
+    if (holds) line = `${line} (holds: ${holds})`;
+    lines.push(line);
+  });
+  if (!lines.length) return "";
+  const numbers = /* @__PURE__ */ new Map();
+  nodes.forEach((node, i) => {
+    const id = F(node).id;
+    if (isStr(id)) numbers.set(id, i + 1);
+  });
+  for (const group of firstList2(block, "groups").slice(0, FL_MAX_GROUPS)) {
+    const label = isDict(group) ? safeText(group.label, FL_GROUP) : "";
+    if (!label) continue;
+    const g = F(group);
+    const at2 = walkable(g, "nodes").filter((k) => isStr(k) && numbers.has(k)).map((k) => numbers.get(k));
+    if (!at2.length) continue;
+    const span = at2.length === 1 ? `step ${at2[0]}` : `steps ${Math.min(...at2)}-${Math.max(...at2)}`;
+    const times = isCount(g.count, FL_MIN_COUNT, FL_MAX_COUNT) ? ` \xD7 ${g.count}` : "";
+    lines.push(`_${label}${times}: ${span}_`);
+  }
+  const title = safeText(block.title, FL_TITLE);
+  return (title ? [`**${title}**`] : []).concat(lines).join("\n");
+}
+var S_TITLE = 80;
+var S_TEXT = 600;
+var S_MAX_ITEMS = 12;
+var S_MAX_TICK = 20;
+function changeLines(item, labels2) {
+  const holds = isDict(item.holds) ? item.holds : {};
+  const lines = [];
+  for (const [node, chips] of Object.entries(holds).slice(0, FL_MAX_NODES)) {
+    const named = Object.hasOwn(labels2, node) ? labels2[node] : void 0;
+    const name = safeText(named, S_TITLE) || safeText(node, 24);
+    const held = chipsText(chips);
+    if (name && held) lines.push(`${name} now holds: ${held}`);
+  }
+  if (isCount(item.tick, 1, S_MAX_TICK)) lines.push(`The repeated part runs ${item.tick} more times.`);
+  return lines;
+}
+function textSteps(block, labels2) {
+  const items = firstList2(block, "items").slice(0, S_MAX_ITEMS).filter((it) => isDict(it) && safeText(it.title));
+  const flowId = isStr(block.for) ? block.for : "";
+  const forLabels = labels2 && flowId && Object.hasOwn(labels2, flowId) ? labels2[flowId] : {};
+  const parts2 = [];
+  items.forEach((item, i) => {
+    const it = F(item);
+    const head = `**Step ${i + 1} of ${items.length} \xB7 ${safeText(it.title, S_TITLE)}**`;
+    const lines = [head, safeText(it.text, S_TEXT), ...changeLines(it, forLabels)].filter(Boolean);
+    parts2.push(lines.join("\n"));
+  });
+  if (!parts2.length) return "";
+  const title = safeText(block.title, S_TITLE);
+  return (title ? [`**${title}**`] : []).concat(parts2).join("\n\n");
+}
+var INPUT_ID = /^[A-Za-z_][A-Za-z0-9_]{0,23}$/;
+function arithmetic(formula, names, powers = false) {
+  if (!isStr(formula) || formula.length > MAX_STRING) return null;
+  let tree;
+  try {
+    tree = parseFormula(formula);
+  } catch {
+    return null;
+  }
+  if (!simpleTree(tree, powers)) return null;
+  return evaluate(tree, names);
+}
+function simpleTree(node, powers) {
+  switch (node.kind) {
+    case "number":
+    case "name":
+      return true;
+    case "negate":
+      return simpleTree(node.arg, powers);
+    case "binary": {
+      const ops = ["+", "-", "*", "/"];
+      if (node.op === "^") return powers;
+      if (!ops.includes(node.op)) return false;
+      return simpleTree(node.left, powers) && simpleTree(node.right, powers);
+    }
+    case "call":
+      return false;
+  }
+}
+function textCalculator(block) {
+  const inputs = walkable(block, "inputs").slice(0, 6).filter((it) => isDict(it) && isStr(it.id));
+  const names = /* @__PURE__ */ new Map();
+  const shown2 = [];
+  for (const item of inputs) {
+    const it = F(item);
+    const start = [it.value, it.min].find(isNum) ?? 0;
+    names.set(it.id, start);
+    const label = firstOf(it, "label", "id");
+    shown2.push(`${label} ${withUnit(fmtNum(start), safeText(it.unit, 20))}`);
+  }
+  const lines = [];
+  for (const out of walkable(block, "outputs").slice(0, 6)) {
+    const label = isDict(out) ? safeText(out.label) : "";
+    if (!label) continue;
+    const value = arithmetic(F(out).formula, names);
+    lines.push(value === null ? `- ${label}: open in Hermes Desktop for the live calculator` : `- ${label}: ${withUnit(fmtNum(value), safeText(F(out).unit, 20))}`);
+  }
+  if (!lines.length) return "";
+  return (shown2.length ? [`With ${shown2.join(", ")}:`] : []).concat(lines).join("\n");
+}
+var SIM_TITLE = 80;
+var SIM_UNIT = 12;
+var SIM_MAX_PILES = 3;
+var SIM_ROWS = 5;
+function isName(v) {
+  return isStr(v) && INPUT_ID.test(v);
+}
+function timesOf2(to, step) {
+  const out = [];
+  for (let k = 0; k < SIM_ROWS; k++) out.push(Math.floor(to * k / (SIM_ROWS - 1) / step + 0.5) * step);
+  return out;
+}
+function amount(v) {
+  if (Math.abs(v) >= 100) return fmtNum(roundHalfEven(v, 0));
+  if (Math.abs(v) >= 1) return fmtNum(roundHalfEven(v, 2));
+  return fmtNum(v);
+}
+function textSimulate(block) {
+  const t = block.t, view = block.view;
+  if (!isDict(t) || !isDict(view) || !isName(t.name)) return "";
+  const to = t.to, step = pick(t, "step", 1);
+  const pilesRaw = Object.hasOwn(view, "piles") ? view.piles : view.series;
+  if (!isNum(to) || !isNum(step) || to <= 0 || step <= 0 || !isList(pilesRaw)) return "";
+  const piles = pilesRaw.slice(0, SIM_MAX_PILES).filter((p) => isDict(p) && safeText(p.name));
+  if (!piles.length) return "";
+  const names = /* @__PURE__ */ new Map();
+  if (isDict(block.values)) {
+    for (const [k, v] of Object.entries(block.values)) if (isName(k) && isNum(v)) names.set(k, v);
+  }
+  const shown2 = [];
+  const inputs = isList(block.inputs) ? block.inputs : [];
+  for (const item of inputs) {
+    if (!isDict(item)) continue;
+    const it = F(item);
+    const key = pick(it, "name", it.id);
+    if (!isName(key)) continue;
+    const start = [it.value, it.min].find(isNum) ?? 0;
+    names.set(key, start);
+    const value = withUnit(fmtNum(start), safeText(it.unit, SIM_UNIT));
+    shown2.push(`${firstOf(it, "label", "name", "id")} ${value}`);
+  }
+  const unit = safeText(block.unit, SIM_UNIT);
+  const rows = [];
+  for (const when2 of timesOf2(to, step)) {
+    const withTime = new Map(names);
+    withTime.set(t.name, when2);
+    const cells = piles.map((p) => {
+      const v = arithmetic(F(p).formula, withTime, true);
+      return v === null ? "\u2013" : withUnit(amount(v), unit);
+    });
+    rows.push([fmtNum(when2), ...cells]);
+  }
+  const header = [tableCell(t.unit) || t.name, ...piles.map((p) => tableCell(F(p).name))];
+  const title = safeText(block.title, SIM_TITLE);
+  const lead = (title ? [`**${title}**`] : []).concat(shown2.length ? [`With ${shown2.join(", ")}:`] : []);
+  return lead.concat(mdTable(header, rows)).join("\n");
+}
+var FORM_NOTE = 80;
+var FORM_GROUP = 40;
+function choice(value) {
+  if (isList(value)) return value.slice(0, 12).map(choice).filter(Boolean).join(", ");
+  if (isDict(value)) return firstOf(value, "label", "value");
+  return safeText(value, 60);
+}
+function optionText(option) {
+  const name = choice(option);
+  const note = isDict(option) && name ? safeText(option.note, FORM_NOTE) : "";
+  return note ? `${name} \u2014 ${note}` : name;
+}
+function chosen(field, options) {
+  const value = field.value;
+  for (const option of options) {
+    if (isDict(option) && !Array.isArray(value) && option.value === value) return choice(option);
+  }
+  return choice(value);
+}
+function textForm(block) {
+  const fields = isList(block.fields) ? block.fields : [];
+  const lines = [];
+  let group = "";
+  for (const field of fields.slice(0, 12)) {
+    if (!isDict(field)) continue;
+    const f = F(field);
+    const label = firstOf(f, "label", "id");
+    if (!label) continue;
+    const heading = safeText(f.group, FORM_GROUP);
+    if (heading && heading !== group) lines.push(`${heading}:`);
+    group = heading;
+    const options = isList(f.options) ? f.options : [];
+    const picked = chosen(f, options);
+    const value = picked ? withUnit(picked, safeText(f.unit, 20)) : "";
+    const listed2 = options.slice(0, 12).map(optionText).filter(Boolean).join(" / ");
+    lines.push(`- ${label}${value ? `: ${value}` : ""}${listed2 ? ` (${listed2})` : ""}`);
+  }
+  if (!lines.length) return "";
+  const title = safeText(block.title);
+  return (title ? [`**${title}**`] : []).concat(lines, ["(answer in a message)"]).join("\n");
+}
+var DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+var MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+var CALENDAR_MAX_EVENTS = 12;
+var UPNEXT_MAX_ITEMS = 12;
+var UPNEXT_STATES = ["overdue", "today", "soon"];
+function calendarDay(text) {
+  if (!isStr(text)) return null;
+  const t = text.trim();
+  if (t.length !== 10) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+  if (!m) return null;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  if (mo < 1 || mo > 12 || d < 1) return null;
+  const date = new Date(Date.UTC(y, mo - 1, d));
+  if (date.getUTCFullYear() !== y || date.getUTCMonth() + 1 !== mo || date.getUTCDate() !== d) return null;
+  return { weekday: (date.getUTCDay() + 6) % 7, day: d, month: mo };
+}
+function dayWords(day) {
+  return `${DAY_NAMES[day.weekday]} ${day.day} ${MONTH_NAMES[day.month - 1]}`;
+}
+function hourMinute(text) {
+  const value = safeText(text, 40);
+  return value.length >= 16 && value[10] === "T" ? value.slice(11, 16) : value.slice(0, 5);
+}
+function textCalendar(block) {
+  const day = calendarDay(block.date);
+  const head = day ? `**${dayWords(day)}**` : "";
+  const lines = [];
+  const events = block.events || [];
+  if (events && !isList(events)) throw new Error("events");
+  for (const event of (isList(events) ? events : []).slice(0, CALENDAR_MAX_EVENTS)) {
+    if (!isDict(event) || !safeText(event.title)) continue;
+    const when2 = hourMinute(event.start) + (event.end ? `\u2013${hourMinute(event.end)}` : "");
+    const place2 = safeText(event.place);
+    lines.push(`- ${when2} ${safeText(event.title)}` + (place2 ? ` \xB7 ${place2}` : ""));
+  }
+  return [head, ...lines.length ? lines : ["- Nothing planned"]].join("\n");
+}
+function deg3(value) {
+  return `${roundHalfEven(value, 0)}\xB0`;
+}
+function hasText(v) {
+  return isStr(v) && v.trim() !== "";
+}
+function textWeather(block) {
+  if (!(isNum(block.temp) && hasText(block.place))) return "";
+  const place2 = safeText(block.place), sky = safeText(block.condition);
+  const parts2 = [`**${deg3(block.temp)}** ` + (sky ? `${sky} in ${place2}` : place2)];
+  if (isNum(block.high)) parts2.push(`High ${deg3(block.high)}`);
+  if (isNum(block.low)) parts2.push(`${deg3(block.low)} tonight`);
+  return parts2.join(" \xB7 ");
+}
+function textUpnext(block) {
+  const lines = [];
+  const rawItems = block.items || [];
+  if (rawItems && !isList(rawItems)) throw new Error("items");
+  for (const item of (isList(rawItems) ? rawItems : []).slice(0, UPNEXT_MAX_ITEMS)) {
+    const day = isDict(item) ? calendarDay(item.date) : null;
+    const title = isDict(item) ? safeText(item.title) : "";
+    if (!(day && title)) continue;
+    const r = F(item);
+    const extra = [safeText(r.time) || safeText(r.amount)];
+    if (UPNEXT_STATES.includes(readStateWord(r.state))) extra.push(safeText(r.stateText));
+    const tail = extra.filter(Boolean).map((e) => ` \xB7 ${e}`).join("");
+    lines.push(`- ${dayWords(day)} \xB7 ${title}${tail}`);
+  }
+  if (!lines.length) return "";
+  const head = safeText(block.title) || "Up next";
+  return [`**${head}**`, ...lines].join("\n");
+}
+function readStateWord(v) {
+  return isStr(v) ? v : "";
+}
+function heatCell(value) {
+  return isNum(value) ? tableCell(value) : "\u2013";
+}
+var RENDERERS = {
+  heading: textHeading,
+  text: textText,
+  divider: () => textDivider(),
+  badge: textBadge,
+  link: textLink,
+  image: textImage,
+  bar: textBar,
+  callout: textCallout,
+  source: textSource,
+  table: textTable,
+  list: textListBlock,
+  checklist: textChecklist,
+  tiles: textTiles,
+  streak: textStreak,
+  progress: textProgress,
+  stat: textStat,
+  kpis: textKpis,
+  chart: textChart,
+  images: textImages,
+  include: textInclude,
+  flip: textFlip,
+  calendar: textCalendar,
+  upnext: textUpnext,
+  weather: textWeather,
+  button: textButton,
+  actions: textActions,
+  layers: textLayers,
+  timeline: textTimeline,
+  heatmap: textHeatmap,
+  flow: textFlow,
+  calculator: textCalculator,
+  simulate: textSimulate,
+  form: textForm,
+  steps: textSteps
+};
+var SIMPLE = {};
+for (const [kind, fn] of Object.entries(RENDERERS)) {
+  SIMPLE[kind] = (block, _depth, labels2) => fn(block, labels2);
+}
+function layoutPieces(block, depth, labels2) {
+  if (block.type === "tabs") {
+    const out = [];
+    for (const tab of isList(block.tabs) ? block.tabs : []) {
+      const children2 = isDict(tab) && isList(tab.children) ? tab.children : [];
+      const inside3 = pieces2(children2, depth + 1, labels2);
+      const label = inside3.length ? safeText(F(tab).label) : "";
+      if (label) out.push(`**${label}**`);
+      out.push(...inside3);
+    }
+    return out;
+  }
+  const children = isList(block.children) ? block.children : [];
+  const title = block.type === "section" ? safeText(block.title) : "";
+  const inside2 = pieces2(children, depth + 1, labels2);
+  return (title && inside2.length ? [`**${title}**`] : []).concat(inside2);
+}
+function renderBlock(block, depth, labels2) {
+  if (!isDict(block) || depth > MAX_DEPTH2) return [];
+  const kind = block.type;
+  if (LAYOUT_TYPES.includes(kind)) return layoutPieces(block, depth, labels2);
+  const renderer = isStr(kind) && Object.hasOwn(SIMPLE, kind) ? SIMPLE[kind] : void 0;
+  const text = renderer ? renderer(block, depth, labels2) : "";
+  return text ? [text] : [];
+}
+function renderSafely(block, depth, labels2) {
+  try {
+    return renderBlock(block, depth, labels2);
+  } catch {
+    return [];
+  }
+}
+function pieces2(blocks, depth, labels2) {
+  const out = [];
+  for (const block of blocks) out.push(...renderSafely(block, depth, labels2));
+  return out;
+}
+function blocksAsMarkdown(blocks) {
+  if (!isList(blocks)) return "";
+  let labels2 = {};
+  try {
+    labels2 = flowLabels(blocks);
+  } catch {
+    labels2 = {};
+  }
+  return pieces2(blocks, 0, labels2).join("\n\n");
+}
+
+// src/host/ExportChrome.tsx
+import { Fragment as Fragment14, jsx as jsx50, jsxs as jsxs45 } from "react/jsx-runtime";
+var CONTAINER = ["row", "section", "grid", "columns", "tabs"];
+function blocksOf(board) {
+  if (Array.isArray(board)) return board;
+  if (board && typeof board === "object" && Array.isArray(board.blocks)) {
+    return board.blocks;
+  }
+  return [];
+}
+function useExportChrome(args) {
+  const { blocks, stored: stored3, getBoard, getHost } = args;
+  const actions = useContext13(BlockActions);
+  const provenance = provenanceOf(blocks);
+  const line = provenanceLine(provenance);
+  const [found, setFound] = useState27([]);
+  const foundRef = useRef15([]);
+  const [lit, setLit] = useState27(null);
+  const [said, setSaid] = useState27(null);
+  const [open, setOpen] = useState27(false);
+  const [failed, setFailed] = useState27(null);
+  const menuButtonRef = useRef15(null);
+  const menuRef = useRef15(null);
+  function scan() {
+    const board = getBoard();
+    const host2 = getHost();
+    const commit = (out2) => {
+      const same = out2.length === foundRef.current.length && out2.every((c, i) => c.root === foundRef.current[i].root && c.block === foundRef.current[i].block && c.left === foundRef.current[i].left && c.top === foundRef.current[i].top);
+      if (same) return;
+      foundRef.current = out2;
+      setFound(out2);
+    };
+    if (!board || !host2) {
+      commit([]);
+      return;
+    }
+    const out = [];
+    const measure = (block, root, kind) => {
+      const r = root.getBoundingClientRect();
+      const t = host2.getBoundingClientRect();
+      const name = kind === "table" ? block.caption ?? "" : block.spec.title ?? block.spec.series[0]?.name ?? "Chart";
+      out.push({ block, root, kind, name, left: Math.round(r.right - t.left) - 34, top: Math.round(r.top - t.top) + 6 });
+    };
+    const walk = (list, els) => {
+      list.forEach((block, i) => {
+        const el = els[i];
+        if (!el) return;
+        if (block.type === "table" || block.type === "chart") {
+          measure(block, el, block.type);
+          return;
+        }
+        if (!CONTAINER.includes(block.type)) return;
+        const root = el;
+        const container = block;
+        if (block.type === "tabs") {
+          const tabs = [...root.querySelectorAll(":scope > .hb-tab-bar > .hb-tab")];
+          const at2 = tabs.findIndex((t) => t.getAttribute("aria-selected") === "true");
+          const panel = root.querySelector(":scope > .hb-tab-panel");
+          const children = container.tabs?.[at2 >= 0 ? at2 : 0]?.children ?? [];
+          if (panel) walk(children, [...panel.children]);
+          return;
+        }
+        if (block.type === "section") {
+          const body = root.querySelector(":scope > .hb-section-body");
+          if (body) walk(container.children ?? [], [...body.children]);
+          return;
+        }
+        const cellClass = block.type === "grid" ? ".hb-grid-cell" : block.type === "row" ? ".hb-row-cell" : ".hb-column";
+        const cells = [...root.querySelectorAll(`:scope > ${cellClass}`)];
+        walk(container.children ?? [], cells.map((c) => c.firstElementChild).filter((c) => !!c));
+      });
+    };
+    walk(blocks, [...board.children]);
+    commit(out);
+  }
+  const scanRef = useRef15(scan);
+  scanRef.current = scan;
+  useLayoutEffect4(() => {
+    scanRef.current();
+  }, [blocks, stored3]);
+  useEffect10(() => {
+    const board = getBoard();
+    if (!board) return;
+    const observer = new MutationObserver(() => scanRef.current());
+    observer.observe(board, { childList: true, subtree: true });
+    const onResize = () => scanRef.current();
+    window.addEventListener("resize", onResize);
+    const onScroll = () => scanRef.current();
+    window.addEventListener("scroll", onScroll, true);
+    let ro = null;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => scanRef.current());
+      ro.observe(board);
+    }
+    return () => {
+      observer.disconnect();
+      ro?.disconnect();
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onScroll, true);
+    };
+  }, [getBoard]);
+  useEffect10(() => {
+    if (!open) return;
+    const away = (e) => {
+      const node = e.target;
+      if (menuRef.current?.contains(node) || menuButtonRef.current?.contains(node)) return;
+      setOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      setOpen(false);
+      menuButtonRef.current?.focus();
+    };
+    document.addEventListener("pointerdown", away, true);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", away, true);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  function light(e) {
+    const node = e.target;
+    if (node?.closest?.(".hb-export-btn, .hb-export, .hb-export-menu")) return;
+    const at2 = found.findIndex((c) => c.root.contains(node));
+    setLit(at2 >= 0 ? at2 : null);
+  }
+  async function runBlock(c) {
+    if (c.block.type === "table") {
+      saveBlob(tableCsvBlob(c.block, line), `${fileBase(c.block.caption, "table")}.csv`);
+      return;
+    }
+    const blob = await chartPng(c.root, { spec: c.block.spec, provenance: line });
+    if (blob) saveBlob(blob, `${chartFileBase(c.root)}.png`);
+    else setSaid(found.indexOf(c));
+  }
+  function runBoard(kind) {
+    if (stored3 === null || stored3 === void 0) {
+      setFailed("Nothing was exported.");
+      return;
+    }
+    const base = `board-${actions.blockId ?? "board"}`;
+    if (kind === "markdown") {
+      saveBlob(new Blob([markdownFile(blocksAsMarkdown(blocksOf(stored3)), provenance)], {
+        type: "text/markdown;charset=utf-8"
+      }), `${base}.md`);
+    } else {
+      saveBlob(new Blob([jsonFile(stored3)], { type: "application/json" }), `${base}.json`);
+    }
+    setFailed(null);
+    setOpen(false);
+  }
+  const bind = {
+    onPointerMove: (e) => light(e),
+    onPointerLeave: () => setLit(null),
+    onFocus: (e) => light(e),
+    onBlur: (e) => {
+      const to = e.relatedTarget;
+      if (to?.closest?.(".hb-export-btn, .hb-export, .hb-export-menu")) return;
+      setLit(null);
+    }
+  };
+  const menu = /* @__PURE__ */ jsx50(
+    "button",
+    {
+      ref: menuButtonRef,
+      type: "button",
+      className: "hb-export",
+      "aria-label": "Export board",
+      "aria-haspopup": "menu",
+      "aria-expanded": open,
+      onClick: () => {
+        setOpen((o) => !o);
+        setFailed(null);
+      },
+      children: /* @__PURE__ */ jsx50(IconDownload, {})
+    }
+  );
+  const popover = open && /* @__PURE__ */ jsxs45("div", { ref: menuRef, className: "hb-export-menu", role: "menu", "aria-label": "Export the whole board", children: [
+    /* @__PURE__ */ jsx50("button", { type: "button", role: "menuitem", onClick: () => runBoard("markdown"), children: "Markdown" }),
+    /* @__PURE__ */ jsx50("button", { type: "button", role: "menuitem", onClick: () => runBoard("json"), children: "JSON" }),
+    failed && /* @__PURE__ */ jsx50("div", { className: "hb-export-failed", role: "status", "aria-live": "polite", children: failed })
+  ] });
+  const layer = /* @__PURE__ */ jsxs45("div", { className: "hb-export-layer", children: [
+    found.map((c, i) => /* @__PURE__ */ jsx50(
+      "button",
+      {
+        type: "button",
+        className: i === lit ? "hb-export-btn lit" : "hb-export-btn",
+        style: { left: `${c.left}px`, top: `${c.top}px` },
+        "aria-label": `Export ${c.kind === "table" ? "table" : "chart"}${c.name ? ` \u201C${c.name}\u201D` : ""} as ${c.kind === "table" ? "CSV" : "PNG"}`,
+        onClick: () => runBlock(c),
+        children: /* @__PURE__ */ jsx50(IconDownload, {})
+      },
+      i
+    )),
+    said !== null && found[said] && /* @__PURE__ */ jsx50(
+      "span",
+      {
+        className: "hb-export-said",
+        role: "status",
+        "aria-live": "polite",
+        style: { left: `${found[said].left}px`, top: `${found[said].top + 30}px` },
+        children: "No picture could be exported."
+      }
+    )
+  ] });
+  const whole2 = /* @__PURE__ */ jsxs45(Fragment14, { children: [
+    menu,
+    popover
+  ] });
+  return { bind, menu: whole2, layer };
+}
+function IconDownload() {
+  return /* @__PURE__ */ jsx50(
+    "svg",
+    {
+      width: "14",
+      height: "14",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      "aria-hidden": "true",
+      children: /* @__PURE__ */ jsx50("path", { d: "M12 4v10m0 0l-4-4m4 4l4-4M4 19h16" })
+    }
+  );
+}
+
 // src/host/BlockTag.tsx
-import { jsx as jsx50, jsxs as jsxs45 } from "react/jsx-runtime";
+import { jsx as jsx51, jsxs as jsxs46 } from "react/jsx-runtime";
 var ID_PATTERN = /^[0-9a-f]{8}$/;
+function isEnvelopeCarrying(data) {
+  return typeof data === "object" && data !== null && !Array.isArray(data) && "stored" in data;
+}
+var NO_BLOCKS = [];
 function BlockTag({ id, streaming, load }) {
   const validId = typeof id === "string" && ID_PATTERN.test(id);
-  const actions = useContext13(BlockActions);
+  const actions = useContext14(BlockActions);
   const address = validId ? `${actions.sessionScope ?? ""}|${id}` : "";
-  const [state, setState] = useState27({ kind: "loading" });
-  const [viewing, setViewing] = useState27(null);
-  const drawn = useRef15(null);
-  const self = useRef15(null);
+  const [state, setState] = useState28({ kind: "loading" });
+  const [viewing, setViewing] = useState28(null);
+  const drawn = useRef16(null);
+  const tagRef = useRef16(null);
+  const self = useRef16(null);
   if (self.current === null) self.current = { token: /* @__PURE__ */ Symbol("hb-tag") };
-  const [role, setRole] = useState27("unknown");
-  const [refresh, setRefresh] = useState27(0);
+  const [role, setRole] = useState28("unknown");
+  const [refresh, setRefresh] = useState28(0);
   const [, force] = useReducer((x) => x + 1, 0);
-  const [live, setLive] = useState27({});
-  useLayoutEffect4(() => {
+  const [live, setLive] = useState28({});
+  useLayoutEffect5(() => {
     if (streaming || !validId) return;
     const token = self.current.token;
     const claim2 = claim(address, token);
@@ -7727,7 +9587,7 @@ function BlockTag({ id, streaming, load }) {
       if (release(address, token)) forgetBlock(id);
     };
   }, [address, id, streaming, validId]);
-  useEffect10(() => {
+  useEffect11(() => {
     if (streaming || !validId || role !== "home") return;
     let alive = true;
     const ask = viewing === null || !actions.rest ? load(id) : actions.rest(`/blocks/${id}?version=${viewing}`);
@@ -7735,6 +9595,7 @@ function BlockTag({ id, streaming, load }) {
       const { blocks, version: boardVersion, updatedAt: boardUpdatedAt, links: boardLinks } = readBlocksNoted(data);
       if (!alive) return;
       if (blocks.length) {
+        const envelope = isEnvelopeCarrying(data) ? data.stored : data;
         const headless = drawn.current === null && viewing === null && (boardVersion ?? 0) >= 2;
         const commitDraw = () => {
           if (!alive) return;
@@ -7742,7 +9603,7 @@ function BlockTag({ id, streaming, load }) {
           if (drawn.current && viewing === null) void promoteOnUpdate(actions.rest, id, drawn.current, blocks);
           if (viewing === null && (boardVersion ?? 0) >= 2) markLiving(id);
           drawn.current = blocks;
-          setState({ kind: "drawn", blocks });
+          setState({ kind: "drawn", blocks, stored: envelope });
           if (viewing === null) {
             setLive({ version: boardVersion, updatedAt: boardUpdatedAt, links: boardLinks });
             setMeta(address, { version: boardVersion, updatedAt: boardUpdatedAt });
@@ -7778,14 +9639,21 @@ function BlockTag({ id, streaming, load }) {
       alive = false;
     };
   }, [address, id, streaming, validId, role, refresh, viewing]);
+  const chrome = useExportChrome({
+    blocks: state.kind === "drawn" ? state.blocks : NO_BLOCKS,
+    stored: state.kind === "drawn" ? state.stored : null,
+    getBoard: () => tagRef.current?.querySelector(".hb-blocks") ?? null,
+    getHost: () => tagRef.current
+  });
   if (!validId && !streaming) return null;
-  if (streaming || role === "unknown") return /* @__PURE__ */ jsx50(Note, { text: "drawing\u2026", pulse: true });
-  if (role === "pointer") return /* @__PURE__ */ jsx50(LivePointer, { id, address });
-  if (state.kind === "loading") return /* @__PURE__ */ jsx50(Note, { text: "drawing\u2026", pulse: true });
+  if (streaming || role === "unknown") return /* @__PURE__ */ jsx51(Note, { text: "drawing\u2026", pulse: true });
+  if (role === "pointer") return /* @__PURE__ */ jsx51(LivePointer, { id, address });
+  if (state.kind === "loading") return /* @__PURE__ */ jsx51(Note, { text: "drawing\u2026", pulse: true });
   if (state.kind === "failed") return null;
-  return /* @__PURE__ */ jsxs45(BlockActions.Provider, { value: { ...actions, blockId: id }, children: [
-    /* @__PURE__ */ jsx50(Blocks, { blocks: state.blocks }),
-    (live.version != null || live.links) && /* @__PURE__ */ jsx50(
+  return /* @__PURE__ */ jsx51(BlockActions.Provider, { value: { ...actions, blockId: id }, children: /* @__PURE__ */ jsxs46("div", { className: "hb-tag", ref: tagRef, ...chrome.bind, children: [
+    chrome.menu,
+    /* @__PURE__ */ jsx51(Blocks, { blocks: state.blocks }),
+    (live.version != null || live.links) && /* @__PURE__ */ jsx51(
       LiveRow,
       {
         id,
@@ -7796,18 +9664,19 @@ function BlockTag({ id, streaming, load }) {
         onShow: setViewing,
         canReach: Boolean(actions.rest)
       }
-    )
-  ] });
+    ),
+    chrome.layer
+  ] }) });
 }
 function Note({ text, pulse = false }) {
-  return /* @__PURE__ */ jsx50("div", { className: pulse ? "hb-state hb-pulse" : "hb-state", children: text });
+  return /* @__PURE__ */ jsx51("div", { className: pulse ? "hb-state hb-pulse" : "hb-state", children: text });
 }
 
 // src/live/DashboardView.tsx
-import { useCallback as useCallback2, useEffect as useEffect11, useRef as useRef16, useState as useState28 } from "react";
+import { useCallback as useCallback2, useEffect as useEffect12, useRef as useRef17, useState as useState29 } from "react";
 
 // src/live/RefreshBar.tsx
-import { jsx as jsx51, jsxs as jsxs46 } from "react/jsx-runtime";
+import { jsx as jsx52, jsxs as jsxs47 } from "react/jsx-runtime";
 function when(iso, now = /* @__PURE__ */ new Date()) {
   const at2 = new Date(iso);
   const time = at2.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
@@ -7815,15 +9684,15 @@ function when(iso, now = /* @__PURE__ */ new Date()) {
   return `${at2.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}, ${time}`;
 }
 function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) {
-  return /* @__PURE__ */ jsxs46("div", { className: "hb-refresh", role: "status", children: [
-    /* @__PURE__ */ jsx51("span", { className: "hb-refresh-label", children: label }),
-    /* @__PURE__ */ jsx51("span", { className: "hb-refresh-when", children: at2 ? `updated ${when(at2)}` : "not filled yet" }),
-    schedule && /* @__PURE__ */ jsxs46("span", { className: "hb-refresh-when", children: [
+  return /* @__PURE__ */ jsxs47("div", { className: "hb-refresh", role: "status", children: [
+    /* @__PURE__ */ jsx52("span", { className: "hb-refresh-label", children: label }),
+    /* @__PURE__ */ jsx52("span", { className: "hb-refresh-when", children: at2 ? `updated ${when(at2)}` : "not filled yet" }),
+    schedule && /* @__PURE__ */ jsxs47("span", { className: "hb-refresh-when", children: [
       "\xB7 refreshes ",
       schedule
     ] }),
-    error && /* @__PURE__ */ jsx51("span", { className: "hb-refresh-error", children: error }),
-    /* @__PURE__ */ jsxs46(
+    error && /* @__PURE__ */ jsx52("span", { className: "hb-refresh-error", children: error }),
+    /* @__PURE__ */ jsxs47(
       "button",
       {
         type: "button",
@@ -7832,7 +9701,7 @@ function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) 
         onClick: onRefresh,
         "aria-label": refreshing ? "Refreshing" : `Refresh ${label}`,
         children: [
-          /* @__PURE__ */ jsx51("span", { "aria-hidden": "true", children: "\u21BB" }),
+          /* @__PURE__ */ jsx52("span", { "aria-hidden": "true", children: "\u21BB" }),
           " ",
           refreshing ? "Refreshing\u2026" : "Refresh"
         ]
@@ -7842,7 +9711,7 @@ function RefreshBar({ label, at: at2, refreshing, error, schedule, onRefresh }) 
 }
 
 // src/live/DashboardView.tsx
-import { jsx as jsx52, jsxs as jsxs47 } from "react/jsx-runtime";
+import { jsx as jsx53, jsxs as jsxs48 } from "react/jsx-runtime";
 function snapshotOf(b) {
   if (b.snapshots) return b.snapshots;
   if (b.at !== void 0 || b.refreshing !== void 0) {
@@ -7871,10 +9740,10 @@ function signature(ids) {
   return (h >>> 0).toString(36);
 }
 function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, refreshLabel = "Snapshot" }) {
-  const [board, setBoard] = useState28(null);
-  const [missing, setMissing] = useState28(false);
-  const live = useRef16(false);
-  const lastTicks = useRef16({});
+  const [board, setBoard] = useState29(null);
+  const [missing, setMissing] = useState29(false);
+  const live = useRef17(false);
+  const lastTicks = useRef17({});
   const reload = useCallback2(async () => {
     try {
       const next = await load();
@@ -7894,10 +9763,10 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
       setMissing(true);
     }
   }, [load]);
-  useEffect11(() => {
+  useEffect12(() => {
     if (refreshNow) void reload();
   }, [refreshNow, reload]);
-  useEffect11(() => {
+  useEffect12(() => {
     let stop = false;
     let timer;
     const tick = async () => {
@@ -7911,7 +9780,7 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
     };
   }, [reload]);
   if (!board) {
-    return /* @__PURE__ */ jsx52("div", { className: "hb-blocks hb-dash", children: /* @__PURE__ */ jsx52("p", { className: "hb-dash-sub", children: missing ? "This page isn't in this profile. Switch back to the profile it was made in, or ask Hermes to make it here." : "Loading\u2026" }) });
+    return /* @__PURE__ */ jsx53("div", { className: "hb-blocks hb-dash", children: /* @__PURE__ */ jsx53("p", { className: "hb-dash-sub", children: missing ? "This page isn't in this profile. Switch back to the profile it was made in, or ask Hermes to make it here." : "Loading\u2026" }) });
   }
   const ids = checklistsByPath(board.blocks);
   const sig = signature(ids);
@@ -7938,12 +9807,12 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
     if (Object.keys(ticks).length) await saveTicks(ticks);
     return { ok: true };
   };
-  return /* @__PURE__ */ jsxs47("div", { className: "hb-blocks hb-dash", children: [
-    board.blocks[0]?.type !== "briefing" && /* @__PURE__ */ jsxs47("header", { className: "hb-dash-head", children: [
-      /* @__PURE__ */ jsx52("div", { className: "hb-dash-date", children: board.at.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }) }),
-      /* @__PURE__ */ jsx52("h1", { children: board.greeting ?? board.title ?? "Today" })
+  return /* @__PURE__ */ jsxs48("div", { className: "hb-blocks hb-dash", children: [
+    board.blocks[0]?.type !== "briefing" && /* @__PURE__ */ jsxs48("header", { className: "hb-dash-head", children: [
+      /* @__PURE__ */ jsx53("div", { className: "hb-dash-date", children: board.at.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }) }),
+      /* @__PURE__ */ jsx53("h1", { children: board.greeting ?? board.title ?? "Today" })
     ] }),
-    refresh && board.snapshot && /* @__PURE__ */ jsx52(RefreshBar, { label: refreshLabel, ...board.snapshot, onRefresh: async () => {
+    refresh && board.snapshot && /* @__PURE__ */ jsx53(RefreshBar, { label: refreshLabel, ...board.snapshot, onRefresh: async () => {
       setBoard((b) => b ? { ...b, snapshot: { ...b.snapshot, refreshing: true, error: null } } : b);
       try {
         await refresh();
@@ -7951,7 +9820,7 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
         void reload();
       }
     } }),
-    /* @__PURE__ */ jsx52(BlockActions.Provider, { value: { send: fill, fill, rest, blockId: `dashboard-${sig}` }, children: /* @__PURE__ */ jsx52(Blocks, { blocks: board.blocks }, sig) })
+    /* @__PURE__ */ jsx53(BlockActions.Provider, { value: { send: fill, fill, rest, blockId: `dashboard-${sig}` }, children: /* @__PURE__ */ jsx53(Blocks, { blocks: board.blocks }, sig) })
   ] });
 }
 
@@ -7983,7 +9852,7 @@ function pageRoutes(register, view) {
 }
 
 // src/live/register.tsx
-import { jsx as jsx53 } from "react/jsx-runtime";
+import { jsx as jsx54 } from "react/jsx-runtime";
 var POLL_MS = 5e3;
 var TODAY_PATH = "/genui-today";
 function registerLive(ctx, fill) {
@@ -7994,7 +9863,7 @@ function registerLive(ctx, fill) {
     area: "routes",
     title: "Today",
     data: { path: TODAY_PATH },
-    render: () => /* @__PURE__ */ jsx53(
+    render: () => /* @__PURE__ */ jsx54(
       DashboardView,
       {
         fill,
@@ -8032,7 +9901,7 @@ function registerLive(ctx, fill) {
       sync();
     }
   };
-  const syncPages = pageRoutes(ctx.register, (slug2) => /* @__PURE__ */ jsx53(
+  const syncPages = pageRoutes(ctx.register, (slug2) => /* @__PURE__ */ jsx54(
     DashboardView,
     {
       fill,
@@ -8239,6 +10108,112 @@ var blockTag_default = `/* The block tag's own states */
   margin: 6px 0;
   color: var(--ui-text-tertiary, #6b7280);
   font-size: 13px;
+  overflow-wrap: anywhere;
+}
+/* Export affordance (host/ExportChrome.tsx): deterministic host acts, zero requests \u2014 a chart's PNG (the SVG
+   kinds and the DOM-drawn bars alike), a table's CSV, the whole board's Markdown or JSON from the envelope the
+   page already holds. The board menu sits in the tag's top corner: quiet until the pointer is on the board or
+   the key reaches it, and visible while its own menu is open. The per-block corner buttons live in a layer
+   OUTSIDE .hb-blocks: the board's drawing stays exactly what it always was, the one mounted instance is never
+   re-rendered by the chrome, and the walk pairs data with the elements the reader is looking at. Every
+   exportable block's button is ALWAYS in the DOM and in the tab order (keyboard readers reach it without a
+   mouse); at rest it is merely invisible and unreachable to the pointer (opacity 0, pointer-events none \u2014
+   neither keeps focus away), and the pointer lights its corner while any focus, especially a keyboard one,
+   shows it whole. The menu's word (a failure) and the corner's word (no 2D painting here) WRAP: they may grow
+   taller, never wider than their box, the rule every status word here keeps. Controls sit outside .hb-blocks,
+   so --hb-* tokens are undefined here: the app tokens, with fallbacks. The tag itself takes position:relative
+   and no part in layout beyond what it had \u2014 it only anchors the layer and the menu. */
+.hb-tag { position: relative; }
+.hb-export {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background, #ffffff) 85%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  cursor: pointer;
+  opacity: 0;
+}
+.hb-tag:hover .hb-export, .hb-export:focus-visible, .hb-export[aria-expanded="true"] { opacity: 1; }
+.hb-export-menu {
+  position: absolute;
+  top: 38px;
+  right: 6px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+  max-width: 240px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
+  border-radius: 10px;
+  background: var(--background, #ffffff);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.hb-export-menu > button {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--foreground, #1f2328);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.hb-export-menu > button:hover, .hb-export-menu > button:focus-visible {
+  background: color-mix(in srgb, var(--foreground, #1f2328) 7%, transparent);
+}
+.hb-export-failed {
+  padding: 4px 10px 6px;
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 12px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.hb-export-layer { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.hb-export-btn {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background, #ffffff) 88%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  cursor: pointer;
+  opacity: 0;              /* invisible at rest, never in the pointer's way \u2014 and still in the tab order */
+  pointer-events: none;
+}
+.hb-export-btn.lit, .hb-export-btn:hover, .hb-export-btn:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+  color: var(--foreground, #1f2328);
+  background: var(--background, #ffffff);
+}
+.hb-export-said {
+  position: absolute;
+  max-width: 220px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background, #ffffff) 90%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  font-size: 12px;
+  white-space: normal;
   overflow-wrap: anywhere;
 }
 `;
@@ -8565,7 +10540,7 @@ var STYLE_PARTS = [
 var styles_default = STYLE_PARTS.join("\n");
 
 // src/plugin.tsx
-import { jsx as jsx54 } from "react/jsx-runtime";
+import { jsx as jsx55 } from "react/jsx-runtime";
 var ID4 = "hermes-genui";
 var STYLE_ID = "hermes-genui-css";
 function injectStyles() {
@@ -8591,7 +10566,7 @@ var plugin_default = {
       area: TRANSCRIPT_DIRECTIVE_AREA,
       data: {
         name: "blocks",
-        render: ({ attrs, sessionId, streaming }) => /* @__PURE__ */ jsx54(BlockActions.Provider, { value: { send, fill, rest, blockId: attrs?.id, sessionScope: sessionId }, children: /* @__PURE__ */ jsx54(BlockTag, { id: attrs?.id, streaming: Boolean(streaming), load }) })
+        render: ({ attrs, sessionId, streaming }) => /* @__PURE__ */ jsx55(BlockActions.Provider, { value: { send, fill, rest, blockId: attrs?.id, sessionScope: sessionId }, children: /* @__PURE__ */ jsx55(BlockTag, { id: attrs?.id, streaming: Boolean(streaming), load }) })
       }
     });
     const open = (text) => void openAndFill(text, host ?? {});

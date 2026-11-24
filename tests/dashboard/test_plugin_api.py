@@ -23,7 +23,8 @@ def test_api_returns_blocks(client, tmp_path):
     block_id = api.store.save([{"type": "text", "text": "hi"}], root=tmp_path)
     response = http.get(f"/blocks/{block_id}")
     assert response.status_code == 200
-    assert response.json() == {"blocks": [{"type": "text", "text": "hi"}]}
+    # the stored envelope rides along (enhancement #6): the page's JSON export is the board's OWN words.
+    assert response.json() == {"blocks": [{"type": "text", "text": "hi"}], "stored": [{"type": "text", "text": "hi"}]}
 
 
 def test_api_404_for_unknown(client):
@@ -100,7 +101,9 @@ def test_a_board_from_another_profile_draws_and_keeps_its_ticks_there(client, tm
     other = tmp_path / "profiles" / "claude" / "blocks"
     monkeypatch.setattr(api.store, "profile_stores", lambda: [other])
     block_id = api.store.save([{"type": "checklist", "items": ["Passport"]}], root=other)
-    assert http.get(f"/blocks/{block_id}").json() == {"blocks": [{"type": "checklist", "items": ["Passport"]}]}
+    assert http.get(f"/blocks/{block_id}").json() == {
+        "blocks": [{"type": "checklist", "items": ["Passport"]}],
+        "stored": [{"type": "checklist", "items": ["Passport"]}]}
     assert http.put(f"/blocks/{block_id}/state", json={"state": {"0": [0]}}).status_code == 200
     assert (other / f"{block_id}.state.json").is_file()
     assert not (tmp_path / f"{block_id}.state.json").exists()
@@ -286,3 +289,43 @@ def test_a_page_on_a_schedule_says_so(client, tmp_path):
     assert http.get("/pages/executive").json()["schedule"] == "every day at 8am"
     _page(api, tmp_path)
     assert http.get("/pages/executive").json()["schedule"] is None
+
+
+# --- export rides the load; there is no export door (t_bff8178a round 2, F1) ---------------------------------
+
+def test_the_load_itself_carries_the_stored_envelope_whole(client, tmp_path):
+    """The board page needs nothing else to export JSON: the stored envelope arrives with the board itself —
+    unknown words and all, exactly as saved (the drawer may serve a projection; the export keeps the original)."""
+    http, api = client
+    board = {"version": 2, "updated_at": "2026-11-18T10:00:00+05:30", "model_note": "kept", "blocks": [
+        {"type": "heading", "text": "Day 1"},
+        {"type": "text", "text": "Leaves at 7:10."},
+    ]}
+    block_id = api.store.save(board, root=tmp_path)
+    assert http.get(f"/blocks/{block_id}").json()["stored"] == board
+
+
+def test_plain_list_boards_store_ride_as_they_were_saved(client, tmp_path):
+    http, api = client
+    board = [{"type": "text", "text": "hi"}]
+    block_id = api.store.save(board, root=tmp_path)
+    assert http.get(f"/blocks/{block_id}").json()["stored"] == board
+
+
+def test_reach_back_stores_the_version_answered(client, tmp_path):
+    """With ?version=N the `stored` word is THAT version's envelope — the very board the answer describes,
+    never the live one beside it."""
+    http, api = client
+    first = [{"type": "text", "text": "Q3: 41"}]
+    block_id = api.store.save(first, root=tmp_path)
+    api.store.update(block_id, {"blocks": first + [{"type": "text", "text": "plus NVDA"}]}, root=tmp_path)
+    answer = http.get(f"/blocks/{block_id}", params={"version": "1"}).json()
+    assert answer["stored"] == first
+
+
+def test_there_is_no_export_route_to_ask(client):
+    """The GET /blocks/<id>/export door was REMOVED with the rework: nothing may answer a board's Markdown at
+    export time. Its absence is pinned — a 404 here is the feature working."""
+    http, _ = client
+    for bad in ("0badc0de", "7f3a09bc"):
+        assert http.get(f"/blocks/{bad}/export").status_code == 404

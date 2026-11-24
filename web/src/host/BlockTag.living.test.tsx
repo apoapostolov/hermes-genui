@@ -212,6 +212,100 @@ describe("links between boards", () => {
   });
 });
 
+describe("export follows the board on screen", () => {
+  // Round-2's blocking finding, pinned through the REAL BlockTag machinery: an addressed update or a version
+  // reach-back REPLACES THE READ at the same slot while the drawing carries on (the identity system keeps a
+  // survivor on the very element already mounted when its words held, and honestly remounts it when they
+  // moved). Either way the export corner must refresh: its bytes AND its accessible name follow whatever
+  // the reader is looking at right now, never the previous version. The predicate-level proof — same element,
+  // same position, changed data — is pinned directly in ExportChrome.scan.test.tsx; real Chrome rides in
+  // tests/test_export_chrome.py::TestLivingRefresh.
+  const downloads = () => {
+    const files: { name: string; blob: Blob }[] = [];
+    (URL as { createObjectURL?: unknown }).createObjectURL = (b: Blob) => {
+      files.push({ name: "", blob: b });
+      return "blob:x";
+    };
+    (URL as { revokeObjectURL?: unknown }).revokeObjectURL = () => {};
+    const grab = (e: Event) => {
+      const link = (e.target as HTMLElement).closest?.("a[download]");
+      if (link && files.length) files[files.length - 1].name = link.getAttribute("download")!;
+    };
+    document.addEventListener("click", grab, true);
+    return files;
+  };
+  const TABLE = (value: string) => ({
+    type: "table", caption: "Lodging, compared", columns: ["Hotel", "Cost"], rows: [["Kanra", value]],
+  });
+  const corner = () =>
+    [...document.querySelectorAll<HTMLButtonElement>(".hb-export-btn")]
+      .find((b) => (b.getAttribute("aria-label") ?? "").startsWith("Export table"));
+
+  it("a version reach-back re-exports the version being VIEWED — same slot, new bytes", async () => {
+    const id = "c0ffee0e";
+    const d = door();
+    d.boards.set(`${id}.versions`, [
+      { version: 1, saved_at: "2026-11-19T08:00:00+00:00", board: { blocks: [TABLE("old")], version: 1 } },
+    ]);
+    d.boards.set(id, { blocks: [TABLE("new")], version: 2, updated_at: "2026-11-20T09:00:00+00:00" });
+    const files = downloads();
+    const { container } = mountTag(id, d);
+    await waitFor(() => expect(container.querySelector(".hb-table")).toBeTruthy());
+    expect(container.textContent).toContain("new");
+
+    // The live board on screen: the corner says CURRENT data.
+    corner()!.click();
+    await waitFor(() => expect(files.length).toBe(1));
+    expect(await files[0].blob.text()).toContain("new");
+
+    // Reach back: v1 answers through the REAL door route (?version=N) at the SAME slot. Whether the
+    // identity system carries the survivor onto the very element or honestly remounts it (its words moved),
+    // the pairing must refresh: exported bytes follow the displayed version, never the previous one.
+    fireEvent.click(container.querySelector(".hb-live-history")!);
+    await waitFor(() => expect(container.textContent).toContain("viewing v1"));
+    await waitFor(() => expect(container.textContent).toContain("old"));
+    expect(corner()).toBeTruthy();                                   // the corner never left the DOM
+
+    // The bytes the reader would download are the board the reader SEES — not the version that came before.
+    corner()!.click();
+    await waitFor(() => expect(files.length).toBe(2));
+    expect(await files[1].blob.text()).toContain("old");
+    expect(await files[1].blob.text()).not.toContain("new");
+
+    // And stepping back to current follows the SAME way: current bytes again.
+    fireEvent.click(container.querySelector(".hb-live-back")!);
+    await waitFor(() => expect(container.textContent).toContain("new"));
+    corner()!.click();
+    await waitFor(() => expect(files.length).toBe(3));
+    expect(await files[2].blob.text()).toContain("new");
+    expect(await files[2].blob.text()).not.toContain("old");
+  });
+
+  it("an update-in-place moves the corner's CSV at the same slot (poke, not reach-back)", async () => {
+    const id = "c0ffee0f";
+    const d = door();
+    d.boards.set(id, [TABLE("old")]);
+    const files = downloads();
+    const { container } = mountTag(id, d);
+    await waitFor(() => expect(container.querySelector(".hb-table")).toBeTruthy());
+    corner()!.click();
+    await waitFor(() => expect(files.length).toBe(1));
+    expect(await files[0].blob.text()).toContain("old");
+
+    // A newer turn quotes the SAME address: the owner refetches and REPLACES the read in place — v2, a table
+    // at the same slot with a new value (an unsaid board grows no living row: this is the plainest swap).
+    d.boards.set(`${id}.versions`, [{ version: 1, saved_at: null, board: [TABLE("old")] }]);
+    d.boards.set(id, { blocks: [TABLE("new")], version: 2, updated_at: "2026-11-20T09:00:00+00:00" });
+    act(() => { mountTag(id, d); });   // the later tag is a pointer; its claim pokes the live view
+    await waitFor(() => expect(container.textContent).toContain("new"));
+
+    corner()!.click();
+    await waitFor(() => expect(files.length).toBe(2));
+    expect(await files[1].blob.text()).toContain("new");
+    expect(await files[1].blob.text()).not.toContain("old");
+  });
+});
+
 describe("board-held transient answers", () => {
   it("a moved slider survives an addressed update on the same element", async () => {
     const id = "c0ffee0c";

@@ -755,3 +755,24 @@ def test_steps_say_what_each_step_changes_using_the_flow_labels():
 def test_steps_without_a_flow_on_the_board_name_the_node_id():
     steps = {"type": "steps", "for": "tf", "items": [{"title": "A", "holds": {"emb": ["v"]}}, {"title": "B"}]}
     assert render(steps) == "**Step 1 of 2 · A**\nemb now holds: v\n\n**Step 2 of 2 · B**"
+
+
+def test_replace_tags_reads_both_board_shapes():
+    # A stored board is either a plain list or the Living Boards envelope; as text, both are just their blocks:
+    # which version an address is on and when it was written are the DRAWER's words, never the serializer's.
+    heading = EXAMPLES["heading"]
+    plain = tf.replace_tags('::blocks{id="7f3a09bc"}', load=lambda _: [heading])
+    wrapped = tf.replace_tags('::blocks{id="7f3a09bc"}',
+                              load=lambda _: {"version": 2, "updated_at": "2026-11-18T10:00:00+05:30",
+                                              "blocks": [heading]})
+    assert wrapped == plain
+    assert wrapped.strip() and wrapped != tf.NOT_SHOWN
+
+
+def test_blocks_as_text_can_go_uncapped_for_exports():
+    """limit=None is the export's ask: every block whole. The default cap is the chat contract, untouched."""
+    blocks = [{"type": "text", "text": f"line {i} " + "x" * 60} for i in range(80)]
+    whole = tf.blocks_as_text(blocks, limit=None)
+    assert len(whole) > tf.LIMIT and whole.count("line ") == 80
+    capped = tf.blocks_as_text(blocks)
+    assert len(capped) <= tf.LIMIT and capped.endswith(tf.MORE_NOTE)

@@ -246,7 +246,12 @@ async def get_block(block_id: str, version: str | None = None):
                 return JSONResponse({"error": f"no version {want} of this board"}, status_code=404)
             board = archived["board"]
             served_version = want
-    answer = {"blocks": store.blocks_of(board)}
+    # `stored` is the envelope exactly as it was saved, riding along so a board's JSON export is the board's
+    # OWN words — unknown fields and all — with no second read and no request at export time (enhancement #6:
+    # an export is a deterministic host act, local to the page). The drawer ignores the key; its reader
+    # (core/readBlocks.ts) reads the words it knows, as it always did. With ?version=N it is that version's
+    # envelope, the same board this answer describes.
+    answer = {"blocks": store.blocks_of(board), "stored": board}
     if served_version is not None:  # living boards: which version this answer is
         answer["version"] = served_version
     if (stamp := store.updated_at_of(board)) is not None:  # and when this version was written

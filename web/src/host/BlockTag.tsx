@@ -7,6 +7,10 @@
 // same elements, never a second renderer (a calculator's sliders, an unsent form, a lit tab all ride
 // through). A board that speaks a living word (a version, links) says it in a quiet row under itself; a board
 // that speaks nothing draws the DOM and the note it always drew.
+//
+// Export chrome (#6, host/ExportChrome.tsx): the tag grows view-act controls OUTSIDE .hb-blocks — a board menu
+// (Markdown/JSON from the stored envelope this very load delivered) and a corner button per drawn chart and
+// table. The board's own drawing stays exactly what it always was.
 import { useContext, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 import { Blocks } from "../core/Blocks";
 import * as boards from "../core/boardRoster";
@@ -16,10 +20,20 @@ import { LivePointer, LiveRow } from "../core/LivingBoards";
 import { readBlocksNoted, type BoardLink } from "../core/readBlocks";
 import type { Block } from "../registry";
 import { BlockActions } from "./actions";
+import { useExportChrome } from "./ExportChrome";
 
 const ID_PATTERN = /^[0-9a-f]{8}$/;
 
-type State = { kind: "loading" } | { kind: "drawn"; blocks: Block[] } | { kind: "failed" };
+/** A get_block answer that carries the stored envelope beside its projection (the local door does). */
+function isEnvelopeCarrying(data: unknown): data is { stored: unknown } {
+  return typeof data === "object" && data !== null && !Array.isArray(data) && "stored" in data;
+}
+
+// One stable empty list for the chrome's "nothing drawn yet" argument: a fresh [] every render would churn its
+// deps and let its scan re-commit forever.
+const NO_BLOCKS: Block[] = [];
+
+type State = { kind: "loading" } | { kind: "drawn"; blocks: Block[]; stored: unknown } | { kind: "failed" };
 
 /**
  * load fetches the stored JSON for an id (in the app: the plugin's REST route).
@@ -39,6 +53,8 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
   const [viewing, setViewing] = useState<number | null>(null);  // an archived version being viewed, or null
   // The tree this live view MOUNTED last: what the next replacement tree is carried against.
   const drawn = useRef<Block[] | null>(null);
+  // The chrome's anchor: the tag wraps the board (never inside .hb-blocks) so corners and the menu pair with it.
+  const tagRef = useRef<HTMLDivElement | null>(null);
 
   // The roster claim (core/boardRoster.ts): the token belongs to this instance; the claim is taken in a
   // LAYOUT effect so no flash of the wrong role ever paints, and it is released on unmount whatever path
@@ -93,6 +109,10 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
         const { blocks, version: boardVersion, updatedAt: boardUpdatedAt, links: boardLinks } = readBlocksNoted(data);
         if (!alive) return;
         if (blocks.length) {
+          // The export's JSON source: the stored envelope when the answer carries it (the local get_block
+          // does, at every version); the answer itself where it does not (previews, old doors) — never a
+          // fabrication. With ?version=N this is THAT version's envelope, the board being looked at.
+          const envelope = isEnvelopeCarrying(data) ? data.stored : data;
           // Drawing the answer is a function of the board and the door; the ONE thing that may precede it
           // is an archive walk: a version ≥ 2 board arriving at a FRESH mount may carry updates that landed
           // with no view mounted anywhere — no promote ever ran, and the door may still hold answers under
@@ -113,7 +133,7 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
             if (drawn.current && viewing === null) void promoteOnUpdate(actions.rest, id, drawn.current, blocks);
             if (viewing === null && (boardVersion ?? 0) >= 2) markLiving(id);
             drawn.current = blocks;
-            setState({ kind: "drawn", blocks });
+            setState({ kind: "drawn", blocks, stored: envelope });
             // Only the LIVE answer says what this address IS now: the live row and the roster's word about
             // the address speak of the current version, whatever older one is being looked at.
             if (viewing === null) {
@@ -152,6 +172,16 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
     // actions.rest is left out of the deps on purpose: it is a per-render closure over the same door.
   }, [address, id, streaming, validId, role, refresh, viewing]);
 
+  // The export affordance (host/ExportChrome.tsx): chrome around the board, never inside it. Its corner buttons
+  // pair the one drawn instance's elements with the read blocks by walking both trees together; its board
+  // files come out of the stored envelope this very load already delivered — export asks the door for nothing.
+  const chrome = useExportChrome({
+    blocks: state.kind === "drawn" ? state.blocks : NO_BLOCKS,
+    stored: state.kind === "drawn" ? state.stored : null,
+    getBoard: () => tagRef.current?.querySelector<HTMLElement>(".hb-blocks") ?? null,
+    getHost: () => tagRef.current,
+  });
+
   if (!validId && !streaming) return null;
   if (streaming || role === "unknown") return <Note text="drawing…" pulse />;
   if (role === "pointer") return <LivePointer id={id as string} address={address} />;
@@ -159,11 +189,15 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
   if (state.kind === "failed") return null;
   return (
     <BlockActions.Provider value={{ ...actions, blockId: id }}>
-      <Blocks blocks={state.blocks} />
-      {(live.version != null || live.links) && (
-        <LiveRow id={id as string} version={live.version} updatedAt={live.updatedAt} links={live.links}
-          viewing={viewing} onShow={setViewing} canReach={Boolean(actions.rest)} />
-      )}
+      <div className="hb-tag" ref={tagRef} {...chrome.bind}>
+        {chrome.menu}
+        <Blocks blocks={state.blocks} />
+        {(live.version != null || live.links) && (
+          <LiveRow id={id as string} version={live.version} updatedAt={live.updatedAt} links={live.links}
+            viewing={viewing} onShow={setViewing} canReach={Boolean(actions.rest)} />
+        )}
+        {chrome.layer}
+      </div>
     </BlockActions.Provider>
   );
 }
