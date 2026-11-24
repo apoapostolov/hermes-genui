@@ -2,7 +2,6 @@ import importlib
 import json
 
 import pytest
-
 from conftest import load_plugin_package
 
 load_plugin_package()
@@ -391,6 +390,10 @@ def test_a_long_as_of_is_cut_to_the_footer_line(store_dir):
 
 def test_including_a_board_keeps_its_blocks_and_not_its_provenance(store_dir):
     board_id = plugin_store.save({"as_of": "2026-11-18", "live": True, "blocks": [TIMELINE]}, root=store_dir)
+    result = tools.show_blocks({"blocks": [{"type": "include", "id": board_id}]})
+    assert plugin_store.load(stored_id(result), root=store_dir) == [TIMELINE]
+
+
 # --- follow-ups: the board's tappable continuations ride the same envelope (enhancement #5) ----------------------
 
 def test_follow_ups_are_stored_beside_the_blocks(store_dir):
