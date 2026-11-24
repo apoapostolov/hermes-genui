@@ -139,8 +139,7 @@ function actsBeforeTheModel(message) {
 }
 
 // src/host/actions.ts
-var BlockActions = createContext({ send: () => {
-}, fill: () => {
+var BlockActions = createContext({ send: async () => "nowhere", fill: () => {
 } });
 var MAX_SENT = 120;
 function composerActions(composer) {
@@ -151,30 +150,43 @@ function composerActions(composer) {
     insert(text).then(() => composer?.focus(null)).catch(() => {
     });
   };
+  const draft = async (text) => {
+    let taken = false;
+    try {
+      taken = await composer?.insertText(null, text, { mode: "block" }) === true;
+    } catch {
+      taken = false;
+    }
+    if (taken) {
+      try {
+        composer?.focus(null);
+      } catch {
+      }
+    }
+    return taken;
+  };
   return {
-    send(text) {
-      if (text.length > MAX_SENT || actsBeforeTheModel(text)) {
-        fill(text);
-        return;
+    async send(text, opts) {
+      if (!composer) return "nowhere";
+      const guarded = actsBeforeTheModel(text);
+      if (guarded || !opts?.force && text.length > MAX_SENT) {
+        return await draft(text) ? guarded ? "blocked" : "drafted" : "failed";
       }
       try {
-        if (composer?.submit(null, text)) return;
-        insert(text).catch(() => {
-        });
+        if (composer.submit(null, text)) return "sent";
       } catch {
-        insert(text).catch(() => {
-        });
       }
+      return await draft(text) ? "drafted" : "failed";
     },
     fill
   };
 }
 
 // src/host/BlockTag.tsx
-import { useContext as useContext13, useEffect as useEffect10, useLayoutEffect as useLayoutEffect4, useReducer, useRef as useRef15, useState as useState27 } from "react";
+import { useContext as useContext14, useEffect as useEffect10, useLayoutEffect as useLayoutEffect4, useReducer, useRef as useRef16, useState as useState27 } from "react";
 
 // src/core/Blocks.tsx
-import { Component as ReactComponent, createContext as createContext4, useContext as useContext11 } from "react";
+import { Component as ReactComponent, createContext as createContext4, useContext as useContext12 } from "react";
 
 // src/blocks/flow/highlight.tsx
 import { createContext as createContext2, useCallback, useContext, useMemo, useState } from "react";
@@ -1164,10 +1176,10 @@ function pieSlices(x, data) {
   if (slices.length <= MAX_SLICES) return { x: slices.map((s) => s.label), data: slices.map((s) => s.value) };
   const biggestFirst = [...slices].sort((a, b) => b.value - a.value);
   const kept = new Set(biggestFirst.slice(0, MAX_SLICES - 1));
-  const shown2 = slices.filter((s) => kept.has(s));
+  const shown = slices.filter((s) => kept.has(s));
   let other = 0;
   for (const s of slices) if (!kept.has(s)) other += s.value;
-  return { x: [...shown2.map((s) => s.label), "Other"], data: [...shown2.map((s) => s.value), other] };
+  return { x: [...shown.map((s) => s.label), "Other"], data: [...shown.map((s) => s.value), other] };
 }
 function stackSeries(series, n) {
   const up = new Array(n).fill(0);
@@ -1697,9 +1709,9 @@ function textWidth(text, size = 11) {
 function xLabelsShown(n, step, minGap) {
   if (n <= 1 || step <= 0) return [0];
   const every = Math.max(1, Math.ceil(minGap / step));
-  const shown2 = [];
-  for (let i = 0; i < n; i += every) shown2.push(i);
-  return shown2;
+  const shown = [];
+  for (let i = 0; i < n; i += every) shown.push(i);
+  return shown;
 }
 var MAX_SLOT = 96;
 var MIN_BAR = 14;
@@ -2117,7 +2129,7 @@ function ChartTip({ tip }) {
   const card = useRef2(null);
   const [kept, setKept] = useState5(tip);
   if (tip && tip !== kept) setKept(tip);
-  const shown2 = tip ?? kept;
+  const shown = tip ?? kept;
   useLayoutEffect2(() => {
     const el = card.current;
     if (!el || !tip) return;
@@ -2126,14 +2138,14 @@ function ChartTip({ tip }) {
     el.style.left = `${left}px`;
     el.style.top = `${top}px`;
   }, [tip]);
-  return /* @__PURE__ */ jsx6("div", { ref: card, className: `hb-tip${tip ? " hb-tip-on" : ""}`, role: "status", "aria-live": "polite", children: shown2 && /* @__PURE__ */ jsxs3(Fragment2, { children: [
-    /* @__PURE__ */ jsx6("div", { className: "hb-tip-title", children: shown2.title }),
-    shown2.rows.map((row, k) => /* @__PURE__ */ jsxs3("div", { className: "hb-tip-row", children: [
+  return /* @__PURE__ */ jsx6("div", { ref: card, className: `hb-tip${tip ? " hb-tip-on" : ""}`, role: "status", "aria-live": "polite", children: shown && /* @__PURE__ */ jsxs3(Fragment2, { children: [
+    /* @__PURE__ */ jsx6("div", { className: "hb-tip-title", children: shown.title }),
+    shown.rows.map((row, k) => /* @__PURE__ */ jsxs3("div", { className: "hb-tip-row", children: [
       /* @__PURE__ */ jsx6("i", { style: { background: row.colour } }),
       /* @__PURE__ */ jsx6("span", { className: "hb-tip-name", children: row.name }),
       /* @__PURE__ */ jsx6("b", { className: "hb-tip-value", children: row.value })
     ] }, k)),
-    shown2.note && /* @__PURE__ */ jsx6("div", { className: "hb-tip-note", children: shown2.note })
+    shown.note && /* @__PURE__ */ jsx6("div", { className: "hb-tip-note", children: shown.note })
   ] }) });
 }
 
@@ -2695,8 +2707,8 @@ function WaterfallChart({ spec }) {
   const tip = hover === null || !layout.bars[hover] ? null : waterfallTip(spec, hover, layout);
   const unit = spec.series[0]?.unit ?? spec.unit;
   const last = layout.bars.length - 1;
-  const shown2 = hover ?? (layout.bars[last] ? last : null);
-  const bar = shown2 === null ? null : layout.bars[shown2];
+  const shown = hover ?? (layout.bars[last] ? last : null);
+  const bar = shown === null ? null : layout.bars[shown];
   function pickAt(e) {
     const r = svg.current?.getBoundingClientRect();
     if (!r || !r.width) return;
@@ -2714,7 +2726,7 @@ function WaterfallChart({ spec }) {
     /* @__PURE__ */ jsx14("figcaption", { className: "hb-chart-head", children: /* @__PURE__ */ jsx14("span", { className: "hb-chart-title", children: spec.title ?? spec.series[0]?.name ?? "Waterfall" }) }),
     spec.figure !== false && bar !== null && /* @__PURE__ */ jsxs11("div", { className: "hb-chart-figure", children: [
       /* @__PURE__ */ jsx14("span", { className: "hb-chart-big", children: fmt(bar.to, unit) }),
-      /* @__PURE__ */ jsx14("span", { className: "hb-chart-at", children: spec.x[shown2] })
+      /* @__PURE__ */ jsx14("span", { className: "hb-chart-at", children: spec.x[shown] })
     ] }),
     /* @__PURE__ */ jsxs11("div", { ref: plot, className: "hb-chart-plot", children: [
       /* @__PURE__ */ jsxs11(
@@ -2889,17 +2901,17 @@ function headlineAt(spec) {
 function Headline({ spec, hover }) {
   const piled = spec.type === "stacked" || spec.type === "area";
   const pct = spec.type === "line" ? changePct(spec.series[0].data) : null;
-  const shown2 = hover ?? headlineAt(spec);
+  const shown = hover ?? headlineAt(spec);
   const first = spec.series[0];
   const unit = piled ? spec.unit : first.unit ?? spec.unit;
   const hist = spec.type === "histogram";
-  const span = spec.type === "range" ? first.span?.[shown2] ?? null : null;
+  const span = spec.type === "range" ? first.span?.[shown] ?? null : null;
   const counted = hist ? binTotals(first.data) : null;
-  const big = hist ? first.data[shown2] ?? null : span ? span.now ?? fmtSpan(span.low, span.high, unit) : piled ? totalAt(spec.series, shown2) : first.data[shown2] ?? null;
+  const big = hist ? first.data[shown] ?? null : span ? span.now ?? fmtSpan(span.low, span.high, unit) : piled ? totalAt(spec.series, shown) : first.data[shown] ?? null;
   const listed2 = piled ? [] : spec.series.slice(1);
   const withFigure = spec.figure !== false;
   const at2 = [
-    hover !== null || hist || span ? String(spec.x[shown2]) : "",
+    hover !== null || hist || span ? String(spec.x[shown]) : "",
     counted ? `${counted.total} counted` : "",
     span && span.now !== null && span.low !== null && span.high !== null ? fmtSpan(span.low, span.high, unit) : ""
   ].filter(Boolean).join(" \xB7 ");
@@ -2918,7 +2930,7 @@ function Headline({ spec, hover }) {
       /* @__PURE__ */ jsxs12("span", { className: "hb-chart-at", children: [
         at2,
         listed2.map((s, k) => {
-          const v = s.data[shown2] ?? null;
+          const v = s.data[shown] ?? null;
           return v === null ? null : /* @__PURE__ */ jsxs12("span", { className: "hb-chart-other", children: [
             s.name ? `${s.name} ` : "",
             fmt(v, s.unit ?? spec.unit)
@@ -4149,7 +4161,7 @@ function Flow({ id, title, direction, nodes, groups = [] }) {
   const holds = state.holds.some((h) => h.length > 0);
   const panelId = useId4();
   const down = direction === "down" || !fitsAcross(nodes.length, groups.length, width, holds);
-  const shown2 = open === null ? void 0 : nodes[open];
+  const shown = open === null ? void 0 : nodes[open];
   const node = (n, i, arrow) => /* @__PURE__ */ jsxs21("li", { className: "hb-flow-step", children: [
     arrow && /* @__PURE__ */ jsx24(Arrow, {}),
     /* @__PURE__ */ jsx24(
@@ -4186,9 +4198,9 @@ function Flow({ id, title, direction, nodes, groups = [] }) {
       ] }, start) : /* @__PURE__ */ jsx24(Fragment5, { children: node(nodes[start], start, start > 0) }, start)) }),
       moving && walk && /* @__PURE__ */ jsx24("div", { ref: packet, className: "hb-flow-packet", "aria-hidden": "true" })
     ] }),
-    shown2?.note && /* @__PURE__ */ jsxs21("div", { id: panelId, className: "hb-flow-panel", role: "region", "aria-label": shown2.label, children: [
-      /* @__PURE__ */ jsx24("div", { className: "hb-flow-panel-title", children: shown2.label }),
-      /* @__PURE__ */ jsx24("p", { className: "hb-flow-note", children: /* @__PURE__ */ jsx24(InlineText, { text: shown2.note }) })
+    shown?.note && /* @__PURE__ */ jsxs21("div", { id: panelId, className: "hb-flow-panel", role: "region", "aria-label": shown.label, children: [
+      /* @__PURE__ */ jsx24("div", { className: "hb-flow-panel-title", children: shown.label }),
+      /* @__PURE__ */ jsx24("p", { className: "hb-flow-note", children: /* @__PURE__ */ jsx24(InlineText, { text: shown.note }) })
     ] })
   ] });
 }
@@ -4878,10 +4890,10 @@ var GRID_FROM = 4;
 function Images({ block }) {
   const [failed, setFailed] = useState14(/* @__PURE__ */ new Set());
   const [open, setOpen] = useState14(null);
-  const shown2 = block.images.filter((p) => !failed.has(p.url));
-  if (!shown2.length) return null;
+  const shown = block.images.filter((p) => !failed.has(p.url));
+  if (!shown.length) return null;
   const fail = (url) => setFailed((before) => new Set(before).add(url));
-  const grid = shown2.length >= GRID_FROM;
+  const grid = shown.length >= GRID_FROM;
   const download = (p) => /* @__PURE__ */ jsx27(
     "a",
     {
@@ -4895,7 +4907,7 @@ function Images({ block }) {
   );
   return /* @__PURE__ */ jsxs24("figure", { className: grid ? "hb-photos hb-photos-grid" : "hb-photos", children: [
     block.title && /* @__PURE__ */ jsx27("figcaption", { className: "hb-chart-title", children: block.title }),
-    /* @__PURE__ */ jsx27("div", { className: "hb-photo-strip", children: shown2.map((p) => grid ? /* @__PURE__ */ jsxs24("div", { className: "hb-photo", children: [
+    /* @__PURE__ */ jsx27("div", { className: "hb-photo-strip", children: shown.map((p) => grid ? /* @__PURE__ */ jsxs24("div", { className: "hb-photo", children: [
       /* @__PURE__ */ jsx27("button", { type: "button", className: "hb-photo-open", onClick: () => setOpen(p), "aria-label": p.caption ?? "Open photo", children: /* @__PURE__ */ jsx27("img", { src: p.url, alt: p.caption ?? "", loading: "lazy", referrerPolicy: "no-referrer", onError: () => fail(p.url) }) }),
       /* @__PURE__ */ jsxs24("div", { className: "hb-photo-text", children: [
         /* @__PURE__ */ jsxs24("button", { type: "button", className: "hb-photo-label", onClick: () => setOpen(p), children: [
@@ -4970,7 +4982,7 @@ function kpiValue(k, { full = false } = {}) {
   return attached ? `${plain2}${k.unit}` : k.unit ? `${plain2} ${k.unit}` : plain2;
 }
 function KpiCard({ item, trendColour }) {
-  const shown2 = kpiValue(item);
+  const shown = kpiValue(item);
   const full = kpiValue(item, { full: true });
   const change = formatChange(item.change, item.change_unit);
   const isText = typeof item.value === "string";
@@ -4978,7 +4990,7 @@ function KpiCard({ item, trendColour }) {
   const valueClass = ["hb-kpi-value", isText ? "hb-kpi-value-text" : "", empty ? "hb-kpi-value-empty" : ""].filter(Boolean).join(" ");
   return /* @__PURE__ */ jsxs25("div", { className: "hb-card hb-kpi", children: [
     /* @__PURE__ */ jsx28("div", { className: "hb-kpi-label", children: item.label }),
-    /* @__PURE__ */ jsx28("div", { className: valueClass, title: full !== shown2 ? full : void 0, children: shown2 }),
+    /* @__PURE__ */ jsx28("div", { className: valueClass, title: full !== shown ? full : void 0, children: shown }),
     change && /* @__PURE__ */ jsx28("div", { className: changeClass(item), children: change }),
     item.trend && /* @__PURE__ */ jsx28(Sparkline, { values: item.trend, colour: trendColour })
   ] });
@@ -6180,7 +6192,7 @@ function Pile({ k, name, amount, counts, startDots, tallest, playing, unit }) {
   const cols = Math.max(20, Math.floor(width / DOT));
   const size = width / cols;
   const height = Math.ceil(tallest / cols) * size;
-  const shown2 = amount === null ? "\u2013" : fmt(amount, unit, { full: true });
+  const shown = amount === null ? "\u2013" : fmt(amount, unit, { full: true });
   useEffect5(() => {
     const el = canvas.current;
     if (!el) return;
@@ -6210,8 +6222,8 @@ function Pile({ k, name, amount, counts, startDots, tallest, playing, unit }) {
   }, [count2, counts.join(), startDots, width, height, theme]);
   return /* @__PURE__ */ jsxs32("div", { className: "hb-sim-pile", children: [
     /* @__PURE__ */ jsx35("div", { className: "hb-sim-pile-name", children: name }),
-    /* @__PURE__ */ jsx35("div", { className: "hb-sim-amount", children: shown2 }),
-    /* @__PURE__ */ jsx35("canvas", { ref: canvas, className: "hb-sim-canvas", style: { height }, role: "img", "aria-label": `${name}: ${shown2}, ${count2} dots` })
+    /* @__PURE__ */ jsx35("div", { className: "hb-sim-amount", children: shown }),
+    /* @__PURE__ */ jsx35("canvas", { ref: canvas, className: "hb-sim-canvas", style: { height }, role: "img", "aria-label": `${name}: ${shown}, ${count2} dots` })
   ] });
 }
 
@@ -6679,6 +6691,14 @@ function readAggregates(raw, columns) {
   }).filter((a) => columns.some((c) => c.id === a.column));
 }
 function readStructuredTable(raw, here, caption2) {
+  const typedColumns = Array.isArray(raw.columns) && raw.columns.every((column) => isObject(column) && plain(column.id, 40));
+  if (raw.interactive === true && !typedColumns) {
+    return here.drop("interactive needs a column object with an id for every column");
+  }
+  if (raw.interactive === true) {
+    const ids = raw.columns.map((column) => plain(column.id, 40));
+    if (new Set(ids).size !== ids.length) return here.drop("interactive needs a different id for every column");
+  }
   const columns = readStructuredColumns(raw.columns, here.at("columns"));
   if (!columns.length) return here.drop("table needs columns");
   const rawRows = Array.isArray(raw.rows) ? raw.rows : [];
@@ -6712,6 +6732,7 @@ function readStructuredTable(raw, here, caption2) {
     columns,
     rows,
     filterable: raw.filterable === true,
+    interactive: raw.interactive === true,
     page: page !== null && page >= 1 && page <= 10 ? Math.floor(page) : 1,
     aggregates: readAggregates(raw.aggregates, columns)
   });
@@ -6814,102 +6835,7 @@ function isIndex(n, length) {
 import { useState as useState22 } from "react";
 
 // src/blocks/table/StructuredTable.tsx
-import { useMemo as useMemo8, useState as useState21 } from "react";
-import { jsx as jsx40, jsxs as jsxs37 } from "react/jsx-runtime";
-var PAGE = 10;
-function shown(cell, column) {
-  if (!cell) return "\u2013";
-  if (cell.value === void 0) return cell.text;
-  if (column.kind === "currency") return formatAmount(cell.value, column.unit) ?? formatNumber(cell.value);
-  if (column.kind === "percent") return formatPercent(cell.value);
-  if (column.kind === "number" || column.kind === "bar") return formatNumber(cell.value);
-  return cell.text;
-}
-function aggregateValue(rows, a) {
-  const values = rows.map((r) => r.cells[a.column]?.value).filter((v) => v !== void 0);
-  if (a.op === "count") return values.length;
-  if (!values.length) return null;
-  if (a.op === "sum") return values.reduce((s, v) => s + v, 0);
-  if (a.op === "avg") return values.reduce((s, v) => s + v, 0) / values.length;
-  if (a.op === "min") return Math.min(...values);
-  return Math.max(...values);
-}
-function aggregateLabel(op) {
-  return { sum: "Total", avg: "Average", min: "Lowest", max: "Highest", count: "Count" }[op];
-}
-function StructuredTable({ caption: caption2, columns, rows, filterable, page, aggregates }) {
-  const [query, setQuery] = useState21("");
-  const [at2, setAt] = useState21(page);
-  const needle = query.trim().toLowerCase();
-  const filtered = useMemo8(() => {
-    if (!needle) return rows;
-    return rows.filter((row) => columns.some((c) => {
-      const cell = row.cells[c.id];
-      return `${cell?.text ?? ""} ${row.sources.map((s) => s.label).join(" ")}`.toLowerCase().includes(needle);
-    }));
-  }, [rows, columns, needle]);
-  const pages = Math.max(1, Math.ceil(filtered.length / PAGE));
-  const current = Math.min(at2, pages);
-  const slice = filtered.slice((current - 1) * PAGE, current * PAGE);
-  return /* @__PURE__ */ jsxs37("div", { className: "hb-card hb-table-card hb-table hb-table-structured", children: [
-    /* @__PURE__ */ jsxs37("table", { className: "hb-table-grid", children: [
-      caption2 && /* @__PURE__ */ jsx40("caption", { className: "hb-table-caption", children: caption2 }),
-      /* @__PURE__ */ jsx40("thead", { children: /* @__PURE__ */ jsx40("tr", { children: columns.map((c) => /* @__PURE__ */ jsx40("th", { scope: "col", className: c.align ? `hb-align-${c.align}` : void 0, children: c.label }, c.id)) }) }),
-      /* @__PURE__ */ jsxs37("tbody", { children: [
-        slice.map((row, i) => /* @__PURE__ */ jsx40("tr", { children: columns.map((column, ci) => /* @__PURE__ */ jsxs37("td", { className: column.align ? `hb-align-${column.align}` : void 0, children: [
-          column.kind === "sources" ? /* @__PURE__ */ jsx40("span", { className: "hb-table-sources", children: row.sources.length ? row.sources.map(
-            (s, si) => s.url ? /* @__PURE__ */ jsx40("a", { href: s.url, target: "_blank", rel: "noreferrer", children: s.label }, si) : /* @__PURE__ */ jsx40("span", { children: s.label }, si)
-          ) : /* @__PURE__ */ jsx40("span", { className: "hb-table-empty", children: "\u2013" }) }) : column.kind === "bar" ? /* @__PURE__ */ jsxs37("span", { className: "hb-table-bar", children: [
-            /* @__PURE__ */ jsx40(
-              "span",
-              {
-                className: "hb-table-bar-fill",
-                style: { width: `${Math.min(100, Math.max(0, (row.cells[column.id]?.value ?? 0) / (column.max ?? Math.max(1, ...rows.map((r) => r.cells[column.id]?.value ?? 0))) * 100))}%` }
-              }
-            ),
-            /* @__PURE__ */ jsx40("span", { className: "hb-table-bar-value", children: shown(row.cells[column.id], column) })
-          ] }) : column.kind === "badge" ? /* @__PURE__ */ jsx40("span", { className: `hb-chip hb-chip-${row.cells[column.id]?.tone ?? column.tone ?? "plain"}`, children: shown(row.cells[column.id], column) }) : column.kind === "link" && row.cells[column.id]?.url ? /* @__PURE__ */ jsx40("a", { href: row.cells[column.id].url, target: "_blank", rel: "noreferrer", children: shown(row.cells[column.id], column) }) : /* @__PURE__ */ jsx40("span", { children: shown(row.cells[column.id], column) }),
-          ci === 0 && row.sources.length > 0 && column.kind !== "sources" && /* @__PURE__ */ jsx40("span", { className: "hb-table-source-hint", "aria-label": `Sources: ${row.sources.map((s) => s.label).join(", ")}`, children: "\u2022" })
-        ] }, column.id)) }, `${(current - 1) * PAGE + i}`)),
-        !slice.length && /* @__PURE__ */ jsx40("tr", { children: /* @__PURE__ */ jsx40("td", { colSpan: columns.length, className: "hb-table-empty-cell", children: "No rows match." }) })
-      ] }),
-      aggregates.length > 0 && /* @__PURE__ */ jsx40("tfoot", { children: /* @__PURE__ */ jsx40("tr", { children: columns.map((column, ci) => {
-        const a = aggregates.find((item) => item.column === column.id);
-        if (!a) return /* @__PURE__ */ jsx40("td", {}, column.id);
-        const value = aggregateValue(filtered, a);
-        return /* @__PURE__ */ jsxs37("td", { children: [
-          /* @__PURE__ */ jsx40("span", { className: "hb-table-aggregate-label", children: ci === 0 ? a.label : aggregateLabel(a.op) }),
-          value !== null ? ` ${formatNumber(value)}` : " \u2013"
-        ] }, column.id);
-      }) }) })
-    ] }),
-    (filterable || pages > 1) && /* @__PURE__ */ jsxs37("div", { className: "hb-table-tools", children: [
-      filterable && /* @__PURE__ */ jsx40(
-        "input",
-        {
-          type: "search",
-          value: query,
-          placeholder: "Filter rows",
-          "aria-label": "Filter rows",
-          onChange: (e) => {
-            setQuery(e.target.value);
-            setAt(1);
-          }
-        }
-      ),
-      pages > 1 && /* @__PURE__ */ jsxs37("div", { className: "hb-table-pages", children: [
-        /* @__PURE__ */ jsx40("button", { type: "button", disabled: current === 1, onClick: () => setAt(Math.max(1, current - 1)), "aria-label": "Previous page", children: "\u2039" }),
-        /* @__PURE__ */ jsxs37("span", { children: [
-          "Page ",
-          current,
-          " of ",
-          pages
-        ] }),
-        /* @__PURE__ */ jsx40("button", { type: "button", disabled: current === pages, onClick: () => setAt(Math.min(pages, current + 1)), "aria-label": "Next page", children: "\u203A" })
-      ] })
-    ] })
-  ] });
-}
+import { useContext as useContext8, useMemo as useMemo8, useRef as useRef15, useState as useState21 } from "react";
 
 // src/blocks/table/sort.ts
 var GAP2 = "\u2013";
@@ -6957,6 +6883,14 @@ function isNumberColumn(rows, column) {
 }
 
 // src/blocks/table/cells.ts
+function shownCell(cell, column) {
+  if (!cell) return "\u2013";
+  if (cell.value === void 0) return cell.text;
+  if (column.kind === "currency") return formatAmount(cell.value, column.unit) ?? formatNumber(cell.value);
+  if (column.kind === "percent") return formatPercent(cell.value);
+  if (column.kind === "number" || column.kind === "bar") return formatNumber(cell.value);
+  return cell.text;
+}
 function isChangeColumn(rows, column) {
   if (!isNumberColumn(rows, column) || !rows.some((r) => /^[-+−]/.test(r[column] ?? ""))) return false;
   const filled = rows.map((r) => (r[column] ?? "").trim()).filter((cell) => !isBlank(cell));
@@ -6985,6 +6919,217 @@ function bigNumber(cell) {
   const unit = currency || void 0;
   const plus = sign === "+" ? "+" : "";
   return { short: plus + fmt(v, unit), full: plus + fmt(v, unit, { full: true }) };
+}
+
+// src/blocks/table/pick.ts
+function rowHaystack(row, columns) {
+  const parts2 = [];
+  for (const column of columns) {
+    const cell = row.cells[column.id];
+    if (!cell) continue;
+    parts2.push(cell.text, shownCell(cell, column));
+    if (cell.value !== void 0) parts2.push(String(cell.value));
+  }
+  for (const source of row.sources) parts2.push(source.label);
+  return parts2.filter(Boolean).join(" ");
+}
+function rowMatches(row, columns, query) {
+  const wanted = query.trim().toLowerCase();
+  if (!wanted) return true;
+  return rowHaystack(row, columns).toLowerCase().includes(wanted);
+}
+function rowKey(row, columns) {
+  return JSON.stringify([
+    columns.map((column) => {
+      const cell = row.cells[column.id];
+      return cell ? [column.id, cell.text, cell.value ?? null, cell.url ?? null] : null;
+    }),
+    row.sources.map((source) => [source.label, source.url ?? null])
+  ]);
+}
+function livePicks(rows, columns, picked) {
+  if (!picked.length) return picked;
+  const present = new Set(rows.map((row) => rowKey(row, columns)));
+  return picked.filter((key) => present.has(key));
+}
+function selectedRows(rows, columns, picked) {
+  const wanted = new Set(picked);
+  return rows.filter((row) => wanted.has(rowKey(row, columns)));
+}
+function rowLine(row, columns) {
+  const labels2 = row.sources.map((source) => source.label).join(", ");
+  const sourcesColumn = columns.some((column) => column.kind === "sources");
+  const cells = columns.map((column) => column.kind === "sources" ? labels2 || shownCell(void 0, column) : shownCell(row.cells[column.id], column));
+  if (!sourcesColumn && labels2) cells.push(`[${labels2}]`);
+  return cells.join(" | ");
+}
+function pickedMessage(caption2, columns, rows, picked) {
+  const chosen = selectedRows(rows, columns, picked);
+  return [
+    `${caption2 ? `${caption2}:` : "Table:"}`,
+    columns.map((column) => column.label).join(" | "),
+    ...chosen.map((row) => rowLine(row, columns))
+  ].join("\n");
+}
+
+// src/blocks/table/StructuredTable.tsx
+import { jsx as jsx40, jsxs as jsxs37 } from "react/jsx-runtime";
+var PAGE = 10;
+var SENT_WORDS = {
+  sent: "Sent to chat.",
+  drafted: "In the composer. Press Send.",
+  blocked: "In the composer. Blocked from sending.",
+  failed: "Send failed. Nothing was kept.",
+  nowhere: "No chat here."
+};
+function aggregateValue(rows, a) {
+  const values = rows.map((r) => r.cells[a.column]?.value).filter((v) => v !== void 0);
+  if (a.op === "count") return values.length;
+  if (!values.length) return null;
+  if (a.op === "sum") return values.reduce((s, v) => s + v, 0);
+  if (a.op === "avg") return values.reduce((s, v) => s + v, 0) / values.length;
+  if (a.op === "min") return Math.min(...values);
+  return Math.max(...values);
+}
+function aggregateLabel(op) {
+  return { sum: "Total", avg: "Average", min: "Lowest", max: "Highest", count: "Count" }[op];
+}
+function sendLabel(chosen) {
+  return chosen ? "Send" : "Select";
+}
+function StructuredTable({ caption: caption2, columns, rows, filterable, page, aggregates, interactive }) {
+  const [query, setQuery] = useState21("");
+  const [at2, setAt] = useState21(page);
+  const [picked, setPicked] = useState21([]);
+  const [answer, setAnswer] = useState21(null);
+  const taps = useRef15(0);
+  const { send } = useContext8(BlockActions);
+  const live = livePicks(rows, columns, picked);
+  if (live.length !== picked.length) setPicked(live);
+  const searching = filterable || interactive;
+  const filtered = useMemo8(() => {
+    if (!searching) return rows;
+    return rows.filter((row) => rowMatches(row, columns, query));
+  }, [rows, columns, query, searching]);
+  const pages = Math.max(1, Math.ceil(filtered.length / PAGE));
+  const current = Math.min(at2, pages);
+  const slice = filtered.slice((current - 1) * PAGE, current * PAGE);
+  const rowKeys = useMemo8(() => {
+    const seen = /* @__PURE__ */ new Map();
+    const byRow = /* @__PURE__ */ new Map();
+    for (const row of rows) {
+      const base = rowKey(row, columns);
+      const copy = seen.get(base) ?? 0;
+      seen.set(base, copy + 1);
+      byRow.set(row, `${base}#${copy}`);
+    }
+    return byRow;
+  }, [rows, columns]);
+  const chosen = selectedRows(rows, columns, picked);
+  const message = pickedMessage(caption2, columns, rows, picked);
+  const span = columns.length + (interactive ? 1 : 0);
+  return /* @__PURE__ */ jsxs37("div", { className: `hb-card hb-table-card hb-table hb-table-structured${interactive ? " hb-table-interactive" : ""}`, children: [
+    /* @__PURE__ */ jsxs37("table", { className: "hb-table-grid", children: [
+      caption2 && /* @__PURE__ */ jsx40("caption", { className: "hb-table-caption", children: caption2 }),
+      /* @__PURE__ */ jsx40("thead", { children: /* @__PURE__ */ jsxs37("tr", { children: [
+        interactive && /* @__PURE__ */ jsx40("th", { className: "hb-pick", scope: "col", "aria-label": "Select" }),
+        columns.map((c) => /* @__PURE__ */ jsx40("th", { scope: "col", className: c.align ? `hb-align-${c.align}` : void 0, children: c.label }, c.id))
+      ] }) }),
+      /* @__PURE__ */ jsxs37("tbody", { children: [
+        slice.map((row, i) => {
+          const key = rowKey(row, columns);
+          const first = columns[0] ? shownCell(row.cells[columns[0].id], columns[0]) : "";
+          return /* @__PURE__ */ jsxs37("tr", { children: [
+            interactive && /* @__PURE__ */ jsx40("td", { className: "hb-pick", children: /* @__PURE__ */ jsx40(
+              "input",
+              {
+                type: "checkbox",
+                checked: picked.includes(key),
+                onChange: () => {
+                  setPicked((p) => p.includes(key) ? p.filter((x) => x !== key) : [...p, key]);
+                },
+                "aria-label": `Select row ${first || `#${(current - 1) * PAGE + i + 1}`}`
+              }
+            ) }),
+            columns.map((column, ci) => /* @__PURE__ */ jsxs37("td", { className: column.align ? `hb-align-${column.align}` : void 0, children: [
+              column.kind === "sources" ? /* @__PURE__ */ jsx40("span", { className: "hb-table-sources", children: row.sources.length ? row.sources.map(
+                (s, si) => s.url ? /* @__PURE__ */ jsx40("a", { href: s.url, target: "_blank", rel: "noreferrer", children: s.label }, si) : /* @__PURE__ */ jsx40("span", { children: s.label }, si)
+              ) : /* @__PURE__ */ jsx40("span", { className: "hb-table-empty", children: shownCell(void 0, column) }) }) : column.kind === "bar" ? /* @__PURE__ */ jsxs37("span", { className: "hb-table-bar", children: [
+                /* @__PURE__ */ jsx40(
+                  "span",
+                  {
+                    className: "hb-table-bar-fill",
+                    style: { width: `${Math.min(100, Math.max(0, (row.cells[column.id]?.value ?? 0) / (column.max ?? Math.max(1, ...rows.map((r) => r.cells[column.id]?.value ?? 0))) * 100))}%` }
+                  }
+                ),
+                /* @__PURE__ */ jsx40("span", { className: "hb-table-bar-value", children: shownCell(row.cells[column.id], column) })
+              ] }) : column.kind === "badge" ? /* @__PURE__ */ jsx40("span", { className: `hb-chip hb-chip-${row.cells[column.id]?.tone ?? column.tone ?? "plain"}`, children: shownCell(row.cells[column.id], column) }) : column.kind === "link" && row.cells[column.id]?.url ? /* @__PURE__ */ jsx40("a", { href: row.cells[column.id].url, target: "_blank", rel: "noreferrer", children: shownCell(row.cells[column.id], column) }) : /* @__PURE__ */ jsx40("span", { children: shownCell(row.cells[column.id], column) }),
+              ci === 0 && row.sources.length > 0 && column.kind !== "sources" && /* @__PURE__ */ jsx40("span", { className: "hb-table-source-hint", "aria-label": `Sources: ${row.sources.map((s) => s.label).join(", ")}`, children: "\u2022" })
+            ] }, column.id))
+          ] }, rowKeys.get(row) ?? rowKey(row, columns));
+        }),
+        !slice.length && /* @__PURE__ */ jsx40("tr", { children: /* @__PURE__ */ jsx40("td", { colSpan: span, className: "hb-table-empty-cell", children: searching && query.trim() ? `Nothing matches \u201C${query.trim()}\u201D.` : "No rows match." }) })
+      ] }),
+      aggregates.length > 0 && /* @__PURE__ */ jsx40("tfoot", { children: /* @__PURE__ */ jsxs37("tr", { children: [
+        interactive && /* @__PURE__ */ jsx40("td", { className: "hb-pick" }),
+        columns.map((column, ci) => {
+          const a = aggregates.find((item) => item.column === column.id);
+          if (!a) return /* @__PURE__ */ jsx40("td", {}, column.id);
+          const value = aggregateValue(filtered, a);
+          return /* @__PURE__ */ jsxs37("td", { children: [
+            /* @__PURE__ */ jsx40("span", { className: "hb-table-aggregate-label", children: ci === 0 ? a.label : aggregateLabel(a.op) }),
+            value !== null ? ` ${formatNumber(value)}` : ` ${shownCell(void 0, column)}`
+          ] }, column.id);
+        })
+      ] }) })
+    ] }),
+    (searching || pages > 1 || interactive) && /* @__PURE__ */ jsxs37("div", { className: "hb-table-tools", children: [
+      searching && /* @__PURE__ */ jsx40(
+        "input",
+        {
+          type: "search",
+          value: query,
+          placeholder: "Filter rows",
+          "aria-label": "Filter rows",
+          onChange: (e) => {
+            setQuery(e.target.value);
+            setAt(1);
+          }
+        }
+      ),
+      interactive && /* @__PURE__ */ jsxs37(
+        "button",
+        {
+          type: "button",
+          className: "hb-pill hb-table-send",
+          title: chosen.length ? message : "Tick a row, then send it",
+          "aria-label": chosen.length ? `Send ${chosen.length} selected ${chosen.length === 1 ? "row" : "rows"} to the chat` : "Select a row to send to the chat",
+          disabled: !chosen.length,
+          onClick: () => {
+            const tap = ++taps.current;
+            void send(message, { force: true }).then((where) => {
+              if (tap === taps.current) setAnswer({ text: message, where });
+            });
+          },
+          children: [
+            /* @__PURE__ */ jsx40(Icon, { name: "spark", size: 14, stroke: 2.2 }),
+            /* @__PURE__ */ jsx40("span", { className: "hb-pill-label", children: sendLabel(chosen.length) })
+          ]
+        }
+      ),
+      pages > 1 && /* @__PURE__ */ jsxs37("div", { className: "hb-table-pages", children: [
+        /* @__PURE__ */ jsx40("button", { type: "button", disabled: current === 1, onClick: () => setAt(Math.max(1, current - 1)), "aria-label": "Previous page", children: "\u2039" }),
+        /* @__PURE__ */ jsxs37("span", { children: [
+          "Page ",
+          current,
+          " of ",
+          pages
+        ] }),
+        /* @__PURE__ */ jsx40("button", { type: "button", disabled: current === pages, onClick: () => setAt(Math.min(pages, current + 1)), "aria-label": "Next page", children: "\u203A" })
+      ] })
+    ] }),
+    interactive && /* @__PURE__ */ jsx40("div", { className: "hb-table-status", role: "status", "aria-live": "polite", children: answer && answer.text === message ? SENT_WORDS[answer.where] : "" })
+  ] });
 }
 
 // src/blocks/table/Table.tsx
@@ -7105,7 +7250,7 @@ function readTile(item) {
 }
 
 // src/blocks/tiles/Tiles.tsx
-import { useContext as useContext8, useState as useState23 } from "react";
+import { useContext as useContext9, useState as useState23 } from "react";
 import { Fragment as Fragment11, jsx as jsx42, jsxs as jsxs39 } from "react/jsx-runtime";
 var WASHES = [1, 4, 8, 3, 6];
 function Tiles({ items }) {
@@ -7117,7 +7262,7 @@ function tapOf(tile, send, fill) {
   return void 0;
 }
 function Tile({ tile, wash }) {
-  const { send, fill } = useContext8(BlockActions);
+  const { send, fill } = useContext9(BlockActions);
   const [photoFailed, setPhotoFailed] = useState23(false);
   const tap = tapOf(tile, send, fill);
   const colour = `var(--hb-chart-${wash})`;
@@ -7258,10 +7403,10 @@ function readBriefing(raw, here) {
 }
 
 // src/blocks/prepared/Prepared.tsx
-import { useContext as useContext9, useState as useState24 } from "react";
+import { useContext as useContext10, useState as useState24 } from "react";
 import { jsx as jsx44, jsxs as jsxs41 } from "react/jsx-runtime";
 function IdeaCard({ idea, group }) {
-  const { fill } = useContext9(BlockActions);
+  const { fill } = useContext10(BlockActions);
   const [broken, setBroken] = useState24(false);
   return /* @__PURE__ */ jsxs41("button", { type: "button", className: "hb-prep-idea", onClick: () => fill(`Tell me more about ${idea.title} for ${group}`), children: [
     !broken && /* @__PURE__ */ jsx44("img", { src: idea.photo, alt: "", loading: "lazy", onError: () => setBroken(true) }),
@@ -7272,7 +7417,7 @@ function IdeaCard({ idea, group }) {
   ] });
 }
 function GroupView({ group }) {
-  const { fill } = useContext9(BlockActions);
+  const { fill } = useContext10(BlockActions);
   return /* @__PURE__ */ jsxs41("article", { className: "hb-prep-group", children: [
     /* @__PURE__ */ jsxs41("div", { className: "hb-prep-head", children: [
       /* @__PURE__ */ jsx44("span", { className: "hb-prep-title", children: group.title }),
@@ -7377,7 +7522,7 @@ function readTracker(raw, here) {
 }
 
 // src/blocks/tracker/Tracker.tsx
-import { useContext as useContext10, useEffect as useEffect8, useState as useState25 } from "react";
+import { useContext as useContext11, useEffect as useEffect8, useState as useState25 } from "react";
 import { Fragment as Fragment13, jsx as jsx45, jsxs as jsxs42 } from "react/jsx-runtime";
 var VIEW_KEY = "hermes-genui.tracker.view";
 var SEEN_KEY = "hermes-genui.tracker.handled";
@@ -7419,7 +7564,7 @@ function More({ d }) {
   ] });
 }
 function CardView({ card }) {
-  const { fill } = useContext10(BlockActions);
+  const { fill } = useContext11(BlockActions);
   return /* @__PURE__ */ jsxs42("article", { className: `hb-tr-card hb-tr-${card.state}`, children: [
     /* @__PURE__ */ jsxs42("div", { className: "hb-tr-top", children: [
       /* @__PURE__ */ jsx45("span", { className: "hb-tr-title", children: card.title }),
@@ -7451,7 +7596,7 @@ function RowView({ row, onReopen }) {
   ] });
 }
 function Tracker({ need, handled }) {
-  const { rest } = useContext10(BlockActions);
+  const { rest } = useContext11(BlockActions);
   const [view, setView] = useState25(() => stored2(VIEW_KEY) === "done" ? "done" : "need");
   const [reopened, setReopened] = useState25([]);
   const [pulse, setPulse] = useState25(false);
@@ -7690,7 +7835,7 @@ function blockKey(b, i, carried2) {
   return i;
 }
 function Slotted({ block, flat }) {
-  const parent = useContext11(BlockSlot);
+  const parent = useContext12(BlockSlot);
   const slot = parent === null ? flat : `${parent}/${flat}`;
   return /* @__PURE__ */ jsx48(BlockSlot.Provider, { value: slot, children: /* @__PURE__ */ jsx48(Placed, { block }) });
 }
@@ -7705,7 +7850,7 @@ function drawAll(blocks) {
   });
 }
 function Placed({ block }) {
-  const { board, text } = useContext11(AlignScope);
+  const { board, text } = useContext12(AlignScope);
   const at2 = alignOf(block) ?? board ?? "left";
   const ta = TEXT_BEARING.has(block.type) ? textAlignOf(block) ?? text ?? "left" : "left";
   const view = /* @__PURE__ */ jsx48(BlockView, { block });
@@ -7813,7 +7958,7 @@ function subscribe(id, cb) {
 }
 
 // src/core/LivingBoards.tsx
-import { useContext as useContext12, useEffect as useEffect9, useState as useState26 } from "react";
+import { useContext as useContext13, useEffect as useEffect9, useState as useState26 } from "react";
 import { jsx as jsx49, jsxs as jsxs44 } from "react/jsx-runtime";
 var HISTORY_SHOWN = 4;
 function LiveRow({ id, version: version2, updatedAt, links, viewing, onShow, canReach }) {
@@ -7868,7 +8013,7 @@ function LinkChip({ link }) {
   ] });
 }
 function LinkedBoard({ link }) {
-  const actions = useContext12(BlockActions);
+  const actions = useContext13(BlockActions);
   const rest = actions.rest;
   const [board, setBoard] = useState26("loading");
   useEffect9(() => {
@@ -7935,16 +8080,16 @@ import { jsx as jsx50, jsxs as jsxs45 } from "react/jsx-runtime";
 var ID_PATTERN = /^[0-9a-f]{8}$/;
 function BlockTag({ id, streaming, load }) {
   const validId = typeof id === "string" && ID_PATTERN.test(id);
-  const actions = useContext13(BlockActions);
+  const actions = useContext14(BlockActions);
   const address = validId ? `${actions.sessionScope ?? ""}|${id}` : "";
   const [state, setState] = useState27({ kind: "loading" });
   const [viewing, setViewing] = useState27(null);
   const [expanded, setExpanded] = useState27(false);
-  const hostRef = useRef15(null);
-  const expandRef = useRef15(null);
-  const closeRef = useRef15(null);
-  const drawn = useRef15(null);
-  const self = useRef15(null);
+  const hostRef = useRef16(null);
+  const expandRef = useRef16(null);
+  const closeRef = useRef16(null);
+  const drawn = useRef16(null);
+  const self = useRef16(null);
   if (self.current === null) self.current = { token: /* @__PURE__ */ Symbol("hb-tag") };
   const [role, setRole] = useState27("unknown");
   const [refresh, setRefresh] = useState27(0);
@@ -8158,7 +8303,7 @@ function IconClose() {
 }
 
 // src/live/DashboardView.tsx
-import { useCallback as useCallback2, useEffect as useEffect11, useRef as useRef16, useState as useState28 } from "react";
+import { useCallback as useCallback2, useEffect as useEffect11, useRef as useRef17, useState as useState28 } from "react";
 
 // src/live/RefreshBar.tsx
 import { jsx as jsx51, jsxs as jsxs46 } from "react/jsx-runtime";
@@ -8227,8 +8372,8 @@ function signature(ids) {
 function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, refreshLabel = "Snapshot" }) {
   const [board, setBoard] = useState28(null);
   const [missing, setMissing] = useState28(false);
-  const live = useRef16(false);
-  const lastTicks = useRef16({});
+  const live = useRef17(false);
+  const lastTicks = useRef17({});
   const reload = useCallback2(async () => {
     try {
       const next = await load();
@@ -8264,6 +8409,13 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
       clearTimeout(timer);
     };
   }, [reload]);
+  const send = async (text) => {
+    try {
+      return await fill(text) === false ? "failed" : "drafted";
+    } catch {
+      return "failed";
+    }
+  };
   if (!board) {
     return /* @__PURE__ */ jsx52("div", { className: "hb-blocks hb-dash", children: /* @__PURE__ */ jsx52("p", { className: "hb-dash-sub", children: missing ? "This page isn't in this profile. Switch back to the profile it was made in, or ask Hermes to make it here." : "Loading\u2026" }) });
   }
@@ -8305,26 +8457,26 @@ function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, r
         void reload();
       }
     } }),
-    /* @__PURE__ */ jsx52(BlockActions.Provider, { value: { send: fill, fill, rest, blockId: `dashboard-${sig}` }, children: /* @__PURE__ */ jsx52(Blocks, { blocks: board.blocks }, sig) })
+    /* @__PURE__ */ jsx52(BlockActions.Provider, { value: { send, fill, rest, blockId: `dashboard-${sig}` }, children: /* @__PURE__ */ jsx52(Blocks, { blocks: board.blocks }, sig) })
   ] });
 }
 
 // src/live/pages.ts
 var BOARD_PATH = "/genui-board";
 function pageRoutes(register, view) {
-  const shown2 = /* @__PURE__ */ new Map();
+  const shown = /* @__PURE__ */ new Map();
   return (list) => {
     const wanted = new Map(list.filter((p) => p.kind === "dashboard" && /^[a-z0-9-]{1,40}$/.test(p.slug)).map((p) => [p.slug, p.title]));
-    for (const [slug2, entry2] of shown2) {
+    for (const [slug2, entry2] of shown) {
       if (wanted.get(slug2) !== entry2.title) {
         entry2.off.forEach((off) => off());
-        shown2.delete(slug2);
+        shown.delete(slug2);
       }
     }
     for (const [slug2, title] of wanted) {
-      if (shown2.has(slug2)) continue;
+      if (shown.has(slug2)) continue;
       const path = `${BOARD_PATH}/${slug2}`;
-      shown2.set(slug2, { title, off: [
+      shown.set(slug2, { title, off: [
         register({ id: `hermes-genui-page-${slug2}`, area: "routes", title, data: { path }, render: () => view(slug2) }),
         register({
           id: `hermes-genui-page-${slug2}-nav`,
@@ -8637,7 +8789,7 @@ var chart_default = "/* Charts are drawn at their real width and fill their plac
 var images_default = "/* Photos */\n.hb-photos { margin: 0; display: flex; flex-direction: column; gap: 8px; }\n.hb-photo-strip {\n  display: flex;\n  gap: 10px;\n  overflow-x: auto;\n  padding-bottom: 6px;\n  scroll-snap-type: x mandatory;\n  scrollbar-width: thin;\n}\n.hb-photo {\n  position: relative;\n  flex: 0 0 220px;\n  min-width: 0;\n  height: auto;\n  margin: 0;\n  overflow: hidden;\n  border: 1px solid var(--hb-line);\n  border-radius: 14px;\n  background: var(--hb-card);\n  color: inherit;\n  font: inherit;\n  scroll-snap-align: start;\n}\n.hb-photo-open {\n  display: flex;\n  flex-direction: column;\n  justify-content: flex-start;\n  align-items: stretch;\n  width: 100%;\n  margin: 0;\n  padding: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: zoom-in;\n}\n.hb-photo-open:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; }\n.hb-photo-download {\n  position: absolute;\n  right: 8px;\n  bottom: 8px;\n  z-index: 1;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 28px;\n  height: 28px;\n  border-radius: 8px;\n  background: rgba(0, 0, 0, 0.6);\n  color: #fff;\n  font: inherit;\n  font-size: 16px;\n  line-height: 1;\n  text-decoration: none;\n  opacity: 0;\n  transition: opacity 0.12s var(--hb-ease-out);\n}\n.hb-photo:hover .hb-photo-download,\n.hb-photo:focus-within .hb-photo-download { opacity: 1; }\n.hb-photo-label {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n  min-width: 0;\n  flex: 1;\n  padding: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  text-align: left;\n  cursor: zoom-in;\n}\n.hb-photo-label:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-photo-download:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n@media (hover: none) { .hb-photo-download { opacity: 1; } }\n@media (prefers-reduced-motion: reduce) { .hb-photo-download { transition: none; } }\n/* Four or more pictures read better as a grid: same cards and tokens, no sideways scroll. No model-written field. */\n.hb-photos-grid .hb-photo-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); overflow: visible; }\n.hb-photos-grid .hb-photo { flex: initial; width: auto; }\n/* In the full gallery the control sits on the right of the caption row, centred with it; the strip keeps it on the image. */\n.hb-photos-grid .hb-photo-text { flex-direction: row; align-items: center; gap: 8px; }\n.hb-photos-grid .hb-photo-download { position: static; flex: 0 0 28px; opacity: 1; }\n@media (max-width: 520px) { .hb-photos-grid .hb-photo-strip { grid-template-columns: 1fr; } }\n.hb-photo img { display: block; width: 100%; height: 150px; object-fit: cover; background: var(--hb-well); }\n/* In the gallery each photo keeps the shape of a photo: the width sets the height, so a wide window adds columns. */\n.hb-photos-grid .hb-photo img { height: auto; aspect-ratio: 4 / 3; }\n.hb-photo-text { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px 10px; }\n.hb-photo-caption {\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  font-size: 13px;\n  line-height: 17px;\n  font-weight: 600;\n}\n.hb-photo-source { font-size: 11.5px; color: var(--hb-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.hb-photo-overlay {\n  position: fixed;\n  inset: 0;\n  z-index: 2147483000;\n  display: flex;\n  flex-direction: column;\n  align-items: center;\n  justify-content: center;\n  gap: 12px;\n  padding: 32px;\n  background: rgba(0, 0, 0, 0.82);\n  cursor: zoom-out;\n  animation: hb-appear 0.18s var(--hb-ease-out);\n}\n.hb-photo-overlay img { margin: 0; max-width: 100%; max-height: calc(100% - 48px); border-radius: 10px; object-fit: contain; }\n.hb-photo-overlay-text { max-width: 720px; text-align: center; font-size: 14px; color: rgba(255, 255, 255, 0.92); }\n.hb-photo-overlay-text span { color: rgba(255, 255, 255, 0.6); }\n";
 
 // src/blocks/table/table.css
-var table_default = "/* Tables */\n/* A table keeps its natural width (columns close together); the card hugs it. It scrolls inside the card: sideways\n   when wider than the chat, down past 520px with the header kept in view. */\n.hb-table-card { width: fit-content; max-width: 100%; padding: 4px 0 0; overflow: hidden; }\n.hb-table-caption { padding: 10px 16px 2px; }\n.hb-table-scroll { max-height: 520px; overflow: auto; }\n.hb-table {\n  border-collapse: separate;\n  border-spacing: 0;\n  font-size: 13.5px;\n  line-height: 20px;\n  font-variant-numeric: tabular-nums;\n}\n/* With 3 or more columns, a narrow chat scrolls the table rather than squeezing every column. */\n.hb-table-wide { min-width: 420px; }\n.hb-table th, .hb-table td {\n  height: 36px;\n  padding: 8px 12px;\n  border: 0;\n  border-bottom: 1px solid var(--hb-line);\n  background: none;\n  text-align: left;\n  vertical-align: middle;\n  white-space: nowrap;\n}\n/* The header stays in view as the rows scroll; it is painted like the card so rows don't show through. */\n.hb-table th {\n  position: sticky;\n  top: 0;\n  z-index: 1;\n  height: 34px;\n  padding: 0;\n  border-bottom-color: var(--hb-line-strong);\n  background: linear-gradient(var(--hb-card), var(--hb-card)), var(--hb-surface);\n}\n.hb-table th button {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  width: 100%;\n  height: 34px;\n  padding: 0 12px;\n  border: 0;\n  background: none;\n  color: var(--hb-muted);\n  font: inherit;\n  font-size: 11.5px;\n  font-weight: 600;\n  letter-spacing: 0.04em;\n  text-transform: uppercase;\n  white-space: nowrap;\n  cursor: pointer;\n}\n.hb-table th.hb-num button { justify-content: flex-end; }\n.hb-table .hb-first, .hb-table th.hb-first button { padding-left: 16px; }\n.hb-table td:last-child, .hb-table th:last-child button { padding-right: 16px; }\n.hb-table tbody tr:last-child td { border-bottom: 0; }\n.hb-table td.hb-first { font-weight: 600; }\n.hb-table td.hb-num { text-align: right; }\n.hb-table td.hb-wrap { min-width: 180px; white-space: normal; }\n/* Sorting: a faint \u2195 on the header under the pointer, \u2191 or \u2193 on the sorted one. */\n.hb-sort { opacity: 0; font-weight: 400; letter-spacing: 0; transition: opacity 0.12s var(--hb-ease-out); }\n.hb-table th:hover .hb-sort, .hb-table th button:focus-visible .hb-sort { opacity: 0.6; }\n.hb-table th.hb-sorted .hb-sort { opacity: 1; color: var(--hb-ink-2); }\n/* The best row: an accent edge on its first cell and a chip; the best column: an accent line under its header. */\n.hb-table tr.hb-best td.hb-first { box-shadow: inset 3px 0 0 var(--hb-accent); }\n.hb-table th.hb-best-col { box-shadow: inset 0 -2px 0 var(--hb-accent); }\n.hb-table .hb-chip { margin-left: 8px; vertical-align: 1px; padding: 0 7px; font-size: 11px; line-height: 16px; letter-spacing: 0; text-transform: none; }\n.hb-table th .hb-chip { margin-left: 4px; }\n/* Changes: green for a rise, orange for a fall, with a small bar growing from the middle. */\n.hb-table td.hb-up { color: var(--hb-good); }\n.hb-table td.hb-down { color: var(--hb-warn); }\n.hb-mini { display: inline-block; position: relative; width: 56px; height: 8px; margin-right: 8px; vertical-align: 0; }\n.hb-mini-zero { position: absolute; top: -3px; bottom: -3px; left: 50%; width: 1px; background: var(--hb-line-strong); }\n.hb-mini-bar { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: currentColor; }\n.hb-table td.hb-table-empty { color: var(--hb-muted); font-weight: 400; text-align: center; }\n@media (prefers-reduced-motion: reduce) { .hb-sort { transition: none; } }\n.hb-section .hb-table-card { background: none; border: 0; }\n/* Structured tables: typed columns, local filter, pages, aggregates and source chips. */\n.hb-table-structured .hb-table-grid { width: 100%; border-collapse: collapse; font-size: 13px; }\n.hb-table-structured th, .hb-table-structured td { padding: 7px 10px; border-bottom: 1px solid var(--hb-line); text-align: left; vertical-align: top; }\n.hb-table-structured th { color: var(--hb-ink-2); font-size: 11.5px; font-weight: 700; }\n.hb-table-structured .hb-align-right { text-align: right; font-variant-numeric: tabular-nums; }\n.hb-table-structured .hb-align-center { text-align: center; }\n.hb-table-structured tfoot td { color: var(--hb-ink-2); font-weight: 600; border-top: 1px solid var(--hb-line-strong); }\n.hb-table-aggregate-label { color: var(--hb-muted); font-size: 11px; font-weight: 400; }\n.hb-table-sources { display: flex; flex-wrap: wrap; gap: 3px 8px; }\n.hb-table-sources a { color: var(--hb-accent-ink); text-decoration: underline; text-underline-offset: 2px; }\n.hb-table-source-hint { margin-left: 4px; color: var(--hb-muted); }\n.hb-table-bar { display: flex; align-items: center; gap: 6px; min-width: 90px; }\n.hb-table-bar-fill { display: block; flex: 1 1 auto; height: 6px; border-radius: 999px; background: var(--hb-accent); }\n.hb-table-bar-value { flex: none; font-variant-numeric: tabular-nums; }\n.hb-table-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; }\n.hb-table-tools input { min-width: 140px; max-width: 240px; padding: 5px 9px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); font: inherit; font-size: 12px; }\n.hb-table-tools input:focus-visible, .hb-table-pages button:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-table-pages { display: flex; align-items: center; gap: 8px; color: var(--hb-muted); font-size: 11.5px; }\n.hb-table-pages button { min-width: 26px; min-height: 26px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); cursor: pointer; }\n.hb-table-pages button:disabled { opacity: 0.4; cursor: default; }\n";
+var table_default = "/* Tables */\n/* A table keeps its natural width (columns close together); the card hugs it. It scrolls inside the card: sideways\n   when wider than the chat, down past 520px with the header kept in view. */\n.hb-table-card { width: fit-content; max-width: 100%; padding: 4px 0 0; overflow: hidden; }\n.hb-table-caption { padding: 10px 16px 2px; }\n.hb-table-scroll { max-height: 520px; overflow: auto; }\n.hb-table {\n  border-collapse: separate;\n  border-spacing: 0;\n  font-size: 13.5px;\n  line-height: 20px;\n  font-variant-numeric: tabular-nums;\n}\n/* With 3 or more columns, a narrow chat scrolls the table rather than squeezing every column. */\n.hb-table-wide { min-width: 420px; }\n.hb-table th, .hb-table td {\n  height: 36px;\n  padding: 8px 12px;\n  border: 0;\n  border-bottom: 1px solid var(--hb-line);\n  background: none;\n  text-align: left;\n  vertical-align: middle;\n  white-space: nowrap;\n}\n/* The header stays in view as the rows scroll; it is painted like the card so rows don't show through. */\n.hb-table th {\n  position: sticky;\n  top: 0;\n  z-index: 1;\n  height: 34px;\n  padding: 0;\n  border-bottom-color: var(--hb-line-strong);\n  background: linear-gradient(var(--hb-card), var(--hb-card)), var(--hb-surface);\n}\n.hb-table th button {\n  display: flex;\n  align-items: center;\n  gap: 4px;\n  width: 100%;\n  height: 34px;\n  padding: 0 12px;\n  border: 0;\n  background: none;\n  color: var(--hb-muted);\n  font: inherit;\n  font-size: 11.5px;\n  font-weight: 600;\n  letter-spacing: 0.04em;\n  text-transform: uppercase;\n  white-space: nowrap;\n  cursor: pointer;\n}\n.hb-table th.hb-num button { justify-content: flex-end; }\n.hb-table .hb-first, .hb-table th.hb-first button { padding-left: 16px; }\n.hb-table td:last-child, .hb-table th:last-child button { padding-right: 16px; }\n.hb-table tbody tr:last-child td { border-bottom: 0; }\n.hb-table td.hb-first { font-weight: 600; }\n.hb-table td.hb-num { text-align: right; }\n.hb-table td.hb-wrap { min-width: 180px; white-space: normal; }\n/* Sorting: a faint \u2195 on the header under the pointer, \u2191 or \u2193 on the sorted one. */\n.hb-sort { opacity: 0; font-weight: 400; letter-spacing: 0; transition: opacity 0.12s var(--hb-ease-out); }\n.hb-table th:hover .hb-sort, .hb-table th button:focus-visible .hb-sort { opacity: 0.6; }\n.hb-table th.hb-sorted .hb-sort { opacity: 1; color: var(--hb-ink-2); }\n/* The best row: an accent edge on its first cell and a chip; the best column: an accent line under its header. */\n.hb-table tr.hb-best td.hb-first { box-shadow: inset 3px 0 0 var(--hb-accent); }\n.hb-table th.hb-best-col { box-shadow: inset 0 -2px 0 var(--hb-accent); }\n.hb-table .hb-chip { margin-left: 8px; vertical-align: 1px; padding: 0 7px; font-size: 11px; line-height: 16px; letter-spacing: 0; text-transform: none; }\n.hb-table th .hb-chip { margin-left: 4px; }\n/* Changes: green for a rise, orange for a fall, with a small bar growing from the middle. */\n.hb-table td.hb-up { color: var(--hb-good); }\n.hb-table td.hb-down { color: var(--hb-warn); }\n.hb-mini { display: inline-block; position: relative; width: 56px; height: 8px; margin-right: 8px; vertical-align: 0; }\n.hb-mini-zero { position: absolute; top: -3px; bottom: -3px; left: 50%; width: 1px; background: var(--hb-line-strong); }\n.hb-mini-bar { position: absolute; top: 0; bottom: 0; border-radius: 2px; background: currentColor; }\n.hb-table td.hb-table-empty { color: var(--hb-muted); font-weight: 400; text-align: center; }\n@media (prefers-reduced-motion: reduce) { .hb-sort { transition: none; } }\n.hb-section .hb-table-card { background: none; border: 0; }\n/* Structured tables: typed columns, local filter, pages, aggregates and source chips. */\n.hb-table-structured .hb-table-grid { width: 100%; border-collapse: collapse; font-size: 13px; }\n.hb-table-structured th, .hb-table-structured td { padding: 7px 10px; border-bottom: 1px solid var(--hb-line); text-align: left; vertical-align: top; }\n.hb-table-structured th { color: var(--hb-ink-2); font-size: 11.5px; font-weight: 700; }\n.hb-table-structured .hb-align-right { text-align: right; font-variant-numeric: tabular-nums; }\n.hb-table-structured .hb-align-center { text-align: center; }\n.hb-table-structured tfoot td { color: var(--hb-ink-2); font-weight: 600; border-top: 1px solid var(--hb-line-strong); }\n.hb-table-aggregate-label { color: var(--hb-muted); font-size: 11px; font-weight: 400; }\n.hb-table-sources { display: flex; flex-wrap: wrap; gap: 3px 8px; }\n.hb-table-sources a { color: var(--hb-accent-ink); text-decoration: underline; text-underline-offset: 2px; }\n.hb-table-source-hint { margin-left: 4px; color: var(--hb-muted); }\n.hb-table-bar { display: flex; align-items: center; gap: 6px; min-width: 90px; }\n.hb-table-bar-fill { display: block; flex: 1 1 auto; height: 6px; border-radius: 999px; background: var(--hb-accent); }\n.hb-table-bar-value { flex: none; font-variant-numeric: tabular-nums; }\n.hb-table-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; }\n.hb-table-tools input { min-width: 140px; max-width: 240px; padding: 5px 9px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); font: inherit; font-size: 12px; }\n.hb-table-tools input:focus-visible, .hb-table-pages button:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-table-pages { display: flex; align-items: center; gap: 8px; color: var(--hb-muted); font-size: 11.5px; }\n.hb-table-pages button { min-width: 26px; min-height: 26px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); cursor: pointer; }\n.hb-table-pages button:disabled { opacity: 0.4; cursor: default; }\n/* The interactive card hugs its table. Both rows below it fill the card without contributing a width of their\n   own, so the search field, the send pill and the page buttons wrap INSIDE the hug: opting in costs the tick\n   column, never the width of a control, and a narrow card grows taller instead of wider. Scoped to the card\n   that asked for ticks, so a plain structured table keeps #41's geometry exactly. */\n.hb-table-interactive .hb-table-tools { width: 0; min-width: 100%; }\n.hb-table-interactive .hb-table-tools input { flex: 1 1 140px; min-width: 0; }\n/* The tick column: one checkbox, vertically centred, with the full row still clickable through its label-free cell. */\n.hb-table-structured .hb-pick { width: 1%; padding-right: 0; vertical-align: middle; }\n.hb-table-structured .hb-pick input { width: 15px; height: 15px; margin: 0; cursor: pointer; accent-color: var(--hb-accent); }\n.hb-table-structured .hb-pick input:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }\n.hb-table-send { flex: none; }\n/* The word after a tap WRAPS: a card hugging a narrow table grows taller rather than ever cutting the recovery\n   instructions off, and it costs no width because it is pinned to the card it was given. The region is always\n   there (and always announced); empty, it takes no space at all. */\n.hb-table-status { width: 0; min-width: 100%; color: var(--hb-ink-2); font-size: 12px; line-height: 17px;\n  white-space: normal; overflow-wrap: anywhere; }\n.hb-table-status:not(:empty) { padding: 4px 16px 10px; }\n";
 
 // src/blocks/list/list.css
 var list_default = "/* List */\n.hb-list { padding: 4px 0; overflow: hidden; }\n.hb-list-heading { padding: 8px 16px 2px; font-size: 13px; font-weight: 700; color: var(--hb-muted); }\n.hb-list-row {\n  display: flex;\n  align-items: center;\n  gap: 12px;\n  padding: 10px 16px;\n  border-top: 1px solid var(--hb-line);\n  color: inherit;\n  text-decoration: none;\n}\n.hb-list > .hb-list-row:first-child, .hb-list-heading + .hb-list-row { border-top: 0; }\n.hb-list-link { cursor: pointer; transition: background 0.15s; }\n.hb-list-link:hover { background: var(--hb-well); }\n.hb-list-rank {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 28px;\n  height: 28px;\n  border-radius: 999px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n  font-size: 13px;\n  font-weight: 700;\n  font-variant-numeric: tabular-nums;\n}\n.hb-list-photo { flex: none; width: 44px; height: 44px; border-radius: 12px; object-fit: cover; background: var(--hb-well); }\n.hb-list-icon {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border-radius: 12px;\n  background: var(--hb-accent-soft);\n  color: var(--hb-accent-ink);\n}\n.hb-list-initial {\n  flex: none;\n  display: grid;\n  place-items: center;\n  width: 36px;\n  height: 36px;\n  border-radius: 999px;\n  color: #fff;\n  font-size: 15px;\n  font-weight: 700;\n}\n.hb-list-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }\n.hb-list-title { font-size: 14.5px; line-height: 20px; font-weight: 600; overflow-wrap: anywhere; }\n.hb-list-subtitle {\n  display: -webkit-box;\n  -webkit-line-clamp: 2;\n  -webkit-box-orient: vertical;\n  overflow: hidden;\n  margin-top: 1px;\n  font-size: 13px;\n  line-height: 18px;\n  color: var(--hb-muted);\n}\n.hb-list-value { flex: none; font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }\n/* The bar and the value share one right-hand block, so every track starts at the same x. In a list with bars the value\n   column has a fixed width; a list without bars keeps the value at its natural width, as before. */\n.hb-list-tail { flex: none; display: flex; align-items: center; gap: 8px; }\n.hb-list-bars .hb-list-value { width: 6.5rem; text-align: right; overflow: hidden; text-overflow: ellipsis; }\n.hb-list-bar { flex: none; width: 64px; height: 6px; border-radius: 999px; background: var(--hb-accent-soft); overflow: hidden; }\n.hb-list-bar-fill { display: block; height: 100%; border-radius: 999px; background: var(--hb-accent); }\n.hb-list-chevron { flex: none; color: var(--hb-muted); }\n.hb-section .hb-list { padding: 0; }\n\n/* List rows that send a message when tapped */\n.hb-list-button {\n  width: 100%;\n  margin: 0;\n  border: 0;\n  border-top: 1px solid var(--hb-line);\n  background: none;\n  font: inherit;\n  text-align: left;\n}\n.hb-list-button:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: -2px; }\n";
@@ -8953,7 +9105,7 @@ var plugin_default = {
     injectStyles();
     const load = (blockId) => ctx.rest(`/blocks/${blockId}`);
     const rest = (path, init) => ctx.rest(path, init);
-    const send = (text) => composerActions(host?.composer).send(text);
+    const send = (text, opts) => composerActions(host?.composer).send(text, opts);
     const fill = (text) => composerActions(host?.composer).fill(text);
     ctx.register({
       id: "hermes-genui-tag",
@@ -8963,7 +9115,7 @@ var plugin_default = {
         render: ({ attrs, sessionId, streaming }) => /* @__PURE__ */ jsx54(BlockActions.Provider, { value: { send, fill, rest, blockId: attrs?.id, sessionScope: sessionId }, children: /* @__PURE__ */ jsx54(BlockTag, { id: attrs?.id, streaming: Boolean(streaming), load }) })
       }
     });
-    const open = (text) => void openAndFill(text, host ?? {});
+    const open = (text) => openAndFill(text, host ?? {});
     registerLive(ctx, open);
   }
 };

@@ -69,6 +69,27 @@ describe("DashboardView", () => {
     expect(fill).toHaveBeenCalledWith("Pay the Xfinity bill of $89.98");
   });
 
+  it("a block's send on a page answers honestly: a draft when the fill landed, a failure when it threw", async () => {
+    const page = { ...BOARD, blocks: [{ type: "table", caption: "Spend", interactive: true,
+      columns: [{ id: "shop", label: "Shop" }, { id: "spend", label: "Spend", kind: "currency", unit: "$" }],
+      rows: [{ shop: "A", spend: 1200 }] }] };
+    const word = (root: HTMLElement) => root.querySelector(".hb-table-status")!.textContent;
+
+    const landed = vi.fn(async () => true);
+    const first = render(<DashboardView load={async () => page} fill={landed} saveTicks={async () => {}} />);
+    fireEvent.click(await screen.findByRole("checkbox", { name: "Select row A" }));
+    fireEvent.click(screen.getByRole("button", { name: /to the chat/ }));
+    await vi.waitFor(() => expect(word(first.container)).toBe("In the composer. Press Send."));
+    expect(landed).toHaveBeenCalled();
+    first.unmount();
+
+    const broken = vi.fn(async () => { throw new Error("no chat to open"); });
+    const second = render(<DashboardView load={async () => page} fill={broken} saveTicks={async () => {}} />);
+    fireEvent.click(await screen.findByRole("checkbox", { name: "Select row A" }));
+    fireEvent.click(screen.getByRole("button", { name: /to the chat/ }));
+    await vi.waitFor(() => expect(word(second.container)).toBe("Send failed. Nothing was kept."));
+  });
+
   it("a tick is saved by item id, and only the item that changed", async () => {
     const { saveTicks } = draw();
     fireEvent.click(await screen.findByRole("checkbox", { name: /Reply to Emma/ }));

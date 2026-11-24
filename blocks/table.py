@@ -51,6 +51,9 @@ def check_table(block: dict, path: str) -> list[tuple[str, str]]:
     column name.
 
     columns = ["A", "B"], rows[1] = ["1", "2", "3"] → [("0.rows.1", "row has 3 cells, table has 2 columns")]
+
+    `interactive` is a word of the structured form. A plain table that carries it is checked as the plain table it
+    is, exactly as the web reader reads it (which drops the word), so the check never refuses what the reader draws.
     """
     if is_structured(block):
         return check_structured(block, path)
@@ -112,11 +115,15 @@ def text_structured(block: dict) -> str:
         if not isinstance(aggregate, dict):
             continue
         cid = safe_text(aggregate.get("column"), 40)
-        values = [(r.get("cells") or {}).get(cid, {}).get("value") for r in rows]
+        if not cid:
+            continue
+        cells = [(r.get("cells") or {}).get(cid) for r in rows]
+        values = [(cell or {}).get("value") if isinstance(cell, dict) else None for cell in cells]
         values = [v for v in values if isinstance(v, (int, float))]
         if not values:
             continue
-        op = aggregate.get("op")
+        raw_op = aggregate.get("op")
+        op = raw_op if isinstance(raw_op, str) else ""
         value = {"sum": sum(values), "avg": sum(values) / len(values),
                  "min": min(values), "max": max(values), "count": len(values)}.get(op)
         if value is not None:

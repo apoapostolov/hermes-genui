@@ -96,3 +96,20 @@
 .hb-table-pages { display: flex; align-items: center; gap: 8px; color: var(--hb-muted); font-size: 11.5px; }
 .hb-table-pages button { min-width: 26px; min-height: 26px; border: 1px solid var(--hb-line-strong); border-radius: 8px; background: var(--hb-well); color: var(--hb-ink); cursor: pointer; }
 .hb-table-pages button:disabled { opacity: 0.4; cursor: default; }
+/* The interactive card hugs its table. Both rows below it fill the card without contributing a width of their
+   own, so the search field, the send pill and the page buttons wrap INSIDE the hug: opting in costs the tick
+   column, never the width of a control, and a narrow card grows taller instead of wider. Scoped to the card
+   that asked for ticks, so a plain structured table keeps #41's geometry exactly. */
+.hb-table-interactive .hb-table-tools { width: 0; min-width: 100%; }
+.hb-table-interactive .hb-table-tools input { flex: 1 1 140px; min-width: 0; }
+/* The tick column: one checkbox, vertically centred, with the full row still clickable through its label-free cell. */
+.hb-table-structured .hb-pick { width: 1%; padding-right: 0; vertical-align: middle; }
+.hb-table-structured .hb-pick input { width: 15px; height: 15px; margin: 0; cursor: pointer; accent-color: var(--hb-accent); }
+.hb-table-structured .hb-pick input:focus-visible { outline: 2px solid var(--hb-accent); outline-offset: 2px; }
+.hb-table-send { flex: none; }
+/* The word after a tap WRAPS: a card hugging a narrow table grows taller rather than ever cutting the recovery
+   instructions off, and it costs no width because it is pinned to the card it was given. The region is always
+   there (and always announced); empty, it takes no space at all. */
+.hb-table-status { width: 0; min-width: 100%; color: var(--hb-ink-2); font-size: 12px; line-height: 17px;
+  white-space: normal; overflow-wrap: anywhere; }
+.hb-table-status:not(:empty) { padding: 4px 16px 10px; }

@@ -383,6 +383,15 @@ def test_structured_table_reads_as_markdown_with_footer():
     )
 
 
+def test_the_tick_and_send_word_changes_nothing_in_the_text_half():
+    # A screen word: Telegram and the CLI read the same table, word or no word. Ticks, the search row and the
+    # answer are drawn, never written into the message.
+    table = {"type": "table", "caption": "Spend", "columns": [{"id": "shop", "label": "Shop"},
+             {"id": "spend", "label": "Spend", "kind": "currency", "unit": "$"}],
+             "rows": [{"cells": {"shop": {"text": "A"}, "spend": {"text": "1200", "value": 1200}}}]}
+    assert render({**table, "filterable": True, "interactive": True}) == render(table)
+
+
 def test_heatmap_is_a_compact_table():
     out = render(EXAMPLES["heatmap"])
     assert out == (

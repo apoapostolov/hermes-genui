@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Blocks } from "../core/Blocks";
 import { readBlocks } from "../core/readBlocks";
-import { BlockActions, type Rest } from "../host/actions";
+import { BlockActions, type Rest, type SendResult } from "../host/actions";
 import { RefreshBar } from "./RefreshBar";
 
 export type Snapshot = { at: string | null; refreshing: boolean; error: string | null; schedule?: string | null };
@@ -51,7 +51,11 @@ function signature(ids: Record<string, (string | undefined)[]>): string {
 }
 
 export function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, refresh, refreshLabel = "Snapshot" }: {
-  load: () => Promise<Board | undefined>; fill: (text: string) => void;
+  load: () => Promise<Board | undefined>;
+  /** Opens (or finds) a chat and puts the text in its box. Answers whether the text landed, so a block's send can
+   *  report what really happened instead of guessing: a page has no chat to submit into, so a tap here is always a
+   *  draft, and an answer of false makes it an honest failure. */
+  fill: (text: string) => void | Promise<unknown>;
   saveTicks: (ticks: Record<string, boolean>) => Promise<void>;
   /** A block's POST to the plugin (the tracker's Reopen); the board reloads after it. */
   post?: Rest;
@@ -90,6 +94,17 @@ export function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, ref
     return () => { stop = true; clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reload]);
+
+  // A page's `send`: there is no chat here to submit into, so the answer is a draft once the fill acknowledges it and
+  // an honest failure when it did not. Never "sent": nothing on a page can claim that. A fill that throws (opening a
+  // chat can fail) is a failure too, never a rejected promise the block would have no answer for.
+  const send = async (text: string): Promise<SendResult> => {
+    try {
+      return (await fill(text)) === false ? "failed" : "drafted";
+    } catch {
+      return "failed";
+    }
+  };
 
   if (!board) {
     return (
@@ -141,7 +156,7 @@ export function DashboardView({ load, fill, saveTicks, post, refreshNow = 0, ref
       )}
       {/* Keyed by its checklists' items: when they change, the board remounts and ticks start from what's open now,
           so a tick never stays on a list whose items have moved. Same items, same board: tabs and scroll stay. */}
-      <BlockActions.Provider value={{ send: fill, fill, rest, blockId: `dashboard-${sig}` }}>
+      <BlockActions.Provider value={{ send, fill, rest, blockId: `dashboard-${sig}` }}>
         <Blocks key={sig} blocks={board.blocks} />
       </BlockActions.Provider>
     </div>

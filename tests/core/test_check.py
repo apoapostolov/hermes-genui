@@ -298,6 +298,31 @@ def test_structured_table_is_checked():
         "0.columns.0: unknown column kind"]
 
 
+def test_a_structured_table_with_bare_column_names_is_refused_on_both_sides():
+    # The reader refuses `interactive` on this shape too, so a board can never hold a table the check would not store.
+    bare = {"type": "table", "filterable": True, "interactive": True, "columns": ["A"], "rows": [["x"]]}
+    assert check_blocks([bare]) == ["0.columns.0: column needs id and label"]
+
+
+def test_a_repeated_column_id_is_refused_on_both_sides():
+    # The reader refuses `interactive` on this shape too, so the two agree about what a board can hold.
+    repeated = {"type": "table", "filterable": True, "interactive": True,
+                "columns": [{"id": "a", "label": "A"}, {"id": "a", "label": "B"}], "rows": [{"a": "x"}]}
+    assert check_blocks([repeated]) == ["0.columns.1: column id is missing or used twice"]
+
+
+def test_interactive_on_a_plain_table_is_accepted_and_ignored():
+    # The word belongs to the structured form. The reader drops it on a plain table, so the check accepts that table
+    # and still checks it as the plain table it is: the check must never refuse what the reader draws.
+    plain = {"type": "table", "interactive": True, "columns": ["A"], "rows": [["x"]]}
+    assert check_blocks([plain]) == []
+    assert check_blocks([{**plain, "rows": [["1", "2"]]}]) == [
+        "0.rows.0: row has 2 cells, table has 1 columns"]
+    structured = {"type": "table", "interactive": True, "columns": [{"id": "a", "label": "A"}],
+                  "rows": [{"a": "x"}], "filterable": True}
+    assert check_blocks([structured]) == []
+
+
 def test_columns_hold_two_or_three_wide_blocks():
     chart = {"type": "chart", "kind": "line", "x": ["a", "b"], "series": [{"data": [1, 2]}]}
     table = {"type": "table", "columns": ["A"], "rows": [["x"]]}
@@ -578,7 +603,9 @@ def test_new_helpers_cannot_be_input_ids():
 
 def test_formula_helpers_match_the_web_side():
     source = (ROOT / "web" / "src" / "lib" / "formula.ts").read_text(encoding="utf-8")
-    block = re.search(r"const HELPERS[^{]*\{(.*?)\};", source, re.DOTALL).group(1)
+    found = re.search(r"const HELPERS[^{]*\{(.*?)\};", source, re.DOTALL)
+    assert found, "formula.ts has no HELPERS table"
+    block = found.group(1)
     assert sorted(re.findall(r"(\w+): \[", block)) == sorted(FORMULA_HELPERS)
 
 

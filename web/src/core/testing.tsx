@@ -6,7 +6,7 @@ import { Blocks } from "./Blocks";
 import { readBlocks } from "./readBlocks";
 
 export function drawWithActions(blocks: unknown[], actions: Partial<Actions> = {}) {
-  const value: Actions = { send: vi.fn(), fill: vi.fn(), ...actions };
+  const value: Actions = { send: vi.fn(async () => "nowhere" as const), fill: vi.fn(), ...actions };
   const view = render(<BlockActions.Provider value={value}><Blocks blocks={readBlocks(blocks)} /></BlockActions.Provider>);
   return { ...view, send: value.send as ReturnType<typeof vi.fn>, fill: value.fill as ReturnType<typeof vi.fn> };
 }

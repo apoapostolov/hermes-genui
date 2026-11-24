@@ -76,6 +76,42 @@ describe("structured table reader", () => {
     expect(block.rows[0].cells.spend.value).toBe(1200);
     expect(block.rows[0].sources).toEqual([{ label: "POS" }]);
   });
+  it("reads interactive strictly true, and only on the structured form", () => {
+    const read = (extra: Record<string, unknown>) => readBlocksNoted([{ type: "table", columns: [
+      { id: "a", label: "A" }], rows: [{ a: "x" }], ...extra }]).blocks[0] as any;
+    expect(read({ interactive: true }).interactive).toBe(true);
+    for (const word of [false, "true", 1, "yes", null]) expect(read({ interactive: word }).interactive).toBe(false);
+    expect(read({}).interactive).toBe(false);
+  });
+  it("keeps the word off the legacy form: a legacy table is not made structured by it", () => {
+    const legacy = readBlocksNoted([{ type: "table", interactive: true, columns: ["A"], rows: [["x"]] }]).blocks[0] as any;
+    expect(legacy.structured).toBeUndefined();
+    expect(legacy.interactive).toBeUndefined();
+    expect(legacy.rows).toEqual([["x"]]);
+  });
+  it("refuses interactive on bare column names, the way the Python check does", () => {
+    const bare = (extra: Record<string, unknown>) => readBlocksNoted([{ type: "table", filterable: true, ...extra }]);
+    const refused = bare({ interactive: true, columns: ["A", "B"], rows: [["1", "2"]] });
+    expect(refused.blocks).toEqual([]);
+    expect(refused.dropped.map((d) => d.why)).toEqual([
+      "interactive needs a column object with an id for every column"]);
+    // without the word the same table reads exactly as #41 reads it
+    const kept = bare({ columns: ["A", "B"], rows: [["1", "2"]] }).blocks[0] as any;
+    expect(kept.structured).toBe(true);
+    expect(kept.columns.map((c: any) => c.label)).toEqual(["A", "B"]);
+    expect(kept.interactive).toBe(false);
+    // a column object with no id is refused for the word too, the checker refuses it as well
+    expect(bare({ interactive: true, columns: [{ label: "A" }], rows: [{ A: "x" }] }).blocks).toEqual([]);
+  });
+  it("refuses a repeated column id for interactive, the way the Python check does", () => {
+    const repeated = { columns: [{ id: "a", label: "A" }, { id: "a", label: "B" }], rows: [{ a: "x" }] };
+    const refused = readBlocksNoted([{ type: "table", filterable: true, interactive: true, ...repeated }]);
+    expect(refused.blocks).toEqual([]);
+    expect(refused.dropped.map((d) => d.why)).toEqual(["interactive needs a different id for every column"]);
+    // without the word the same table still reads, with the second column disambiguated as #41 ships it
+    const kept = readBlocksNoted([{ type: "table", filterable: true, ...repeated }]).blocks[0] as any;
+    expect(kept.columns.map((c: any) => c.id)).toEqual(["a", "a-1"]);
+  });
   it("drops non-http source links and keeps an unknown kind as text", () => {
     const r = readBlocksNoted([{ type: "table", columns: [{ id: "a", label: "A", kind: "magic" }],
       rows: [{ a: "x", sources: [{ label: "Bad", url: "javascript:alert(1)" }] }] }]);

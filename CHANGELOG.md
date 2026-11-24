@@ -44,6 +44,27 @@ All notable changes to this plugin. Versions follow [Semantic Versioning](https:
   step and lists the allowed icons, and a reply that lost its board's tag gets it back.
 - `HERMES_GENUI_GUIDE=full` brings back the full guide in the description, as a fallback.
 
+### Tick rows, then send them: an interactive table
+
+- **`interactive: true` on a structured table turns it into a work surface.** The table keeps the search row it
+  already has (one filter system, not a second one), gains a tick on each row, and gains one button whose label is
+  the state: "Select" while nothing is ticked, "Send" once something is. A tap sends the
+  ticked rows into the chat as one message, in table order, with the column labels named once so the chat knows
+  what each value means.
+- **A tick belongs to the row's data, not to a seat.** It rides filtering and paging, survives a refresh that
+  keeps the data, and is discarded when the data goes, so a tick can never re-arm a send for a row the reader no
+  longer holds. Identical rows tick together: the same data is one selection.
+- **The word after a tap is the host's own, and waits for it.** "Sent to chat.", "In the composer. Press Send.",
+  "In the composer. Blocked from sending.", "Send failed. Nothing was kept.", "No chat here." A pick that starts
+  like a command or carries an `@`-reference is never auto-submitted; it lands in the composer for review. Ticks
+  stay put after a failure, so the tap can be retried, and only the last tap may write the word.
+- **Opting in costs the tick column, not the width of a control.** Measured in real Chrome
+  (`tests/test_table_pick_width.py`): the grid and its rows measure the same as in a card with no controls, the
+  interactive card is its table plus the tick column to half a pixel, and the card measures the same in silence
+  and with its longest answer on it. The answer wraps, so a narrow card grows taller instead of clipping it.
+- The word is documented in the table's catalog fields and in the table example, and it belongs to the structured
+  form: a table with plain column names draws as the plain table it is, and the word is dropped there.
+
 ### Fixes
 
 - **Gemma and other small models draw instead of writing a made-up tag.** The drawing rule used to show the tag's

@@ -146,7 +146,7 @@
    "kind": "table",
    "for": "Options compared on the same attributes.",
    "use_when": "Phones, plans, hotels.",
-   "fields": "columns ≤8. rows ≤30. Structured: columns [{id, label, kind: text|number|currency|percent|date|badge|link|bar|sources, unit, max, align: left|right|center, tone}], rows [{cells: {id: {text, value, url, tone}}, sources ≤4: [{label, url: http(s)}]}], filterable, page 1-10, aggregates ≤4 [{column, op: sum|avg|min|max|count, label}]. Legacy columns: string[] and rows: [][] still work, a cell per column. highlight: {row: n} | {column: n} from 0, badged Best. caption.",
+   "fields": "columns ≤8. rows ≤30. Structured: columns [{id, label, kind: text|number|currency|percent|date|badge|link|bar|sources, unit, max, align: left|right|center, tone}], rows [{cells: {id: {text, value, url, tone}}, sources ≤4: [{label, url: http(s)}]}], filterable, interactive true (a search row, a tick on each row and one send-to-chat button; structured columns only), page 1-10, aggregates ≤4 [{column, op: sum|avg|min|max|count, label}]. Legacy columns: string[] and rows: [][] still work, a cell per column. highlight: {row: n} | {column: n} from 0, badged Best. caption.",
    "example": {
     "type": "table",
     "caption": "Phones compared",
@@ -204,6 +204,7 @@
      }
     ],
     "filterable": true,
+    "interactive": true,
     "page": 1,
     "aggregates": [
      {

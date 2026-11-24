@@ -16,6 +16,9 @@ export type Aggregate = { column: string; op: AggregateOp; label: string };
 export type StructuredTable = {
   type: "table"; caption?: string; structured: true; columns: TableColumn[]; rows: StructuredRow[];
   filterable: boolean; page: number; aggregates: Aggregate[];
+  /** The reader may search the rows, tick them and send the ticked ones to the chat. Read strictly true, the
+   *  same convention as every other block word. */
+  interactive: boolean;
 };
 export type TableBlock = LegacyTable | StructuredTable;
 
@@ -113,6 +116,19 @@ function readAggregates(raw: unknown, columns: TableColumn[]): Aggregate[] {
 }
 
 function readStructuredTable(raw: any, here: Trail, caption: string | undefined): TableBlock | null {
+  // `interactive` is the one word that cannot work on bare or repeated column names: a tick's name, a row's key and
+  // the message all carry the column ids, and two columns sharing one id would share a cell. The Python check refuses
+  // both shapes, so the reader refuses them too and the two never disagree about what a board can hold. A table
+  // without the word keeps reading exactly the way #41 reads it (which disambiguates a repeated id instead).
+  const typedColumns = Array.isArray(raw.columns)
+    && raw.columns.every((column: any) => isObject(column) && plain(column.id, 40));
+  if (raw.interactive === true && !typedColumns) {
+    return here.drop("interactive needs a column object with an id for every column");
+  }
+  if (raw.interactive === true) {
+    const ids = raw.columns.map((column: any) => plain(column.id, 40));
+    if (new Set(ids).size !== ids.length) return here.drop("interactive needs a different id for every column");
+  }
   const columns = readStructuredColumns(raw.columns, here.at("columns"));
   if (!columns.length) return here.drop("table needs columns");
   const rawRows = Array.isArray(raw.rows) ? raw.rows : [];
@@ -140,6 +156,7 @@ function readStructuredTable(raw: any, here: Trail, caption: string | undefined)
   const page = num(raw.page);
   return clean({ type: "table" as const, caption, structured: true as const, columns, rows,
     filterable: raw.filterable === true,
+    interactive: raw.interactive === true,
     page: page !== null && page >= 1 && page <= 10 ? Math.floor(page) : 1,
     aggregates: readAggregates(raw.aggregates, columns) });
 }
@@ -159,7 +176,10 @@ function readStructuredTable(raw: any, here: Trail, caption: string | undefined)
  * Dropped: no columns. With columns but no usable row it is kept with rows: [] (noted), and draws an empty state.
  * The original `columns: string[]` and `rows: (string|number)[][]` form is unchanged. A structured table writes columns
  * as objects with an id, label and kind, rows as objects keyed by id, and may add filterable, page, aggregates and a
- * sources kind. Both draw in the same card and use the same caption.
+ * sources kind. `interactive: true` belongs to that structured form: it adds the search row, a tick on each row and
+ * one button ("Select", then "Send" once rows are ticked) that sends the ticked rows to the chat as one message. It
+ * does not change which form a table uses, so a legacy table that carries it still draws as a legacy table and the
+ * word is dropped, which is exactly what the Python check accepts.
  *   {caption: "Spend", columns: [{id: "shop", label: "Shop"}, {id: "spend", label: "Spend", kind: "currency", unit: "₹"}],
  *    rows: [{shop: "A", spend: 1200}], filterable: true, aggregates: [{column: "spend", op: "sum"}]}
  */

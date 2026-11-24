@@ -290,13 +290,13 @@ describe("BlockTag expand / full-screen", () => {
     const id = "c0ffee0d";
     const load = async () => stored([{ type: "heading", text: "Portfolio" }]);
     const home = render(
-      <BlockActions.Provider value={{ send: () => {}, fill: () => {}, sessionScope: "expand-pointer" }}>
+      <BlockActions.Provider value={{ send: async () => "nowhere", fill: () => {}, sessionScope: "expand-pointer" }}>
         <BlockTag id={id} streaming={false} load={load} />
       </BlockActions.Provider>,
     );
     await waitFor(() => expect(home.container.querySelector(".hb-blocks")).toBeTruthy());
     const pointer = render(
-      <BlockActions.Provider value={{ send: () => {}, fill: () => {}, sessionScope: "expand-pointer" }}>
+      <BlockActions.Provider value={{ send: async () => "nowhere", fill: () => {}, sessionScope: "expand-pointer" }}>
         <BlockTag id={id} streaming={false} load={load} />
       </BlockActions.Provider>,
     );
