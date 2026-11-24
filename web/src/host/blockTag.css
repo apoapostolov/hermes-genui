@@ -90,3 +90,78 @@
   font-size: 13px;
   overflow-wrap: anywhere;
 }
+/* Expand / full-screen board (host/BlockTag.tsx): the images strip's full-size overlay pattern, raised to a
+   whole board — the photo scrim's own numbers (fixed, same z, same appear animation) and the same way of
+   closing (Escape, the scrim, a close control). One honest correction: a stateless photo may be re-drawn at
+   full size, a board may not — its blocks carry live state. So the host wrapper (.hb-board-host) is a plain
+   block container at rest, costing the inline board nothing, and IS the dialog while expanded: the ONE drawn
+   .hb-blocks is lifted into it, not duplicated, and settles back into flow on close. The control lives
+   OUTSIDE .hb-blocks and out of flow (absolute); it stays quiet until the pointer is on the board or the key
+   reaches it. Inside the dialog the board's 1100px reading cap lifts, so full-width blocks ride the wider
+   container, while every .hb-blocks > X cap (the 720px cards, the fit-content table) is the board's own rule
+   and keeps its number in both views. Chrome measures exactly that (tests/test_expand_fullscreen.py). */
+.hb-tag { position: relative; }
+.hb-expand {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background, #ffffff) 85%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  cursor: pointer;
+  opacity: 0;
+}
+.hb-tag:hover .hb-expand, .hb-expand:focus-visible { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .hb-expand { transition: none; }
+}
+.hb-board-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: rgba(0, 0, 0, 0.82);
+  animation: hb-appear 0.18s ease-out;
+}
+/* The wider container, in the ONE shipped rule: the expanded board box is a single element — it sheds the
+   reading cap and its margin (folded into the panel's own padding) and carries the paper of its own accord.
+   The caps are .hb-blocks > X rules, scoped to the blocks themselves — this selector reaches none of them. */
+.hb-board-overlay .hb-blocks {
+  box-sizing: border-box;
+  width: min(1600px, 100%);
+  max-width: none;
+  max-height: 100%;
+  overflow: auto;
+  margin: 0;
+  padding: 24px;
+  border-radius: 16px;
+  background: var(--background, Canvas);
+}
+.hb-overlay-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  cursor: pointer;
+}
+.hb-overlay-close:hover { background: rgba(0, 0, 0, 0.65); }

@@ -9,6 +9,21 @@
 // that speaks nothing draws the DOM and the note it always drew. The stored answer may also carry the board's
 // own placement words (align, text_align) beside its blocks; they ride through to the drawing, which resolves
 // them for every block that didn't ask for itself.
+//
+// The reader gets exactly one view, not an ask: a quiet expand control on every drawn board, the images strip's
+// full-size overlay pattern (blocks/images/Images.tsx) raised to the whole board — with one honest correction.
+// A stateless photo may be re-drawn at full size; a board may not: its blocks carry live state (a calculator's
+// sliders, an unsent form draft, a lit flow), so expanding MOVES the one drawn instance into the dialog instead
+// of instantiating a second one. The host's .hb-board-host wrapper — a plain block container at rest, so an
+// inline board keeps drawing its byte-identical .hb-blocks under it — becomes the fixed dialog itself: cards
+// keep their caps and full-width blocks ride the wider column. Escape or the close control returns to the
+// inline view and the element settles back into flow; state survives open, close and reopen in both directions
+// because the blocks were never unmounted. Focus lands in the dialog on open, stays inside it while open, and
+// lands back on the control on close; the trap wraps Tab on the eligible tabbable controls (see tabbableIn),
+// never on disabled, negative-tabindex or hidden ones. A board that is not expanded draws exactly the markup
+// it always drew: the control lives outside the board wrapper, and the wrapper takes no part in layout. The
+// pointer a later tag draws has no board to move, so it grows no control; the living row stays beside the
+// live view (the dialog is the board itself).
 import { useContext, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 import { Blocks } from "../core/Blocks";
 import * as boards from "../core/boardRoster";
@@ -41,6 +56,10 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
   const address = validId ? `${actions.sessionScope ?? ""}|${id}` : "";
   const [state, setState] = useState<State>({ kind: "loading" });
   const [viewing, setViewing] = useState<number | null>(null);  // an archived version being viewed, or null
+  const [expanded, setExpanded] = useState(false);              // the drawn board moved into the full-screen dialog
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const expandRef = useRef<HTMLButtonElement | null>(null);
+  const closeRef = useRef<HTMLButtonElement | null>(null);
   // The tree this live view MOUNTED last: what the next replacement tree is carried against.
   const drawn = useRef<Block[] | null>(null);
 
@@ -157,6 +176,38 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
     // actions.rest is left out of the deps on purpose: it is a per-render closure over the same door.
   }, [address, id, streaming, validId, role, refresh, viewing]);
 
+  const close = () => {
+    setExpanded(false);
+    expandRef.current?.focus();  // the dialog hands focus back to the control it opened from
+  };
+
+  useEffect(() => {
+    if (expanded) closeRef.current?.focus();  // an open dialog owns the keyboard
+  }, [expanded]);
+
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        // A photo opened from inside this dialog sits above it; the key answers the topmost layer first.
+        if (document.querySelector(".hb-photo-overlay")) return;
+        close();
+        return;
+      }
+      if (e.key !== "Tab" || !hostRef.current) return;
+      const items = tabbableIn(hostRef.current);  // the DOM can change while open: recompute per keypress
+      if (!items.length) return;
+      e.preventDefault();  // the dialog owns the keyboard: Tab steps only through its own eligible controls
+      const active = document.activeElement as HTMLElement | null;
+      const at = active === null ? -1 : items.indexOf(active);
+      const step = e.shiftKey ? -1 : 1;
+      const next = at === -1 ? (e.shiftKey ? items.length - 1 : 0) : (at + step + items.length) % items.length;
+      items[next].focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [expanded]);
+
   if (!validId && !streaming) return null;
   if (streaming || role === "unknown") return <Note text="drawing…" pulse />;
   if (role === "pointer") return <LivePointer id={id as string} address={address} />;
@@ -164,7 +215,23 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
   if (state.kind === "failed") return null;
   return (
     <BlockActions.Provider value={{ ...actions, blockId: id }}>
-      <Blocks blocks={state.blocks} boardAlign={state.align} boardTextAlign={state.textAlign} />
+      <div className="hb-tag">
+        <button ref={expandRef} type="button" className="hb-expand" aria-label="Expand board" aria-haspopup="dialog"
+          onClick={() => setExpanded(true)}>
+          <IconExpand />
+        </button>
+        <div ref={hostRef} className={expanded ? "hb-board-host hb-board-overlay" : "hb-board-host"}
+          {...(expanded ? { role: "dialog", "aria-modal": "true", "aria-label": "Expanded board" } : {})}
+          onClick={expanded ? (e) => e.target === e.currentTarget && close() : undefined}>
+          {expanded && (
+            <button ref={closeRef} type="button" className="hb-overlay-close" aria-label="Close expanded board"
+              onClick={close}>
+              <IconClose />
+            </button>
+          )}
+          <Blocks blocks={state.blocks} boardAlign={state.align} boardTextAlign={state.textAlign} />
+        </div>
+      </div>
       {(live.version != null || live.links) && (
         <LiveRow id={id as string} version={live.version} updatedAt={live.updatedAt} links={live.links}
           viewing={viewing} onShow={setViewing} canReach={Boolean(actions.rest)} />
@@ -173,6 +240,43 @@ export function BlockTag({ id, streaming, load }: { id: string | undefined; stre
   );
 }
 
+/** The controls a real Tab press can reach inside the open dialog, in tab order. The focusable set minus the
+ *  controls that are not actually stops: anything disabled (own .disabled or a disabled fieldset — Steps and
+ *  Layers end on a spent Next, and a form's Send sits behind its fieldset once sent), anything asking not to be
+ *  (negative tabindex, hidden inputs), anything not shown. The layout half of that read (rects, visibility)
+ *  only counts where layout is real; jsdom reports a zero rect for every element, so there the attribute
+ *  shape governs and Chrome measures the rest (tests/test_expand_fullscreen.py). */
+function tabbableIn(root: HTMLElement): HTMLElement[] {
+  const laidOut = root.getClientRects().length > 0;
+  return [...root.querySelectorAll<HTMLElement>("a[href], button, input, select, textarea, [tabindex]")].filter(
+    (el) =>
+      el.tabIndex >= 0 &&
+      el.getAttribute("type") !== "hidden" &&
+      (el as HTMLButtonElement).disabled !== true &&
+      !el.closest("fieldset[disabled]") &&
+      !el.closest("[hidden]") &&
+      (!laidOut || (el.getClientRects().length > 0 && getComputedStyle(el).visibility === "visible")),
+  );
+}
+
 function Note({ text, pulse = false }: { text: string; pulse?: boolean }) {
   return <div className={pulse ? "hb-state hb-pulse" : "hb-state"}>{text}</div>;
+}
+
+function IconExpand() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" aria-hidden="true">
+      <path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" />
+    </svg>
+  );
+}
+
+function IconClose() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
 }

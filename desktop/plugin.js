@@ -7939,6 +7939,10 @@ function BlockTag({ id, streaming, load }) {
   const address = validId ? `${actions.sessionScope ?? ""}|${id}` : "";
   const [state, setState] = useState27({ kind: "loading" });
   const [viewing, setViewing] = useState27(null);
+  const [expanded, setExpanded] = useState27(false);
+  const hostRef = useRef15(null);
+  const expandRef = useRef15(null);
+  const closeRef = useRef15(null);
   const drawn = useRef15(null);
   const self = useRef15(null);
   if (self.current === null) self.current = { token: /* @__PURE__ */ Symbol("hb-tag") };
@@ -8026,13 +8030,77 @@ function BlockTag({ id, streaming, load }) {
       alive = false;
     };
   }, [address, id, streaming, validId, role, refresh, viewing]);
+  const close = () => {
+    setExpanded(false);
+    expandRef.current?.focus();
+  };
+  useEffect10(() => {
+    if (expanded) closeRef.current?.focus();
+  }, [expanded]);
+  useEffect10(() => {
+    if (!expanded) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        if (document.querySelector(".hb-photo-overlay")) return;
+        close();
+        return;
+      }
+      if (e.key !== "Tab" || !hostRef.current) return;
+      const items = tabbableIn(hostRef.current);
+      if (!items.length) return;
+      e.preventDefault();
+      const active = document.activeElement;
+      const at2 = active === null ? -1 : items.indexOf(active);
+      const step = e.shiftKey ? -1 : 1;
+      const next = at2 === -1 ? e.shiftKey ? items.length - 1 : 0 : (at2 + step + items.length) % items.length;
+      items[next].focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [expanded]);
   if (!validId && !streaming) return null;
   if (streaming || role === "unknown") return /* @__PURE__ */ jsx50(Note, { text: "drawing\u2026", pulse: true });
   if (role === "pointer") return /* @__PURE__ */ jsx50(LivePointer, { id, address });
   if (state.kind === "loading") return /* @__PURE__ */ jsx50(Note, { text: "drawing\u2026", pulse: true });
   if (state.kind === "failed") return null;
   return /* @__PURE__ */ jsxs45(BlockActions.Provider, { value: { ...actions, blockId: id }, children: [
-    /* @__PURE__ */ jsx50(Blocks, { blocks: state.blocks, boardAlign: state.align, boardTextAlign: state.textAlign }),
+    /* @__PURE__ */ jsxs45("div", { className: "hb-tag", children: [
+      /* @__PURE__ */ jsx50(
+        "button",
+        {
+          ref: expandRef,
+          type: "button",
+          className: "hb-expand",
+          "aria-label": "Expand board",
+          "aria-haspopup": "dialog",
+          onClick: () => setExpanded(true),
+          children: /* @__PURE__ */ jsx50(IconExpand, {})
+        }
+      ),
+      /* @__PURE__ */ jsxs45(
+        "div",
+        {
+          ref: hostRef,
+          className: expanded ? "hb-board-host hb-board-overlay" : "hb-board-host",
+          ...expanded ? { role: "dialog", "aria-modal": "true", "aria-label": "Expanded board" } : {},
+          onClick: expanded ? (e) => e.target === e.currentTarget && close() : void 0,
+          children: [
+            expanded && /* @__PURE__ */ jsx50(
+              "button",
+              {
+                ref: closeRef,
+                type: "button",
+                className: "hb-overlay-close",
+                "aria-label": "Close expanded board",
+                onClick: close,
+                children: /* @__PURE__ */ jsx50(IconClose, {})
+              }
+            ),
+            /* @__PURE__ */ jsx50(Blocks, { blocks: state.blocks, boardAlign: state.align, boardTextAlign: state.textAlign })
+          ]
+        }
+      )
+    ] }),
     (live.version != null || live.links) && /* @__PURE__ */ jsx50(
       LiveRow,
       {
@@ -8047,8 +8115,46 @@ function BlockTag({ id, streaming, load }) {
     )
   ] });
 }
+function tabbableIn(root) {
+  const laidOut = root.getClientRects().length > 0;
+  return [...root.querySelectorAll("a[href], button, input, select, textarea, [tabindex]")].filter(
+    (el) => el.tabIndex >= 0 && el.getAttribute("type") !== "hidden" && el.disabled !== true && !el.closest("fieldset[disabled]") && !el.closest("[hidden]") && (!laidOut || el.getClientRects().length > 0 && getComputedStyle(el).visibility === "visible")
+  );
+}
 function Note({ text, pulse = false }) {
   return /* @__PURE__ */ jsx50("div", { className: pulse ? "hb-state hb-pulse" : "hb-state", children: text });
+}
+function IconExpand() {
+  return /* @__PURE__ */ jsx50(
+    "svg",
+    {
+      width: "15",
+      height: "15",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      "aria-hidden": "true",
+      children: /* @__PURE__ */ jsx50("path", { d: "M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" })
+    }
+  );
+}
+function IconClose() {
+  return /* @__PURE__ */ jsx50(
+    "svg",
+    {
+      width: "16",
+      height: "16",
+      viewBox: "0 0 24 24",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "2",
+      strokeLinecap: "round",
+      "aria-hidden": "true",
+      children: /* @__PURE__ */ jsx50("path", { d: "M6 6l12 12M18 6L6 18" })
+    }
+  );
 }
 
 // src/live/DashboardView.tsx
@@ -8429,6 +8535,81 @@ var blockTag_default = `/* The block tag's own states */
   font-size: 13px;
   overflow-wrap: anywhere;
 }
+/* Expand / full-screen board (host/BlockTag.tsx): the images strip's full-size overlay pattern, raised to a
+   whole board \u2014 the photo scrim's own numbers (fixed, same z, same appear animation) and the same way of
+   closing (Escape, the scrim, a close control). One honest correction: a stateless photo may be re-drawn at
+   full size, a board may not \u2014 its blocks carry live state. So the host wrapper (.hb-board-host) is a plain
+   block container at rest, costing the inline board nothing, and IS the dialog while expanded: the ONE drawn
+   .hb-blocks is lifted into it, not duplicated, and settles back into flow on close. The control lives
+   OUTSIDE .hb-blocks and out of flow (absolute); it stays quiet until the pointer is on the board or the key
+   reaches it. Inside the dialog the board's 1100px reading cap lifts, so full-width blocks ride the wider
+   container, while every .hb-blocks > X cap (the 720px cards, the fit-content table) is the board's own rule
+   and keeps its number in both views. Chrome measures exactly that (tests/test_expand_fullscreen.py). */
+.hb-tag { position: relative; }
+.hb-expand {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--foreground, #1f2328) 14%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--background, #ffffff) 85%, transparent);
+  color: var(--ui-text-tertiary, #6b7280);
+  cursor: pointer;
+  opacity: 0;
+}
+.hb-tag:hover .hb-expand, .hb-expand:focus-visible { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .hb-expand { transition: none; }
+}
+.hb-board-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: rgba(0, 0, 0, 0.82);
+  animation: hb-appear 0.18s ease-out;
+}
+/* The wider container, in the ONE shipped rule: the expanded board box is a single element \u2014 it sheds the
+   reading cap and its margin (folded into the panel's own padding) and carries the paper of its own accord.
+   The caps are .hb-blocks > X rules, scoped to the blocks themselves \u2014 this selector reaches none of them. */
+.hb-board-overlay .hb-blocks {
+  box-sizing: border-box;
+  width: min(1600px, 100%);
+  max-width: none;
+  max-height: 100%;
+  overflow: auto;
+  margin: 0;
+  padding: 24px;
+  border-radius: 16px;
+  background: var(--background, Canvas);
+}
+.hb-overlay-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  cursor: pointer;
+}
+.hb-overlay-close:hover { background: rgba(0, 0, 0, 0.65); }
 `;
 
 // src/blocks/atoms/atoms.css
